@@ -15,11 +15,10 @@
 (defn add-response-chunk
   ([new-chunk] (add-response-chunk new-chunk *viewport*))
   ([new-chunk viewport]
-     (send viewport (fn [m]
-                      (let [promise (:response-chunks-promise m)]
-                        (when (not (realized? promise))
-                          (deliver promise 42)))
-                      (update-in m [:response-chunks] conj new-chunk)))))
+     (send viewport #(let [promise (:response-chunks-promise %)]
+                       (when (not (realized? promise))
+                         (deliver promise 42))
+                       (update-in % [:response-chunks] conj new-chunk)))))
 
 
 (defn find-or-create-viewport-instance
