@@ -34,8 +34,8 @@
    :headers {"Content-Type" "text/javascript; charset=UTF-8"
              "Connection" "keep-alive"}
    :body
-   ;; TODO: In general all this is silly, but it'll go away as soon as I switch to a sane
-   ;; backend (Netty?) and split the decouple the HTTP request and response; event-based.
+   ;; TODO: In general all this is silly, but it'll go away as soon as I switch to a sane backend (Netty?) and decouple the HTTP
+   ;; request and response; i.e. I go event-based.
    (let [our-response-chunks (promise)]
      (deref (:response-chunks-promise @*viewport*) -comet-timeout- nil)
      ;; Fetch current chunks and reset to empty set of chunks.

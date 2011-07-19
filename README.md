@@ -1,12 +1,16 @@
 # SymbolicWeb
 
-AJAX/Comet/reverse HTTP thing for Clojure.
+AJAX/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI) thing for Clojure.
+
+SW was originally written for CL, and that version is still found at this location albeit unmaintained:
+
+  https://github.com/lnostdal/old-SymbolicWeb
 
 
 
 ## Status
 
-Very, very alpha.
+Very, very alpha -- and this doesn't do anything much useful yet.
 
 
 
@@ -17,8 +21,7 @@ For PHP support if that's needed:
     php-cgi -b 127.0.0.1:6666 &
 
 
-Lighttpd 1.5.x (from svn/git) is used for the boring static content.
-To enable serving from port 80 we do:
+Lighttpd 1.5.x (from svn/git) is used for the boring static content. To enable serving from port 80 we do:
 
     sudo setcap 'cap_net_bind_service=+ep' /usr/local/sbin/lighttpd
 
@@ -44,8 +47,8 @@ Now start SW:
     symbolicweb.core> (-main)
 
 
-Direct your browser to http://localhost.nostdal.org/sw/ (yes, this will really resolve to 127.0.0.1) and
-it'll show a welcome screen of sorts.
+Direct your browser to http://localhost.nostdal.org/sw/ (yes, this will really resolve to 127.0.0.1) and it'll show a welcome screen
+of sorts.
 
 To send JS to the browser, try:
 
@@ -58,3 +61,6 @@ To send JS to the browser, try:
 Copyright (C) 2011 Lars Rune Nøstdal
 
 Distributed under the Affero General Public License (for now).
+
+
+(.. I'm aiming at a 132 column width: http://ask.slashdot.org/story/07/07/07/1931246/Are-80-Columns-Enough ..)
