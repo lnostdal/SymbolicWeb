@@ -79,9 +79,9 @@
       (let [[application viewport] (find-or-create-application-instance)]
         (touch application)
         (touch viewport)
-        ;; Set the root binding values for easy REPL-inspection.
-        (reset! *application* application)
-        (reset! *viewport* viewport)
+        ;; Set the root bindings for easy REPL-inspection.
+        (def ^:dynamic *application* application)
+        (def ^:dynamic *viewport* viewport)
         (binding [*application* application
                   *viewport* viewport]
           (if-let [sw-request-type (get (:query-params req) "_sw_request-type")]

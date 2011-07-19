@@ -24,11 +24,11 @@
 
 (def ^:dynamic *viewport*
   "The current VIEWPORT."
-  (atom nil))
+  nil)
 
 (def ^:dynamic *application*
   "The current APPLICATION (session)."
-  (atom nil))
+  nil)
 
 
 (let [id-generator-value (atom 0)]
