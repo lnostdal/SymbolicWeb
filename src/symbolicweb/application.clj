@@ -14,6 +14,6 @@ Viewport."
   (if-let [application (get @-applications- (:value (get (:cookies *request*) "sw")))]
     (list application (binding [*application* application]
                         (find-or-create-viewport-instance)))
-    (binding [*application* (make-Application)]
-      (swap! -applications- #(assoc % (:id @*application*) *application*))
-      (list *application* (find-or-create-viewport-instance true)))))
+    (let [application (make-Application)]
+      (swap! -applications- #(assoc % (:id @application) application))
+      (list application (find-or-create-viewport-instance true)))))
