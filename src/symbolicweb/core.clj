@@ -79,9 +79,9 @@
       (let [[application viewport] (find-or-create-application-instance)]
         (touch application)
         (touch viewport)
-        ;; Set the global or outer *application* and *viewport* for easy REPL-inspection.
-        (swap! *application* (fn [_] application))
-        (swap! *viewport* (fn [_] viewport))
+        ;; Set the root binding values for easy REPL-inspection.
+        (reset! *application* application)
+        (reset! *viewport* viewport)
         (binding [*application* application
                   *viewport* viewport]
           (if-let [sw-request-type (get (:query-params req) "_sw_request-type")]
