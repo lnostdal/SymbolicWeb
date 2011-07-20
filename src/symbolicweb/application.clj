@@ -1,11 +1,15 @@
 (in-ns 'symbolicweb.core)
 
 (defn make-Application []
-  (agent {:type 'Application
-          :id (generate-uuid)
-          :last-activity-time (System/currentTimeMillis)
-          :viewports {}
-          }))
+  "This will instantiate a new Application and also 'register' it as part of the server via -APPLICATIONS-."
+  (let [application-id (generate-uuid)
+        application (agent {:type 'Application
+                            :id application-id
+                            :last-activity-time (System/currentTimeMillis)
+                            :viewports {}
+                            })]
+    (swap! -applications- #(assoc % application-id application))
+    application))
 
 
 (defn find-or-create-application-instance []
@@ -13,7 +17,6 @@
 Viewport."
   (if-let [application (get @-applications- (:value (get (:cookies *request*) "sw")))]
     (list application (binding [*application* application]
-                        (find-or-create-viewport-instance)))
+                        (find-viewport-instance)))
     (binding [*application* (make-Application)]
-      (swap! -applications- #(assoc % (:id @*application*) *application*))
-      (list *application* (find-or-create-viewport-instance true)))))
+      (list *application* (make-Viewport)))))

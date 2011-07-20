@@ -1,15 +1,23 @@
 (in-ns 'symbolicweb.core)
 
 (defn make-Viewport []
-  (agent {:type 'Viewport
-          :id (generate-uuid)
-          :last-activity-time (System/currentTimeMillis)
+  "This will instantiate a new Viewport and also 'register' it as a part of *APPLICATION* and the server via -VIEWPORTS-."
+  (assert (thread-bound? #'*application*))
+  (let [viewport-id (generate-uuid)
+        viewport (agent {:type 'Viewport
+                         :id viewport-id
+                         :last-activity-time (System/currentTimeMillis)
 
-          :response-chunks []
-          :response-chunks-promise (promise)
+                         :response-chunks []
+                         :response-chunks-promise (promise)
 
-          :application nil
-          }))
+                         :application *application*
+                         })]
+    (swap! -viewports- #(assoc % viewport-id viewport))
+    (send *application* #(update-in % [:viewports] conj [viewport-id viewport]))
+    (await *application*)
+    viewport))
+
 
 
 (defn add-response-chunk
@@ -21,15 +29,8 @@
                        (update-in % [:response-chunks] conj new-chunk)))))
 
 
-(defn find-or-create-viewport-instance
-  ([] (find-or-create-viewport-instance false))
-  ([just-create?]
-     (if-let [viewport-id (and (not just-create?) (get (:query-params *request*) "_sw_viewport-id"))]
-       (let [viewport (get (:viewports @*application*) viewport-id)]
-         (assert viewport)
-         viewport)
-       (let [viewport (make-Viewport)]
-         (swap! -viewports- #(assoc % (:id @viewport) viewport))
-         (send *application* #(update-in % [:viewports] conj [(:id @viewport) viewport]))
-         (await *application*)
-         viewport))))
+(defn find-viewport-instance []
+  (assert (thread-bound? #'*application* #'*request*))
+  (let [viewport-id (get (:query-params *request*) "_sw_viewport-id")]
+    (assert viewport-id)
+    (get (:viewports @*application*) viewport-id)))

@@ -79,9 +79,10 @@
       (let [[application viewport] (find-or-create-application-instance)]
         (touch application)
         (touch viewport)
-        ;; Set the root bindings for easy REPL-inspection.
+        ;; Set new root bindings for easy REPL-inspection.
         (def ^:dynamic *application* application)
         (def ^:dynamic *viewport* viewport)
+        ;; Set thread-local bindings which will be used from now on.
         (binding [*application* application
                   *viewport* viewport]
           (if-let [sw-request-type (get (:query-params req) "_sw_request-type")]
