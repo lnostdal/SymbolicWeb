@@ -2,7 +2,7 @@
 
 (defn make-ID
   ([] (make-ID {}))
-  ([m] (assoc m :id (id-generator-next))))
+  ([m] (assoc m :id (generate-uid))))
 
 
 (defn make-WidgetBase []
