@@ -13,6 +13,26 @@
   "ID -> VIEWPORT"
   (atom {}))
 
+(def -gc-thread-
+  "This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- end checks their :LAST-ACTIVITY-TIME properties
+removing unused or timed out sessions."
+  (agent 42))
+
+(send-off -gc-thread-
+          (fn [_]
+            (loop  []
+              (let [now (System/currentTimeMillis)
+                    checker-fn (fn [cnt timeout]
+                                 (doseq [obj @cnt]
+                                   (let [obj @(val obj)]
+                                     (when (< timeout (- now (:last-activity-time obj)))
+                                       (swap! cnt #(dissoc % (:id obj)))))))]
+                (checker-fn -applications- -application-timeout-)
+                (checker-fn -viewports- -viewport-timeout-)
+                (when (= *agent* -gc-thread-)
+                  (Thread/sleep 5000)
+                  (recur))))))
+
 (def -widgets-
   "ID -> WIDGET"
   (atom {}))
