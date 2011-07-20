@@ -13,6 +13,16 @@
     application))
 
 
+(defn find-application-constructor []
+  (assert (thread-bound? #'*request*))
+  (loop [app-types @-application-types-]
+    (when-first [app-type app-types]
+      (let [app-type (val app-type)]
+        (if ((:fit-fn app-type))
+          (:application-constructor-fn app-type)
+          (recur (next app-types)))))))
+
+
 (defn find-or-create-application-instance []
   "Returns two values; a map structure representing an user session/Application, and a map structure representing the current
 Viewport."
@@ -38,22 +48,6 @@ Viewport."
                               (application-constructor)
                               (make-Application not-found-page-handler))]
       (list *application* (make-Viewport)))))
-
-
-(defn find-application-constructor []
-  (assert (thread-bound? #'*request*))
-  (loop [app-types @-application-types-]
-    (when-first [app-type app-types]
-      (let [app-type (val app-type)]
-        (if ((:fit-fn app-type))
-          (:application-constructor-fn app-type)
-          (recur (next app-types)))))))
-
-
-(defmacro defapp [name fit-fn session-constructor-fn]
-  `(swap! -application-types-
-          #(assoc % '~name {:fit-fn ~fit-fn
-                            :application-constructor-fn ~session-constructor-fn})))
 
 
 (defn undefapp [name]

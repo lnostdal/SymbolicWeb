@@ -10,23 +10,12 @@
   (:require [clojure.string :as str])
   (:require symbolicweb.common)
   (:require symbolicweb.viewport)
+  (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
   (:require symbolicweb.widget-base)
-
   (:gen-class))
 
 (in-ns 'symbolicweb.core)
-
-
-(defn sw-js-bootstrap []
-  (html
-   [:script {:type "text/javascript"}
-    (set-document-cookie :name "sw" :value (:id @*application*))
-    "sw_viewport_id = '" (:id @*viewport*) "'; "
-    "sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
-                                 (str it ".")
-                                 "") "'; "]
-   [:script {:type "text/javascript" :defer "defer" :src "../kitch/js/sw/sw-ajax.js"}]))
 
 
 (defn handle-comet-request []

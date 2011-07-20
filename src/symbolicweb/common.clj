@@ -125,3 +125,14 @@ Returns a string."
   ;; TODO: HTML-ESCAPE function?
   ([msg] (alert msg *viewport*))
   ([msg viewport] (add-response-chunk (str "alert('" msg "');") viewport)))
+
+
+(defn sw-js-bootstrap []
+  (html
+   [:script {:type "text/javascript"}
+    (set-document-cookie :name "sw" :value (:id @*application*))
+    "sw_viewport_id = '" (:id @*viewport*) "'; "
+    "sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
+                                 (str it ".")
+                                 "") "'; "]
+   [:script {:type "text/javascript" :defer "defer" :src "../kitch/js/sw/sw-ajax.js"}]))

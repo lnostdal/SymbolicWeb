@@ -1,5 +1,14 @@
 (in-ns 'symbolicweb.core)
 
+(declare make-Application)
+
+
+(defmacro defapp [name fit-fn session-constructor-fn]
+  `(swap! -application-types-
+          #(assoc % '~name {:fit-fn ~fit-fn
+                            :application-constructor-fn ~session-constructor-fn})))
+
+
 (defn hello-world-handler []
   {:status  200
    :headers {"Content-Type" "text/html; charset=UTF-8"
