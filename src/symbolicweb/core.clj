@@ -70,6 +70,26 @@
   )
 
 
+(defn reload-page-handler []
+  (println "RELOAD!")
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Connection" "keep-alive"}
+   :body
+   (html
+    (doctype :xhtml-strict)
+    (xhtml-tag
+     "en"
+     [:head
+      [:title "SymbolicWeb"]
+      [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
+      [:script {:type "text/javascript"}
+       ;; Clear session cookie and reload page.
+       (set-document-cookie :name "sw" :value nil)
+       "window.location.reload();"]]
+     [:body]))})
+
+
 (let [*out* *out*
       *err* *err*]
   (defn handler [req]
