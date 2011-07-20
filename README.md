@@ -47,8 +47,8 @@ Now start SW:
     symbolicweb.core> (-main)
 
 
-Direct your browser to http://localhost.nostdal.org/sw/ (yes, this will really resolve to 127.0.0.1) and it'll show a welcome screen
-of sorts.
+Direct your browser to http://localhost.nostdal.org/sw/hello-world (yes, this will really resolve to 127.0.0.1) and it'll show a
+welcome screen of sorts.
 
 To send JS to the browser, try:
 

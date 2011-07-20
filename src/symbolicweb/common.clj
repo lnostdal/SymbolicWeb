@@ -5,6 +5,11 @@
 (def -application-timeout- (+ -viewport-timeout- 30000))
 
 
+(def -application-types-
+  "name -> {:fit-fn fit-fn
+            :application-constructor-fn application-constructor-fn]"
+  (atom {}))
+
 (def -applications-
   "ID -> APPLICATION"
   (atom {}))
@@ -99,3 +104,12 @@ Returns a string."
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=\" + window.location.pathname + \"; "
        "\";"))
+
+
+(defn is-url?
+  ([url-path]
+     (assert (thread-bound? #'*request*))
+     (is-url? url-path (:uri *request*)))
+  ([url-path uri]
+     (= (subs uri 0 (min (count url-path) (count uri)))
+        url-path)))
