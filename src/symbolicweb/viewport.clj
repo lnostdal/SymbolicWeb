@@ -11,13 +11,12 @@
                          :response-chunks []
                          :response-chunks-promise (promise)
 
-                         :application *application*
+                         ;;:application *application* ;; TODO: This creates some issues wrt. printing; is it needed?
                          })]
     (swap! -viewports- #(assoc % viewport-id viewport))
     (send *application* #(update-in % [:viewports] conj [viewport-id viewport]))
     (await *application*)
     viewport))
-
 
 
 (defn add-response-chunk
