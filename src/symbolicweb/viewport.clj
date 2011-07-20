@@ -25,11 +25,4 @@
      (send viewport #(let [promise (:response-chunks-promise %)]
                        (when (not (realized? promise))
                          (deliver promise 42))
-
-
-(defn find-viewport-instance []
-  (assert (thread-bound? #'*application* #'*request*))
-  (let [viewport-id (get (:query-params *request*) "_sw_viewport-id")]
-    (assert viewport-id)
-    (get (:viewports @*application*) viewport-id)))
                        (update-in % [:response-chunks] conj (str new-chunk \newline \newline))))))

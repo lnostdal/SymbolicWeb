@@ -67,7 +67,38 @@
 
 (defn handle-normal-request-type []
   "\"Normal\" as opposed to HANDLE-SW-REQUEST-TYPE or non-AJAX/Comet."
-  )
+  {:status  200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Connection" "keep-alive"
+             "Expires" "Mon, 26 Jul 1997 05:00:00 GMT"
+             "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+             "Pragma" "no-cache"}
+   :body
+   (html
+    (doctype :xhtml-strict)
+    (xhtml-tag
+     "en"
+     [:head
+      [:title "SymbolicWeb"]
+      [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
+      (script-src "https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
+      (sw-js-bootstrap)]
+
+     [:body
+      [:h1 "SymbolicWeb - bringing life to the web!"]
+      [:p "Hello, this is SymbolicWeb running on Clojure " (clojure-version)]
+      [:p "Norwegian characters: æøå."]
+      [:ul (for [i (range 10)]
+             [:li [:b "This is nr. " i "."]])]
+
+      [:p "Here is the Clojure source code for this page:"
+       [:pre (slurp "src/symbolicweb/core.clj")]]
+
+      [:p (link-to "http://validator.w3.org/check?uri=referer"
+                   [:img {:src "http://www.w3.org/Icons/valid-xhtml10"
+                          :alt "Valid XHTML 1.0 Strict"
+                          :height 31
+                          :width  88}])]]))})
 
 
 (defn reload-page-handler []
@@ -97,48 +128,19 @@
               *err* *err*
               *request* req]
       (let [[application viewport] (find-or-create-application-instance)]
-        (touch application)
-        (touch viewport)
-        ;; Set new root bindings for easy REPL-inspection.
-        (def ^:dynamic *application* application)
-        (def ^:dynamic *viewport* viewport)
-        ;; Set thread-local bindings which will be used from now on.
-        (binding [*application* application
-                  *viewport* viewport]
-          (if-let [sw-request-type (get (:query-params req) "_sw_request-type")]
-            (handle-sw-request-type sw-request-type) ;; It's an AJAX or Comet request.
-            {:status  200
-             :headers {"Content-Type" "text/html; charset=UTF-8"
-                       "Connection" "keep-alive"
-                       "Expires" "Mon, 26 Jul 1997 05:00:00 GMT"
-                       "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
-                       "Pragma" "no-cache"}
-             :body
-             (html
-              (doctype :xhtml-strict)
-              (xhtml-tag
-               "en"
-               [:head
-                [:title "SymbolicWeb"]
-                [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-                (script-src "https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
-                (sw-js-bootstrap)]
-
-               [:body
-                [:h1 "SymbolicWeb - bringing life to the web!"]
-                [:p "Hello, this is SymbolicWeb running on Clojure " (clojure-version)]
-                [:p "Norwegian characters: æøå."]
-                [:ul (for [i (range 10)]
-                       [:li [:b "This is nr. " i "."]])]
-
-                [:p "Here is the Clojure source code for this page:"
-                 [:pre (slurp "src/symbolicweb/core.clj")]]
-
-                [:p (link-to "http://validator.w3.org/check?uri=referer"
-                             [:img {:src "http://www.w3.org/Icons/valid-xhtml10"
-                                    :alt "Valid XHTML 1.0 Strict"
-                                    :height 31
-                                    :width  88}])]]))}))))))
+        (if (not (and application viewport))
+          (reload-page-handler)
+          (do
+            ;; Set new root bindings for easy REPL-inspection.
+            (def ^:dynamic *application* application)
+            (def ^:dynamic *viewport* viewport)
+            (touch application)
+            (touch viewport)
+            (binding [*application* application ;; Set thread-local bindings which will be used from now on.
+                      *viewport* viewport]
+              (if-let [sw-request-type (get (:query-params req) "_sw_request-type")]
+                (handle-sw-request-type sw-request-type) ;; It's an AJAX or Comet request.
+                (handle-normal-request-type)))))))))
 
 
 (defn -main [& args]
