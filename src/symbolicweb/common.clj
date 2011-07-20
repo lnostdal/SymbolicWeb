@@ -106,6 +106,12 @@ Returns a string."
        "\";"))
 
 
+(declare add-response-chunk)
+(defn clear-session []
+  (add-response-chunk (str (set-document-cookie :name "sw" :value nil)
+                           " window.location.reload();")))
+
+
 (defn is-url?
   ([url-path]
      (assert (thread-bound? #'*request*))
@@ -113,3 +119,9 @@ Returns a string."
   ([url-path uri]
      (= (subs uri 0 (min (count url-path) (count uri)))
         url-path)))
+
+
+(defn alert
+  ;; TODO: HTML-ESCAPE function?
+  ([msg] (alert msg *viewport*))
+  ([msg viewport] (add-response-chunk (str "alert('" msg "');") viewport)))
