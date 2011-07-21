@@ -135,4 +135,4 @@ Returns a string."
     "sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
                                  (str it ".")
                                  "") "'; "]
-   [:script {:type "text/javascript" :defer "defer" :src "../kitch/js/sw/sw-ajax.js"}]))
+   [:script {:type "text/javascript" :defer "defer" :src "../js/common/sw/sw-ajax.js"}]))
