@@ -8,6 +8,7 @@
   (:use net.cgrand.enlive-html)
   (:use [clojure.java.jdbc :exclude (resultset-seq)])
   (:require [clojure.string :as str])
+  (:require symbolicweb.globals)
   (:require symbolicweb.common)
   (:require symbolicweb.viewport)
   (:require symbolicweb.handy-handlers)
