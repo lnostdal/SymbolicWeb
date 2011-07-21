@@ -67,6 +67,7 @@
       [:script {:type "text/javascript"}
        ;; Clear session cookie and reload page.
        (set-document-cookie :name "sw" :value nil)
+       (set-document-cookie :name "sw" :value nil :domain? false)
        "window.location.reload();"]]
      [:body
       [:p "Reloading page..."]]))})
