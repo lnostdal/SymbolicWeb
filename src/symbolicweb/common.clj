@@ -32,14 +32,16 @@ Returns a string."
           :href href}])
 
 
-(defn set-document-cookie [& {:keys [application viewport name value]
+(defn set-document-cookie [& {:keys [application viewport domain? name value]
                               :or {application *application*
                                    viewport *viewport*
+                                   domain? true
                                    name "name" ;;(cookie-name-of (server-of application))
                                    value "value"}}] ;;(cookie-value-of app)
   (str "document.cookie = \""
        name "=" (if value value "") "; "
-       "domain=.\" + window.location.hostname + \"; "
+       (when domain?
+         "domain=.\" + window.location.hostname + \"; ")
        (if value
          (str "expires=\""
               "+ (function(){ var date = new Date(); date.setFullYear(date.getFullYear()+1); return date.toUTCString(); })()"
