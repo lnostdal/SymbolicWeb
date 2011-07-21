@@ -68,7 +68,6 @@ Returns a string."
 
 
 (defn alert
-  ;; TODO: HTML-ESCAPE function?
   ([msg] (alert msg *viewport*))
   ([msg viewport] (add-response-chunk (str "alert('" msg "');") viewport)))
 

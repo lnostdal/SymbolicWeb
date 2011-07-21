@@ -2,7 +2,7 @@
 
 AJAX/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI) thing for Clojure.
 
-SW was originally written for CL, and that version is still found at this location albeit unmaintained:
+SW was originally written for Common Lisp, and that version is still found at this location albeit unmaintained:
 
   https://github.com/lnostdal/old-SymbolicWeb
 
