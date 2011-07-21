@@ -62,7 +62,7 @@
               *request* req]
       (let [[application viewport] (find-or-create-application-instance)]
         (if (not (and application viewport))
-          (reload-page-handler)
+          (clear-session-page-handler)
           (do
             ;; Set root bindings for easy REPL-inspection.
             (def ^:dynamic *application* application)

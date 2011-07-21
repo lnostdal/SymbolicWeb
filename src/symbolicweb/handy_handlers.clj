@@ -44,7 +44,6 @@
                           :width  88}])]]))})
 
 
-
 (defapp hello-world
   (fn []
     (is-url? "/sw/hello-world"))
@@ -52,7 +51,8 @@
     (make-Application hello-world-handler)))
 
 
-(defn reload-page-handler []
+(defn clear-session-page-handler []
+  "Clears the session; removes client side cookies and reloads the page."
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
              "Connection" "keep-alive"}
