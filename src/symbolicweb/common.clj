@@ -67,7 +67,7 @@ Returns a string."
 
 (declare add-response-chunk)
 (defn clear-session []
-  (add-response-chunk (str (set-document-cookie :name "sw" :value nil)
+  (add-response-chunk (str (set-document-cookie :name "_sw_application_id" :value nil)
                            " window.location.reload();")))
 
 
