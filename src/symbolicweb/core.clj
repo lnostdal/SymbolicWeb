@@ -25,9 +25,6 @@
     (binding [*out* *out*
               *err* *err*
               *request* request]
-      ;; TODO: There's no point in looking for or creating a Viewport instance when the request will be handled by
-      ;; (:AUX-HANDLER *APPLICATION*). I'm thinking a flag could be set, and ADD-RESPONSE-CHUNK checking this flag adding to a
-      ;; thread-local dynamic variable instead of (:RESPONSE-CHUNKS *VIEWPORT*) in these "aux positive" cases.
       (let [[application viewport] (find-or-create-application-instance)]
         (if (not (and application viewport))
           (clear-session-page-handler)
