@@ -1,44 +1,98 @@
 (in-ns 'symbolicweb.core)
 
-(defn make-ID
-  ([] (make-ID {}))
-  ([m] (assoc m :id (generate-uid))))
+(defn ensure-agent [& objects]
+  (map #(if (= clojure.lang.Agent (type %))
+          %
+          (agent %))
+       objects))
 
 
-(defn make-WidgetBase []
-  (assoc (make-ID)
-    :callbacks {}
-    :parent nil
-    :in-dom? nil
-    :delayed-operations []))
+(defn render-event [widget event-type & {:keys [js-before callback-data js-after]
+                                         :or {js-before "return(true);"
+                                              callback-data ""
+                                              js-after ""}}]
+  (str "$('#" (:id widget) "').bind('" event-type "', "
+       "function(event){"
+       "swMsg('" (:id widget) "', '" event-type "', function(){" js-before "}, '" callback-data "', function(){" js-after "});"
+       "});"))
 
 
-(defn make-Widget [& {:keys [type html-element-type]
-                      :or {html-element-type "div"}
-                      :as all}]
-  {:pre [type]}
-  (assoc (make-WidgetBase)
-    :type type
-    :html-element-type html-element-type))
+(defn render-events [widget]
+  (with-out-str
+    (loop [callbacks (:callbacks widget)]
+      (when-first [callback callbacks]
+        (print (render-event widget (key callback)))
+        (recur (rest callbacks))))))
 
 
-(defn make-HTMLElement [html-element-type]
-  "Represents a block or inline HTML element."
-  (make-Widget :type ::HTMLElement
-               :html-element-type html-element-type))
+(defn render [widget]
+  (let [widget (if (= (type widget) clojure.lang.Agent)
+                 @(await1 widget)
+                 widget)]
+    (cond
+     (= (type widget) clojure.lang.PersistentArrayMap)
+     (str ((:render-fn widget) widget)
+          (when (pos? (count (:callbacks widget)))
+            (str "<script type='text/javascript'>" (render-events widget) "</script>")))
+
+     (= (type widget) java.lang.String)
+     (escape-html widget)
+
+     true
+     (throw (Exception. (str "Can't render " widget "."))))))
 
 
-(defn make-Container [& children]
-  (assoc (make-Widget :type ::Container)
-    :children (if children
-                (into [] children)
-                [])))
+(defn render-children [widget]
+  (with-out-str []
+    (loop [children (:children widget)]
+      (when-first [child children]
+        (print (render child))
+        (recur (rest children))))))
 
 
 (defn add-children [root-Container & children]
-  {:pre [(= (type root-Container) clojure.lang.Agent)]}
-  (send root-Container
-        (fn [m]
-          (assoc m :children
-                 (into (:children root-Container)
-                       children)))))
+  (send root-Container #(update-in % [:children] into (apply ensure-agent children))))
+
+
+(defn set-event-handler [event-type widget callback-fn]
+  (send widget #(update-in % [:callbacks] conj [event-type callback-fn])))
+
+
+(defn update-widget-data [widget new-widget-data]
+  {:pre (= clojure.lang.Agent (type widget))}
+  (send widget (fn [_] new-widget-data)))
+
+
+(defn make-ID
+  ([] (make-ID {}))
+  ([m] (assoc m :id (generate-aid))))
+
+
+(defn make-WidgetBase []
+  (with1 (agent (assoc (make-ID)
+                  :parent nil
+                  :callbacks {} ;; event-name -> (handler-fn [widget] ...)
+                  :render-fn #(throw (Exception. (str "No :RENDER-FN defined for this widget (ID: " (:id %) ").")))))
+         (swap! -widgets- #(assoc % (:id @it) it))
+         (send *viewport* #(update-in % [:widgets] conj [(:id @it) it]))))
+
+
+(defn make-Widget [type html-element-type]
+  (send (make-WidgetBase)
+        #(assoc % :type type :html-element-type html-element-type)))
+
+
+(defn make-HTMLElement [html-element-type & children]
+  (send (make-Widget ::HTMLElement html-element-type)
+        (fn [m] (assoc m
+                  :children (if children
+                              (into [] (apply ensure-agent children))
+                              [])
+                  :render-fn #(str "<" (:html-element-type %) " id='" (:id %) "'>"
+                                   (render-children %)
+                                   "</" (:html-element-type %) ">")))))
+
+
+(defn make-Button [& children]
+  (send (apply make-HTMLElement "button" children)
+        #(assoc % :type ::Button)))

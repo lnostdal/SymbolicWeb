@@ -27,7 +27,12 @@
 
 (defn handle-in-channel-request []
   "Input channel."
-  (println "TODO: (HANDLE-IN-CHANNEL-REQUEST ..)")
+  (let [query-params (:query-params *request*)
+        widget-id (get query-params "_sw_widget-id")
+        callback-id (get query-params "_sw_callback-id")
+        widget (get (:widgets @*viewport*) widget-id)
+        callback-fn (get (:callbacks @widget) callback-id)]
+    (callback-fn))
   ;; TODO: I've just mirrored what I did in old-SW, but it'd be nice to return JS in the body here.
   {:status 200
    :headers {"Content-Type" "text/javascript; charset=UTF-8"
@@ -154,9 +159,11 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       [:p "Hello, this is SymbolicWeb running on Clojure " (clojure-version)]
       [:p "Norwegian characters: æøå"]
 
-      [:button ;;{:onclick "$.getScript('/sw/hello-world?something=some-value&_sw_viewport_id=' + _sw_viewport_id);"}
-       {:onclick "$.getScript(swURL('&something=some-value'));"}
-       [:p "Aux handler"]]
+      [:button {:onclick "$.getScript(swURL('&something=some-value'));"}
+       "Test aux event handler"]
+
+      (render (set-event-handler "click" (make-Button "Test widget event handler")
+                                 #(alert "Widget handler called!")))
 
       [:ul (for [i (range 10)]
              [:li [:b "This is nr. " i "."]])]
@@ -165,7 +172,11 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                    [:img {:src "http://www.w3.org/Icons/valid-xhtml10"
                           :alt "Valid XHTML 1.0 Strict"
                           :height 31
-                          :width  88}])]]))})
+                          :width  88}])]
+
+      [:div [:img {:id "sw-loading-spinner" :alt "" :style "position: absolute; z-index: 1000; right: 0px; top: 0px;"
+                   :src "gfx/sw-loader.gif"}]]
+      [:div {:id "sw-recycler" :class "sw-hide"}]]))})
 
 
 (defn simple-aux-handler [fn-to-wrap]
