@@ -44,8 +44,8 @@ Returns a string."
          "domain=.\" + window.location.hostname + \"; ")
        (if value
          (str "expires=\""
-              "+ (function(){ var date = new Date(); date.setFullYear(date.getFullYear()+1); return date.toUTCString(); })()"
-              "+ \"; ")
+              " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear()+1); return date.toUTCString(); })()"
+              " + \"; ")
          ;; MDC states that this could simply be 0, but I have not tested this.
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=\" + window.location.pathname + \"; "
