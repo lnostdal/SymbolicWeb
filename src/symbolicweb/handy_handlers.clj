@@ -168,12 +168,16 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                           :width  88}])]]))})
 
 
+(defn simple-aux-handler [fn-to-wrap]
+  (fn []
+    (fn-to-wrap)
+    {:status 200
+     :headers {"Content-Type" "text/javascript; charset=UTF-8"
+               "Connection"   "keep-alive"}
+     :body ""}))
+
+
 (defapp hello-world
   (fn [] (is-url? "/sw/hello-world"))
   (fn [] (make-Application :rest-handler #'hello-world-page-handler
-                           :aux-handler (fn []
-                                          (alert "Aux handler called!")
-                                          {:status 200
-                                           :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                                                     "Connection"   "keep-alive"}
-                                           :body ""}))))
+                           :aux-handler (simple-aux-handler #(alert "Aux handler called!")))))
