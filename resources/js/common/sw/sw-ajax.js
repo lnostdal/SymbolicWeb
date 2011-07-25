@@ -4,9 +4,9 @@
 /*
 For this file to bootstrap correctly the following variables must be bound:
 
-  * sw_viewport_id [string]
+  * _sw_viewport_id [string]
 
-  * sw_dynamic_subdomain [string]
+  * _sw_dynamic_subdomain [string]
 
 */
 
@@ -35,12 +35,29 @@ else
 /// swURL ///
 /////////////
 
-function swURL(){
-  return [window.location.protocol, "//",
-          sw_dynamic_subdomain,
-          window.location.host,
-          window.location.pathname].join('');
-}
+var swURL, swDURL;
+
+(function (){
+ var fn = function(dynamic_p, params){
+     return [window.location.protocol, "//",
+             (function(){ if(dynamic_p) return(_sw_dynamic_subdomain); else return(""); })(), // Sigh. ClojureScript?
+             window.location.host,
+             window.location.pathname,
+             "?_sw_viewport_id=" + _sw_viewport_id,
+             params
+            ].join('');
+     return "blah";
+ };
+
+ // AJAX request; not vs. random sub-domain.
+ swURL = function(params){
+     return fn(false, params);
+ }
+
+ // AJAX request (but jQuery will use <script> tag background loading); vs. random sub-domain.
+ swDURL = function(params){
+     return fn(true, params);
+ }})();
 
 
 
@@ -75,8 +92,8 @@ swAjax =
              var url = [window.location.protocol, "//",
                         window.location.host,
                         window.location.pathname,
-                        "?_sw_request-type=ajax",
-                        "&_sw_viewport-id=", sw_viewport_id,
+                        "?_sw_request_type=ajax",
+                        "&_sw_viewport_id=", _sw_viewport_id,
                         params].join('');
 
              var options = {
@@ -110,14 +127,14 @@ swAjax =
 /// swComet ///
 ///////////////
 
-sw_comet_response = false;
+_sw_comet_response = false;
 
 
 swComet =
 (function(){
    function callback(){
-     if(sw_comet_response)
-       sw_comet_response = false, swComet('&do=ack');
+     if(_sw_comet_response)
+       _sw_comet_response = false, swComet('&do=ack');
      else
        // FIXME: This stuff never happen for Webkit (it doesn't seem to be a big problem atm. though),
        // or Opera (when random subdomains are used).
@@ -127,7 +144,7 @@ swComet =
    function doIt(params){
      $.ajax({
               type: "GET",
-              url: [swURL(), "?_sw_request-type=comet", "&_sw_viewport-id=", sw_viewport_id, params].join(''),
+              url: swURL("&_sw_request_type=comet", params),
               dataType: "script",
               cache: false,
               complete: callback});

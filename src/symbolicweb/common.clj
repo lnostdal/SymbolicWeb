@@ -1,8 +1,14 @@
 (in-ns 'symbolicweb.core)
 
+(defmacro defapp [name fit-fn application-constructor-fn]
+  `(swap! -application-types-
+          #(assoc % '~name {:fit-fn ~fit-fn
+                            :application-constructor-fn ~application-constructor-fn})))
+
+
 (let [id-generator-value (atom 0)]
   (defn generate-uid []
-    "Generates an unique ID; non-universal.
+    "Generates an unique ID; non-universal or pr. server instance based.
 Returns a string."
     (str (swap! id-generator-value inc'))))
 
@@ -12,6 +18,13 @@ Returns a string."
 Returns a string."
   ;; TODO: This is only pseudo random; we can do better.
   (str (java.util.UUID/randomUUID)))
+
+
+(defn generate-aid
+  "Generate Application/session scoped unique ID."
+  ([] (generate-aid @*application*))
+  ([application]
+     ((:id-generator application))))
 
 
 (defn time-since-last-activity [obj]
@@ -75,9 +88,9 @@ Returns a string."
 (defn sw-js-bootstrap []
   (html
    [:script {:type "text/javascript"}
-    (set-document-cookie :name "sw" :value (:id @*application*))
-    "sw_viewport_id = '" (:id @*viewport*) "'; "
-    "sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
-                                 (str it ".")
-                                 "") "'; "]
+    (set-document-cookie :name "_sw_application_id" :value (:id @*application*))
+    "_sw_viewport_id = '" (:id @*viewport*) "'; "
+    "_sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
+                                  (str it ".")
+                                  "") "'; "]
    [:script {:type "text/javascript" :defer "defer" :src "../js/common/sw/sw-ajax.js"}]))

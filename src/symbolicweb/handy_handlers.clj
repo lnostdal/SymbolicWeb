@@ -3,52 +3,91 @@
 (declare make-Application)
 
 
-(defmacro defapp [name fit-fn session-constructor-fn]
-  `(swap! -application-types-
-          #(assoc % '~name {:fit-fn ~fit-fn
-                            :application-constructor-fn ~session-constructor-fn})))
+(defn handle-out-channel-request []
+  "Output channel."
+  {:status 200
+   :headers {"Content-Type" "text/javascript; charset=UTF-8"
+             "Connection" "keep-alive"}
+   :body
+   ;; TODO: In general all this is silly, but it'll go away as soon as I switch to a sane backend (Netty?) and decouple the HTTP
+   ;; request and response; i.e. I go event-based.
+   (let [our-response-chunks (promise)]
+     (deref (:response-chunks-promise @*viewport*) -comet-timeout- nil)
+     ;; Fetch current chunks and reset to empty set of chunks.
+     (send *viewport* (fn [m]
+                        (deliver our-response-chunks (:response-chunks m))
+                        (assoc m
+                          :response-chunks []
+                          :response-chunks-promise (promise))))
+     (apply str (conj @our-response-chunks
+                      ;; TODO: I don't know if setting a cookie like this when multiple Viewports are active in the same session
+                      ;; or Application will cause the Viewports to race with each other.
+                      "_sw_comet_response = true; console.log('SW WAS HERE!! :D');")))})
 
 
-(defn hello-world-handler []
+(defn handle-in-channel-request []
+  "Input channel."
+  (println "TODO: (HANDLE-IN-CHANNEL-REQUEST ..)")
+  ;; TODO: I've just mirrored what I did in old-SW, but it'd be nice to return JS in the body here.
+  {:status 200
+   :headers {"Content-Type" "text/javascript; charset=UTF-8"
+             "Connection"   "keep-alive"}
+   :body ""})
+
+
+(defn default-aux-handler []
+  "Attempt to handle auxiliary callbacks or events; AJAX requests that do not follow the SW protocol. These might come from 3rd
+party code or plugins or similar running on the browser end.
+Returns TRUE if the event was handled or FALSE if no callback was found for the event."
+  (assert false "TODO: DEFAULT-AUX-HANDLER")
+  (with-local-vars [handled? false]
+    (loop [aux-callbacks (:aux-callbacks @*viewport*)]
+      (when-first [aux-callback aux-callbacks]
+        (let [aux-callback (val aux-callback)]
+          (if ((:fit-fn aux-callback))
+            (do
+              ((:handler-fn aux-callback))
+              (var-set handled? true))
+            (recur (next aux-callbacks))))))
+    (var-get handled?)))
+
+
+(defn default-ajax-handler []
+  (if-let [sw-request-type-str (get (:query-params *request*) "_sw_request_type")]
+    (case sw-request-type-str
+      "comet" (handle-out-channel-request)
+      "ajax"  (handle-in-channel-request)
+      (throw (Exception. (str "SymbolicWeb: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))
+    ((:aux-handler @*application*))))
+
+
+(defn default-request-handler []
+  (if (or (= (get (:headers *request*) "x-requested-with")
+             "XMLHttpRequest")
+          (get (:query-params *request*) "_sw_request_type")) ;; jQuery doesn't use XHR for cross-domain background requests.
+    ((:ajax-handler @*application*))
+    ((:rest-handler @*application*))))
+
+
+(defn default-rest-handler []
   {:status  200
-   :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Connection" "keep-alive"
-             "Expires" "Mon, 26 Jul 1997 05:00:00 GMT"
+   :headers {"Content-Type"  "text/html; charset=UTF-8"
+             "Connection"    "keep-alive"
+             "Expires"       "Mon, 26 Jul 1997 05:00:00 GMT"
              "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
-             "Pragma" "no-cache"}
+             "Pragma"        "no-cache"}
    :body
    (html
     (doctype :xhtml-strict)
     (xhtml-tag
      "en"
      [:head
-      [:title "SymbolicWeb"]
+      [:title "[SymbolicWeb] Hello World"]
       [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
       (script-src "https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
       (sw-js-bootstrap)]
 
-     [:body
-      [:h1 "SymbolicWeb - bringing life to the web!"]
-      [:p "Hello, this is SymbolicWeb running on Clojure " (clojure-version)]
-      [:p "Norwegian characters: æøå."]
-      [:ul (for [i (range 10)]
-             [:li [:b "This is nr. " i "."]])]
-
-      [:p "Here is the Clojure source code for this page:"
-       [:pre (slurp "src/symbolicweb/core.clj")]]
-
-      [:p (link-to "http://validator.w3.org/check?uri=referer"
-                   [:img {:src "http://www.w3.org/Icons/valid-xhtml10"
-                          :alt "Valid XHTML 1.0 Strict"
-                          :height 31
-                          :width  88}])]]))})
-
-
-(defapp hello-world
-  (fn []
-    (is-url? "/sw/hello-world"))
-  (fn []
-    (make-Application hello-world-handler)))
+     [:body]))})
 
 
 (defn clear-session-page-handler []
@@ -66,10 +105,10 @@
       [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
       [:script {:type "text/javascript"}
        ;; Clear session cookie and reload page.
-       (set-document-cookie :name "sw" :value nil)
-       (set-document-cookie :name "sw" :value nil :domain? false)
-       "window.location.reload();"]]
-     [:body
+       (set-document-cookie :name "_sw_application_id" :value nil)
+       (set-document-cookie :name "_sw_application_id" :value nil :domain? false)]]
+
+     [:body {:onload "window.location.reload();"}
       [:p "Reloading page..."]]))})
 
 
@@ -90,3 +129,51 @@
      [:body
       [:h1 "HTTP 404: Not Found"]
       [:p "Going " [:a {:href "javascript:history.go(-1);"} "back"] " might help."]]))})
+
+
+(defn hello-world-page-handler []
+  {:status  200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Connection" "keep-alive"
+             "Expires" "Mon, 26 Jul 1997 05:00:00 GMT"
+             "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+             "Pragma" "no-cache"}
+   :body
+   (html
+    (doctype :xhtml-strict)
+    (xhtml-tag
+     "en"
+     [:head
+      [:title "[SymbolicWeb] Hello World"]
+      [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
+      (script-src "https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
+      (sw-js-bootstrap)]
+
+     [:body
+      [:h1 "SymbolicWeb - bringing life to the web!"]
+      [:p "Hello, this is SymbolicWeb running on Clojure " (clojure-version)]
+      [:p "Norwegian characters: æøå"]
+
+      [:button ;;{:onclick "$.getScript('/sw/hello-world?something=some-value&_sw_viewport_id=' + _sw_viewport_id);"}
+       {:onclick "$.getScript(swURL('&something=some-value'));"}
+       [:p "Aux handler"]]
+
+      [:ul (for [i (range 10)]
+             [:li [:b "This is nr. " i "."]])]
+
+      [:p (link-to "http://validator.w3.org/check?uri=referer"
+                   [:img {:src "http://www.w3.org/Icons/valid-xhtml10"
+                          :alt "Valid XHTML 1.0 Strict"
+                          :height 31
+                          :width  88}])]]))})
+
+
+(defapp hello-world
+  (fn [] (is-url? "/sw/hello-world"))
+  (fn [] (make-Application :rest-handler #'hello-world-page-handler
+                           :aux-handler (fn []
+                                          (alert "Aux handler called!")
+                                          {:status 200
+                                           :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                                                     "Connection"   "keep-alive"}
+                                           :body ""}))))
