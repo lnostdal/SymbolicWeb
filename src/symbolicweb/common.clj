@@ -1,5 +1,18 @@
 (in-ns 'symbolicweb.core)
 
+
+(defmacro dbg-prin1 [form]
+  `(let [res# ~form]
+     (println (str '~form " => " res#))
+     res#))
+
+
+(defmacro with1 [form & body]
+  `(let [~'it ~form]
+     ~@body
+     ~'it))
+
+
 (defmacro defapp [name fit-fn application-constructor-fn]
   `(swap! -application-types-
           #(assoc % '~name {:fit-fn ~fit-fn
