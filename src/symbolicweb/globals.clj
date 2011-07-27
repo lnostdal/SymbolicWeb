@@ -42,10 +42,6 @@ removing unused or timed out sessions."
                   (Thread/sleep 5000)
                   (recur))))))
 
-(def -widgets-
-  "ID -> WIDGET"
-  (atom {}))
-
 
 (def ^:dynamic *request*
   "The current request data (map)."

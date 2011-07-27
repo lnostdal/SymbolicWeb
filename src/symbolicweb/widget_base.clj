@@ -70,10 +70,12 @@
 
 (defn make-WidgetBase []
   (with1 (agent (assoc (make-ID)
+                  :type ::WidgetBase
                   :parent nil
-                  :callbacks {} ;; event-name -> (handler-fn [widget] ...)
-                  :render-fn #(throw (Exception. (str "No :RENDER-FN defined for this widget (ID: " (:id %) ").")))))
-         (swap! -widgets- #(assoc % (:id @it) it))
+                  :callbacks {} ;; event-name -> [handler-fn callback-data]
+                  :render-fn #(throw (Exception. (str "No :RENDER-FN defined for this widget (ID: " (:id %) ").")))
+                  :parse-callback-data-handler #'default-parse-callback-data-handler))
+         ;; There's no way we'll create a Widget in the context of one Viewport and use it or "send" it to another Viewport anyway.
          (send *viewport* #(update-in % [:widgets] conj [(:id @it) it]))))
 
 
