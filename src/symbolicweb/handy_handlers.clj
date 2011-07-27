@@ -25,14 +25,21 @@
                       "_sw_comet_response = true; console.log('SW WAS HERE!! :D');")))})
 
 
+(defn default-parse-callback-data-handler [widget callback-data]
+  (mapcat (fn [key]
+            (list key (get (:query-params *request*) (str key))))
+          (keys callback-data)))
+
+
 (defn handle-in-channel-request []
   "Input channel."
   (let [query-params (:query-params *request*)
         widget-id (get query-params "_sw_widget-id")
         callback-id (get query-params "_sw_callback-id")
         widget (get (:widgets @*viewport*) widget-id)
-        callback-fn (get (:callbacks @widget) callback-id)]
-    (callback-fn))
+        callback (get (:callbacks @widget) callback-id)
+        [callback-fn callback-data] callback]
+    (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data)))
   ;; TODO: I've just mirrored what I did in old-SW, but it'd be nice to return JS in the body here.
   {:status 200
    :headers {"Content-Type" "text/javascript; charset=UTF-8"
@@ -163,7 +170,12 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        "Test aux event handler"]
 
       (render (set-event-handler "click" (make-Button "Test widget event handler")
-                                 #(alert "Widget handler called!")))
+                                 (fn [& {:keys [page-x page-y]}]
+                                   (alert (str "Widget handler called: "
+                                               " page-x => " page-x
+                                               ", page-y => " page-y)))
+                                 :callback-data {:page-x "' + event.pageX + '"
+                                                 :page-y "' + event.pageY + '"}))
 
       [:ul (for [i (range 10)]
              [:li [:b "This is nr. " i "."]])]

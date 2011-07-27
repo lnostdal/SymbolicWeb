@@ -13,15 +13,25 @@
                                               js-after ""}}]
   (str "$('#" (:id widget) "').bind('" event-type "', "
        "function(event){"
-       "swMsg('" (:id widget) "', '" event-type "', function(){" js-before "}, '" callback-data "', function(){" js-after "});"
+       "swMsg('" (:id widget) "', '" event-type "', function(){" js-before "}, '"
+       ;; TODO: This is quite horrible.
+       (let [res (with-out-str
+                   (doall (map (fn [key_val]
+                                 (print (str (url-encode (str (key key_val)))
+                                             "="
+                                             (val key_val)
+                                             "&")))
+                               callback-data)))]
+         (subs res 0 (- (count res) 1)))
+       "', function(){" js-after "});"
        "});"))
 
 
 (defn render-events [widget]
   (with-out-str
     (loop [callbacks (:callbacks widget)]
-      (when-first [callback callbacks]
-        (print (render-event widget (key callback)))
+      (when-first [[event-type [callback-fn callback-data]] callbacks]
+        (print (render-event widget event-type :callback-data callback-data))
         (recur (rest callbacks))))))
 
 
@@ -54,8 +64,8 @@
   (send root-Container #(update-in % [:children] into (apply ensure-agent children))))
 
 
-(defn set-event-handler [event-type widget callback-fn]
-  (send widget #(update-in % [:callbacks] conj [event-type callback-fn])))
+(defn set-event-handler [event-type widget callback-fn & {:keys [callback-data]}]
+  (send widget #(update-in % [:callbacks] conj [event-type [callback-fn callback-data]])))
 
 
 (defn update-widget-data [widget new-widget-data]
