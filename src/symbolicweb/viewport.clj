@@ -10,7 +10,8 @@
                          :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
                          :response-chunks []
                          :response-chunks-promise (promise)})]
-    (swap! -viewports- #(assoc % viewport-id viewport))
+    (when (:session? *application*)
+      (swap! -viewports- #(assoc % viewport-id viewport)))
     (send *application* #(update-in % [:viewports] conj [viewport-id viewport]))
     (await *application*)
     viewport))
