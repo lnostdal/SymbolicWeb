@@ -22,7 +22,8 @@
      (send viewport #(let [promise (:response-chunks-promise %)]
                        (when (not (realized? promise))
                          (deliver promise 42))
-                       (update-in % [:response-chunks] conj (str new-chunk \newline \newline))))))
+                       (update-in % [:response-chunks] conj (str new-chunk \newline \newline))))
+     nil))
 
 
 (defn handle-widget-event [widget event-name]
