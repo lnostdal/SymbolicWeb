@@ -4,6 +4,10 @@
 (def -viewport-timeout- (+ -comet-timeout- 30000))
 (def -application-timeout- (+ -viewport-timeout- 30000))
 
+(def -request-counter-
+  "Number of HTTP requests since server started."
+  (atom 0))
+
 
 (def -application-types-
   "name -> {:fit-fn fit-fn

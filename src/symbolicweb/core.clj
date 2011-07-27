@@ -22,6 +22,7 @@
 (let [*out* *out*
       *err* *err*]
   (defn handler [request]
+    (swap! -request-counter- inc')
     (binding [*out* *out*
               *err* *err*
               *request* request]
