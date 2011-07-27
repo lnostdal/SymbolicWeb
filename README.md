@@ -56,11 +56,22 @@ To send JS to the browser, try:
 
 
 
+## Other things
+
+I'm aiming at a 132 column width: http://ask.slashdot.org/story/07/07/07/1931246/Are-80-Columns-Enough
+
+
+### Style
+
+-this-is-global-variables-
+*this-is-global-dynamic-variables*
+
+
+
 ## License
 
 Copyright (C) 2011 Lars Rune Nøstdal
 
-Distributed under the Affero General Public License (for now).
-
-
-(.. I'm aiming at a 132 column width: http://ask.slashdot.org/story/07/07/07/1931246/Are-80-Columns-Enough ..)
+Distributed under the GNU Affero General Public License (for now):
+  http://en.wikipedia.org/wiki/Affero_General_Public_License
+  http://www.gnu.org/licenses/agpl.html
