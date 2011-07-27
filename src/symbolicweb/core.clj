@@ -1,4 +1,5 @@
 (ns symbolicweb.core
+  (:import java.lang.ref.WeakReference)
   (:use hiccup.core)
   (:use hiccup.page-helpers)
   (:use ring.adapter.jetty)
@@ -11,9 +12,9 @@
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
   (:require symbolicweb.viewport)
+  (:require symbolicweb.widget-base)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
-  (:require symbolicweb.widget-base)
   (:gen-class))
 
 (in-ns 'symbolicweb.core)

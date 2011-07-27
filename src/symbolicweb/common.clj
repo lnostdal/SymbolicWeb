@@ -46,7 +46,7 @@ Returns a string."
 
 
 (defn touch [obj]
-  (send obj (fn [m] (assoc m :last-activity-time (System/currentTimeMillis)))))
+  (send obj #(assoc % :last-activity-time (System/currentTimeMillis))))
 
 
  (defn script-src [src]

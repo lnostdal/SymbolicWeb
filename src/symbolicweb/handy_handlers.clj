@@ -106,7 +106,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (xhtml-tag
      "en"
      [:head
-      [:title "[SymbolicWeb] Reloading page.."]
+      [:title "[SymbolicWeb] Reloading page..."]
       [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
       [:script {:type "text/javascript"}
        ;; Clear session cookie and reload page.
