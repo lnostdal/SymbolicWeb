@@ -1,13 +1,16 @@
 (in-ns 'symbolicweb.core)
 
-(defn make-Application [& {:keys [request-handler rest-handler ajax-handler aux-handler]
+(defn make-Application [& {:keys [request-handler rest-handler ajax-handler aux-handler
+                                  session?]
                            :or {request-handler #'default-request-handler
                                 rest-handler    #'default-rest-handler
                                 ajax-handler    #'default-ajax-handler
-                                aux-handler     #'default-aux-handler}}]
+                                aux-handler     #'default-aux-handler
+                                session?        true}}]
   "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-."
   (let [application-id (generate-uuid)
         application (agent {:type 'Application
+                            :session? session?
                             :id application-id
                             :id-generator (let [last-id (atom 0)]
                                             (fn [] (str (swap! last-id inc'))))
@@ -16,8 +19,9 @@
                             :request-handler request-handler
                             :rest-handler    rest-handler
                             :ajax-handler    ajax-handler
-                            :aux-handler     aux-handler})] ;; Keep in mind that no "real" *VIEWPORT* is bound when this runs.
-    (swap! -applications- #(assoc % application-id application))
+                            :aux-handler     aux-handler})]
+    (when session?
+      (swap! -applications- #(assoc % application-id application)))
     application))
 
 
@@ -46,15 +50,17 @@ Viewport."
             ;; Viewport ID sent, and Viewport found on server end.
             (list application viewport)
             ;; Viewport ID sent, but Viewport not found on server end.
-            (list nil nil))
+            (binding [*application* (make-Application :rest-handler clear-session-page-handler :session? false)]
+              (list *application* (make-Viewport))))
           ;; Viewport ID not sent.
           (list application (make-Viewport))))
       ;; Session cookie sent, but Application not found on server end.
-      (list nil nil))
+      (binding [*application* (make-Application :rest-handler clear-session-page-handler :session? false)]
+        (list *application* (make-Viewport))))
     ;; Session cookie not sent; the user is requesting a brand new session or Application.
     (binding [*application* (if-let [application-constructor (find-application-constructor)]
                               (application-constructor)
-                              (make-Application not-found-page-handler))]
+                              (make-Application :rest-handler not-found-page-handler :session? false))]
       (list *application* (make-Viewport)))))
 
 

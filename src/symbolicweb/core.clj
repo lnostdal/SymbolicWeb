@@ -26,16 +26,13 @@
               *err* *err*
               *request* request]
       (let [[application viewport] (find-or-create-application-instance)]
-        (if (not (and application viewport))
-          (clear-session-page-handler)
-          (do
-            (def ^:dynamic *application* application) ;; Set root bindings for easy REPL-inspection.
-            (def ^:dynamic *viewport* viewport)
-            (touch application)
-            (touch viewport)
-            (binding [*application* application ;; Set thread-local bindings which will be used from now on.
-                      *viewport* viewport]
-              ((:request-handler @application)))))))))
+        (def ^:dynamic *application* application) ;; Set root bindings for easy REPL-inspection.
+        (def ^:dynamic *viewport* viewport)
+        (touch application)
+        (touch viewport)
+        (binding [*application* application ;; Set thread-local bindings which will be used from now on.
+                  *viewport* viewport]
+          ((:request-handler @application)))))))
 
 
 (defn -main [& args]
