@@ -38,7 +38,7 @@ else
 var swURL, swDURL;
 
 (function (){
- var fn = function(dynamic_p, params){
+   var fn = function(dynamic_p, params){
      return [window.location.protocol, "//",
              (function(){ if(dynamic_p) return(_sw_dynamic_subdomain); else return(""); })(), // Sigh. ClojureScript?
              window.location.host,
@@ -47,17 +47,17 @@ var swURL, swDURL;
              params
             ].join('');
      return "blah";
- };
+   };
 
- // AJAX request; not vs. random sub-domain.
- swURL = function(params){
+   // AJAX request; not vs. random sub-domain.
+   swURL = function(params){
      return fn(false, params);
- }
+   };
 
- // AJAX request (but jQuery will use <script> tag background loading); vs. random sub-domain.
- swDURL = function(params){
+   // AJAX request (but jQuery will use <script> tag background loading); vs. random sub-domain.
+   swDURL = function(params){
      return fn(true, params);
- }})();
+   };})();
 
 
 
@@ -69,7 +69,7 @@ swAjax =
   (function(){
      var queue = new Array();
      var timer = false;
-
+     
      function displaySpinner(){
        $("#sw-loading-spinner").css("display", "block");
      }
@@ -86,41 +86,41 @@ swAjax =
          }
        }
      }
-
+     
      return function(params, callback_data, after_fn){
-         if(queue.push(function(){
-             var url = [window.location.protocol, "//",
-                        window.location.host,
-                        window.location.pathname,
-                        "?_sw_request_type=ajax",
-                        "&_sw_viewport_id=", _sw_viewport_id,
-                        params].join('');
-
-             var options = {
-                 type: (function(){
-                     // http://bit.ly/1z3xEu
-                     // MAX for 'GET' is apparently 2048 (IE). We stay a bit below this just in case.
-                     //console.log(callback_data.length + url.length);
-                     if(callback_data.length + url.length > 1950)
-                         return "POST";
-                     else
-                         return "GET";
-                 })(),
-                 url: url,
-                 data: callback_data,
-                 cache: false,
-                 //dataType: "script", // NOTE: The server end always returns an empty result atm..
-                 dataType: "text",
-                 // TODO: 500 should be configurable.
-                 beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }},
-                 complete: handleRestOfQueue
-             };
-             if(after_fn) options.success = after_fn;
-             $.ajax(options);
-         }) == 1) // if()..
-             queue[0]();
+       if(queue.push(function(){
+                       var url = [window.location.protocol, "//",
+                                  window.location.host,
+                                  window.location.pathname,
+                                  "?_sw_request_type=ajax",
+                                  "&_sw_viewport_id=", _sw_viewport_id,
+                                  params].join('');
+                       
+                       var options = {
+                         type: (function(){
+                                  // http://bit.ly/1z3xEu
+                                  // MAX for 'GET' is apparently 2048 (IE). We stay a bit below this just in case.
+                                  //console.log(callback_data.length + url.length);
+                                  if(callback_data.length + url.length > 1950)
+                                    return "POST";
+                                  else
+                                    return "GET";
+                                })(),
+                         url: url,
+                         data: callback_data,
+                         cache: false,
+                         //dataType: "script", // NOTE: The server end always returns an empty result atm..
+                         dataType: "text",
+                         // TODO: 500 should be configurable.
+                         beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }},
+                         complete: handleRestOfQueue
+                       };
+                       if(after_fn) options.success = after_fn;
+                       $.ajax(options);
+                     }) == 1) // if()..
+         queue[0]();
      };
-  })();
+   })();
 
 
 
@@ -131,32 +131,31 @@ _sw_comet_response = false;
 
 
 swComet =
-(function(){
-   function callback(){
-     if(_sw_comet_response)
-       _sw_comet_response = false, swComet('&do=ack');
+  (function(){
+     function callback(){
+       if(_sw_comet_response)
+         _sw_comet_response = false, swComet('&do=ack');
+       else
+         // FIXME: This stuff never happen for Webkit (it doesn't seem to be a big problem atm. though),
+         // or Opera (when random subdomains are used).
+         setTimeout("swComet('');", 1000);
+     }
+
+     function doIt(params){
+       $.ajax({type: "GET",
+               url: swURL("&_sw_request_type=comet", params),
+               dataType: "script",
+               cache: false,
+               complete: callback});
+     }
+
+     // This returns what is assigned to the "swComet = ..." part above.
+     if($.browser.mozilla)
+       // Stop "throbbing of doom".
+       return function(params){ setTimeout(function(){ doIt(params); }, 0); };
      else
-       // FIXME: This stuff never happen for Webkit (it doesn't seem to be a big problem atm. though),
-       // or Opera (when random subdomains are used).
-       setTimeout("swComet('');", 1000);
-   }
-
-   function doIt(params){
-     $.ajax({
-              type: "GET",
-              url: swURL("&_sw_request_type=comet", params),
-              dataType: "script",
-              cache: false,
-              complete: callback});
-   }
-
-   // This returns what is assigned to the "swComet = ..." part above.
-   if($.browser.mozilla)
-     // Stop "throbbing of doom".
-     return function(params){ setTimeout(function(){ doIt(params); }, 0); };
-   else
-     return doIt;
- })();
+       return doIt;
+   })();
 
 
 
@@ -256,5 +255,5 @@ $.address.change(function(event){
 /////////////
 
 $(function(){
-  swComet("&do=refresh&hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
-});
+    swComet("&do=refresh&hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
+  });
