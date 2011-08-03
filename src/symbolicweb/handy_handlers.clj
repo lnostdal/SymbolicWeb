@@ -25,12 +25,6 @@
                       "_sw_comet_response = true; console.log('SW WAS HERE!! :D');")))})
 
 
-(defn default-parse-callback-data-handler [widget callback-data]
-  (mapcat (fn [key]
-            (list key (get (:query-params *request*) (str key))))
-          (keys callback-data)))
-
-
 (defn handle-in-channel-request []
   "Input channel."
   (let [query-params (:query-params *request*)

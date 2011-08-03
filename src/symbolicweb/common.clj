@@ -1,6 +1,12 @@
 (in-ns 'symbolicweb.core)
 
 
+(defn default-parse-callback-data-handler [widget callback-data]
+  (mapcat (fn [key]
+            (list key (get (:query-params *request*) (str key))))
+          (keys callback-data)))
+
+
 (defmacro dbg-prin1 [form]
   `(let [res# ~form]
      (println (str '~form " => " res#))
