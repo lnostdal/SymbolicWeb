@@ -150,7 +150,7 @@ swComet =
      }
 
      // This returns what is assigned to the "swComet = ..." part above.
-     if($.browser.mozilla)
+     if($.browser.mozilla || $.browser.webkit)
        // Stop "throbbing of doom".
        return function(params){ setTimeout(function(){ doIt(params); }, 0); };
      else
@@ -254,6 +254,7 @@ $.address.change(function(event){
 /// Boot! ///
 /////////////
 
-$(function(){
-    swComet("&do=refresh&hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
-  });
+$(window).load(function()
+{
+  swComet("&do=refresh&hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
+});
