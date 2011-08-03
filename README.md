@@ -63,8 +63,8 @@ I'm aiming at a 132 column width: http://ask.slashdot.org/story/07/07/07/1931246
 
 ### Style
 
--this-is-global-variables-
-*this-is-global-dynamic-variables*
+    -this-is-global-variables-
+    *this-is-global-dynamic-variables*
 
 
 
