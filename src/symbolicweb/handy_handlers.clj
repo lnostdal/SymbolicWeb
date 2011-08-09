@@ -90,7 +90,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
      [:head
       [:title "[SymbolicWeb] Hello World"]
       [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-      (script-src "https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
+      (script-src "../js/common/jquery-1.6.1.min.js")
       (sw-js-bootstrap)]
 
      [:body]))})
@@ -152,7 +152,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
      [:head
       [:title "[SymbolicWeb] Hello World"]
       [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-      (script-src "https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
+      (script-src "../js/common/jquery-1.6.1.min.js")
       (sw-js-bootstrap)]
 
      [:body
