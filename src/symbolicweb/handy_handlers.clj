@@ -163,7 +163,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       [:button {:onclick "$.getScript(swURL('&something=some-value'));"}
        "Test aux event handler"]
 
-      (render (set-event-handler "click" (make-Button "Test widget event handler")
+      (render-html (set-event-handler "click" (make-Button "Test widget event handler")
                                  (fn [& {:keys [page-x page-y]}]
                                    (alert (str "Widget handler called: "
                                                " page-x => " page-x
