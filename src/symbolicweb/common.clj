@@ -1,5 +1,26 @@
 (in-ns 'symbolicweb.core)
 
+(set! *print-length* 10)
+(set! *print-level* 3)
+
+
+(defn ensure-model [obj]
+  (if (string? obj)
+    (ref obj)
+    obj)) ;; Assume it is a Model..
+
+
+(defn url-encode-wrap [text]
+  (str "decodeURIComponent('" (str/replace (url-encode text) "+" "%20") "')"))
+
+
+(defn agent? [x]
+  (= clojure.lang.Agent (type x)))
+
+
+(defn ref? [x]
+  (= clojure.lang.Ref (type x)))
+
 
 (defn default-parse-callback-data-handler [widget callback-data]
   (mapcat (fn [key]
@@ -13,8 +34,13 @@
      res#))
 
 
-(defmacro with1 [form & body]
+(defmacro with [form & body]
   `(let [~'it ~form]
+     ~@body))
+
+
+(defmacro with1 [form & body]
+  `(with ~form
      ~@body
      ~'it))
 
@@ -25,7 +51,7 @@
                             :application-constructor-fn ~application-constructor-fn})))
 
 
-(let [id-generator-value (atom 0)]
+(let [id-generator-value (atom 0N)]
   (defn generate-uid []
     "Generates an unique ID; non-universal or pr. server instance based.
 Returns a string."
@@ -52,7 +78,7 @@ Returns a string."
 
 
 (defn touch [obj]
-  (send obj #(assoc % :last-activity-time (System/currentTimeMillis))))
+  (alter obj assoc :last-activity-time (System/currentTimeMillis)))
 
 
  (defn script-src [src]
@@ -99,9 +125,18 @@ Returns a string."
         url-path)))
 
 
-(defn alert
-  ([msg] (alert msg *viewport*))
-  ([msg viewport] (add-response-chunk (str "alert('" msg "');") viewport)))
+(defn alert [msg]
+  (add-response-chunk (str "alert(" (url-encode-wrap msg) ");")))
+  ;;([msg] (alert msg *viewport*))
+  ;;([msg viewport] (add-response-chunk (str "alert('" msg "');") viewport)))
+
+
+(defn widget-id-of [widget]
+  (if (string? widget)
+    widget
+    (:id (if (ref? widget)
+           @widget
+           widget))))
 
 
 (defn sw-js-bootstrap []
@@ -113,3 +148,18 @@ Returns a string."
                                   (str it ".")
                                   "") "'; "]
    [:script {:type "text/javascript" :defer "defer" :src "../js/common/sw/sw-ajax.js"}]))
+
+
+(defn sw-css-bootstrap []
+  "")
+
+
+(def ^:dynamic *with-js?* false)
+
+(defmacro with-js [& body]
+  `(binding [*with-js?* true]
+     ~@body))
+
+
+(defn root-element []
+  (:root-element @*viewport*))

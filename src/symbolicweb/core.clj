@@ -12,7 +12,10 @@
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
   (:require symbolicweb.viewport)
+  (:require symbolicweb.jquery)
   (:require symbolicweb.widget-base)
+  (:require symbolicweb.container)
+  (:require symbolicweb.html-container)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
   (:gen-class))
@@ -30,10 +33,11 @@
       (let [[application viewport] (find-or-create-application-instance)]
         (def ^:dynamic *application* application) ;; Set root bindings for easy REPL-inspection.
         (def ^:dynamic *viewport* viewport)
-        (touch application)
-        (touch viewport)
         (binding [*application* application ;; Set thread-local bindings which will be used from now on.
                   *viewport* viewport]
+          (dosync
+           (touch application)
+           (touch viewport))
           ((:request-handler @application)))))))
 
 

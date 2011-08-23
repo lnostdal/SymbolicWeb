@@ -52,7 +52,7 @@ welcome screen of sorts.
 
 To send JS to the browser, try:
 
-    symbolicweb.core> (add-response-chunk "alert('hi');" *viewport*)
+    symbolicweb.core> (add-response-chunk "alert('hi');")
 
 
 

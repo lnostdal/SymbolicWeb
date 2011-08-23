@@ -69,7 +69,7 @@ swAjax =
   (function(){
      var queue = new Array();
      var timer = false;
-     
+
      function displaySpinner(){
        $("#sw-loading-spinner").css("display", "block");
      }
@@ -86,7 +86,7 @@ swAjax =
          }
        }
      }
-     
+
      return function(params, callback_data, after_fn){
        if(queue.push(function(){
                        var url = [window.location.protocol, "//",
@@ -95,7 +95,7 @@ swAjax =
                                   "?_sw_request_type=ajax",
                                   "&_sw_viewport_id=", _sw_viewport_id,
                                   params].join('');
-                       
+
                        var options = {
                          type: (function(){
                                   // http://bit.ly/1z3xEu
@@ -109,8 +109,7 @@ swAjax =
                          url: url,
                          data: callback_data,
                          cache: false,
-                         //dataType: "script", // NOTE: The server end always returns an empty result atm..
-                         dataType: "text",
+                         dataType: "script",
                          // TODO: 500 should be configurable.
                          beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }},
                          complete: handleRestOfQueue

@@ -9,17 +9,18 @@
                                 session?        true}}]
   "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-."
   (let [application-id (generate-uuid)
-        application (agent {:type 'Application
-                            :session? session?
-                            :id application-id
-                            :id-generator (let [last-id (atom 0)]
-                                            (fn [] (str (swap! last-id inc'))))
-                            :last-activity-time (System/currentTimeMillis)
-                            :viewports {}
-                            :request-handler request-handler
-                            :rest-handler    rest-handler
-                            :ajax-handler    ajax-handler
-                            :aux-handler     aux-handler})]
+        application (ref {:type 'Application
+                          :session? session?
+                          :id application-id
+                          :id-generator (let [last-id (atom 0N)]
+                                          (fn [] (str (swap! last-id inc'))))
+                          :last-activity-time (System/currentTimeMillis)
+                          :viewports {}
+                          :request-handler request-handler
+                          :rest-handler    rest-handler
+                          :ajax-handler    ajax-handler
+                          :aux-handler     aux-handler
+                          :html-title "[SymbolicWeb]"})]
     (when session?
       (swap! -applications- #(assoc % application-id application)))
     application))

@@ -1,10 +1,12 @@
 (in-ns 'symbolicweb.core)
 
-(defn ensure-agent [& objects]
-  (map #(if (= clojure.lang.Agent (type %))
-          %
-          (agent %))
-       objects))
+
+(defn set-parent! [child new-parent]
+  (alter child assoc :parent new-parent))
+
+
+(defn set-children! [parent & children]
+  (alter parent assoc :children (flatten children)))
 
 
 (defn render-event [widget event-type & {:keys [js-before callback-data js-after]
@@ -31,54 +33,77 @@
           (recur (rest callbacks)))))))
 
 
-(defn render-aux [widget]
+(defn render-aux-js [widget]
   "Return JS which will initialize WIDGET."
-  (when-let [render-aux-fn (:render-aux-fn widget)]
-    (render-aux-fn widget)))
+  (when-let [render-aux-js-fn (:render-aux-js-fn widget)]
+    (render-aux-js-fn widget)))
 
 
+(defn render-aux-html [widget]
+  "Return \"aux\" HTML for WIDGET."
+  (when-let [render-aux-html-fn (:render-aux-html-fn widget)]
+    (render-aux-html-fn widget)))
+
+
+(declare ensure-visible)
 (defn render-html [widget]
-  "Return HTML structure which will be the basis for further initialization via RENDER-AUX.
-The return value of RENDER-AUX will be inlined within this structure."
-  (let [widget (if (= (type widget) clojure.lang.Agent)
-                 @(await1 widget)
-                 widget)]
+  "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS.
+The return value of RENDER-AUX-JS will be inlined within this structure."
+  (let [widget-m (if (ref? widget)
+                 @widget
+                 widget)
+        widget-type (:type widget-m)]
     (cond
-     (map? widget)
-     ((:render-html-fn widget) widget)
-
-     (string? widget)
-     (escape-html widget)
+     (isa? widget-type ::Widget)
+     (if (isa? widget-type ::HTMLContainer)
+       (binding [*in-html-container?* widget
+                 *html-container-accu-children* []]
+         (with1 ((:render-html-fn widget-m) widget-m)
+           (set-children! widget *html-container-accu-children*)
+           (doseq [child *html-container-accu-children*]
+             (set-parent! child widget)
+             (when (:viewport widget-m)
+               (ensure-visible child widget)))))
+       (with1 ((:render-html-fn widget-m) widget-m)
+              (when *in-html-container?*
+                (set! *html-container-accu-children*
+                      (conj *html-container-accu-children* widget)))))
 
      true
-     (throw (Exception. (str "Can't render: " widget))))))
+     (throw (Exception. (str "Can't render: " widget-m))))))
 
 
-(defn render-children [widget]
+#_(defn render-child [parent child]
+  (if-let [render-child-fn (:render-child-fn parent)]
+    (render-child-fn parent child)
+    (render-html child)))
+
+
+#_(defn render-children [widget]
   (with-out-str []
-    (loop [children (:children widget)]
-      (when-first [child children]
-        (print (render-html child))
-        (recur (rest children))))))
+    (doseq [child (:children widget)]
+      (print (render-child widget child)))))
 
 
 (defn render-static-attributes [widget]
-  "")
-
-
-(defn add-children [root-Container & children]
-  (send root-Container #(update-in % [:children] into (apply ensure-agent children))))
+  (when-let [render-static-attributes-fn (:render-static-attributes-fn widget)]
+    (render-static-attributes-fn)))
 
 
 (defn set-event-handler [event-type widget callback-fn & {:keys [callback-data]}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
-  (send widget #(update-in % [:callbacks] conj [event-type [callback-fn callback-data]])))
+  (alter widget update-in [:callbacks] assoc event-type [callback-fn callback-data])
+  widget)
 
 
-(defn update-widget-data [widget new-widget-data]
-  {:pre (= clojure.lang.Agent (type widget))}
-  (send widget (fn [_] new-widget-data)))
+(defn set-model! [widget model]
+  {:pre (ref? widget)}
+  (dosync
+   (alter widget #(with1 (assoc %
+                           :model model
+                           :watchers ((:set-model-fn %) widget model))
+                    (ref-set model @model))))) ;; Trigger initial update.
 
 
 (defn make-ID
@@ -87,46 +112,74 @@ Returns WIDGET."
 
 
 (defn make-WidgetBase [& key_vals]
-  (with1 (agent (apply assoc (make-ID)
-                       :type ::WidgetBase
-                       :in-dom? false
-                       :parent nil
-                       :callbacks {} ;; event-name -> [handler-fn callback-data]
-                       :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
-                       :parse-callback-data-handler #'default-parse-callback-data-handler
-                       key_vals))
-         ;; There's no way we'll create a Widget in the context of one Viewport and use it or "send" it to another Viewport anyway.
-         (send *viewport* #(update-in % [:widgets] conj [(:id @it) it]))
-         (await *viewport*)))
+  (let [widget-m (apply assoc (make-ID)
+                        :type ::WidgetBase
+                        :set-model-fn (fn [new-model] [])
+                        :on-visible-fns []
+                        :children []
+                        :callbacks {} ;; event-name -> [handler-fn callback-data]
+                        :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
+                        :parse-callback-data-handler #'default-parse-callback-data-handler
+                        key_vals)]
+    (ref widget-m)
+    #_(let [widget-ref (ref widget-m)]
+      (when *request*
+        ;; There's no way we'll create a Widget in the context of one Viewport and use it or "send" it to another Viewport anyway.
+        (alter *viewport* update-in [:widgets] assoc (:id widget-m) widget-ref))
+      widget-ref)))
 
 
+(derive ::Widget ::WidgetBase)
 (defn make-Widget [& key_vals]
   (apply make-WidgetBase key_vals))
 
 
-(defn make-HTMLElement [html-element-type children & key_vals]
-  (apply make-Widget
-         :type ::HTMLElement
-         :html-element-type html-element-type
-         :children (if children
-                     (into [] (apply ensure-agent children))
-                     [])
-         :render-html-fn #(str "<" (:html-element-type %) " id='" (:id %) "'" (render-static-attributes %) ">"
-                               (render-children %)
-                               (let [script (str (render-aux %) (render-events %))]
-                                 (when (seq script)
-                                   (str "<script type='text/javascript'>" script "</script>")))
-                               "</" (:html-element-type %) ">")
-         key_vals))
+(derive ::HTMLElement ::Widget)
+(defn make-HTMLElement
+  ([element-type_element-attributes] (make-HTMLElement element-type_element-attributes (ref "")))
+  ([element-type_element-attributes element-content]
+  "HTML-CONTENT will be evaluated as TEXT on the client-end by default.
+Set ESCAPE-HTML? to FALSE to change this."
+  (let [[element-type & element-attributes] (if (vector? element-type_element-attributes)
+                                              element-type_element-attributes
+                                              (vector element-type_element-attributes))
+        element-content (ensure-model element-content)
+        html-element (apply make-Widget
+                            :type ::HTMLElement
+                            :html-element-type element-type
+                            :set-model-fn (fn [widget model]
+                                            (let [watch-key (generate-uid)]
+                                              (add-watch model watch-key
+                                                         (fn [_ _ _ new-value]
+                                                           (jqHTML widget new-value)))
+                                              watch-key))
+                            :render-html-fn #(str "<" (:html-element-type %)
+                                                  " id='" (:id %) "'" (render-static-attributes %) ">"
+                                                  ;;(render-children %)
+                                                  (render-aux-html %)
+                                                  (let [script (str (render-aux-js %) (render-events %))]
+                                                    (when (seq script)
+                                                      (str "<script type='text/javascript'>" script "</script>")))
+                                                  "</" (:html-element-type %) ">")
+                            element-attributes)]
+    (set-model! html-element element-content)
+    html-element)))
 
 
-(defn make-Button [& children]
-  (make-HTMLElement "button" children
-                    :type ::Button))
+(defn make-Container [element-type_element-attributes]
+  (make-HTMLElement (conj (if (vector? element-type_element-attributes)
+                            element-type_element-attributes
+                            [element-type_element-attributes])
+                          :set-model-fn (fn [widget model]
+                                          (let [watch-key (generate-uid)]
+                                            (add-watch model watch-key
+                                                       (fn [_ _ _ new-value]
+                                                         ;; container-model-event-router
+                                                         ))
+                                            watch-key)))))
 
 
-(defn make-Sortable [& children]
-  (make-HTMLElement "ul" children
-                    :type ::JQUSortable
-                    :render-aux-fn #(str "$(#" (:id %) ").sortable();")
-                    ))
+(derive ::Button ::HTMLElement)
+(defn make-Button [element-content]
+  (make-HTMLElement ["button" :type ::Button]
+                    element-content))
