@@ -99,22 +99,16 @@ Returns WIDGET."
 
 
 (defn make-WidgetBase [& key_vals]
-  (let [widget-m (apply assoc (make-ID)
-                        :type ::WidgetBase
-                        :set-model-fn (fn [new-model] [])
-                        :on-visible-fns []
-                        :children [] ;; Note that order etc. doesn't matter here; this is only used to track
-                                     ;; visibility on the client-end.
-                        :callbacks {} ;; event-name -> [handler-fn callback-data]
-                        :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
-                        :parse-callback-data-handler #'default-parse-callback-data-handler
-                        key_vals)]
-    (ref widget-m)
-    #_(let [widget-ref (ref widget-m)]
-      (when *request*
-        ;; There's no way we'll create a Widget in the context of one Viewport and use it or "send" it to another Viewport anyway.
-        (alter *viewport* update-in [:widgets] assoc (:id widget-m) widget-ref))
-      widget-ref)))
+  (ref (apply assoc (make-ID)
+              :type ::WidgetBase
+              :set-model-fn (fn [new-model] [])
+              :on-visible-fns []
+              :children [] ;; Note that order etc. doesn't matter here; this is only used to track
+              ;; visibility on the client-end.
+              :callbacks {} ;; event-name -> [handler-fn callback-data]
+              :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
+              :parse-callback-data-handler #'default-parse-callback-data-handler
+              key_vals)))
 
 
 (derive ::Widget ::WidgetBase)
