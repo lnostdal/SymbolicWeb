@@ -68,18 +68,6 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
      (throw (Exception. (str "Can't render: " widget-m))))))
 
 
-#_(defn render-child [parent child]
-  (if-let [render-child-fn (:render-child-fn parent)]
-    (render-child-fn parent child)
-    (render-html child)))
-
-
-#_(defn render-children [widget]
-  (with-out-str []
-    (doseq [child (:children widget)]
-      (print (render-child widget child)))))
-
-
 (defn render-static-attributes [widget]
   (when-let [render-static-attributes-fn (:render-static-attributes-fn widget)]
     (render-static-attributes-fn)))
@@ -151,7 +139,6 @@ Set ESCAPE-HTML? to FALSE to change this."
                                               watch-key))
                             :render-html-fn #(str "<" (:html-element-type %)
                                                   " id='" (:id %) "'" (render-static-attributes %) ">"
-                                                  ;;(render-children %)
                                                   (render-aux-html %)
                                                   (let [script (str (render-aux-js %) (render-events %))]
                                                     (when (seq script)
