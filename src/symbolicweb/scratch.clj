@@ -27,8 +27,8 @@
  (jqAppend (root-element)
            (with-html-container
              [:h2 "Header.."]
-             (render-html (make-HTMLElement "p" "test-a"))
-             (render-html (make-HTMLElement "b" "test-b"))
+             (sw (make-HTMLElement "p" "test-a"))
+             (sw (make-HTMLElement "b" "test-b"))
              [:h2 "..footer."])))
 
 
@@ -36,11 +36,11 @@
  (clear-root)
  (jqAppend (root-element)
            (with-html-container
-             [:em (render-html (with-html-container
-                                 [:p "nested html"]
-                                 (render-html (make-HTMLElement "p" "nested widget"))))]
-             [:b (render-html (make-HTMLElement "p" "non-nested widget 1"))]
-             [:b (render-html (make-HTMLElement "p" "non-nested widget 2"))])))
+             [:em (sw (with-html-container
+                        [:p "nested html"]
+                        (sw (make-HTMLElement "p" "nested widget"))))]
+             [:b (sw (make-HTMLElement "p" "non-nested widget 1"))]
+             [:b (sw (make-HTMLElement "p" "non-nested widget 2"))])))
 
 
 
@@ -49,12 +49,12 @@
  (jqAppend (root-element)
            (with-html-container
              [:em
-              (render-html (make-HTMLElement "p" "test-a"))
-              (render-html (make-HTMLElement "p" "test-b"))
-              (render-html (with-html-container
-                             [:b
-                              (render-html (make-HTMLElement "p" "test-c"))
-                              (render-html (make-HTMLElement "p" "test-d"))]))])))
+              (sw (make-HTMLElement "p" "test-a"))
+              (sw (make-HTMLElement "p" "test-b"))
+              (sw (with-html-container
+                    [:b
+                     (sw (make-HTMLElement "p" "test-c"))
+                     (sw (make-HTMLElement "p" "test-d"))]))])))
 
 
 

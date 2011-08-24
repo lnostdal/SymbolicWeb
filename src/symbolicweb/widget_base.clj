@@ -68,6 +68,10 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
      (throw (Exception. (str "Can't render: " widget-m))))))
 
 
+(defn sw [widget]
+  (render-html widget))
+
+
 (defn render-static-attributes [widget]
   (when-let [render-static-attributes-fn (:render-static-attributes-fn widget)]
     (render-static-attributes-fn)))
