@@ -72,7 +72,9 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           (get (:query-params *request*) "_sw_request_type")) ;; jQuery doesn't use XHR for cross-domain background requests.
     ((:ajax-handler @*application*))
     (dosync
-     ((:rest-handler @*application*)))))
+     (with1 ((:rest-handler @*application*))
+       ((:reload-handler @*application*))))))
+
 
 
 (def x (ref "initial"))

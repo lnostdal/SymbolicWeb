@@ -1,8 +1,9 @@
 (in-ns 'symbolicweb.core)
 
-(defn make-Application [& {:keys [request-handler rest-handler ajax-handler aux-handler
+(defn make-Application [& {:keys [request-handler reload-handler rest-handler ajax-handler aux-handler
                                   session?]
                            :or {request-handler #'default-request-handler
+                                reload-handler  (fn [])
                                 rest-handler    #'default-rest-handler
                                 ajax-handler    #'default-ajax-handler
                                 aux-handler     #'default-aux-handler
@@ -17,6 +18,7 @@
                           :last-activity-time (System/currentTimeMillis)
                           :viewports {}
                           :request-handler request-handler
+                          :reload-handler  reload-handler
                           :rest-handler    rest-handler
                           :ajax-handler    ajax-handler
                           :aux-handler     aux-handler
