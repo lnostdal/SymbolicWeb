@@ -4,6 +4,19 @@
 (set! *print-level* 3)
 
 
+(defn get-widget [id]
+  (get (:widgets @*viewport*) (str id)))
+
+
+(defn children-of [widget]
+  (:children @widget))
+
+
+(defn widget? [obj]
+  (when-not (string? obj)
+    (isa? (:type @obj) ::WidgetBase)))
+
+
 (defn ensure-model [obj]
   (if (string? obj)
     (ref obj)

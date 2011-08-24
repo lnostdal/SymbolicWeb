@@ -14,7 +14,7 @@
                     :response-str ""
                     :response-str-promise (promise)})]
       (dosync
-       (with1 (make-HTMLElement ["div" :viewport *viewport*])
+       (with1 (make-HTMLElement ["div" :viewport *viewport*]) ;; TODO: HTMLContainer would probably be more suitable.
          (alter *viewport* assoc
                 :root-element it
                 :widgets {(:id @it) it}))
