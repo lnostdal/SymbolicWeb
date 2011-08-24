@@ -46,6 +46,7 @@
 
 
 (declare ensure-visible)
+(declare add-branch)
 (defn render-html [widget]
   "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS.
 The return value of RENDER-AUX-JS will be inlined within this structure."
@@ -55,19 +56,13 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
         widget-type (:type widget-m)]
     (cond
      (isa? widget-type ::Widget)
-     (if (isa? widget-type ::HTMLContainer)
-       (binding [*in-html-container?* widget
-                 *html-container-accu-children* []]
-         (with1 ((:render-html-fn widget-m) widget-m)
-           (set-children! widget *html-container-accu-children*)
-           (doseq [child *html-container-accu-children*]
-             (set-parent! child widget)
-             (when (:viewport widget-m)
-               (ensure-visible child widget)))))
-       (with1 ((:render-html-fn widget-m) widget-m)
-              (when *in-html-container?*
-                (set! *html-container-accu-children*
-                      (conj *html-container-accu-children* widget)))))
+     (do
+       (when (and *in-html-container?* (not (:parent widget-m))) ;; TODO: The :parent test here?
+         (add-branch *in-html-container?* widget))
+       (if (isa? widget-type ::HTMLContainer)
+         (binding [*in-html-container?* widget]
+           ((:render-html-fn widget-m) widget-m))
+         ((:render-html-fn widget-m) widget-m)))
 
      true
      (throw (Exception. (str "Can't render: " widget-m))))))
@@ -116,7 +111,8 @@ Returns WIDGET."
                         :type ::WidgetBase
                         :set-model-fn (fn [new-model] [])
                         :on-visible-fns []
-                        :children []
+                        :children [] ;; Note that order etc. doesn't matter here; this is only used to track
+                                     ;; visibility on the client-end.
                         :callbacks {} ;; event-name -> [handler-fn callback-data]
                         :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
                         :parse-callback-data-handler #'default-parse-callback-data-handler
@@ -165,18 +161,6 @@ Set ESCAPE-HTML? to FALSE to change this."
     (set-model! html-element element-content)
     html-element)))
 
-
-(defn make-Container [element-type_element-attributes]
-  (make-HTMLElement (conj (if (vector? element-type_element-attributes)
-                            element-type_element-attributes
-                            [element-type_element-attributes])
-                          :set-model-fn (fn [widget model]
-                                          (let [watch-key (generate-uid)]
-                                            (add-watch model watch-key
-                                                       (fn [_ _ _ new-value]
-                                                         ;; container-model-event-router
-                                                         ))
-                                            watch-key)))))
 
 
 (derive ::Button ::HTMLElement)

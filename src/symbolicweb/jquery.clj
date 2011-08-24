@@ -1,5 +1,16 @@
 (in-ns 'symbolicweb.core)
 
+(declare render-html)
+(declare add-branch)
+(declare empty-branch)
+(declare remove-branch)
+
+
+(defn ensure-content-str [content]
+  (if (widget? content)
+    (render-html content)
+    content))
+
 
 (defn jqHTML
   ([widget] (str "$('#" (widget-id-of widget) "').html();"))
@@ -17,33 +28,40 @@
                          widget)))
 
 
-(defn jqAppend [widget content]
+(defn jqAppend [parent content]
   "Inside."
-  (add-response-chunk (str "$('#" (widget-id-of widget) "').append(" (url-encode-wrap content) ");")
-                      widget))
+  (when (widget? content)
+    (add-branch parent content))
+  (let [content (ensure-content-str content)]
+    (add-response-chunk (str "$('#" (widget-id-of parent) "').append(" (url-encode-wrap content) ");")
+                        parent)))
 
 
-(defn jqPrepend [widget content]
+(defn jqPrepend [parent content]
   "Inside."
-  (add-response-chunk (str "$('#" (widget-id-of widget) "').prepend(" (url-encode-wrap content) ");")
-                      widget))
+  (when (widget? content)
+    (add-branch parent content))
+  (let [content (ensure-content-str content)]
+    (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap content) ");")
+                        parent)))
 
 
 (defn jqAfter [widget content]
   "Outside."
-  (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap content) ");")
-                      widget))
+  (when (widget? content)
+    (add-branch (:parent @widget) content))
+  (let [content (ensure-content-str content)]
+    (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap content) ");")
+                        widget)))
 
 
 (defn jqBefore [widget content]
   "Outside."
-  (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap content) ");")
-                      widget))
-
-
-(defn jqRemove [widget]
-  (add-response-chunk (str "$('#" (widget-id-of widget) "').remove();")
-                      widget))
+  (when (widget? content)
+    (add-branch (:parent @widget) content))
+  (let [content (ensure-content-str content)]
+    (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap content) ");")
+                        widget)))
 
 
 (defn jqAddClass [widget class-name]
@@ -58,9 +76,11 @@
 
 (defn jqEmpty [widget]
   (add-response-chunk (str "$('#" (widget-id-of widget) "').empty();")
-                      widget))
+                      widget)
+  (empty-branch widget))
 
 
 (defn jqRemove [widget]
   (add-response-chunk (str "$('#" (widget-id-of widget) "').remove();")
-                      widget))
+                      widget)
+  (remove-branch widget))

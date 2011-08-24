@@ -1,23 +1,31 @@
 (in-ns 'symbolicweb.core)
 
 
-;; TODO: The JQ-APPEND? stuff is wonky.
-(defn ensure-visible
-  ([child parent] (ensure-visible child parent false))
-  ([child parent jq-append?]
-     "Ensure CHILD is made visible in context of PARENT.
-This will also call any FNs stored in :ON-VISIBLE-FNS of all CHILD."
-     (let [parent-m @parent
-           viewport (:viewport parent-m)
-           child-m @child]
-       (alter viewport update-in [:widgets] assoc (:id child-m) child)
-       (alter child assoc :viewport viewport)
-       (when jq-append?
-         (jqAppend parent (render-html child)))
-       (doseq [on-visible-fn (:on-visible-fns child-m)]
-         (on-visible-fn))
-       (doseq [child-of-child (:children child-m)]
-         (ensure-visible child-of-child child jq-append?)))))
+(defn make-Container [element-type_element-attributes]
+  (make-HTMLElement (conj (if (vector? element-type_element-attributes)
+                            element-type_element-attributes
+                            [element-type_element-attributes])
+                          :set-model-fn (fn [widget model]
+                                          (let [watch-key (generate-uid)]
+                                            (add-watch model watch-key
+                                                       (fn [_ _ _ new-value]
+                                                         ;; container-model-event-router
+                                                         ))
+                                            watch-key)))))
+
+
+(defn ensure-visible [child parent]
+  "Ensure CHILD and its children in turn is declared visible in context of PARENT.
+This will also call any FNs stored in :ON-VISIBLE-FNS for the children in question."
+  (let [parent-m @parent
+        viewport (:viewport parent-m)
+        child-m @child]
+    (alter viewport update-in [:widgets] assoc (:id child-m) child) ;; DOM-events will find the widget now.
+    (alter child assoc :viewport viewport) ;; Widget will know which Viewport to send JS code to now.
+    (doseq [on-visible-fn (:on-visible-fns child-m)]
+      (on-visible-fn))
+    (doseq [child-of-child (:children child-m)]
+      (ensure-visible child-of-child child))))
 
 
 (defn ensure-non-visible [widget]
@@ -37,21 +45,23 @@ This will also call any FNs stored in :ON-VISIBLE-FNS of all CHILD."
 
 
 (defn add-branch [parent child]
-  "Add CHILD to children of PARENT using CONJ (server side) / jqAppend (client side)."
+  "Declare CHILD to be a part of PARENT.
+This is used to track visibility on the server-end. Use e.g. jqAppend to actually display the widget on the client
+end."
   (let [parent-m @parent
         child-m @child]
-    (assert (not (:parent child-m))) ;; TODO: MOVE-BRANCH?
+    (assert (not (:parent child-m)))
     (alter child assoc :parent parent)
     (alter parent update-in [:children] conj child)
-    ;; When PARENT is visible, the CHILD and its children in turn should be declared and made visible too.
+    ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.
     (when (:viewport parent-m)
-      (ensure-visible child parent true))))
+      (ensure-visible child parent))))
 
 
 (defn remove-branch [branch-root-node]
   "Remove BRANCH-ROOT-NODE and its children."
   (let [root-m @branch-root-node]
-    (jqRemove branch-root-node)
+    ;;(jqRemove branch-root-node)
     (ensure-non-visible branch-root-node)))
 
 
@@ -63,4 +73,4 @@ This will also call any FNs stored in :ON-VISIBLE-FNS of all CHILD."
 
 (defn clear-root []
   (dosync
-   (empty-branch (root-element))))
+   (jqEmpty (root-element))))
