@@ -84,3 +84,10 @@
   (add-response-chunk (str "$('#" (widget-id-of widget) "').remove();")
                       widget)
   (remove-branch widget))
+
+
+(defn jqCSS
+  ([widget property-name]
+     (str "$('#" (widget-id-of widget) "').css('" property-name "');"))
+  ([widget property-name value]
+     (add-response-chunk (str "$('#" (widget-id-of widget) "').css('" property-name "', '" value "');"))))
