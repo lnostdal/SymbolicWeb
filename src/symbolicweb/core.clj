@@ -14,6 +14,7 @@
   (:require symbolicweb.viewport)
   (:require symbolicweb.jquery)
   (:require symbolicweb.widget-base)
+  (:require symbolicweb.html-elements)
   (:require symbolicweb.container)
   (:require symbolicweb.html-container)
   (:require symbolicweb.handy-handlers)
