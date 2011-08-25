@@ -129,6 +129,14 @@ Returns a string."
                            " window.location.reload();")))
 
 
+(defn clear-all-sessions []
+  (doseq [id_application @-applications-]
+    (let [application (val id_application)]
+      (doseq [id_viewport (:viewports @application)]
+        (binding [*viewport* (val id_viewport)]
+          (clear-session))))))
+
+
 (defn is-url?
   ([url-path]
      (assert (thread-bound? #'*request*))
