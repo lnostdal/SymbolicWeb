@@ -221,11 +221,9 @@ html, body, #sw-root {
 
 (defapp hello-world
   (fn [] (is-url? "/sw/hello-world"))
-  (fn [] (make-Application ;;:rest-handler #'hello-world-page-handler
-                           :aux-handler (simple-aux-handler #(alert "Aux handler called!")))))
+  (fn [] (make-Application [:aux-handler (simple-aux-handler #(alert "Aux handler called!"])))))
 
 
 (defapp empty-page
   (fn [] (is-url? "/sw/empty-page"))
-  (fn [] (make-Application ;;:rest-handler #'default-rest-handler
-                           )))
+  (fn [] (make-Application [])))

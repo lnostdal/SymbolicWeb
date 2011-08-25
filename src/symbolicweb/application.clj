@@ -1,28 +1,31 @@
 (in-ns 'symbolicweb.core)
 
-(defn make-Application [& {:keys [request-handler reload-handler rest-handler ajax-handler aux-handler
-                                  session?]
-                           :or {request-handler #'default-request-handler
-                                reload-handler  (fn [])
-                                rest-handler    #'default-rest-handler
-                                ajax-handler    #'default-ajax-handler
-                                aux-handler     #'default-aux-handler
-                                session?        true}}]
+(defn make-Application [[& {:keys [request-handler reload-handler rest-handler ajax-handler aux-handler
+                                   session?]
+                            :or {request-handler #'default-request-handler
+                                 reload-handler  (fn [])
+                                 rest-handler    #'default-rest-handler
+                                 ajax-handler    #'default-ajax-handler
+                                 aux-handler     #'default-aux-handler
+                                 session?        true}}]
+                        & app-args]
   "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-."
   (let [application-id (generate-uuid)
-        application (ref {:type 'Application
-                          :session? session?
-                          :id application-id
-                          :id-generator (let [last-id (atom 0N)]
-                                          (fn [] (str (swap! last-id inc'))))
-                          :last-activity-time (System/currentTimeMillis)
-                          :viewports {}
-                          :request-handler request-handler
-                          :reload-handler  reload-handler
-                          :rest-handler    rest-handler
-                          :ajax-handler    ajax-handler
-                          :aux-handler     aux-handler
-                          :html-title "[SymbolicWeb]"})]
+        application (ref (apply assoc {}
+                                :type 'Application
+                                :session? session?
+                                :id application-id
+                                :id-generator (let [last-id (atom 0N)]
+                                                (fn [] (str (swap! last-id inc'))))
+                                :last-activity-time (System/currentTimeMillis)
+                                :viewports {}
+                                :request-handler request-handler
+                                :reload-handler  reload-handler
+                                :rest-handler    rest-handler
+                                :ajax-handler    ajax-handler
+                                :aux-handler     aux-handler
+                                :html-title "[SymbolicWeb]"
+                                app-args))]
     (when session?
       (swap! -applications- #(assoc % application-id application)))
     application))
@@ -53,17 +56,17 @@ Viewport."
             ;; Viewport ID sent, and Viewport found on server end.
             (list application viewport)
             ;; Viewport ID sent, but Viewport not found on server end.
-            (binding [*application* (make-Application :rest-handler clear-session-page-handler :session? false)]
+            (binding [*application* (make-Application [:rest-handler clear-session-page-handler :session? false])]
               (list *application* (make-Viewport))))
           ;; Viewport ID not sent.
           (list application (make-Viewport))))
       ;; Session cookie sent, but Application not found on server end.
-      (binding [*application* (make-Application :rest-handler clear-session-page-handler :session? false)]
+      (binding [*application* (make-Application [:rest-handler clear-session-page-handler :session? false])]
         (list *application* (make-Viewport))))
     ;; Session cookie not sent; the user is requesting a brand new session or Application.
     (binding [*application* (if-let [application-constructor (find-application-constructor)]
                               (application-constructor)
-                              (make-Application :rest-handler not-found-page-handler :session? false))]
+                              (make-Application [:rest-handler not-found-page-handler :session? false]))]
       (list *application* (make-Viewport)))))
 
 
