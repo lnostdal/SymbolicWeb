@@ -45,7 +45,6 @@
     (render-aux-html-fn widget)))
 
 
-(declare ensure-visible)
 (declare add-branch)
 (defn render-html [widget]
   "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS.

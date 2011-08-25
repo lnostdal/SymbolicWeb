@@ -18,9 +18,6 @@
   "ID -> APPLICATION"
   (atom {}))
 
-(def -viewports-
-  "ID -> VIEWPORT"
-  (atom {}))
 
 (def -gc-thread-
   "This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- end checks their :LAST-ACTIVITY-TIME properties

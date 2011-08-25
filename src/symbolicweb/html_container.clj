@@ -11,4 +11,5 @@
 
 
 (defmacro with-html-container [& body]
+  "The interesting or 'tricky' code related to HTMLContainer is mostly found in the RENDER-HTML (widget_base.clj) function."
   `(%make-HTMLContainer (ref (fn [] (html ~@body)))))

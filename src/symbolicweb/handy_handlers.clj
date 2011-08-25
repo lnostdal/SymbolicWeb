@@ -76,9 +76,6 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        ((:reload-handler @*application*))))))
 
 
-
-(def x (ref "initial"))
-
 (defn default-rest-handler []
   {:status  200
    :headers {"Content-Type"  "text/html; charset=UTF-8"
