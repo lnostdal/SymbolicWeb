@@ -27,8 +27,8 @@
  (jqAppend (root-element)
            (with-html-container
              [:h2 "Header.."]
-             (sw (make-HTMLElement "p" "test-a"))
-             (sw (make-HTMLElement "b" "test-b"))
+             (sw-p "test-a")
+             (sw-p "test-b")
              [:h2 "..footer."])))
 
 
@@ -36,12 +36,13 @@
  (clear-root)
  (jqAppend (root-element)
            (with-html-container
+             [:h2 "Header.."]
              [:em (sw (with-html-container
                         [:p "nested html"]
-                        (sw (make-HTMLElement "p" "nested widget"))))]
-             [:b (sw (make-HTMLElement "p" "non-nested widget 1"))]
-             [:b (sw (make-HTMLElement "p" "non-nested widget 2"))])))
-
+                        (sw-p "nested widget")))]
+             (sw-p "non-nested widget 1")
+             [:b (sw-p "non-nested widget 2")]
+             [:h2 "..footer."])))
 
 
 (dosync
@@ -49,14 +50,18 @@
  (jqAppend (root-element)
            (with-html-container
              [:em
-              (sw (make-HTMLElement "p" "test-a"))
-              (sw (make-HTMLElement "p" "test-b"))
+              (sw-p "test-a")
+              (sw-p "test-b")
               (sw (with-html-container
                     [:b
-                     (sw (make-HTMLElement "p" "test-c"))
-                     (sw (make-HTMLElement "p" "test-d"))]))])))
+                     (sw-p "test-c")
+                     (sw-p "test-d")]))])))
 
 
+
+;;; TODO: Think about this; does having Container make sense now?
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (dosync
  (clear-root)
