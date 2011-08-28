@@ -70,7 +70,13 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
   (if (or (= (get (:headers *request*) "x-requested-with")
              "XMLHttpRequest")
           (get (:query-params *request*) "_sw_request_type")) ;; jQuery doesn't use XHR for cross-domain background requests.
-    ((:ajax-handler @*application*))
+    (if (= clear-session-page-handler (:rest-handler @*application*))
+      ;; Send an "AJAX style" (text/javascript content-type) clear-session response.
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                 "Connection"   "keep-alive"}
+       :body (with-js (clear-session))}
+      ((:ajax-handler @*application*)))
     (dosync
      (with1 ((:rest-handler @*application*))
        ((:reload-handler @*application*))))))
