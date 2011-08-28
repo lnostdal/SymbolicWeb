@@ -24,12 +24,11 @@
 (defn handle-in-channel-request []
   "Input channel."
   (let [query-params (:query-params *request*)
-        widget-id (dbg-prin1 (get query-params "_sw_widget-id"))
-        callback-id (dbg-prin1 (get query-params "_sw_callback-id"))
-        widget (dbg-prin1 (get (:widgets @*viewport*) widget-id))
+        widget-id (get query-params "_sw_widget-id")
+        callback-id (get query-params "_sw_callback-id")
+        widget (get (:widgets @*viewport*) widget-id)
         callback (get (:callbacks @widget) callback-id)
         [callback-fn callback-data] callback]
-    (dbg-prin1 callback-fn)
     (binding [*in-channel-request?* ""]
       (dosync
        (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data)))
@@ -224,7 +223,7 @@ html, body, #sw-root {
 
 (defapp hello-world
   (fn [] (is-url? "/sw/hello-world"))
-  (fn [] (make-Application [:aux-handler (simple-aux-handler #(alert "Aux handler called!"])))))
+  (fn [] (make-Application [:aux-handler (simple-aux-handler #(alert "Aux handler called!"))])))
 
 
 (defapp empty-page
