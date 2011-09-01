@@ -4,6 +4,16 @@
 (set! *print-level* 3)
 
 
+(defmacro with-all-viewports [& body]
+  "Handy when testing things in the REPL."
+  `(doseq [~'application (vals @-applications-)]
+     (doseq [~'viewport (vals (:viewports @~'application))]
+       (binding [*application* ~'application
+                 *viewport* ~'viewport]
+         (dosync
+          ~@body)))))
+
+
 (defn get-widget [id]
   (get (:widgets @*viewport*) (str id)))
 
