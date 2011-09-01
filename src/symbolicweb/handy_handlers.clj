@@ -119,7 +119,7 @@ html, body, #sw-root {
       (sw-js-bootstrap)]
 
      [:body
-      (render-html (:root-element @*viewport*))]))})
+      (sw (:root-element @*viewport*))]))})
 
 
 (defn clear-session-page-handler []
@@ -190,13 +190,13 @@ html, body, #sw-root {
         [:button {:onclick "$.getScript(swURL('&something=some-value'));"}
          "Test aux event handler"]
 
-        (render-html (set-event-handler "click" (make-Button "Test widget event handler")
-                                        (fn [& {:keys [page-x page-y]}]
-                                          (alert (str "Widget handler called: "
-                                                      " page-x => " page-x
-                                                      ", page-y => " page-y)))
-                                        :callback-data {:page-x "' + event.pageX + '"
-                                                        :page-y "' + event.pageY + '"}))
+        (sw (set-event-handler "click" (make-Button "Test widget event handler")
+                               (fn [& {:keys [page-x page-y]}]
+                                 (alert (str "Widget handler called: "
+                                             " page-x => " page-x
+                                             ", page-y => " page-y)))
+                               :callback-data {:page-x "' + event.pageX + '"
+                                               :page-y "' + event.pageY + '"}))
 
       [:ul (for [i (range 10)]
              [:li [:b "This is nr. " i "."]])]
