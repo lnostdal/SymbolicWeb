@@ -71,9 +71,6 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
   (render-html widget))
 
 
-(defn render-static-attributes [widget]
-  (when-let [render-static-attributes-fn (:render-static-attributes-fn widget)]
-    (render-static-attributes-fn)))
 (defn set-event-handler [event-type widget callback-fn & {:keys [callback-data]}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
@@ -81,7 +78,7 @@ Returns WIDGET."
   widget)
 
 
-(defn set-model! [widget model]
+(defn set-model [widget model]
   {:pre (ref? widget)}
   (dosync
    (alter widget #(with1 (assoc %

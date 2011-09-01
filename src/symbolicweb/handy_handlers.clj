@@ -65,6 +65,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
      ((:aux-handler @*application*)))))
 
 
+(declare clear-session-page-handler)
 (defn default-request-handler []
   (if (or (= (get (:headers *request*) "x-requested-with")
              "XMLHttpRequest")
