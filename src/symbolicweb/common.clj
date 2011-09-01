@@ -78,7 +78,7 @@
   (defn generate-uid []
     "Generates an unique ID; non-universal or pr. server instance based.
 Returns a string."
-    (str (swap! id-generator-value inc'))))
+    (swap! id-generator-value inc')))
 
 
 (defn generate-uuid []

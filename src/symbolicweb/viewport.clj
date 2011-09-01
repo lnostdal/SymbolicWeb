@@ -4,7 +4,7 @@
 
 (defn make-Viewport []
   "This will instantiate a new Viewport and also 'register' it as a part of *APPLICATION* and the server via -VIEWPORTS-."
-  (let [viewport-id (generate-aid)]
+  (let [viewport-id (str (generate-aid))]
     (binding [*viewport*
               (ref {:type 'Viewport
                     :id viewport-id

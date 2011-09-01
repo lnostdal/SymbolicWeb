@@ -16,7 +16,7 @@
                                 :session? session?
                                 :id application-id
                                 :id-generator (let [last-id (atom 0N)]
-                                                (fn [] (str (swap! last-id inc'))))
+                                                (fn [] (swap! last-id inc')))
                                 :last-activity-time (System/currentTimeMillis)
                                 :viewports {}
                                 :request-handler request-handler
