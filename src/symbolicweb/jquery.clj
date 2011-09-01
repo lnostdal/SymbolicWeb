@@ -90,4 +90,13 @@
   ([widget property-name]
      (str "$('#" (widget-id-of widget) "').css('" property-name "');"))
   ([widget property-name value]
-     (add-response-chunk (str "$('#" (widget-id-of widget) "').css('" property-name "', '" value "');"))))
+     (add-response-chunk (str "$('#" (widget-id-of widget) "').css('" property-name "', '" value "');")
+                         widget)))
+
+
+(defn jqVal
+  ([widget]
+     (str "$('#" (widget-id-of widget) "').val();"))
+  ([widget new-value]
+     (add-response-chunk (str "$('#" (widget-id-of widget) "').val(" (url-encode-wrap new-value) ");")
+                         widget)))
