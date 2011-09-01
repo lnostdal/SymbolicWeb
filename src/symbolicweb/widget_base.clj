@@ -152,24 +152,3 @@ Set ESCAPE-HTML? to FALSE to change this."
 (defn make-Button [element-content]
   (make-HTMLElement ["button" :type ::Button]
                     element-content))
-
-
-;; TODO:
-;; * parameter handling for the make-TextInput widget; static-attributes/css ...
-
-(defn make-TextInput [model & {:keys [input-parsing-fn]
-                               :or {input-parsing-fn identity}}]
-  (with1 (make-HTMLElement ["input"
-                            :static-attributes {:type "text"}
-                            :input-parsing-fn input-parsing-fn
-                            :set-model-fn (fn [widget model]
-                                            (let [watch-key (generate-uid)]
-                                              (add-watch model watch-key
-                                                         (fn [_ _ _ new-value]
-                                                           (jqVal widget (str new-value))))))]
-                           model)
-    (let [model (:model @it)]
-      (set-event-handler "change" it
-                         (fn [& {:keys [new-value]}]
-                           (ref-set model ((:input-parsing-fn @it) new-value)))
-                         :callback-data {:new-value "' + $(this).val() + '"}))))
