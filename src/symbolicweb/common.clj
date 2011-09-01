@@ -68,6 +68,16 @@
      ~'it))
 
 
+(defmacro with-object [object & body]
+  "Used by OBJ."
+  `(let [~'%with-object ~object]
+     ~@body))
+
+(defmacro obj [signature]
+  `(~signature ~'%with-object))
+
+
+
 (defmacro defapp [name fit-fn application-constructor-fn]
   `(swap! -application-types-
           #(assoc % '~name {:fit-fn ~fit-fn

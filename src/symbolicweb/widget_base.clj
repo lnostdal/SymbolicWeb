@@ -74,8 +74,6 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
 (defn render-static-attributes [widget]
   (when-let [render-static-attributes-fn (:render-static-attributes-fn widget)]
     (render-static-attributes-fn)))
-
-
 (defn set-event-handler [event-type widget callback-fn & {:keys [callback-data]}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
@@ -134,20 +132,47 @@ Set ESCAPE-HTML? to FALSE to change this."
                                                          (fn [_ _ _ new-value]
                                                            (jqHTML widget new-value)))
                                               watch-key))
+                            :render-static-attributes-fn #(with-out-str
+                                                            (doseq [key_val (:static-attributes %)]
+                                                              (print (str " "
+                                                                          (name (key key_val))
+                                                                          "='"
+                                                                          (name (val key_val)) ;; TODO: Escaping.
+                                                                          "'"))))
                             :render-html-fn #(str "<" (:html-element-type %)
-                                                  " id='" (:id %) "'" (render-static-attributes %) ">"
+                                                  " id='" (:id %) "'" ((:render-static-attributes-fn %) %) ">"
                                                   (render-aux-html %)
                                                   (let [script (str (render-aux-js %) (render-events %))]
                                                     (when (seq script)
                                                       (str "<script type='text/javascript'>" script "</script>")))
                                                   "</" (:html-element-type %) ">")
                             element-attributes)]
-    (set-model! html-element element-content)
+    (set-model html-element element-content)
     html-element)))
-
 
 
 (derive ::Button ::HTMLElement)
 (defn make-Button [element-content]
   (make-HTMLElement ["button" :type ::Button]
                     element-content))
+
+
+;; TODO:
+;; * parameter handling for the make-TextInput widget; static-attributes/css ...
+
+(defn make-TextInput [model & {:keys [input-parsing-fn]
+                               :or {input-parsing-fn identity}}]
+  (with1 (make-HTMLElement ["input"
+                            :static-attributes {:type "text"}
+                            :input-parsing-fn input-parsing-fn
+                            :set-model-fn (fn [widget model]
+                                            (let [watch-key (generate-uid)]
+                                              (add-watch model watch-key
+                                                         (fn [_ _ _ new-value]
+                                                           (jqVal widget (str new-value))))))]
+                           model)
+    (let [model (:model @it)]
+      (set-event-handler "change" it
+                         (fn [& {:keys [new-value]}]
+                           (ref-set model ((:input-parsing-fn @it) new-value)))
+                         :callback-data {:new-value "' + $(this).val() + '"}))))
