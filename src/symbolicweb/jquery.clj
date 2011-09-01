@@ -30,38 +30,38 @@
 
 (defn jqAppend [parent content]
   "Inside."
-  (when (widget? content)
-    (add-branch parent content))
   (let [content (ensure-content-str content)]
     (add-response-chunk (str "$('#" (widget-id-of parent) "').append(" (url-encode-wrap content) ");")
-                        parent)))
+                        parent))
+  (when (widget? content)
+    (add-branch parent content)))
 
 
 (defn jqPrepend [parent content]
   "Inside."
-  (when (widget? content)
-    (add-branch parent content))
   (let [content (ensure-content-str content)]
     (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap content) ");")
-                        parent)))
+                        parent))
+  (when (widget? content)
+    (add-branch parent content)))
 
 
 (defn jqAfter [widget content]
   "Outside."
-  (when (widget? content)
-    (add-branch (:parent @widget) content))
   (let [content (ensure-content-str content)]
     (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap content) ");")
-                        widget)))
+                        widget))
+  (when (widget? content)
+    (add-branch (:parent @widget) content)))
 
 
 (defn jqBefore [widget content]
   "Outside."
-  (when (widget? content)
-    (add-branch (:parent @widget) content))
   (let [content (ensure-content-str content)]
     (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap content) ");")
-                        widget)))
+                        widget))
+  (when (widget? content)
+    (add-branch (:parent @widget) content)))
 
 
 (defn jqAddClass [widget class-name]
