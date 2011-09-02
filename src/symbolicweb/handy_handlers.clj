@@ -107,6 +107,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
   box-sizing: border-box;         /* Opera/IE 8+ */
 }
 html, body, #sw-root {
+  font-family: sans-serif;
   position: absolute;
   width: 100%; height: 100%;
   margin: 0; padding: 0; border: 0;
