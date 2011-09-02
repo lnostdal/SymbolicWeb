@@ -116,7 +116,7 @@ html, body, #sw-root {
   display: none !important;
 }"]
       (sw-css-bootstrap)
-      (script-src "../js/common/jquery-1.6.2.min.js")
+      (script-src "../js/common/jquery-1.6.3.min.js")
       (sw-js-bootstrap)]
 
      [:body
@@ -180,7 +180,7 @@ html, body, #sw-root {
        [:head
         [:title "[SymbolicWeb] Hello World"]
         [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-        (script-src "../js/common/jquery-1.6.2.min.js")
+        (script-src "../js/common/jquery-1.6.3.min.js")
         (sw-js-bootstrap)]
 
        [:body
