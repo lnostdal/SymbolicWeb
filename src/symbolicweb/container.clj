@@ -61,7 +61,6 @@ end."
 (defn remove-branch [branch-root-node]
   "Remove BRANCH-ROOT-NODE and its children."
   (let [root-m @branch-root-node]
-    ;;(jqRemove branch-root-node)
     (ensure-non-visible branch-root-node)))
 
 

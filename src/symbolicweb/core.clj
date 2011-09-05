@@ -44,6 +44,6 @@
 
 
 (defn -main [& args]
-  (def symbolicweb-server
+  (defonce symbolicweb-server
     (run-jetty (wrap-cookies (wrap-params #'handler))
                {:port 8080 :join? false})))

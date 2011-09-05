@@ -2,6 +2,8 @@
 
 ;; TODO:
 ;; * Better and more flexible parameter handling; static-attributes/CSS etc..
+;; * Error handling and feedback to user.
+
 
 (defn make-TextInput [model & {:keys [input-parsing-fn]
                                :or {input-parsing-fn identity}}]
