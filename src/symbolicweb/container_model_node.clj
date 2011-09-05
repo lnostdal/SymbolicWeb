@@ -25,8 +25,9 @@
      (ref-set (:left right-node) nil))))
 
 
-(defn append-container-model-node [existing-node new-node]
-  "Append NEW-NODE to right side of EXISTING-NODE."
+(defn after-container-model-node [existing-node new-node]
+  "Add NEW-NODE to right side of EXISTING-NODE.
+This mirrors the jQuery `after' function."
   (let [left-node (:left existing-node)
         right-node (:right existing-node)]
     (cond
@@ -50,8 +51,9 @@
        (ref-set (:left right-node) new-node)))))
 
 
-(defn prepend-container-model-node [existing-node new-node]
-  "Prepend NEW-NODE to left side of EXISTING-NODE."
+(defn before-container-model-node [existing-node new-node]
+  "Add NEW-NODE to left side of EXISTING-NODE.
+This mirrors the jQuery `before' function."
   (let [left-node (:left existing-node)
         right-node (:right existing-node)]
     (cond
