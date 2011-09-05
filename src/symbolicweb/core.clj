@@ -16,6 +16,7 @@
   (:require symbolicweb.widget-base)
   (:require symbolicweb.text-input)
   (:require symbolicweb.html-elements)
+  (:require symbolicweb.container-model-node)
   (:require symbolicweb.container)
   (:require symbolicweb.html-container)
   (:require symbolicweb.handy-handlers)
