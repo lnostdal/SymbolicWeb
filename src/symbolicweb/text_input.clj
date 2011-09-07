@@ -14,7 +14,9 @@
                                             (let [watch-key (generate-uid)]
                                               (add-watch model watch-key
                                                          (fn [_ _ _ new-value]
-                                                           (jqVal widget (str new-value))))))]
+                                                           (jqVal widget (str new-value))))
+                                              (ref-set model @model) ;; Trigger initual update.
+                                              watch-key))]
                            model)
     (let [model (:model @it)]
       (set-event-handler "change" it

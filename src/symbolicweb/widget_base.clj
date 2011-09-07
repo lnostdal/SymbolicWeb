@@ -78,15 +78,6 @@ Returns WIDGET."
   widget)
 
 
-(defn set-model [widget model]
-  {:pre (ref? widget)}
-  (dosync
-   (alter widget #(with1 (assoc %
-                           :model model
-                           :watchers ((:set-model-fn %) widget model))
-                    (ref-set model @model))))) ;; Trigger initial update.
-
-
 (defn make-ID
   ([] (make-ID {}))
   ([m] (assoc m :id (str (generate-aid)))))
@@ -121,11 +112,13 @@ Set ESCAPE-HTML? to FALSE to change this."
         html-element (apply make-Widget
                             :type ::HTMLElement
                             :html-element-type element-type
+                            :model element-content
                             :set-model-fn (fn [widget model]
                                             (let [watch-key (generate-uid)]
                                               (add-watch model watch-key
                                                          (fn [_ _ _ new-value]
                                                            (jqHTML widget new-value)))
+                                              (ref-set model @model) ;; Trigger initial update.
                                               watch-key))
                             :render-static-attributes-fn #(with-out-str
                                                             (doseq [key_val (:static-attributes %)]
@@ -142,7 +135,7 @@ Set ESCAPE-HTML? to FALSE to change this."
                                                       (str "<script type='text/javascript'>" script "</script>")))
                                                   "</" (:html-element-type %) ">")
                             element-attributes)]
-    (set-model html-element element-content)
+    ((:set-model-fn @html-element) html-element element-content)
     html-element)))
 
 
