@@ -61,10 +61,17 @@ To send JS to the browser, try:
 I'm aiming at a 132 column width: http://ask.slashdot.org/story/07/07/07/1931246/Are-80-Columns-Enough
 
 
+
 ### Style
 
     -this-is-global-variables-
     *this-is-global-dynamic-variables*
+
+Naming of Container (container_model.clj and container_model_node.clj) related functions follow or match the naming
+found in jQuery. E.g., append, prepend, before and after:
+
+  http://api.jquery.com/category/manipulation/dom-insertion-inside/
+  http://api.jquery.com/category/manipulation/dom-insertion-outside/
 
 
 
