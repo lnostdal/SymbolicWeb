@@ -168,10 +168,14 @@ Returns a string."
         url-path)))
 
 
-(defn alert [msg]
-  (add-response-chunk (str "alert(" (url-encode-wrap msg) ");")))
-  ;;([msg] (alert msg *viewport*))
-  ;;([msg viewport] (add-response-chunk (str "alert('" msg "');") viewport)))
+(defn root-element []
+  (:root-element @*viewport*))
+
+
+(defn alert
+  ([msg] (alert msg (root-element)))
+  ([msg widget] (add-response-chunk (str "alert(" (url-encode-wrap msg) ");")
+                                    widget)))
 
 
 (defn widget-id-of [widget]
@@ -202,7 +206,3 @@ Returns a string."
 (defmacro with-js [& body]
   `(binding [*with-js?* true]
      ~@body))
-
-
-(defn root-element []
-  (:root-element @*viewport*))
