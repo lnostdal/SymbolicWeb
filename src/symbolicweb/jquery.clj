@@ -50,7 +50,7 @@
   "Outside."
   (let [content (ensure-content-str content)]
     (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap content) ");")
-                        widget))
+                        (:parent @widget)))
   (when (widget? content)
     (add-branch (:parent @widget) content)))
 
@@ -59,7 +59,7 @@
   "Outside."
   (let [content (ensure-content-str content)]
     (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap content) ");")
-                        widget))
+                        (:parent @widget)))
   (when (widget? content)
     (add-branch (:parent @widget) content)))
 
