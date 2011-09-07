@@ -18,34 +18,28 @@
     append-container-model
     (let [container-model (nth event-args 0)
           new-node (nth event-args 1)]
-      (dosync
-       (jqAppend container-view (view-of-node-in-context container-view new-node))))
+      (jqAppend container-view (view-of-node-in-context container-view new-node)))
 
     prepend-container-model
     (let [container-model (nth event-args 0)
           new-node (nth event-args 1)]
-      (dosync
-       (jqPrepend container-view (view-of-node-in-context container-view new-node))))
-
+      (jqPrepend container-view (view-of-node-in-context container-view new-node)))
 
     after-container-model-node
     (let [existing-node (nth event-args 0)
           new-node (nth event-args 1)]
-      (dosync
-       (jqAfter (view-of-node-in-context container-view existing-node true)
-                (view-of-node-in-context container-view new-node))))
+      (jqAfter (view-of-node-in-context container-view existing-node true)
+               (view-of-node-in-context container-view new-node)))
 
     before-container-model-node
     (let [existing-node (nth event-args 0)
           new-node (nth event-args 1)]
-      (dosync
-       (jqBefore (view-of-node-in-context container-view existing-node true)
-                 (view-of-node-in-context container-view new-node))))
+      (jqBefore (view-of-node-in-context container-view existing-node true)
+                (view-of-node-in-context container-view new-node)))
 
     remove-container-model-node
     (let [node (nth event-args 0)]
-      (dosync
-       (jqRemove (view-of-node-in-context container-view node true))))))
+      (jqRemove (view-of-node-in-context container-view node true)))))
 
 
 (defn make-ContainerView [element-type_element-attributes container-model]
