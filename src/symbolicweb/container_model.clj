@@ -11,7 +11,8 @@
 
 (defn append-container-model [container-model new-node]
   "Add NEW-NODE to end of the contained nodes in CONTAINER-MODEL.
-This mirrors the jQuery `append' function."
+This mirrors the jQuery `append' function:
+  http://api.jquery.com/append/"
   (let [tail-node (:tail-node container-model)]
     (if @tail-node
       (do
@@ -28,7 +29,8 @@ This mirrors the jQuery `append' function."
 
 (defn prepend-container-model [container-model new-node]
   "Add NEW-NODE to beginning of the contained nodes in CONTAINER-MODEL.
-This mirrors the jQuery `prepend' function."
+This mirrors the jQuery `prepend' function:
+  http://api.jquery.com/prepend/"
   (let [head-node (:head-node container-model)]
     (if @head-node
       (do

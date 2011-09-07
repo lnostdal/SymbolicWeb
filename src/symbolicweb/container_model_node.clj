@@ -41,6 +41,7 @@ This mirrors the jQuery `after' function:
         right-node @(:right existing-node)
         container-model @(:container-model existing-node)
         event-router (:event-router container-model)]
+    ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not @(:container-model new-node)))
     (ref-set (:container-model new-node) container-model)
     ;; Adding a node behind the tail.
