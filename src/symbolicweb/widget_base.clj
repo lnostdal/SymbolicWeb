@@ -116,9 +116,7 @@ Returns WIDGET."
   ([element-type_element-attributes element-content]
   "HTML-CONTENT will be evaluated as TEXT on the client-end by default.
 Set ESCAPE-HTML? to FALSE to change this."
-  (let [[element-type & element-attributes] (if (vector? element-type_element-attributes)
-                                              element-type_element-attributes
-                                              (vector element-type_element-attributes))
+  (let [[element-type & element-attributes] (ensure-vector element-type_element-attributes)
         element-content (ensure-model element-content)
         html-element (apply make-Widget
                             :type ::HTMLElement

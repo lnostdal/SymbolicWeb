@@ -4,6 +4,12 @@
 (set! *print-level* 3)
 
 
+(defn ensure-vector [x]
+  (if (vector? x)
+    x
+    (vector x)))
+
+
 (defmacro with-all-viewports [& body]
   "Handy when testing things in the REPL."
   `(doseq [~'application (vals @-applications-)]
