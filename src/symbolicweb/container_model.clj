@@ -1,9 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-;; TODO: Does having a "root" make sense? Perhaps forcing the user to use jqAppend initially then continue with
-;; jqAppend or jqAfter (vs. the ContainerModelNodes) is a good idea ..
-
 (defn make-ContainerModel []
   {:type ::ContainerModel
    :event-router (ref [])

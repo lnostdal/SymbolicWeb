@@ -31,6 +31,7 @@
 
 
 (defn add-response-chunk
+  "Viewport is a REF so this will work. I.e., all changes done to Viewport will reset if a transaction fails."
   ([new-chunk] (add-response-chunk new-chunk (root-element)))
   ([new-chunk widget]
      (letfn [(do-it []
