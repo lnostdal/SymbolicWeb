@@ -14,8 +14,8 @@
 (defn remove-container-model-node [node]
   (let [left-node @(:left node)
         right-node @(:right node)
-        container-model (:container-model node)
-        event-router (:event-router @container-model)]
+        container-model @(:container-model node)
+        event-router (:event-router container-model)]
     (cond
      (and left-node right-node)
      (do
@@ -30,21 +30,23 @@
 
      true
      (println "REMOVE-CONTAINER-MODEL-NODE: TODO"))
-
     (alter event-router conj ['remove-container-model-node node])))
 
 
 (defn after-container-model-node [existing-node new-node]
   "Add NEW-NODE to right side of EXISTING-NODE.
-This mirrors the jQuery `after' function."
-  (assert (not @(:container-model new-node)))
-  (ref-set (:container-model new-node) (:container-model existing-node))
+This mirrors the jQuery `after' function:
+  http://api.jquery.com/after/"
   (let [left-node @(:left existing-node)
         right-node @(:right existing-node)
-        container-model (:container-model existing-node)
-        event-router (:event-router @container-model)]
-    (when (= existing-node (:tail-node container-model))
-      (ref-set (:tail-node container-model) new-node))
+        container-model @(:container-model existing-node)
+        event-router (:event-router container-model)]
+    (assert (not @(:container-model new-node)))
+    (ref-set (:container-model new-node) container-model)
+    ;; Adding a node behind the tail.
+    (when (= existing-node (:tail container-model))
+      (ref-set (:tail container-model) new-node))
+
     (cond
      right-node
      (do
@@ -63,13 +65,19 @@ This mirrors the jQuery `after' function."
 
 (defn before-container-model-node [existing-node new-node]
   "Add NEW-NODE to left side of EXISTING-NODE.
-This mirrors the jQuery `before' function."
-  (assert (not @(:container-model new-node)))
-  (ref-set (:container-model new-node) (:container-model existing-node))
+This mirrors the jQuery `before' function:
+  http://api.jquery.com/before/"
   (let [left-node @(:left existing-node)
         right-node @(:right existing-node)
         container-model @(:container-model existing-node)
         event-router @(:event-router container-model)]
+    ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
+    (assert (not @(:container-model new-node)))
+    (ref-set (:container-model new-node) container-model)
+    ;; Adding a node in front of the head?
+    (when (= existing-node (:head container-model))
+      (ref-set (:head container-model) new-node))
+
     (cond
      left-node
      (do
