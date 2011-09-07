@@ -100,7 +100,9 @@ Returns a string."
 
 (defn generate-aid
   "Generate Application/session scoped unique ID."
-  ([] (generate-aid @*application*))
+  ([] (if *application*
+        (generate-aid @*application*)
+        (generate-uid)))
   ([application]
      ((:id-generator application))))
 
