@@ -56,10 +56,13 @@
                                    (let [watch-key (generate-uid)]
                                      (add-watch (:event-router model) (generate-uid)
                                                 (fn [_ _ _ event-router-entries]
-                                                  (doseq [entry event-router-entries]
-                                                    (handle-container-view-event widget
-                                                                                 (first entry)
-                                                                                 (rest entry)))))
+                                                  (dosync
+                                                   (doseq [entry event-router-entries]
+                                                     (handle-container-view-event widget
+                                                                                  (first entry)
+                                                                                  (rest entry)))
+                                                   (when (seq event-router-entries)
+                                                     (ref-set (:event-router model) [])))))
                                      watch-key))
 
                                  :view-from-node-fn ;; TODO: Should this simply pass (:data node) directly?
