@@ -15,11 +15,6 @@
 (defn handle-container-view-event [container-view event-sym event-args]
   "Forward Container related operations/events to the View end."
   (case event-sym
-    append-container-model
-    (let [container-model (nth event-args 0)
-          new-node (nth event-args 1)]
-      (jqAppend container-view (view-of-node-in-context container-view new-node)))
-
     prepend-container-model
     (let [container-model (nth event-args 0)
           new-node (nth event-args 1)]

@@ -43,8 +43,7 @@ This mirrors the jQuery `append' function:
   (if (not (tail-node container-model)) ;; if list.lastNode == null
     (prepend-container-model container-model new-node) ;; insertBeginning(list, newNode)
   ;; else
-    (after-container-model-node (tail-node container-model) new-node)) ;; insertAfter(list, list.lastNode, newNode)
-  (alter (:event-router container-model) conj ['append-container-model container-model new-node]))
+    (after-container-model-node (tail-node container-model) new-node))) ;; insertAfter(list, list.lastNode, newNode)
 
 
 (declare before-container-model-node set-left-node set-right-node)
