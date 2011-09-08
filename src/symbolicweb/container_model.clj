@@ -16,7 +16,7 @@ This mirrors the jQuery `append' function:
   (let [tail-node (:tail-node container-model)]
     (if @tail-node
       (do
-        (after-container-model-node tail-node new-node)
+        (after-container-model-node @tail-node new-node)
         (ref-set tail-node new-node))
       (let [head-node (:head-node container-model)]
         (assert (not @head-node)) ;; TODO: Remove or make compile-time optional later.
@@ -34,7 +34,7 @@ This mirrors the jQuery `prepend' function:
   (let [head-node (:head-node container-model)]
     (if @head-node
       (do
-        (before-container-model-node head-node new-node)
+        (before-container-model-node @head-node new-node)
         (ref-set head-node new-node))
       (let [tail-node (:tail-node container-model)]
         (assert (not @tail-node)) ;; TODO: Remove or make compile-time optional-later.
