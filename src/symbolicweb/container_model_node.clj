@@ -12,6 +12,9 @@
 
 
 (defn remove-container-model-node [node]
+  "Pretty much does what you'd expect.
+This mirrors the jQuery `remove' function:
+  http://api.jquery.com/remove/"
   (let [left-node @(:left node)
         right-node @(:right node)
         container-model @(:container-model node)
@@ -71,7 +74,7 @@ This mirrors the jQuery `before' function:
   (let [left-node @(:left existing-node)
         right-node @(:right existing-node)
         container-model @(:container-model existing-node)
-        event-router @(:event-router container-model)]
+        event-router (:event-router container-model)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not @(:container-model new-node)))
     (ref-set (:container-model new-node) container-model)
