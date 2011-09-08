@@ -43,25 +43,25 @@
 
 
 (defn make-ContainerView [element-type_element-attributes container-model]
-  (with1 (make-HTMLElement (conj (ensure-vector element-type_element-attributes)
-                                 :set-model-fn
-                                 (fn [widget model]
-                                   (alter (:views model) conj widget)
-                                   (let [watch-key (generate-uid)]
-                                     (add-watch (:event-router model) (generate-uid)
-                                                (fn [_ _ _ event-router-entries]
-                                                  (dosync
-                                                   (doseq [entry event-router-entries]
-                                                     (handle-container-view-event widget
-                                                                                  (first entry)
-                                                                                  (rest entry)))
-                                                   (when (seq event-router-entries)
-                                                     (ref-set (:event-router model) [])))))
-                                     watch-key))
+  (make-HTMLElement (conj (ensure-vector element-type_element-attributes)
+                          :set-model-fn
+                          (fn [widget model]
+                            (alter (:views model) conj widget)
+                            (let [watch-key (generate-uid)]
+                              (add-watch (:event-router model) (generate-uid)
+                                         (fn [_ _ _ event-router-entries]
+                                           (dosync
+                                            (doseq [entry event-router-entries]
+                                              (handle-container-view-event widget
+                                                                           (first entry)
+                                                                           (rest entry)))
+                                            (when (seq event-router-entries)
+                                              (ref-set (:event-router model) [])))))
+                              watch-key))
 
-                                 :view-from-node-fn ;; TODO: Should this simply pass (:data node) directly?
-                                 (fn [container-view node]
-                                   (make-HTMLElement "p" (:data node)))
+                          :view-from-node-fn ;; TODO: Should this simply pass (:data node) directly?
+                          (fn [container-view node]
+                            (make-HTMLElement "p" (:data node)))
 
-                                 :view-of-node (ref {}))
-                           container-model)))
+                          :view-of-node (ref {}))
+                    container-model))

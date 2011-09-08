@@ -1,19 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn make-Container [element-type_element-attributes]
-  (make-HTMLElement (conj (if (vector? element-type_element-attributes)
-                            element-type_element-attributes
-                            [element-type_element-attributes])
-                          :set-model-fn (fn [widget model]
-                                          (let [watch-key (generate-uid)]
-                                            (add-watch model watch-key
-                                                       (fn [_ _ _ new-value]
-                                                         ;; container-model-event-router
-                                                         ))
-                                            watch-key)))))
-
-
 (defn ensure-visible [child parent]
   "Ensure CHILD and its children in turn is declared visible in context of PARENT.
 This will also call any FNs stored in :ON-VISIBLE-FNS for the children in question."
