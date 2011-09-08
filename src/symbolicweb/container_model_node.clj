@@ -11,58 +11,91 @@
    :views (ref [])})
 
 
+(defn left-node [container-model-node]
+  @(:left container-model-node))
+
+(defn set-left-node [container-model-node new-left-node]
+  (assert (= ::ContainerModelNode (:type container-model-node)))
+  (ref-set (:left container-model-node) new-left-node))
+
+
+(defn right-node [container-model-node]
+  (assert (= ::ContainerModelNode (:type container-model-node)))
+  @(:right container-model-node))
+
+(defn set-right-node [container-model-node new-right-node]
+  (assert (= ::ContainerModelNode (:type container-model-node)))
+  (ref-set (:right container-model-node) new-right-node))
+
+
+(defn container-model [container-model-node]
+  (assert (= ::ContainerModelNode (:type container-model-node)))
+  @(:container-model container-model-node))
+
+(defn set-container-model [container-model-node new-container-model]
+  (assert (= ::ContainerModelNode (:type container-model-node)))
+  (assert (= ::ContainerModel (:type new-container-model)))
+  (ref-set (:container-model container-model-node) new-container-model))
+
+
 (defn remove-container-model-node [node]
   "Pretty much does what you'd expect.
 This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
-  (let [left-node @(:left node)
-        right-node @(:right node)
-        container-model @(:container-model node)
-        event-router (:event-router container-model)]
-    (cond
-     (and left-node right-node)
-     (do
-       (ref-set (:left right-node) left-node)
-       (ref-set (:right left-node) right-node))
+  (let [container-model @(:container-model node)
+        event-router-ref (:event-router container-model)]
+    (alter (:length @(:container-model node)) dec)
 
-     left-node
-     (ref-set (:right left-node) nil)
+    ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
+    ;;
+    ;;   if node.prev == null
+    ;;       list.firstNode := node.next
+    ;;   else
+    ;;       node.prev.next := node.next
+    (if (not (left-node node))
+      (set-head-node container-model (right-node node))
+      (set-right-node (left-node node) (right-node node)))
 
-     right-node
-     (ref-set (:left right-node) nil)
+    ;;   if node.next == null
+    ;;       list.lastNode := node.prev
+    ;;   else
+    ;;       node.next.prev := node.prev
+    (if (not (right-node node))
+      (set-tail-node container-model (left-node node))
+      (set-left-node (right-node node) (left-node node)))
 
-     true
-     (println "REMOVE-CONTAINER-MODEL-NODE: TODO"))
-    (alter event-router conj ['remove-container-model-node node])))
+    (alter event-router-ref conj ['remove-container-model-node node])))
 
 
 (defn after-container-model-node [existing-node new-node]
   "Add NEW-NODE to right side of EXISTING-NODE.
 This mirrors the jQuery `after' function:
   http://api.jquery.com/after/"
-  (let [left-node @(:left existing-node)
-        right-node @(:right existing-node)
-        container-model @(:container-model existing-node)
+  (let [container-model @(:container-model existing-node)
         event-router (:event-router container-model)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not @(:container-model new-node)))
     (ref-set (:container-model new-node) container-model)
-    ;; Adding a node behind the tail.
-    (when (= existing-node (:tail container-model))
-      (ref-set (:tail container-model) new-node))
+    (alter (:length @(:container-model new-node)) inc)
 
-    (cond
-     right-node
-     (do
-       (ref-set (:right existing-node) new-node)
-       (ref-set (:left new-node) existing-node)
-       (ref-set (:right new-node) right-node)
-       (ref-set (:left right-node) new-node))
+    ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
+    ;;
+    ;; function insertAfter(List list, Node node, Node newNode)
+    ;;  newNode.prev := node
+    (set-left-node new-node existing-node)
+    ;;  newNode.next := node.next
+    (set-right-node new-node (right-node existing-node))
 
-     true
-     (do
-       (ref-set (:left new-node) existing-node)
-       (ref-set (:right existing-node) new-node)))
+    ;;  if node.next == null
+    ;;    list.lastNode := newNode
+    ;;  else
+    ;;    node.next.prev := newNode
+    (if (not (right-node existing-node))
+      (set-tail-node container-model new-node)
+      (set-left-node (right-node existing-node) new-node))
+
+    ;;  node.next := newNode
+    (set-right-node existing-node new-node)
 
     (alter event-router conj ['after-container-model-node existing-node new-node])))
 
@@ -71,32 +104,31 @@ This mirrors the jQuery `after' function:
   "Add NEW-NODE to left side of EXISTING-NODE.
 This mirrors the jQuery `before' function:
   http://api.jquery.com/before/"
-  (let [left-node @(:left existing-node)
-        right-node @(:right existing-node)
-        container-model @(:container-model existing-node)
+  (let [container-model @(:container-model existing-node)
         event-router (:event-router container-model)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not @(:container-model new-node)))
     (ref-set (:container-model new-node) container-model)
-    ;; Adding a node in front of the head?
-    (when (= existing-node (:head container-model))
-      (ref-set (:head container-model) new-node))
+    (alter (:length @(:container-model new-node)) inc)
 
-    (cond
-     left-node
-     (do
-       (ref-set (:right left-node) new-node)
-       (ref-set (:left new-node) left-node)
-       (ref-set (:right new-node) existing-node)
-       (ref-set (:left existing-node) new-node))
+    ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
+    ;;
+    ;; function insertBefore(List list, Node node, Node newNode)
+    ;; newNode.prev := node.prev
+    (set-left-node new-node (left-node existing-node))
 
-     true
-     (do
-       (ref-set (:left existing-node) new-node)
-       (ref-set (:right new-node) existing-node)))
+    ;; newNode.next := node
+    (set-right-node new-node existing-node)
+
+    ;; if node.prev == null
+    ;;   list.firstNode := newNode
+    ;; else
+    ;;   node.prev.next := newNode
+    (if (not (left-node existing-node))
+      (set-head-node container-model new-node)
+      (set-right-node (left-node existing-node) new-node))
+
+    ;; node.prev := newNode
+    (set-left-node existing-node new-node)
 
     (alter event-router conj ['before-container-model-node existing-node new-node])))
-
-
-;; jqAppend and jqPrepend are mirrored in the code found in container_model.clj via append-container-model-node
-;; and prepend-container-model-node respectively.
