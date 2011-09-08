@@ -43,3 +43,11 @@ This mirrors the jQuery `prepend' function:
         (ref-set head-node new-node)
         (ref-set tail-node new-node)
         (alter (:event-router container-model) conj ['prepend-container-model container-model new-node])))))
+
+
+(defn clear-container-model [container-model]
+  ;; Remove head node of CONTAINER-MODEL until trying to access the head node of CONTAINER-MODEL returns NIL.
+  (loop [node (head-node container-model)]
+    (when node
+      (remove-container-model-node node)
+      (recur (head-node container-model)))))
