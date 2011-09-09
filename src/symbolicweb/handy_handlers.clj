@@ -120,7 +120,7 @@ html, body, #sw-root {
       (sw-js-bootstrap)]
 
      [:body
-      (sw (:root-element @*viewport*))]))})
+      (render-html (:root-element @*viewport*))]))})
 
 
 (defn clear-session-page-handler []

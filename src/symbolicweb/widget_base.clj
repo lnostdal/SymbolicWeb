@@ -56,8 +56,6 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
     (cond
      (isa? widget-type ::Widget)
      (do
-       (when (and *in-html-container?* (not (:parent widget-m))) ;; TODO: The :parent test here?
-         (add-branch *in-html-container?* widget))
        (if (isa? widget-type ::HTMLContainer)
          (binding [*in-html-container?* widget]
            ((:render-html-fn widget-m) widget-m))
@@ -68,6 +66,9 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
 
 
 (defn sw [widget]
+  "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
+  (assert *in-html-container?*)
+  (add-branch *in-html-container?* widget)
   (render-html widget))
 
 
