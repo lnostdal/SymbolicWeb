@@ -6,7 +6,7 @@
   (if-let [existing-view (get @(:view-of-node @container-view) node)]
     existing-view
     (do
-      (assert (not find-only?))
+      (assert (not find-only?) (str "View of NODE not found."))
       (let [new-view ((:view-from-node-fn @container-view) container-view node)]
         (alter (:view-of-node @container-view) assoc node new-view)
         new-view))))
@@ -40,14 +40,19 @@
 (defn make-ContainerView [element-type_element-attributes container-model]
   (make-HTMLElement (conj (ensure-vector element-type_element-attributes)
                           :set-model-fn
-                          (fn [widget model]
-                            (alter (:views model) conj widget)
+                          (fn [container-view model]
+                            (alter (:views model) conj container-view)
+                            ;; Add any already existing nodes to CONTAINER-VIEW.
+                            (loop [node (ensure (:head-node container-model))]
+                              (when node
+                                (jqAppend container-view (view-of-node-in-context container-view node))
+                                (recur (ensure (:right node)))))
                             (let [watch-key (generate-uid)]
                               (add-watch (:event-router model) (generate-uid)
                                          (fn [_ _ _ event-router-entries]
                                            (dosync
                                             (doseq [entry event-router-entries]
-                                              (handle-container-view-event widget
+                                              (handle-container-view-event container-view
                                                                            (first entry)
                                                                            (rest entry)))
                                             (when (seq event-router-entries)
