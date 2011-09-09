@@ -7,7 +7,7 @@
 
 (defn make-ContainerModel []
   {:type ::ContainerModel
-   :event-router (ref [])
+   :event-router (ref []) ;; This is used to forward operations to one or more ContainerView instances.
    :head-node (ref nil)
    :tail-node (ref nil)
    :length (ref 0)
@@ -71,6 +71,7 @@ This mirrors the jQuery `prepend' function:
     (before-container-model-node (head-node container-model) new-node))) ;; insertBefore(list, list.firstNode, newNode)
 
 
+(declare remove-container-model-node)
 (defn clear-container-model [container-model]
   ;; Remove head node of CONTAINER-MODEL until trying to access the head node of CONTAINER-MODEL returns NIL.
   (loop [node (head-node container-model)]
