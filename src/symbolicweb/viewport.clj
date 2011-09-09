@@ -14,12 +14,12 @@
                     :response-str ""
                     :response-str-promise (promise)})]
       (dosync
-       (with1 (make-HTMLElement ["div" :viewport *viewport*]) ;; TODO: HTMLContainer would probably be more suitable.
+       (with1 (make-HTMLElement ["div" :viewport *viewport*])
          (alter *viewport* assoc
                 :root-element it
                 :widgets {(:id @it) it}))
        (alter *application* update-in [:viewports] assoc viewport-id *viewport*))
-      (when (:session? *application*)
+      (when (:session? @*application*)
         (swap! -viewports- #(assoc % viewport-id *viewport*)))
       *viewport*)))
 
@@ -37,7 +37,7 @@
      (letfn [(do-it []
                (let [viewport (:viewport @widget)]
                  (assert viewport)
-                 (if (and *in-channel-request?* (= *viewport* viewport))
+                 (if (and (thread-bound? #'*in-channel-request?*) (= *viewport* viewport))
                    (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline)) ;; AJAX.
                    (dosync ;; Comet.
                     (alter viewport
