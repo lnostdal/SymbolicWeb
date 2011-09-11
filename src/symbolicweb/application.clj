@@ -12,7 +12,7 @@
   "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-."
   (let [application-id (generate-uuid)
         application (ref (apply assoc {}
-                                :type 'Application
+                                :type ::Application
                                 :session? session?
                                 :id application-id
                                 :id-generator (let [last-id (atom 0N)]

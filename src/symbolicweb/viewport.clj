@@ -6,7 +6,7 @@
   "This will instantiate a new Viewport and also 'register' it as a part of *APPLICATION* and the server via -VIEWPORTS-."
   (let [viewport-id (str (generate-aid))]
     (binding [*viewport*
-              (ref {:type 'Viewport
+              (ref {:type ::Viewport
                     :id viewport-id
                     :agent (agent 42)
                     :last-activity-time (System/currentTimeMillis)
