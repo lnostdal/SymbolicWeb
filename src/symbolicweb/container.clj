@@ -47,8 +47,7 @@ end."
 
 (defn remove-branch [branch-root-node]
   "Remove BRANCH-ROOT-NODE and its children."
-  (let [root-m @branch-root-node]
-    (ensure-non-visible branch-root-node)))
+  (ensure-non-visible branch-root-node))
 
 
 (defn empty-branch [branch-root-node]
