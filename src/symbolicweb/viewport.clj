@@ -2,9 +2,10 @@
 
 (declare make-HTMLElement)
 
+(declare make-ContainerView make-ContainerModel add-branch)
 (defn make-Viewport []
   "This will instantiate a new Viewport and also 'register' it as a part of *APPLICATION* and the server via -VIEWPORTS-."
-  (let [viewport-id (str (generate-aid))]
+  (let [viewport-id (str (generate-uid))]
     (binding [*viewport*
               (ref {:type ::Viewport
                     :id viewport-id
@@ -13,12 +14,15 @@
                     :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
                     :response-str ""
                     :response-str-promise (promise)})]
+
       (dosync
-       (with1 (make-HTMLElement ["div" :viewport *viewport*])
+       (with1 (make-ContainerView "div" (make-ContainerModel))
          (alter *viewport* assoc
                 :root-element it
-                :widgets {(:id @it) it}))
+                :widgets {(:id @it) it})
+         (add-branch :root it))
        (alter *application* update-in [:viewports] assoc viewport-id *viewport*))
+
       (when (:session? @*application*)
         (swap! -viewports- #(assoc % viewport-id *viewport*)))
       *viewport*)))
