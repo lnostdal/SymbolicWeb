@@ -90,11 +90,11 @@
                             :application-constructor-fn ~application-constructor-fn})))
 
 
-(let [id-generator-value (atom 0N)]
+(let [id-generator-value (atom 0)]
   (defn generate-uid []
     "Generates an unique ID; non-universal or pr. server instance based.
 Returns a string."
-    (swap! id-generator-value inc')))
+    (swap! id-generator-value inc)))
 
 
 (defn generate-uuid []
@@ -104,11 +104,13 @@ Returns a string."
   (str (java.util.UUID/randomUUID)))
 
 
-(defn generate-aid
+;; TODO: I messed up once; shared IDs where they shouldn't be.
+#_(defn generate-aid
   "Generate Application/session scoped unique ID."
-  ([] (if *application*
-        (generate-aid @*application*)
-        (generate-uid)))
+  ([]
+     (if *application*
+       (generate-aid @*application*)
+       (generate-uid)))
   ([application]
      ((:id-generator application))))
 
