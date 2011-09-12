@@ -4,6 +4,16 @@
 (set! *print-level* 3)
 
 
+(defmacro typecase [e & clauses]
+  ;; (str 'clojure.lang.PersistentVector)
+  ;; (case (.getName (type []))
+  ;;   "clojure.lang.PersistentVector" (println "test"))
+  ;;
+  ;; <clgv> lnostdal_: another way is to use cond and instance? see ##(doc instance?)
+  ;; <lazybot> ⇒ "([c x]); Evaluates x and tests if it is an instance of the class c. Returns true or false"
+  )
+
+
 (defn ensure-vector [x]
   (if (vector? x)
     x
@@ -33,10 +43,13 @@
     (isa? (:type @obj) ::WidgetBase)))
 
 
+(defn ref? [x]
+  (= clojure.lang.Ref (type x)))
+
+
 (defn ensure-model [obj]
-  (if (string? obj)
-    (ref obj)
-    obj)) ;; Assume it is a Model..
+  (assert (ref? obj))
+  obj)
 
 
 (defn url-encode-wrap [text]
@@ -45,10 +58,6 @@
 
 (defn agent? [x]
   (= clojure.lang.Agent (type x)))
-
-
-(defn ref? [x]
-  (= clojure.lang.Ref (type x)))
 
 
 (defn default-parse-callback-data-handler [widget callback-data]
@@ -178,6 +187,9 @@ Returns a string."
 
 (defn root-element []
   (:root-element @*viewport*))
+
+(defn root-model []
+  (:model @(root-element)))
 
 
 (defn alert
