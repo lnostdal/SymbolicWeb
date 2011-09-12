@@ -30,7 +30,7 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
     (alter (:viewport widget-m) update-in [:widgets]
            dissoc (:id widget-m))
     (alter widget assoc
-           :parent nil
+           :parent :dead
            :viewport nil
            :children [])))
 
