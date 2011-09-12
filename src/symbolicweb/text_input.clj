@@ -5,21 +5,18 @@
 ;; * Error handling and feedback to user.
 
 
-(defn make-TextInput [model & {:keys [input-parsing-fn]
-                               :or {input-parsing-fn identity}}]
-  (with1 (make-HTMLElement ["input"
-                            :static-attributes {:type "text"}
-                            :input-parsing-fn input-parsing-fn
-                            :set-model-fn (fn [widget model]
-                                            (let [watch-key (generate-uid)]
-                                              (add-watch model watch-key
-                                                         (fn [_ _ _ new-value]
-                                                           (jqVal widget (str new-value))))
-                                              (ref-set model @model) ;; Trigger initual update.
-                                              watch-key))]
-                           model)
-    (let [model (:model @it)]
-      (set-event-handler "change" it
-                         (fn [& {:keys [new-value]}]
-                           (ref-set model ((:input-parsing-fn @it) new-value)))
-                         :callback-data {:new-value "' + $(this).val() + '"}))))
+(defn make-TextInput [model & attributes]
+  (with1 (apply make-HTMLElement "input" model
+                :static-attributes {:type "text"}
+                :handle-model-event-fn (fn [widget new-value]
+                                         (jqVal widget new-value))
+                :connect-model-view-fn (fn [model widget]
+                                         (alter (:views model) conj widget)
+                                         (jqVal widget (get-value model)))
+                attributes)
+    (set-event-handler "change" it
+                       (fn [& {:keys [new-value]}]
+                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                            (input-parsing-fn new-value)
+                                            new-value)))
+                       :callback-data {:new-value "' + $(this).val() + '"})))

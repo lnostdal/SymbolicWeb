@@ -11,11 +11,11 @@
              "Connection"   "keep-alive"}
    :body
    (with-local-vars [our-response-str ""]
-     (deref (:response-str-promise @*viewport*) -comet-timeout- nil)
+     (deref (:response-str-promise @*viewport*) -comet-timeout- nil) ;; Hanging HTTP request.
      (dosync
       (alter *viewport* (fn [m]
                           (var-set our-response-str (:response-str m))
-                          (assoc m
+                         (assoc m
                             :response-str ""
                             :response-str-promise (promise)))))
      (str (var-get our-response-str) "_sw_comet_response = true;"))})
@@ -29,13 +29,13 @@
         widget (get (:widgets @*viewport*) widget-id)
         callback (get (:callbacks @widget) callback-id)
         [callback-fn callback-data] callback]
-    (binding [*in-channel-request?* ""]
-      (dosync
-       (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data)))
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Connection"   "keep-alive"}
-       :body (str *in-channel-request?* "_sw_comet_response = true;")})))
+    (dosync
+     (binding [*in-channel-request?* ""]
+       (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
+       {:status 200
+        :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                  "Connection"   "keep-alive"}
+        :body (str *in-channel-request?* "_sw_comet_response = true;")}))))
 
 
 (defn default-aux-handler []

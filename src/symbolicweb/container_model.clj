@@ -5,13 +5,13 @@
 ;; I guess I need to take a closer look at Clojure protocols, defrecord and deftype etc. when I have time. This might also make
 ;; type-checking easier.
 
+(derive ::ContainerModel ::Model)
 (defn make-ContainerModel []
   {:type ::ContainerModel
-   :event-router (ref []) ;; This is used to forward operations to one or more ContainerView instances.
    :head-node (ref nil)
    :tail-node (ref nil)
    :length (ref 0)
-   :views (ref [])})
+   :views (ref #{})})
 
 
 (defn tail-node [container-model]
@@ -32,11 +32,18 @@
   (ref-set (:head-node container-model) new-head-node))
 
 
+(declare handle-container-view-event)
+(defn notify-views [container-model event-sym & event-args]
+  (doseq [container-view (ensure (:views container-model))]
+    (handle-container-view-event container-view event-sym event-args)))
+
+
 (declare prepend-container-model after-container-model-node)
 (defn append-container-model [container-model new-node]
   "Add NEW-NODE to end of the contained nodes in CONTAINER-MODEL.
 This mirrors the jQuery `append' function:
   http://api.jquery.com/append/"
+  (assert (= ::ContainerModelNode (:type new-node)))
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertEnd(List list, Node newNode)
@@ -51,6 +58,7 @@ This mirrors the jQuery `append' function:
   "Add NEW-NODE to beginning of the contained nodes in CONTAINER-MODEL.
 This mirrors the jQuery `prepend' function:
   http://api.jquery.com/prepend/"
+  (assert (= ::ContainerModelNode (:type new-node)))
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertBeginning(List list, Node newNode)
@@ -66,7 +74,7 @@ This mirrors the jQuery `prepend' function:
       (set-tail-node container-model new-node) ;; list.lastNode  := newNode
       (set-left-node new-node nil) ;; newNode.prev := null
       (set-right-node new-node nil) ;; newNode.next := null
-      (alter (:event-router container-model) conj ['prepend-container-model container-model new-node]))
+      (notify-views container-model 'prepend-container-model container-model new-node))
     ;; else
     (before-container-model-node (head-node container-model) new-node))) ;; insertBefore(list, list.firstNode, newNode)
 

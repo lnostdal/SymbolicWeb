@@ -37,31 +37,29 @@
       (jqRemove (view-of-node-in-context container-view node true)))))
 
 
-(defn make-ContainerView [element-type_element-attributes container-model]
-  (make-HTMLElement (conj (ensure-vector element-type_element-attributes)
-                          :set-model-fn
-                          (fn [container-view model]
-                            (alter (:views model) conj container-view)
-                            ;; Add any already existing nodes to CONTAINER-VIEW.
-                            (loop [node (ensure (:head-node container-model))]
-                              (when node
-                                (jqAppend container-view (view-of-node-in-context container-view node))
-                                (recur (ensure (:right node)))))
-                            (let [watch-key (generate-uid)]
-                              (add-watch (:event-router model) (generate-uid)
-                                         (fn [_ _ _ event-router-entries]
-                                           (dosync
-                                            (doseq [entry event-router-entries]
-                                              (handle-container-view-event container-view
-                                                                           (first entry)
-                                                                           (rest entry)))
-                                            (when (seq event-router-entries)
-                                              (ref-set (:event-router model) [])))))
-                              watch-key))
+(derive ::ContainerView ::HTMLElement)
+(defn make-ContainerView [html-element-type container-model & attributes]
+  (assert (= ::ContainerModel (:type container-model)))
+  (apply make-HTMLElement html-element-type container-model
+         :type ::ContainerView
 
-                          :view-from-node-fn ;; TODO: Should this simply pass (:data node) directly?
-                          (fn [container-view node]
-                            (make-HTMLElement "p" (:data node)))
+         :connect-model-view-fn
+         (fn [container-model container-view]
+           ;; Add any already existing nodes to CONTAINER-VIEW.
+           (loop [node (ensure (:head-node container-model))]
+             (when node
+               (jqAppend container-view (view-of-node-in-context container-view node))
+               (recur (ensure (:right node)))))
+           ;; Let CONTAINER-VIEW know about any future changes to CONTAINER-MODEL.
+           (alter (:views container-model) conj container-view))
 
-                          :view-of-node (ref {}))
-                    container-model))
+         :disconnect-model-view-fn
+         (fn [widget]
+           (alter (:views container-model) disj widget))
+
+         :view-from-node-fn ;; TODO: Should this simply pass (:data node) directly?
+         (fn [container-view node]
+           (make-HTMLElement "p" (make-ValueModel (:data node))))
+
+         :view-of-node (ref {})
+         attributes))

@@ -97,50 +97,59 @@ Returns WIDGET."
               key_vals)))
 
 
+(defn disconnect-model-view [model watch-key]
+  (remove-watch model watch-key))
+
+
+(defn connect-model-view [model view cb]
+  (let [view-m @view]
+    ((:disconnect-model-view-fn view-m) view) ;; ADD-WATCH isn't "STM safe".
+    (let [key (generate-uid)]
+      (add-watch model key (fn [_ _ old-value new-value]
+                             (dosync (cb old-value new-value))))
+      (ref-set (:watch-key view-m) key)
+      (cb @model @model))))
+
+
 (derive ::Widget ::WidgetBase)
 (defn make-Widget [& key_vals]
   (apply make-WidgetBase key_vals))
 
 
 (derive ::HTMLElement ::Widget)
-(defn make-HTMLElement
-  ([element-type_element-attributes] (make-HTMLElement element-type_element-attributes (ref "")))
-  ([element-type_element-attributes element-content]
-  "HTML-CONTENT will be evaluated as TEXT on the client-end by default.
-Set ESCAPE-HTML? to FALSE to change this."
-  (let [[element-type & element-attributes] (ensure-vector element-type_element-attributes)
-        element-content (ensure-model element-content)
-        html-element (apply make-Widget
-                            :type ::HTMLElement
-                            :html-element-type element-type
-                            :model element-content
-                            :set-model-fn (fn [widget model]
-                                            (let [watch-key (generate-uid)]
-                                              (add-watch model watch-key
-                                                         (fn [_ _ _ new-value]
-                                                           (jqHTML widget new-value)))
-                                              (ref-set model @model) ;; Trigger initial update.
-                                              watch-key))
-                            :render-static-attributes-fn #(with-out-str
-                                                            (doseq [key_val (:static-attributes %)]
-                                                              (print (str " "
-                                                                          (name (key key_val))
-                                                                          "='"
-                                                                          (name (val key_val)) ;; TODO: Escaping.
-                                                                          "'"))))
-                            :render-html-fn #(str "<" (:html-element-type %)
-                                                  " id='" (:id %) "'" ((:render-static-attributes-fn %) %) ">"
-                                                  (render-aux-html %)
-                                                  (let [script (str (render-aux-js %) (render-events %))]
-                                                    (when (seq script)
-                                                      (str "<script type='text/javascript'>" script "</script>")))
-                                                  "</" (:html-element-type %) ">")
-                            element-attributes)]
-    ((:set-model-fn @html-element) html-element element-content)
-    html-element)))
+(defn make-HTMLElement [html-element-type model & attributes]
+    (apply make-Widget
+           :type ::HTMLElement
+           :html-element-type html-element-type
+           :model model
+           :handle-model-event-fn (fn [widget new-value]
+                                    (jqHTML widget new-value))
+           :connect-model-view-fn (fn [model widget]
+                                    (alter (:views model) conj widget)
+                                    (jqHTML widget (get-value model))) ;; Trigger initial update.
+           :disconnect-model-view-fn (fn [widget]
+                                       (alter (:views model) disj widget))
+           :render-static-attributes-fn #(with-out-str
+                                           (doseq [key_val (:static-attributes %)]
+                                             (print (str " "
+                                                         (name (key key_val))
+                                                         "='"
+                                                         (name (val key_val)) ;; TODO: Escaping.
+                                                         "'"))))
+           :render-html-fn #(str "<" (:html-element-type %)
+                                 " id='" (:id %) "'" ((:render-static-attributes-fn %) %) ">"
+                                 (render-aux-html %)
+                                 (let [script (str (render-aux-js %) (render-events %))]
+                                   (when (seq script)
+                                     (str "<script type='text/javascript'>" script "</script>")))
+                                 "</" (:html-element-type %) ">")
+           attributes))
 
 
+;; TODO: Button is actually a container.
 (derive ::Button ::HTMLElement)
-(defn make-Button [element-content]
-  (make-HTMLElement ["button" :type ::Button]
-                    element-content))
+(defn make-Button [label-str & attributes]
+  "Supply :MODEL as attribute if needed. This will override what's provided via LABEL-STR."
+  (apply make-HTMLElement "button" (vm label-str)
+         :type ::Button
+         attributes))

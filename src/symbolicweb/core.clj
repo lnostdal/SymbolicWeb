@@ -13,6 +13,7 @@
   (:require symbolicweb.common)
   (:require symbolicweb.viewport)
   (:require symbolicweb.jquery)
+  (:require symbolicweb.model)
   (:require symbolicweb.widget-base)
   (:require symbolicweb.text-input)
   (:require symbolicweb.html-elements)

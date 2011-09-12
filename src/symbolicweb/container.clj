@@ -13,11 +13,17 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
       (on-visible-fn))
     (doseq [child-of-child (:children child-m)]
       (ensure-visible child-of-child child))))
+      ((:connect-model-view-fn child-m) (:model child-m) child)
+      (doseq [on-visible-fn (:on-visible-fns child-m)]
+        (on-visible-fn))
+      (doseq [child-of-child (:children child-m)]
+        (ensure-visible child-of-child child))))
 
 
 (defn ensure-non-visible [widget]
   "Remove WIDGET and its children from the DOM."
   (let [widget-m @widget]
+    ((:disconnect-model-view-fn widget-m) widget)
     ;; Remove WIDGET from children of parent of WIDGET.
     (alter (:parent widget-m)
            assoc :children (remove widget (:children (:parent widget-m))))

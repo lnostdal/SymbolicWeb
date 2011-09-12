@@ -1,14 +1,14 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn make-ContainerModelNode [left right data]
+(derive ::ContainerModelNode ::Model)
+(defn make-ContainerModelNode [data]
   "Doubly linked list node."
   {:type ::ContainerModelNode
    :container-model (ref nil)
    :left (ref left)
    :right (ref right)
-   :data data
-   :views (ref [])})
+   :data data})
 
 
 (defn left-node [container-model-node]
@@ -42,8 +42,8 @@
   "Pretty much does what you'd expect.
 This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
-  (let [container-model @(:container-model node)
-        event-router-ref (:event-router container-model)]
+  (assert (= ::ContainerModelNode (:type node)))
+  (let [container-model @(:container-model node)]
     (alter (:length @(:container-model node)) dec)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
@@ -64,15 +64,16 @@ This mirrors the jQuery `remove' function:
       (set-tail-node container-model (left-node node))
       (set-left-node (right-node node) (left-node node)))
 
-    (alter event-router-ref conj ['remove-container-model-node node])))
+    (notify-views container-model 'remove-container-model-node node)))
 
 
 (defn after-container-model-node [existing-node new-node]
   "Add NEW-NODE to right side of EXISTING-NODE.
 This mirrors the jQuery `after' function:
   http://api.jquery.com/after/"
-  (let [container-model @(:container-model existing-node)
-        event-router (:event-router container-model)]
+  (assert (= ::ContainerModelNode (:type new-node)))
+  (assert (= ::ContainerModelNode (:type existing-node)))
+  (let [container-model @(:container-model existing-node)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not @(:container-model new-node)))
     (ref-set (:container-model new-node) container-model)
@@ -97,15 +98,16 @@ This mirrors the jQuery `after' function:
     ;;  node.next := newNode
     (set-right-node existing-node new-node)
 
-    (alter event-router conj ['after-container-model-node existing-node new-node])))
+    (notify-views container-model 'after-container-model-node existing-node new-node)))
 
 
 (defn before-container-model-node [existing-node new-node]
   "Add NEW-NODE to left side of EXISTING-NODE.
 This mirrors the jQuery `before' function:
   http://api.jquery.com/before/"
-  (let [container-model @(:container-model existing-node)
-        event-router (:event-router container-model)]
+  (assert (= ::ContainerModelNode (:type new-node)))
+  (assert (= ::ContainerModelNode (:type existing-node)))
+  (let [container-model @(:container-model existing-node)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not @(:container-model new-node)))
     (ref-set (:container-model new-node) container-model)
@@ -131,4 +133,4 @@ This mirrors the jQuery `before' function:
     ;; node.prev := newNode
     (set-left-node existing-node new-node)
 
-    (alter event-router conj ['before-container-model-node existing-node new-node])))
+    (notify-views container-model 'before-container-model-node existing-node new-node)))
