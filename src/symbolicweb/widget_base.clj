@@ -97,20 +97,6 @@ Returns WIDGET."
               key_vals)))
 
 
-(defn disconnect-model-view [model watch-key]
-  (remove-watch model watch-key))
-
-
-(defn connect-model-view [model view cb]
-  (let [view-m @view]
-    ((:disconnect-model-view-fn view-m) view) ;; ADD-WATCH isn't "STM safe".
-    (let [key (generate-uid)]
-      (add-watch model key (fn [_ _ old-value new-value]
-                             (dosync (cb old-value new-value))))
-      (ref-set (:watch-key view-m) key)
-      (cb @model @model))))
-
-
 (derive ::Widget ::WidgetBase)
 (defn make-Widget [& key_vals]
   (apply make-WidgetBase key_vals))
