@@ -108,11 +108,17 @@ Returns WIDGET."
            :type ::HTMLElement
            :html-element-type html-element-type
            :model model
+           :escape-html? true
            :handle-model-event-fn (fn [widget new-value]
-                                    (jqHTML widget new-value))
+                                    (jqHTML widget (if (:escape-html? @widget)
+                                                     (escape-html new-value)
+                                                     new-value)))
            :connect-model-view-fn (fn [model widget]
                                     (alter (:views model) conj widget)
-                                    (jqHTML widget (get-value model))) ;; Trigger initial update.
+                                    ;; Trigger initial update.
+                                    (jqHTML widget (if (:escape-html? @widget)
+                                                     (escape-html (get-value model))
+                                                     (get-value model))))
            :disconnect-model-view-fn (fn [widget]
                                        (alter (:views model) disj widget))
            :render-static-attributes-fn #(with-out-str
@@ -138,4 +144,5 @@ Returns WIDGET."
   "Supply :MODEL as attribute if needed. This will override what's provided via LABEL-STR."
   (apply make-HTMLElement "button" (vm label-str)
          :type ::Button
+         :escape-html? false
          attributes))
