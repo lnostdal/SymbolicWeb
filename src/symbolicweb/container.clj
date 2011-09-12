@@ -64,5 +64,4 @@ end."
 
 
 (defn clear-root []
-  (dosync
-   (jqEmpty (root-element))))
+  (jqEmpty (root-element)))
