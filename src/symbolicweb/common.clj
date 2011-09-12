@@ -179,9 +179,6 @@ Returns a string."
 (defn root-element []
   (:root-element @*viewport*))
 
-(defn root-model []
-  (:model @(root-element)))
-
 
 (defn alert
   ([msg] (alert msg (root-element)))

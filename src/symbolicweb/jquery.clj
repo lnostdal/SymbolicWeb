@@ -98,5 +98,5 @@
   ([widget]
      (str "$('#" (widget-id-of widget) "').val();"))
   ([widget new-value]
-     (add-response-chunk (str "$('#" (widget-id-of widget) "').val(" (url-encode-wrap new-value) ");")
+     (add-response-chunk (str "$('#" (widget-id-of widget) "').val(" (url-encode-wrap (str new-value)) ");")
                          widget)))
