@@ -1,7 +1,5 @@
 (in-ns 'symbolicweb.core)
 
-(declare make-HTMLElement)
-
 (declare make-ContainerView make-ContainerModel add-branch)
 (defn make-Viewport []
   "This will instantiate a new Viewport and also 'register' it as a part of *APPLICATION* and the server via -VIEWPORTS-."
@@ -30,8 +28,7 @@
 
 (defn add-on-visible-fn [widget fn]
   "FN is code to execute when WIDGET is made visible on the client/DOM end."
-  (dosync
-   (alter widget update-in [:on-visible-fns] conj fn)))
+  (alter widget update-in [:on-visible-fns] conj fn))
 
 
 (defn add-response-chunk
@@ -41,18 +38,17 @@
      (letfn [(do-it []
                (let [viewport (:viewport @widget)]
                  (assert viewport)
-                 (if (and (thread-bound? #'*in-channel-request?*) (= *viewport* viewport))
-                   (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline)) ;; AJAX.
-                   (dosync ;; Comet.
-                    (alter viewport
-                           #(let [promise (:response-str-promise %)]
-                              (when-not (realized? promise)
-                                (deliver promise 42))
-                              (update-in % [:response-str] str new-chunk \newline))))))
+                 (if (and (thread-bound? #'*in-channel-request?*) (= *viewport* viewport)) ;; AJAX?
+                   (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
+                   (alter viewport
+                          #(let [promise (:response-str-promise %)]
+                             (when-not (realized? promise)
+                               (deliver promise 42))
+                             (update-in % [:response-str] str new-chunk \newline)))))
                new-chunk)]
        (if *with-js?*
          new-chunk
-         (if (:viewport @widget)
+         (if (:viewport @widget) ;; Visible?
            (do-it)
            (add-on-visible-fn widget do-it))))
      new-chunk))

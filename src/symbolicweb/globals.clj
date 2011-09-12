@@ -24,7 +24,7 @@
 
 
 (def -gc-thread-
-  "This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- end checks their :LAST-ACTIVITY-TIME properties
+  "This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME properties
 removing unused or timed out sessions."
   (agent 42))
 

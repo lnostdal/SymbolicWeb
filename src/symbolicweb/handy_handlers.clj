@@ -15,7 +15,7 @@
      (dosync
       (alter *viewport* (fn [m]
                           (var-set our-response-str (:response-str m))
-                         (assoc m
+                          (assoc m
                             :response-str ""
                             :response-str-promise (promise)))))
      (str (var-get our-response-str) "_sw_comet_response = true;"))})
