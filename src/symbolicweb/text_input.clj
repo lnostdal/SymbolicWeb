@@ -5,8 +5,10 @@
 ;; * Error handling and feedback to user.
 
 
+(derive ::TextInput ::HTMLElement)
 (defn make-TextInput [model & attributes]
   (with1 (apply make-HTMLElement "input" model
+                :type ::TextInput
                 :static-attributes {:type "text"}
                 :handle-model-event-fn (fn [widget new-value]
                                          (jqVal widget new-value))
@@ -20,3 +22,12 @@
                                             (input-parsing-fn new-value)
                                             new-value)))
                        :callback-data {:new-value "' + $(this).val() + '"})))
+
+
+
+(derive ::IntInput ::TextInput)
+(defn make-IntInput [model & attributes]
+  (apply make-TextInput model
+         :type ::IntInput
+         :input-parsing-fn #(Integer/parseInt %)
+         attributes))
