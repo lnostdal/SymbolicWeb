@@ -14,7 +14,7 @@
                                          (jqVal widget new-value))
                 :connect-model-view-fn (fn [model widget]
                                          (alter (:views model) conj widget)
-                                         (jqVal widget (get-value model)))
+                                         ((:handle-model-event-fn @widget) widget (get-value model)))
                 attributes)
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]
