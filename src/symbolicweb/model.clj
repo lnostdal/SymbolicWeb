@@ -18,6 +18,7 @@
 
 
 (defn get-value [value-model]
+  (assert (= ::ValueModel (:type value-model)))
   @(:value value-model))
 
 

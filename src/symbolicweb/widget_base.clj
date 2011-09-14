@@ -75,6 +75,7 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
 (defn set-event-handler [event-type widget callback-fn & {:keys [callback-data]}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
+  ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
   (alter widget update-in [:callbacks] assoc event-type [callback-fn callback-data])
   widget)
 
@@ -87,10 +88,8 @@ Returns WIDGET."
 (defn make-WidgetBase [& key_vals]
   (ref (apply assoc (make-ID)
               :type ::WidgetBase
-              :set-model-fn (fn [new-model] [])
               :on-visible-fns []
-              :children [] ;; Note that order etc. doesn't matter here; this is only used to track
-              ;; visibility on the client-end.
+              :children [] ;; Note that order etc. doesn't matter here; this is only used to track visibility on the client-end.
               :callbacks {} ;; event-name -> [handler-fn callback-data]
               :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
               :parse-callback-data-handler #'default-parse-callback-data-handler
@@ -142,6 +141,7 @@ Returns WIDGET."
 (derive ::Button ::HTMLElement)
 (defn make-Button [label-str & attributes]
   "Supply :MODEL as attribute if needed. This will override what's provided via LABEL-STR."
+  (assert (string? label-str))
   (apply make-HTMLElement "button" (vm label-str)
          :type ::Button
          :escape-html? false

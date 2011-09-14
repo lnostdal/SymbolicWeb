@@ -92,7 +92,6 @@
   `(~signature ~'%with-object))
 
 
-
 (defmacro defapp [name fit-fn application-constructor-fn]
   `(swap! -application-types-
           #(assoc % '~name {:fit-fn ~fit-fn

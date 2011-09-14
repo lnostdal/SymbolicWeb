@@ -5,7 +5,6 @@
 (defn %make-HTMLContainer [content-fn]
   (make-HTMLElement "div" content-fn
                     :type ::HTMLContainer
-                    :set-model-fn (fn [widget model])
                     :connect-model-view-fn (fn [model view])
                     :disconnect-model-view-fn (fn [widget])
                     :render-aux-html-fn (fn [_] (content-fn))))
