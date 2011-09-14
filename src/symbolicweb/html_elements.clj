@@ -3,29 +3,29 @@
 
 ;; TODO: Macro this shit.
 
-(defn mk-p [model]
-  (make-HTMLElement "p" model))
+(defn mk-p [model & attributes]
+  (apply make-HTMLElement "p" model attributes))
 
-(defn sw-p [model]
-  (sw (mk-p model)))
-
-
-(defn mk-b [model]
-  (make-HTMLElement "b" model))
-
-(defn sw-b [model]
-  (sw (mk-b model)))
+(defn sw-p [model & attributes]
+  (sw (apply mk-p model attributes)))
 
 
-(defn mk-h1 [model]
-  (make-HTMLElement "h1" model))
+(defn mk-b [model & attributes]
+  (apply make-HTMLElement "b" model attributes))
 
-(defn sw-h1 [model]
-  (sw (mk-h1 model)))
+(defn sw-b [model & attributes]
+  (sw (apply mk-b model attributes)))
 
 
-(defn mk-h2 [model]
-  (make-HTMLElement "h2" model))
+(defn mk-h1 [model & attributes]
+  (apply make-HTMLElement "h1" model attributes))
 
-(defn sw-h2 [model]
-  (sw (mk-h2 model)))
+(defn sw-h1 [model & attributes]
+  (sw (apply mk-h1 model attributes)))
+
+
+(defn mk-h2 [model & attributes]
+  (apply make-HTMLElement "h2" model attributes))
+
+(defn sw-h2 [model & attributes]
+  (sw (apply mk-h2 model attributes)))
