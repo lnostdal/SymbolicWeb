@@ -14,6 +14,27 @@
   )
 
 
+(defn seconds-to-hms [seconds]
+  "Returns a vector of three values; hours, minutes and seconds in whole (integer) numbers."
+  [(int (/ seconds 3600)) ;; hours
+   (int (/ (rem seconds 3600) 60)) ;; minutes
+   (rem (rem seconds 3600) 60)]) ;; seconds
+
+
+(defn seconds-to-hms-str [seconds]
+  "This renders the result of SECONDS-TO-HMS into a string such as: 1h 5m 42s"
+  (let [[h m s] (seconds-to-hms seconds)]
+    (str (when (pos? h)
+           (str h "h "))
+         (when (or (pos? h)
+                   (pos? m))
+           (str m "m "))
+         (when (or (pos? h)
+                   (pos? m)
+                   (pos? s))
+           (str s "s")))))
+
+
 (defn ensure-vector [x]
   (if (vector? x)
     x
