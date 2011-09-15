@@ -35,6 +35,13 @@
            (str s "s")))))
 
 
+(defn hms-to-seconds [hours minutes seconds]
+  "HOURS, MINUTES and SECONDS are integers. This returns a single integer value; seconds."
+  (+ (* hours 60 60)
+     (* minutes 60)
+     seconds))
+
+
 (defn ensure-vector [x]
   (if (vector? x)
     x
