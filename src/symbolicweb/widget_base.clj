@@ -118,7 +118,8 @@ Returns WIDGET."
            :connect-model-view-fn (fn [model widget]
                                     (alter (:views model) conj widget)
                                     (when (:trigger-initial-update? @widget)
-                                      ((:handle-model-event-fn @widget) widget (get-value model))))
+                                      ((:handle-model-event-fn @widget) widget
+                                       ((:output-parsing-fn @widget) (get-value model)))))
            :disconnect-model-view-fn (fn [widget]
                                        (alter (:views model) disj widget))
            :render-static-attributes-fn #(with-out-str
