@@ -27,7 +27,7 @@
 
 
 (defn add-on-visible-fn [widget fn]
-  "FN is code to execute when WIDGET is made visible on the client/DOM end."
+  "FN is code to execute when WIDGET is added to the client/DOM end."
   (alter widget update-in [:on-visible-fns] conj fn))
 
 

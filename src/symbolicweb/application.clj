@@ -3,11 +3,11 @@
 (defn make-Application [[& {:keys [request-handler reload-handler rest-handler ajax-handler aux-handler
                                    session?]
                             :or {request-handler #'default-request-handler
-                                 reload-handler  (fn [])
-                                 rest-handler    #'default-rest-handler
-                                 ajax-handler    #'default-ajax-handler
-                                 aux-handler     #'default-aux-handler
-                                 session?        true}}]
+                                 reload-handler (fn [])
+                                 rest-handler   #'default-rest-handler
+                                 ajax-handler   #'default-ajax-handler
+                                 aux-handler    #'default-aux-handler
+                                 session?       true}}]
                         & app-args]
   "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-."
   (let [application-id (generate-uuid)

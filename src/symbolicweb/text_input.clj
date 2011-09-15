@@ -1,7 +1,11 @@
 (in-ns 'symbolicweb.core)
 
 ;; TODO:
+;; * Input parsing should be or happen on the Model end so data flowing from back-ends (DBs) can benefit from
+;;   it too.
+
 ;; * Better and more flexible parameter handling; static-attributes/CSS etc..
+
 ;; * Error handling and feedback to user.
 
 
@@ -22,7 +26,6 @@
                                             (input-parsing-fn new-value)
                                             new-value)))
                        :callback-data {:new-value "' + $(this).val() + '"})))
-
 
 
 (derive ::IntInput ::TextInput)

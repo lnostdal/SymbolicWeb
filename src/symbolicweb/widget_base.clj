@@ -110,8 +110,6 @@ Returns WIDGET."
            :model model
            :escape-html? true
            :output-parsing-fn (fn [new-value] new-value)
-           :model-new-value-governor (fn [widget new-value]
-                                       new-value)
            :handle-model-event-fn (fn [widget new-value]
                                     (jqHTML widget (if (:escape-html? @widget)
                                                      (escape-html new-value)
