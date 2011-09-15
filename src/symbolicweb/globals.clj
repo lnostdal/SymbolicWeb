@@ -27,14 +27,8 @@
   (atom {}))
 
 
-;; TODO: yeah, this stuff; remove-branch needs to be called to disconnect Widgets from any long-living Models.
-(declare jqRemove)
-#_(when (and (= ::Viewport (:type obj))
-             (:root-element obj))
-    (dosync
-     (jqRemove (:root-element obj))))
-
-
+;; TODO: Hack; forward decl and def since -GC-THREAD- is started right away.
+(defn ensure-non-visible [widget])
 (defn do-gc []
   ;;(println "..DO-GC.!")
   (let [now (System/currentTimeMillis)
@@ -42,12 +36,18 @@
                      (doseq [obj @cnt]
                        (let [obj @(val obj)]
                          (when (< timeout (- now (:last-activity-time obj)))
-                           ;;(println "DO-GC: Timeout found!")
                            (swap! cnt #(dissoc % (:id obj)))
-                           (when (= (:type obj) ::Application)
-                             ;;(println "DO-GC: Updating Application counter..")
+                           (case (:type obj)
+                             ::Application
                              (dosync
-                              (set-value -num-applications-model- (count @-applications-))))))))]
+                              (println "GC: Application")
+                              (set-value -num-applications-model- (count @-applications-)))
+                             ::Viewport
+                             (dosync
+                              (println "GC: Viewport")
+                              ;; This will ensure that Models that hang around "for a long time" (e.g. global vars)
+                              ;; doesn't try to forward their updates to stale Widgets/Viewports.
+                              (ensure-non-visible (:root-element obj))))))))]
     (checker-fn -applications- -application-timeout-)
     (checker-fn -viewports- -viewport-timeout-)))
 
@@ -59,7 +59,7 @@
     (send-off it (fn [_]
                    (loop []
                      (do-gc)
-                     (Thread/sleep 5000)
+                     (Thread/sleep 5000) ;; TODO: Probably too low, and magic value anyway.
                      (recur))))
     it))
 
