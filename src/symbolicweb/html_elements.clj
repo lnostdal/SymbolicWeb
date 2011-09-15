@@ -29,3 +29,10 @@
 
 (defn sw-h2 [model & attributes]
   (sw (apply mk-h2 model attributes)))
+
+
+(defn mk-td [model & attributes]
+  (apply make-HTMLElement "td" model attributes))
+
+(defn sw-td [model & attributes]
+  (sw (apply mk-td model attributes)))
