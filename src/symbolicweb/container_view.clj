@@ -5,8 +5,7 @@
   "Find or create (if not found) new View of NODE in context of CONTAINER-VIEW."
   (if-let [existing-view (get @(:view-of-node @container-view) node)]
     existing-view
-    (do
-      (assert (not find-only?) (str "View of NODE not found."))
+    (when-not find-only?
       (let [new-view ((:view-from-node-fn @container-view) container-view node)]
         (alter (:view-of-node @container-view) assoc node new-view)
         (add-on-non-visible-fn new-view (fn []
