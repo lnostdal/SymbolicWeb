@@ -4,7 +4,9 @@
 (derive ::ValueModel ::Model)
 (let [notify-views-fn (fn [model new-value]
                         (doseq [view (ensure (:views model))]
-                          ((:handle-model-event-fn @view) view new-value)))]
+                          (let [view-m @view
+                                new-value ((:output-parsing-fn view-m) new-value)]
+                            ((:handle-model-event-fn view-m) view new-value))))]
   (defn make-ValueModel [value-ref]
     {:type ::ValueModel
      :value value-ref

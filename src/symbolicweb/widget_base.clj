@@ -113,10 +113,9 @@ Returns WIDGET."
            :model-new-value-governor (fn [widget new-value]
                                        new-value)
            :handle-model-event-fn (fn [widget new-value]
-                                    (let [new-value ((:output-parsing-fn @widget) new-value)]
-                                      (jqHTML widget (if (:escape-html? @widget)
-                                                       (escape-html new-value)
-                                                       new-value))))
+                                    (jqHTML widget (if (:escape-html? @widget)
+                                                     (escape-html new-value)
+                                                     new-value)))
            :connect-model-view-fn (fn [model widget]
                                     (alter (:views model) conj widget)
                                     ;; Trigger initial update.
