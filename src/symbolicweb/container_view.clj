@@ -9,6 +9,8 @@
       (assert (not find-only?) (str "View of NODE not found."))
       (let [new-view ((:view-from-node-fn @container-view) container-view node)]
         (alter (:view-of-node @container-view) assoc node new-view)
+        (add-on-non-visible-fn new-view (fn []
+                                          (alter (:view-of-node @container-view) dissoc node)))
         new-view))))
 
 

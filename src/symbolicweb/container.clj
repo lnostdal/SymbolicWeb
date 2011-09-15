@@ -27,6 +27,8 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
              assoc :children (remove widget (:children (:parent widget-m)))))
     (doseq [child (:children widget-m)]
       (ensure-non-visible child))
+    (doseq [on-non-visible-fn (:on-non-visible-fns widget-m)]
+      (on-non-visible-fn))
     (alter (:viewport widget-m) update-in [:widgets]
            dissoc (:id widget-m))
     (alter widget assoc

@@ -31,6 +31,11 @@
   (alter widget update-in [:on-visible-fns] conj fn))
 
 
+(defn add-on-non-visible-fn [widget fn]
+  "FN is code to execute when WIDGET is removed from the client/DOM end."
+  (alter widget update-in [:on-non-visible-fns] conj fn))
+
+
 (defn add-response-chunk
   "Viewport is a REF so this will work. I.e., all changes done to Viewport will reset if a transaction fails."
   ([new-chunk] (add-response-chunk new-chunk (root-element)))
