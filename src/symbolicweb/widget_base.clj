@@ -116,10 +116,11 @@ Returns WIDGET."
                                     (jqHTML widget (if (:escape-html? @widget)
                                                      (escape-html new-value)
                                                      new-value)))
+           :trigger-initial-update? true
            :connect-model-view-fn (fn [model widget]
                                     (alter (:views model) conj widget)
-                                    ;; Trigger initial update.
-                                    ((:handle-model-event-fn @widget) widget (get-value model)))
+                                    (when (:trigger-initial-update? @widget)
+                                      ((:handle-model-event-fn @widget) widget (get-value model))))
            :disconnect-model-view-fn (fn [widget]
                                        (alter (:views model) disj widget))
            :render-static-attributes-fn #(with-out-str
