@@ -14,6 +14,10 @@
             :application-constructor-fn application-constructor-fn]"
   (atom {}))
 
+
+(def -num-applications-model-
+  (vm 0))
+
 (def -applications-
   "ID -> APPLICATION"
   (atom {}))
@@ -23,25 +27,41 @@
   (atom {}))
 
 
-(def -gc-thread-
-  "This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME properties
-removing unused or timed out sessions."
-  (agent 42))
+;; TODO: yeah, this stuff; remove-branch needs to be called to disconnect Widgets from any long-living Models.
+(declare jqRemove)
+#_(when (and (= ::Viewport (:type obj))
+             (:root-element obj))
+    (dosync
+     (jqRemove (:root-element obj))))
 
-(send-off -gc-thread-
-          (fn [_]
-            (loop  []
-              (let [now (System/currentTimeMillis)
-                    checker-fn (fn [cnt timeout]
-                                 (doseq [obj @cnt]
-                                   (let [obj @(val obj)]
-                                     (when (< timeout (- now (:last-activity-time obj)))
-                                       (swap! cnt #(dissoc % (:id obj)))))))]
-                (checker-fn -applications- -application-timeout-)
-                (checker-fn -viewports- -viewport-timeout-)
-                (when (= *agent* -gc-thread-)
-                  (Thread/sleep 5000)
-                  (recur))))))
+
+(defn do-gc []
+  ;;(println "..DO-GC.!")
+  (let [now (System/currentTimeMillis)
+        checker-fn (fn [cnt timeout]
+                     (doseq [obj @cnt]
+                       (let [obj @(val obj)]
+                         (when (< timeout (- now (:last-activity-time obj)))
+                           ;;(println "DO-GC: Timeout found!")
+                           (swap! cnt #(dissoc % (:id obj)))
+                           (when (= (:type obj) ::Application)
+                             ;;(println "DO-GC: Updating Application counter..")
+                             (dosync
+                              (set-value -num-applications-model- (count @-applications-))))))))]
+    (checker-fn -applications- -application-timeout-)
+    (checker-fn -viewports- -viewport-timeout-)))
+
+
+;; This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
+;; properties removing unused or timed out sessions.
+(defonce -gc-thread-
+  (let [it (agent 42)]
+    (send-off it (fn [_]
+                   (loop []
+                     (do-gc)
+                     (Thread/sleep 5000)
+                     (recur))))
+    it))
 
 
 (def ^:dynamic *request*

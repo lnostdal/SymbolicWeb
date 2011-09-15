@@ -27,7 +27,9 @@
                                 :html-title "[SymbolicWeb]"
                                 app-args))]
     (when session?
-      (swap! -applications- #(assoc % application-id application)))
+      (swap! -applications- #(assoc % application-id application))
+      (dosync
+       (set-value -num-applications-model- (count @-applications-))))
     application))
 
 
