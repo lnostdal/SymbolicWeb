@@ -22,7 +22,8 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
   (let [widget-m @widget]
     ((:disconnect-model-view-fn widget-m) widget)
     ;; Remove WIDGET from children of parent of WIDGET.
-    (when (:parent widget-m) ;; (:root-element Viewport) doesn't have a parent.
+    (when (and (:parent widget-m)
+               (not (= :root (:parent widget-m))))
       (alter (:parent widget-m)
              assoc :children (remove widget (:children (:parent widget-m)))))
     (doseq [child (:children widget-m)]
