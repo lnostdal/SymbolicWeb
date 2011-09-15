@@ -44,11 +44,13 @@
   (apply make-HTMLElement html-element-type container-model
          :type ::ContainerView
 
+         :filter-node-fn (fn [container-view node] true)
+
          :connect-model-view-fn
          (fn [container-model container-view]
            ;; Add any already existing nodes to CONTAINER-VIEW.
            (loop [node (ensure (:head-node container-model))]
-             (when node
+             (when (and node ((:filter-node-fn @container-view) container-view node))
                (jqAppend container-view (view-of-node-in-context container-view node))
                (recur (ensure (:right node)))))
            ;; Let CONTAINER-VIEW know about any future changes to CONTAINER-MODEL.
