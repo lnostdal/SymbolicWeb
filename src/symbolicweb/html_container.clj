@@ -2,14 +2,21 @@
 
 
 (derive ::HTMLContainer ::Widget)
-(defn %make-HTMLContainer [content-fn]
-  (make-HTMLElement "div" content-fn
-                    :type ::HTMLContainer
-                    :connect-model-view-fn (fn [model view])
-                    :disconnect-model-view-fn (fn [widget])
-                    :render-aux-html-fn (fn [_] (content-fn))))
+(defn %make-HTMLContainer [[html-element-type & attributes] content-fn]
+  (apply make-HTMLElement html-element-type (ref nil)
+         :type ::HTMLContainer
+         :handle-model-event-fn (fn [widget new-value])
+         :connect-model-view-fn (fn [model widget])
+         :disconnect-model-view-fn (fn [widget])
+         :render-aux-html-fn (fn [_] (content-fn))
+         attributes))
 
 
-(defmacro with-html-container [& body]
-  "The interesting or 'tricky' code related to HTMLContainer is mostly found in the RENDER-HTML (widget_base.clj) function."
-  `(%make-HTMLContainer (fn [] (html ~@body))))
+(defmacro with-html-container [[html-element-type & attributes] & body]
+  `(%make-HTMLContainer (into [~html-element-type] ~attributes)
+                        (fn [] (html ~@body))))
+
+
+(defmacro whc [[html-element-type & attributes] & body]
+  `(with-html-container ~(into [html-element-type] attributes)
+     ~@body))

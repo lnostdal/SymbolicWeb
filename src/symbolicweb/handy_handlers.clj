@@ -173,7 +173,7 @@ html, body, #sw-root {
              "Pragma"        "no-cache"}
    :body
    (render-html
-    (with-html-container
+    (whc ["div"] ;; TODO: THIS IS WRONG; NO DIV SHOULD BE HERE...
       (doctype :xhtml-strict)
       (xhtml-tag
        "en"
