@@ -13,29 +13,32 @@
         new-view))))
 
 
-(defn handle-container-view-event [container-view event-sym event-args]
+(defn handle-container-view-event [container-view event-args]
   "Forward Container related operations/events to the View end."
-  (case event-sym
-    prepend-container-model
-    (let [container-model (nth event-args 0)
-          new-node (nth event-args 1)]
-      (jqPrepend container-view (view-of-node-in-context container-view new-node)))
+  (let [[event-sym & event-args] event-args]
+    (case event-sym
+      prepend-container-model
+      (let [container-model (nth event-args 0)
+            new-node (nth event-args 1)]
+        (jqPrepend container-view (view-of-node-in-context container-view new-node)))
 
-    after-container-model-node
-    (let [existing-node (nth event-args 0)
-          new-node (nth event-args 1)]
-      (jqAfter (view-of-node-in-context container-view existing-node true)
-               (view-of-node-in-context container-view new-node)))
+      after-container-model-node
+      (let [existing-node (nth event-args 0)
+            new-node (nth event-args 1)]
+        (jqAfter (view-of-node-in-context container-view existing-node true)
+                 (view-of-node-in-context container-view new-node)))
 
-    before-container-model-node
-    (let [existing-node (nth event-args 0)
-          new-node (nth event-args 1)]
-      (jqBefore (view-of-node-in-context container-view existing-node true)
-                (view-of-node-in-context container-view new-node)))
+      before-container-model-node
+      (let [existing-node (nth event-args 0)
+            new-node (nth event-args 1)]
+        (jqBefore (view-of-node-in-context container-view existing-node true)
+                  (view-of-node-in-context container-view new-node)))
 
-    remove-container-model-node
-    (let [node (nth event-args 0)]
-      (jqRemove (view-of-node-in-context container-view node true)))))
+      remove-container-model-node
+      (let [node (nth event-args 0)]
+        (if-let [view (view-of-node-in-context container-view node true)]
+          (jqRemove view)
+          (assert false "ContainerView: Tried to remove Node, but no existing View of that Node was found."))))))
 
 
 (derive ::ContainerView ::HTMLElement)
@@ -46,12 +49,17 @@
 
          :filter-node-fn (fn [container-view node] true)
 
+         :handle-model-event-fn
+         (fn [widget operation-args]
+           (handle-container-view-event widget operation-args))
+
          :connect-model-view-fn
          (fn [container-model container-view]
            ;; Add any already existing nodes to CONTAINER-VIEW.
            (loop [node (ensure (:head-node container-model))]
-             (when (and node ((:filter-node-fn @container-view) container-view node))
-               (jqAppend container-view (view-of-node-in-context container-view node))
+             (when node
+               (when ((:filter-node-fn @container-view) container-view node)
+                 (jqAppend container-view (view-of-node-in-context container-view node)))
                (recur (ensure (:right node)))))
            ;; Let CONTAINER-VIEW know about any future changes to CONTAINER-MODEL.
            (alter (:views container-model) conj container-view))

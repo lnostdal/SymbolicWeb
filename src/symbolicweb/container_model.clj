@@ -35,7 +35,7 @@
 (declare handle-container-view-event)
 (defn notify-views [container-model event-sym & event-args]
   (doseq [container-view (ensure (:views container-model))]
-    (handle-container-view-event container-view event-sym event-args)))
+    ((:handle-model-event-fn @container-view) container-view (apply list event-sym event-args))))
 
 
 (declare prepend-container-model after-container-model-node)
