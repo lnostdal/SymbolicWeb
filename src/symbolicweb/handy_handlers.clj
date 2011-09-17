@@ -116,7 +116,7 @@ html, body, #sw-root {
   display: none !important;
 }"]
       (sw-css-bootstrap)
-      (script-src "../js/common/jquery-1.6.3.min.js")
+      (script-src "../js/common/jquery-1.6.4.min.js")
       (sw-js-bootstrap)]
 
      [:body
