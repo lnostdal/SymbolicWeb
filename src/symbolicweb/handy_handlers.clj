@@ -164,55 +164,6 @@ html, body, #sw-root {
       [:p "Going " [:a {:href "javascript:history.go(-1);"} "back"] " might help."]]))})
 
 
-(defn hello-world-page-handler []
-  {:status  200
-   :headers {"Content-Type"  "text/html; charset=UTF-8"
-             "Connection"    "keep-alive"
-             "Expires"       "Mon, 26 Jul 1997 05:00:00 GMT"
-             "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
-             "Pragma"        "no-cache"}
-   :body
-   (render-html
-    (whc ["div"] ;; TODO: THIS IS WRONG; NO DIV SHOULD BE HERE...
-      (doctype :xhtml-strict)
-      (xhtml-tag
-       "en"
-       [:head
-        [:title "[SymbolicWeb] Hello World"]
-        [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-        (script-src "../js/common/jquery-1.6.3.min.js")
-        (sw-js-bootstrap)]
-
-       [:body
-        [:h1 "SymbolicWeb - bringing life to the web!"]
-        [:p "Hello, this is SymbolicWeb running on Clojure " (clojure-version)]
-        [:p "Norwegian characters: æøå"]
-
-        [:button {:onclick "$.getScript(swURL('&something=some-value'));"}
-         "Test aux event handler"]
-
-        (sw (set-event-handler "click" (make-Button "Test widget event handler")
-                               (fn [& {:keys [page-x page-y]}]
-                                 (alert (str "Widget handler called: "
-                                             " page-x => " page-x
-                                             ", page-y => " page-y)))
-                               :callback-data {:page-x "' + event.pageX + '"
-                                               :page-y "' + event.pageY + '"}))
-
-      [:ul (for [i (range 10)]
-             [:li [:b "This is nr. " i "."]])]
-
-        [:p (link-to "http://validator.w3.org/check?uri=referer"
-                     [:img {:src "http://www.w3.org/Icons/valid-xhtml10"
-                            :alt "Valid XHTML 1.0 Strict"
-                            :height 31
-                            :width  88}])]
-
-        [:div [:img {:id "sw-loading-spinner" :alt "" :style "position: absolute; z-index: 1000; right: 0px; top: 0px;"
-                     :src "gfx/sw-loader.gif"}]]
-        [:div {:id "sw-recycler" :class "sw-hide"}]])))})
-
-
 (defn simple-aux-handler [fn-to-wrap]
   (fn []
     (binding [*in-channel-request?* ""]
@@ -221,11 +172,6 @@ html, body, #sw-root {
        :headers {"Content-Type" "text/javascript; charset=UTF-8"
                  "Connection"   "keep-alive"}
        :body (str *in-channel-request?* "_sw_comet_response = true;")})))
-
-
-(defapp hello-world
-  (fn [] (is-url? "/sw/hello-world"))
-  (fn [] (make-Application [:aux-handler (simple-aux-handler #(alert "Aux handler called!"))])))
 
 
 (defapp empty-page
