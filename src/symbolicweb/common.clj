@@ -14,6 +14,13 @@
   )
 
 
+(defn sha [input-str]
+  (let [md (java.security.MessageDigest/getInstance "SHA-256")]
+    (. md update (.getBytes input-str))
+    (let [digest (.digest md)]
+      (apply str (map #(format "%02x" (bit-and % 0xff)) digest)))))
+
+
 (defn seconds-to-hms [seconds]
   "Returns a vector of three values; hours, minutes and seconds in whole (integer) numbers."
   [(int (/ seconds 3600)) ;; hours
