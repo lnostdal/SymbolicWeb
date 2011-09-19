@@ -1,9 +1,11 @@
 (in-ns 'symbolicweb.core)
 
+;; TODO: Use MVC here too? For now I just dodge it.
 
-(derive ::HTMLContainer ::Widget)
+
+(derive ::HTMLContainer ::HTMLElement)
 (defn %make-HTMLContainer [[html-element-type & attributes] content-fn]
-  (apply make-HTMLElement html-element-type (ref nil)
+  (apply make-HTMLElement html-element-type (vm nil)
          :type ::HTMLContainer
          :handle-model-event-fn (fn [widget old-value new-value])
          :connect-model-view-fn (fn [model widget])
