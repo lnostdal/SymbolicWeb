@@ -36,3 +36,12 @@
 
 (defn sw-td [model & attributes]
   (sw (apply mk-td model attributes)))
+
+
+(defn mk-a [model href & attributes]
+  (with1 (apply make-HTMLElement "a" model attributes)
+    (jqAttr it "href" href)))
+
+
+(defn sw-a [model href & attributes]
+  (sw (apply mk-a model href attributes)))
