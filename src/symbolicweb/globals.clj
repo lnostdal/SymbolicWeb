@@ -40,11 +40,11 @@
                            (case (:type obj)
                              ::Application
                              (dosync
-                              (println "GC: Application")
+                              ;;(println "GC: Application")
                               (set-value -num-applications-model- (count @-applications-)))
                              ::Viewport
                              (dosync
-                              (println "GC: Viewport")
+                              ;;(println "GC: Viewport")
                               ;; This will ensure that Models that hang around "for a long time" (e.g. global vars)
                               ;; doesn't try to forward their updates to stale Widgets/Viewports.
                               (ensure-non-visible (:root-element obj))))))))]
