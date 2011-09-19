@@ -1,5 +1,9 @@
 (in-ns 'symbolicweb.core)
 
+(defn ref? [x]
+  (= clojure.lang.Ref (type x)))
+
+
 (def -comet-timeout- 29000)
 (def -viewport-timeout- (+ -comet-timeout- 30000))
 (def -application-timeout- (+ -viewport-timeout- 30000))

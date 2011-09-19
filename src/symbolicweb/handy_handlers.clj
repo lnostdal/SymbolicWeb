@@ -100,6 +100,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       [:meta {:http-equiv "X-UA-Compatible" :content "chrome=1"}]
       [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
       [:title (:html-title @*application*)]
+      ;; TODO: #sw-root doesn't exist anymore; check ID of :ROOT-ELEMENT!
       [:style {:type "text/css"} "
 * {
   -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
@@ -119,8 +120,7 @@ html, body, #sw-root {
       (script-src "../js/common/jquery-1.6.4.min.js")
       (sw-js-bootstrap)]
 
-     [:body
-      (render-html (:root-element @*viewport*))]))})
+     [:body (render-html (:root-element @*viewport*))]))})
 
 
 (defn clear-session-page-handler []

@@ -1,6 +1,8 @@
 (in-ns 'symbolicweb.core)
 
 
+(declare ref?)
+
 (derive ::ValueModel ::Model)
 (let [notify-views-fn (fn [model old-value new-value]
                         (doseq [view (ensure (:views model))]

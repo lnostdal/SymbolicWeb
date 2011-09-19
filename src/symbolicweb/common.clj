@@ -1,5 +1,6 @@
 (in-ns 'symbolicweb.core)
 
+
 (set! *print-length* 10)
 (set! *print-level* 3)
 
@@ -76,10 +77,6 @@
 (defn widget? [obj]
   (when-not (string? obj)
     (isa? (:type @obj) ::WidgetBase)))
-
-
-(defn ref? [x]
-  (= clojure.lang.Ref (type x)))
 
 
 (defn ensure-model [obj]
