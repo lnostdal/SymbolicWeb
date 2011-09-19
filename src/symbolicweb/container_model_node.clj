@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
-(derive ::ContainerModelNode ::Model)
+;;(derive ::ContainerModelNode ::Model) ;; TODO: Think about this.. this is really sort of a wrapper for Models, right?
 (defn make-ContainerModelNode [data]
   "Doubly linked list node."
   {:type ::ContainerModelNode
@@ -16,6 +16,8 @@
 
 (defn set-left-node [container-model-node new-left-node]
   (assert (= ::ContainerModelNode (:type container-model-node)))
+  (assert (or (= ::ContainerModelNode (:type new-left-node))
+              (not new-left-node)))
   (ref-set (:left container-model-node) new-left-node))
 
 
@@ -25,6 +27,8 @@
 
 (defn set-right-node [container-model-node new-right-node]
   (assert (= ::ContainerModelNode (:type container-model-node)))
+  (assert (or (= ::ContainerModelNode (:type new-right-node))
+              (not new-right-node)))
   (ref-set (:right container-model-node) new-right-node))
 
 

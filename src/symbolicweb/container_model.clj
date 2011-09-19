@@ -20,6 +20,8 @@
 
 (defn set-tail-node [container-model new-tail-node]
   (assert (= ::ContainerModel (:type container-model)))
+  (assert (or (= ::ContainerModelNode (:type new-tail-node))
+              (not new-tail-node)))
   (ref-set (:tail-node container-model) new-tail-node))
 
 
@@ -29,12 +31,16 @@
 
 (defn set-head-node [container-model new-head-node]
   (assert (= ::ContainerModel (:type container-model)))
+  (assert (or (= ::ContainerModelNode (:type new-head-node))
+              (not new-head-node)))
   (ref-set (:head-node container-model) new-head-node))
 
 
 (declare handle-container-view-event)
 (defn notify-views [container-model event-sym & event-args]
+  (assert (= ::ContainerModel (:type container-model)))
   (doseq [container-view (ensure (:views container-model))]
+    ;;(dbg-prin1 (:filter-node-fn @container-view)) ;; TODO!!!! on insert operations..
     ((:handle-model-event-fn @container-view) container-view (apply list event-sym event-args))))
 
 
@@ -43,6 +49,7 @@
   "Add NEW-NODE to end of the contained nodes in CONTAINER-MODEL.
 This mirrors the jQuery `append' function:
   http://api.jquery.com/append/"
+  (assert (= ::ContainerModel (:type container-model)))
   (assert (= ::ContainerModelNode (:type new-node)))
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
@@ -58,6 +65,7 @@ This mirrors the jQuery `append' function:
   "Add NEW-NODE to beginning of the contained nodes in CONTAINER-MODEL.
 This mirrors the jQuery `prepend' function:
   http://api.jquery.com/prepend/"
+  (assert (= ::ContainerModel (:type container-model)))
   (assert (= ::ContainerModelNode (:type new-node)))
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
@@ -82,6 +90,7 @@ This mirrors the jQuery `prepend' function:
 (declare remove-container-model-node)
 (defn clear-container-model [container-model]
   ;; Remove head node of CONTAINER-MODEL until trying to access the head node of CONTAINER-MODEL returns NIL.
+  (assert (= ::ContainerModel (:type container-model)))
   (loop [node (head-node container-model)]
     (when node
       (remove-container-model-node node)

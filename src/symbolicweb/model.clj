@@ -8,6 +8,7 @@
                                 new-value ((:output-parsing-fn view-m) new-value)]
                             ((:handle-model-event-fn view-m) view new-value))))]
   (defn make-ValueModel [value-ref]
+    (assert (ref? value-ref))
     {:type ::ValueModel
      :value value-ref
      :views (ref #{})
@@ -16,6 +17,7 @@
 
 (defn vm [initial-value]
   "Creates a ValueModel. INITIAL-VALUE will be wrapped in a Ref."
+  (assert (not (ref? initial-value)))
   (make-ValueModel (ref initial-value)))
 
 
