@@ -7,7 +7,6 @@
     (binding [*viewport*
               (ref {:type ::Viewport
                     :id viewport-id
-                    :agent (agent 42)
                     :last-activity-time (System/currentTimeMillis)
                     :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
                     :response-str ""
