@@ -16,9 +16,6 @@
                 :static-attributes {:type "text"}
                 :handle-model-event-fn (fn [widget new-value]
                                          (jqVal widget new-value))
-                :connect-model-view-fn (fn [model widget]
-                                         (alter (:views model) conj widget)
-                                         ((:handle-model-event-fn @widget) widget (get-value model)))
                 attributes)
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]
