@@ -104,42 +104,45 @@ Returns WIDGET."
 
 (derive ::HTMLElement ::Widget)
 (defn make-HTMLElement [html-element-type model & attributes]
-    (apply make-Widget
-           :type ::HTMLElement
-           :html-element-type html-element-type
-           :model model
-           :escape-html? true
-           :output-parsing-fn (fn [new-value] new-value)
-           :handle-model-event-fn (fn [widget new-value]
-                                    (jqHTML widget (if (:escape-html? @widget)
-                                                     (escape-html new-value)
-                                                     new-value)))
-           :trigger-initial-update? true
-           :connect-model-view-fn (fn [model widget]
-                                    (alter (:views model) conj widget)
-                                    (when (:trigger-initial-update? @widget)
-                                      ((:handle-model-event-fn @widget) widget
-                                       ((:output-parsing-fn @widget) (get-value model)))))
-           :disconnect-model-view-fn (fn [widget]
-                                       (alter (:views model) disj widget))
-           :render-static-attributes-fn #(with-out-str
-                                           (doseq [key_val (:static-attributes %)]
-                                             (print (str " "
-                                                         (name (key key_val))
-                                                         "='"
-                                                         (name (val key_val)) ;; TODO: Escaping.
-                                                         "'"))))
-           :render-html-fn #(str "<" (:html-element-type %)
-                                 " id='" (:id %) "'" ((:render-static-attributes-fn %) %) ">"
-                                 (render-aux-html %)
-                                 (let [script (str (render-aux-js %) (render-events %))]
-                                   (when (seq script)
-                                     (str "<script type='text/javascript'>" script "</script>")))
-                                 "</" (:html-element-type %) ">")
-           attributes))
+  (assert (isa? (:type model) ::Model))
+  (apply make-Widget
+         :type ::HTMLElement
+         :html-element-type html-element-type
+         :model model
+         :escape-html? true
+         :output-parsing-fn (fn [new-value] new-value)
+         :handle-model-event-fn (fn [widget old-value new-value]
+                                  (jqHTML widget (if (:escape-html? @widget)
+                                                   (escape-html new-value)
+                                                   new-value)))
+         :trigger-initial-update? true
+         :connect-model-view-fn (fn [model widget]
+                                  (alter (:views model) conj widget)
+                                  (when (:trigger-initial-update? @widget)
+                                    ((:handle-model-event-fn @widget)
+                                     widget
+                                     nil
+                                     ((:output-parsing-fn @widget) (get-value model)))))
+         :disconnect-model-view-fn (fn [widget]
+                                     (alter (:views model) disj widget))
+         :render-static-attributes-fn #(with-out-str
+                                         (doseq [key_val (:static-attributes %)]
+                                           (print (str " "
+                                                       (name (key key_val))
+                                                       "='"
+                                                       (name (val key_val)) ;; TODO: Escaping.
+                                                       "'"))))
+         :render-html-fn #(str "<" (:html-element-type %)
+                               " id='" (:id %) "'" ((:render-static-attributes-fn %) %) ">"
+                               (render-aux-html %)
+                               (let [script (str (render-aux-js %) (render-events %))]
+                                 (when (seq script)
+                                   (str "<script type='text/javascript'>" script "</script>")))
+                               "</" (:html-element-type %) ">")
+         attributes))
 
 
-;; TODO: Button is actually a container.
+;; TODO: Button is actually a container (HTMLContainer?).
 (derive ::Button ::HTMLElement)
 (defn make-Button [label-str & attributes]
   "Supply :MODEL as attribute if needed. This will override what's provided via LABEL-STR."

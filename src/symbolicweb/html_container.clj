@@ -5,7 +5,7 @@
 (defn %make-HTMLContainer [[html-element-type & attributes] content-fn]
   (apply make-HTMLElement html-element-type (ref nil)
          :type ::HTMLContainer
-         :handle-model-event-fn (fn [widget new-value])
+         :handle-model-event-fn (fn [widget old-value new-value])
          :connect-model-view-fn (fn [model widget])
          :disconnect-model-view-fn (fn [widget])
          :render-aux-html-fn (fn [_] (content-fn))

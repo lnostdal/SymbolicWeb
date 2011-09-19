@@ -14,7 +14,7 @@
   (with1 (apply make-HTMLElement "input" model
                 :type ::TextInput
                 :static-attributes {:type "text"}
-                :handle-model-event-fn (fn [widget new-value]
+                :handle-model-event-fn (fn [widget _ new-value]
                                          (jqVal widget new-value))
                 attributes)
     (set-event-handler "change" it
