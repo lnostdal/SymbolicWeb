@@ -151,3 +151,16 @@ Returns WIDGET."
          :type ::Button
          :escape-html? false
          attributes))
+
+
+(defn make-View [model lifetime & attributes]
+  "Supply :HANDLE-MODEL-EVENT-FN and you'll have an observer ('callback') of MODEL that is not a Widget.
+The lifetime of this observer is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
+  #_(assert (or (= :root lifetime)
+                (isa? lifetime ::Widget)))
+  (with (apply make-HTMLElement "dummy" model
+               :type ::View
+               attributes)
+    (if lifetime
+      (add-branch lifetime it)
+      ((:connect-model-view-fn @it) model it))))
