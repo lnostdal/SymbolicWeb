@@ -45,3 +45,10 @@
 
 (defn sw-a [model href & attributes]
   (sw (apply mk-a model href attributes)))
+
+
+(defn mk-span [model & attributes]
+  (apply make-HTMLElement "span" model attributes))
+
+(defn sw-span [model & attributes]
+  (sw (apply mk-span model attributes)))
