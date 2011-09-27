@@ -135,10 +135,10 @@ Returns WIDGET."
          :render-html-fn #(str "<" (:html-element-type %)
                                " id='" (:id %) "'" ((:render-static-attributes-fn %) %) ">"
                                (render-aux-html %)
+                               "</" (:html-element-type %) ">"
                                (let [script (str (render-aux-js %) (render-events %))]
                                  (when (seq script)
-                                   (str "<script type='text/javascript'>" script "</script>")))
-                               "</" (:html-element-type %) ">")
+                                   (str "<script type='text/javascript'>" script "</script>"))))
          attributes))
 
 
