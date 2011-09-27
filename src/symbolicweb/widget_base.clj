@@ -25,7 +25,7 @@
 
 (defn render-events [widget]
   "Returns JS which will set up client/DOM side events."
-  (when (:callbacks widget)
+  (when-not (empty? (:callbacks widget))
     (with-out-str
       (loop [callbacks (:callbacks widget)]
         (when-first [[event-type [callback-fn callback-data]] callbacks]
