@@ -164,3 +164,12 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
     (if lifetime
       (add-branch lifetime it)
       ((:connect-model-view-fn @it) model it))))
+
+
+(derive ::Img ::HTMLElement)
+(defn make-Img [model & attributes]
+  (apply make-HTMLElement "img" model
+         :type ::Img
+         :handle-model-event-fn (fn [widget old-value new-value]
+                                  (jqAttr widget "src" new-value))
+         attributes))
