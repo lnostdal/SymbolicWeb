@@ -25,23 +25,24 @@
 
 (defn render-events [widget]
   "Returns JS which will set up client/DOM side events."
-  (when-not (empty? (:callbacks widget))
-    (with-out-str
-      (loop [callbacks (:callbacks widget)]
-        (when-first [[event-type [callback-fn callback-data]] callbacks]
-          (print (render-event widget event-type :callback-data callback-data))
-          (recur (rest callbacks)))))))
+  (let [widget @widget]
+    (when-not (empty? (:callbacks widget))
+      (with-out-str
+        (loop [callbacks (:callbacks widget)]
+          (when-first [[event-type [callback-fn callback-data]] callbacks]
+            (print (render-event widget event-type :callback-data callback-data))
+            (recur (rest callbacks))))))))
 
 
 (defn render-aux-js [widget]
   "Return JS which will initialize WIDGET."
-  (when-let [render-aux-js-fn (:render-aux-js-fn widget)]
+  (when-let [render-aux-js-fn (:render-aux-js-fn @widget)]
     (render-aux-js-fn widget)))
 
 
 (defn render-aux-html [widget]
   "Return \"aux\" HTML for WIDGET."
-  (when-let [render-aux-html-fn (:render-aux-html-fn widget)]
+  (when-let [render-aux-html-fn (:render-aux-html-fn @widget)]
     (render-aux-html-fn widget)))
 
 
@@ -49,7 +50,7 @@
 (defn render-html [widget]
   "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS.
 The return value of RENDER-AUX-JS will be inlined within this structure."
-  (let [widget-m (if (ref? widget)
+  (let [widget-m (if (ref? widget) ;; TODO: It'll always be a ref now. Perhaps add an assert though.
                  @widget
                  widget)
         widget-type (:type widget-m)]
@@ -58,8 +59,8 @@ The return value of RENDER-AUX-JS will be inlined within this structure."
      (do
        (if (isa? widget-type ::HTMLContainer)
          (binding [*in-html-container?* widget]
-           ((:render-html-fn widget-m) widget-m))
-         ((:render-html-fn widget-m) widget-m)))
+           ((:render-html-fn widget-m) widget))
+         ((:render-html-fn widget-m) widget)))
 
      true
      (throw (Exception. (str "Can't render: " widget-m))))))
@@ -120,25 +121,27 @@ Returns WIDGET."
                                   (alter (:views model) conj widget)
                                   (when (:trigger-initial-update? @widget)
                                     ((:handle-model-event-fn @widget)
-                                     widget
-                                     nil
-                                     ((:output-parsing-fn @widget) (get-value model)))))
+                                     widget nil ((:output-parsing-fn @widget) (get-value model)))))
          :disconnect-model-view-fn (fn [widget]
                                      (alter (:views model) disj widget))
-         :render-static-attributes-fn #(with-out-str
-                                         (doseq [key_val (:static-attributes %)]
-                                           (print (str " "
-                                                       (name (key key_val))
-                                                       "='"
-                                                       (name (val key_val)) ;; TODO: Escaping.
-                                                       "'"))))
-         :render-html-fn #(str "<" (:html-element-type %)
-                               " id='" (:id %) "'" ((:render-static-attributes-fn %) %) ">"
-                               (render-aux-html %)
-                               "</" (:html-element-type %) ">"
-                               (let [script (str (render-aux-js %) (render-events %))]
-                                 (when (seq script)
-                                   (str "<script type='text/javascript'>" script "</script>"))))
+         :render-static-attributes-fn (fn [w]
+                                        (let [w-m @w]
+                                          (with-out-str
+                                            (doseq [key_val (:static-attributes w-m)]
+                                              (print (str " "
+                                                          (name (key key_val))
+                                                          "='"
+                                                          (name (val key_val)) ;; TODO: Escaping.
+                                                          "'"))))))
+         :render-html-fn (fn [w]
+                           (let [w-m @w]
+                             (str "<" (:html-element-type w-m)
+                                  " id='" (:id w-m) "'" ((:render-static-attributes-fn w-m) w) ">"
+                                  (render-aux-html w)
+                                  "</" (:html-element-type w-m) ">"
+                                  (let [script (str (render-aux-js w) (render-events w))]
+                                    (when (seq script)
+                                      (str "<script type='text/javascript'>" script "</script>"))))))
          attributes))
 
 
