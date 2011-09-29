@@ -161,8 +161,11 @@ Returns WIDGET."
 The lifetime of this observer is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
   #_(assert (or (= :root lifetime)
                 (isa? lifetime ::Widget)))
-  (with (apply make-HTMLElement "dummy" model
+
+  (with (apply make-HTMLElement "%make-View" model
                :type ::View
+               :handle-model-event-fn (fn [view old-value new-value]
+                                        (assert false "make-View: No callback (:handle-model-event-fn) supplied."))
                attributes)
     (if lifetime
       (add-branch lifetime it)
@@ -171,6 +174,7 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
 
 (derive ::Img ::HTMLElement)
 (defn make-Img [model & attributes]
+  "HTML IMG element. MODEL represents the SRC attribute."
   (apply make-HTMLElement "img" model
          :type ::Img
          :handle-model-event-fn (fn [widget old-value new-value]

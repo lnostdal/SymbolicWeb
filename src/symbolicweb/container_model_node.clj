@@ -48,7 +48,8 @@ This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
   (assert (= ::ContainerModelNode (:type node)))
   (let [container-model @(:container-model node)]
-    (alter (:length @(:container-model node)) dec)
+    (assert (= ::ContainerModel (:type container-model)))
+    (alter (:length container-model) dec)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
     ;;
