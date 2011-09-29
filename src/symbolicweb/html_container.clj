@@ -55,3 +55,30 @@ CONTENT-FN is something like:
                        (add-response-chunk script (second td)))))
                  (apply str (emit* (var-get res)))))))
          attributes))
+
+
+(derive ::TemplateElement ::HTMLElement)
+(defn make-TemplateElement [model & attributes]
+  "A TemplateElement has already got its static HTML (:html-element-type etc.) defined for it via a template (make-HTMLTemplate).
+It still maintains the same Model <-> View relationship as a HTMLElement unless it is overridden."
+  (apply make-HTMLElement "%make-TemplateElement" model
+         :type ::TemplateElement
+         attributes))
+
+
+(defn mk-te [model & attributes]
+  "Short for make-TemplateElement."
+  (apply make-TemplateElement model attributes))
+
+
+(derive ::BlankTemplateElement ::TemplateElement)
+(defn make-BlankTemplateElement [& attributes]
+  "A TemplateElement which doesn't have a Model."
+  (apply make-TemplateElement (vm "%make-BlankTemplateElement")
+         :type ::BlankTemplateElement
+         :handle-model-event-fn (fn [widget old-value new-value])
+         attributes))
+
+(defn mk-bte [& attributes]
+  "Short for make-BlankTemplateElement."
+  (apply make-BlankTemplateElement attributes))
