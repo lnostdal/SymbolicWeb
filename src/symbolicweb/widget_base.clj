@@ -180,3 +180,13 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
          :handle-model-event-fn (fn [widget old-value new-value]
                                   (jqAttr widget "src" new-value))
          attributes))
+
+
+(derive ::Link ::HTMLElement)
+(defn make-Link [model & attributes]
+  "HTML Link (a href) element. MODEL represents the HREF attribute."
+  (apply make-HTMLElement "a" model
+         :type ::Link
+         :handle-model-event-fn (fn [widget old-value new-value]
+                                  (jqAttr widget "href" new-value))
+         attributes))
