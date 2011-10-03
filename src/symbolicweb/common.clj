@@ -94,7 +94,7 @@
 
 (defn default-parse-callback-data-handler [widget callback-data]
   (mapcat (fn [key]
-            (list key (get (:query-params *request*) (str key))))
+            (list key (get (:params *request*) (str key))))
           (keys callback-data)))
 
 
