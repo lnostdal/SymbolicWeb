@@ -28,7 +28,7 @@ Lighttpd 1.5.x (from svn/git) is used for the boring static content. To enable s
 
 ..then we start it:
 
-    /usr/local/sbin/lighttpd -f ~/clojure/src/symbolicweb/lighttpd.conf
+    /usr/local/sbin/lighttpd -f ~/clojure/src/symbolicweb/resources/lighttpd.conf
 
 
 Start swank in the SW directory:

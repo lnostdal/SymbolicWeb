@@ -26,8 +26,7 @@
   (:require symbolicweb.html-container)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
-  (:require symbolicweb.date-and-time)
-  (:gen-class))
+  (:require symbolicweb.date-and-time))
 
 (in-ns 'symbolicweb.core)
 
@@ -50,7 +49,7 @@
           ((:request-handler @application)))))))
 
 
-(defn -main [& args]
+(defn main [& args]
   (defonce symbolicweb-server
     (run-jetty (wrap-cookies (wrap-params #'handler))
                {:port 8080 :join? false})))
