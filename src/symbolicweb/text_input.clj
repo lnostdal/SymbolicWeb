@@ -2,7 +2,7 @@
 
 ;; TODO:
 ;; * Input parsing should be or happen on the Model end so data flowing from back-ends (DBs) can benefit from
-;;   it too.
+;;   it too. Uhm, I think.
 
 ;; * Better and more flexible parameter handling; static-attributes/CSS etc..
 
@@ -47,3 +47,21 @@
                                                  new-value)))
                             :callback-data
                             {:new-value "' + encodeURIComponent($(this).val()) + '"})))
+
+
+(derive ::CKEditor ::HTMLElement)
+(defn make-CKEditor [model & attributes]
+  (apply make-TextArea model
+                :type ::CKEditor
+                :render-aux-js-fn (fn [widget]
+                                    (let [w-m @widget
+                                          id (:id w-m)]
+                                      (str "CKEDITOR.replace('" id "');"
+                                           "CKEDITOR.instances['" id "'].on('blur', function(e){"
+                                           "  if(CKEDITOR.instances['" id "'].checkDirty()){"
+                                           "    CKEDITOR.instances['" id "'].updateElement();"
+                                           "    $('#" id "').trigger('change');"
+                                           "  }"
+                                           "  CKEDITOR.instances['" id "'].resetDirty();"
+                                           "});")))
+                attributes))
