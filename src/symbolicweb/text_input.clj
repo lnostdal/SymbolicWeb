@@ -40,28 +40,28 @@
                 :handle-model-event-fn (fn [widget _ new-value]
                                          (jqVal widget new-value))
                 attributes)
-         (set-event-handler "change" it
-                            (fn [& {:keys [new-value]}]
-                              (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
-                                                 (input-parsing-fn new-value)
-                                                 new-value)))
-                            :callback-data
-                            {:new-value "' + encodeURIComponent($(this).val()) + '"})))
+    (set-event-handler "change" it
+                       (fn [& {:keys [new-value]}]
+                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                            (input-parsing-fn new-value)
+                                            new-value)))
+                       :callback-data
+                       {:new-value "' + encodeURIComponent($(this).val()) + '"})))
 
 
 (derive ::CKEditor ::HTMLElement)
 (defn make-CKEditor [model & attributes]
   (apply make-TextArea model
-                :type ::CKEditor
-                :render-aux-js-fn (fn [widget]
-                                    (let [w-m @widget
-                                          id (:id w-m)]
-                                      (str "CKEDITOR.replace('" id "');"
-                                           "CKEDITOR.instances['" id "'].on('blur', function(e){"
-                                           "  if(CKEDITOR.instances['" id "'].checkDirty()){"
-                                           "    CKEDITOR.instances['" id "'].updateElement();"
-                                           "    $('#" id "').trigger('change');"
-                                           "  }"
-                                           "  CKEDITOR.instances['" id "'].resetDirty();"
-                                           "});")))
-                attributes))
+         :type ::CKEditor
+         :render-aux-js-fn (fn [widget]
+                             (let [w-m @widget
+                                   id (:id w-m)]
+                               (str "CKEDITOR.replace('" id "');"
+                                    "CKEDITOR.instances['" id "'].on('blur', function(e){"
+                                    "  if(CKEDITOR.instances['" id "'].checkDirty()){"
+                                    "    CKEDITOR.instances['" id "'].updateElement();"
+                                    "    $('#" id "').trigger('change');"
+                                    "  }"
+                                    "  CKEDITOR.instances['" id "'].resetDirty();"
+                                    "});")))
+         attributes))
