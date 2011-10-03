@@ -48,19 +48,15 @@
 
 (declare add-branch)
 (defn render-html [widget]
-  "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS.
-The return value of RENDER-AUX-JS will be inlined within this structure."
-  (let [widget-m (if (ref? widget) ;; TODO: It'll always be a ref now. Perhaps add an assert though.
-                 @widget
-                 widget)
+  "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS."
+  (let [widget-m (ensure widget)
         widget-type (:type widget-m)]
     (cond
      (isa? widget-type ::Widget)
-     (do
-       (if (isa? widget-type ::HTMLContainer)
-         (binding [*in-html-container?* widget]
-           ((:render-html-fn widget-m) widget))
-         ((:render-html-fn widget-m) widget)))
+     (if (isa? widget-type ::HTMLContainer)
+       (binding [*in-html-container?* widget]
+         ((:render-html-fn widget-m) widget))
+       ((:render-html-fn widget-m) widget))
 
      true
      (throw (Exception. (str "Can't render: " widget-m))))))
