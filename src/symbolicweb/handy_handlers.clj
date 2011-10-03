@@ -117,10 +117,14 @@ html, body, #sw-root {
   display: none !important;
 }"]
       (sw-css-bootstrap)
-      (script-src "../js/common/jquery-1.6.4.min.js")
+      (script-src "/js/common/jquery-1.6.4.min.js")
+      (with-out-str
+        (doseq [head-element (:head-elements @*application*)]
+          (println head-element)))
       (sw-js-bootstrap)]
 
-     [:body (render-html (:root-element @*viewport*))]))})
+     [:body
+      (render-html (:root-element @*viewport*))]))})
 
 
 (defn clear-session-page-handler []

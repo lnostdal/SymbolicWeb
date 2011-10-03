@@ -12,6 +12,7 @@
 
 
 (defn left-node [container-model-node]
+  (assert (= ::ContainerModelNode (:type container-model-node)))
   @(:left container-model-node))
 
 (defn set-left-node [container-model-node new-left-node]

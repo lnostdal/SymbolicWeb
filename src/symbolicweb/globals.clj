@@ -50,7 +50,7 @@
                              (dosync
                               ;;(println "GC: Viewport")
                               ;; This will ensure that Models that hang around "for a long time" (e.g. global vars)
-                              ;; doesn't try to forward their updates to stale Widgets/Viewports.
+                              ;; doesn't try to forward their updates to Widgets in stale Viewports.
                               (ensure-non-visible (:root-element obj))))))))]
     (checker-fn -applications- -application-timeout-)
     (checker-fn -viewports- -viewport-timeout-)))

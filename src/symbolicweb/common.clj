@@ -2,7 +2,7 @@
 
 
 (set! *print-length* 10)
-(set! *print-level* 3)
+(set! *print-level* 10)
 
 
 (defmacro typecase [e & clauses]
@@ -20,34 +20,6 @@
     (. md update (.getBytes input-str))
     (let [digest (.digest md)]
       (apply str (map #(format "%02x" (bit-and % 0xff)) digest)))))
-
-
-(defn seconds-to-hms [seconds]
-  "Returns a vector of three values; hours, minutes and seconds in whole (integer) numbers."
-  [(int (/ seconds 3600)) ;; hours
-   (int (/ (rem seconds 3600) 60)) ;; minutes
-   (rem (rem seconds 3600) 60)]) ;; seconds
-
-
-(defn seconds-to-hms-str [seconds]
-  "This renders the result of SECONDS-TO-HMS into a string such as: 1h 5m 42s"
-  (let [[h m s] (seconds-to-hms seconds)]
-    (str (when (pos? h)
-           (str h "h "))
-         (when (or (pos? h)
-                   (pos? m))
-           (str m "m "))
-         (when (or (pos? h)
-                   (pos? m)
-                   (pos? s))
-           (str s "s")))))
-
-
-(defn hms-to-seconds [hours minutes seconds]
-  "HOURS, MINUTES and SECONDS are integers. This returns a single integer value; seconds."
-  (+ (* hours 60 60)
-     (* minutes 60)
-     seconds))
 
 
 (defn ensure-vector [x]
@@ -199,6 +171,11 @@ Returns a string."
                            " window.location.reload();")))
 
 
+(defn reload-page []
+  (dosync
+   (add-response-chunk "window.location.reload();")))
+
+
 (defn clear-all-sessions []
   (doseq [id_application @-applications-]
     (let [application (val id_application)]
@@ -245,7 +222,7 @@ Returns a string."
     "_sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
                                   (str it ".")
                                   "") "'; "]
-   [:script {:type "text/javascript" :defer "defer" :src "../js/common/sw/sw-ajax.js"}]))
+   [:script {:type "text/javascript" :defer "defer" :src "/js/common/sw/sw-ajax.js"}]))
 
 
 (defn sw-css-bootstrap []
@@ -253,6 +230,7 @@ Returns a string."
 
 
 (def ^:dynamic *with-js?* false)
+
 
 (defmacro with-js [& body]
   `(binding [*with-js?* true]

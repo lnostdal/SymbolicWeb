@@ -58,7 +58,8 @@ To send JS to the browser, try:
 
 ## Other things
 
-I'm aiming at a 132 column width: http://ask.slashdot.org/story/07/07/07/1931246/Are-80-Columns-Enough
+I'm aiming at a 132 column width using 1920x1080 monitors:
+  http://ask.slashdot.org/story/07/07/07/1931246/Are-80-Columns-Enough
 
 
 

@@ -1,5 +1,7 @@
 (ns symbolicweb.core
   (:import java.lang.ref.WeakReference)
+  (:import java.util.Calendar)
+  (:require clojure.stacktrace)
   (:use hiccup.core)
   (:use hiccup.page-helpers)
   (:use ring.adapter.jetty)
@@ -24,6 +26,7 @@
   (:require symbolicweb.html-container)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
+  (:require symbolicweb.date-and-time)
   (:gen-class))
 
 (in-ns 'symbolicweb.core)

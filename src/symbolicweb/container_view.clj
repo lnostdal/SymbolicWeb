@@ -43,10 +43,13 @@
 
 (derive ::ContainerView ::HTMLElement)
 (defn make-ContainerView [html-element-type container-model & attributes]
-  (assert (= ::ContainerModel (:type container-model)))
+  (assert (isa? ::ContainerModel (:type container-model)))
   (apply make-HTMLElement html-element-type container-model
          :type ::ContainerView
 
+         :html-element-type "ul"
+
+         ;; TODO: This thing isn't actually implemented proper yet. E.g., see the TODO in container_model.clj.
          :filter-node-fn (fn [container-view node] true)
 
          :handle-model-event-fn
@@ -68,9 +71,9 @@
          (fn [widget]
            (alter (:views container-model) disj widget))
 
-         :view-from-node-fn ;; TODO: Should this simply pass (:data node) directly?
+         :view-from-node-fn
          (fn [container-view node]
-           (make-HTMLElement "p" (make-ValueModel (:data node))))
+           (make-HTMLElement "li" (:data node)))
 
          :view-of-node (ref {})
          attributes))
