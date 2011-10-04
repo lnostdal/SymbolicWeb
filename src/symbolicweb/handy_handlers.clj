@@ -178,6 +178,7 @@ html, body, #sw-root {
        :body (str *in-channel-request?* "_sw_comet_response = true;")})))
 
 
+
 (defapp empty-page
-  (fn [] (is-url? "/sw/empty-page"))
+  (fn [] (is-url? "/empty-page/sw"))
   (fn [] (make-Application [])))
