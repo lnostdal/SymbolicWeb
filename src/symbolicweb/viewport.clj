@@ -1,28 +1,29 @@
 (in-ns 'symbolicweb.core)
 
 (declare make-ContainerView make-ContainerModel add-branch)
-(defn make-Viewport []
+(defn make-Viewport
   "This will instantiate a new Viewport and also 'register' it as a part of *APPLICATION* and the server via -VIEWPORTS-."
-  (let [viewport-id (str (generate-uid))]
-    (binding [*viewport*
-              (ref {:type ::Viewport
-                    :id viewport-id
-                    :last-activity-time (System/currentTimeMillis)
-                    :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
-                    :response-str ""
-                    :response-str-promise (promise)})]
+  ([] (make-Viewport (make-ContainerView "div" (make-ContainerModel))))
+  ([root-widget]
+     (let [viewport-id (str (generate-uid))]
+       (binding [*viewport*
+                 (ref {:type ::Viewport
+                       :id viewport-id
+                       :last-activity-time (System/currentTimeMillis)
+                       :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
+                       :response-str ""
+                       :response-str-promise (promise)})]
 
-      (dosync
-       (with1 (make-ContainerView "div" (make-ContainerModel))
-         (alter *viewport* assoc
-                :root-element it
-                :widgets {(:id @it) it})
-         (add-branch :root it))
-       (alter *application* update-in [:viewports] assoc viewport-id *viewport*))
+         (dosync
+          (alter *viewport* assoc
+                 :root-element root-widget
+                 :widgets {(:id @root-widget) root-widget})
+          (add-branch :root root-widget)
+          (alter *application* update-in [:viewports] assoc viewport-id *viewport*))
 
-      (when (:session? @*application*)
-        (swap! -viewports- #(assoc % viewport-id *viewport*)))
-      *viewport*)))
+         (when (:session? @*application*)
+           (swap! -viewports- #(assoc % viewport-id *viewport*)))
+         *viewport*))))
 
 
 (defn add-on-visible-fn [widget fn]

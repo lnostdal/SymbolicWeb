@@ -13,6 +13,7 @@
   (let [application-id (generate-uuid)
         application (ref (apply assoc {}
                                 :type ::Application
+                                :make-viewport-fn #'make-Viewport
                                 :session? session?
                                 :id application-id
                                 :id-generator (let [last-id (atom 0N)]
@@ -59,17 +60,17 @@ Viewport."
             (list application viewport)
             ;; Viewport ID sent, but Viewport not found on server end.
             (binding [*application* (make-Application [:rest-handler clear-session-page-handler :session? false])]
-              (list *application* (make-Viewport))))
+              (list *application* ((:make-viewport-fn @*application*)))))
           ;; Viewport ID not sent.
-          (list application (make-Viewport))))
+          (list application ((:make-viewport-fn @*application*)))))
       ;; Session cookie sent, but Application not found on server end.
       (binding [*application* (make-Application [:rest-handler clear-session-page-handler :session? false])]
-        (list *application* (make-Viewport))))
+        (list *application* ((:make-viewport-fn @*application*)))))
     ;; Session cookie not sent; the user is requesting a brand new session or Application.
     (binding [*application* (if-let [application-constructor (find-application-constructor)]
                               (application-constructor)
                               (make-Application [:rest-handler not-found-page-handler :session? false]))]
-      (list *application* (make-Viewport)))))
+      (list *application* ((:make-viewport-fn @*application*))))))
 
 
 (defn undefapp [name]
