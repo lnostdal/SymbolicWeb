@@ -25,6 +25,20 @@
                        :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
 
 
+(derive ::HashedTextInput ::HTMLElement)
+(defn make-HashedTextInput [model & attributes]
+  (with1 (apply make-TextInput model
+                :handle-model-event-fn (fn [_ _ _])
+                :static-attributes {:type "password"}
+                attributes)
+    (set-event-handler "change" it
+                       (fn [& {:keys [new-value]}]
+                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                            (input-parsing-fn new-value)
+                                            new-value)))
+                       :callback-data {:new-value "' + encodeURIComponent($.sha256($(this).val())) + '"})))
+
+
 (derive ::IntInput ::TextInput)
 (defn make-IntInput [model & attributes]
   (apply make-TextInput model
