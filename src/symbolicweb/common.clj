@@ -102,6 +102,22 @@
                             :application-constructor-fn ~application-constructor-fn})))
 
 
+(defmacro with-ctx [[& send-off?] & body]
+  "This will run BODY in the context of an Agent for the current session, i.e. whatever *APPLICATION* is bound to."
+  `(~(if send-off? 'send-off 'send)
+    (:agent @*application*)
+    (fn [_#]
+      (binding [*in-channel-request?* false]
+        (try
+          (do ~@body)
+          (catch Exception e#
+            (dosync
+             (jqAppend (root-element)
+               (make-Dialog (mk-pre (vm (with-out-str (clojure.stacktrace/print-stack-trace e# 10))))
+                            {:modal :true :width 1500 :height 800
+                             :buttons "{ 'Ok': function() { $(this).dialog('close'); }}"})))))))))
+
+
 (let [id-generator-value (atom 0)]
   (defn generate-uid []
     "Generates an unique ID; non-universal or pr. server instance based.
