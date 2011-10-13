@@ -101,6 +101,14 @@
                          widget)))
 
 
+(defn jqProp
+  ([widget attribute-name]
+     (str "$('#" (widget-id-of widget) "').prop('" attribute-name "');"))
+  ([widget attribute-name value]
+     (add-response-chunk (str "$('#" (widget-id-of widget) "').prop('" attribute-name "', " value ");")
+                         widget)))
+
+
 (defn jqVal
   ([widget]
      (str "$('#" (widget-id-of widget) "').val();"))
