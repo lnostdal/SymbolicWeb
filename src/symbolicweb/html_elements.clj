@@ -3,6 +3,10 @@
 
 ;; TODO: Macro this shit.
 
+(defn mk-pre [model & attributes]
+  (apply make-HTMLElement "pre" model attributes))
+
+
 (defn mk-p [model & attributes]
   (apply make-HTMLElement "p" model attributes))
 
