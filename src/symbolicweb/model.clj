@@ -10,6 +10,7 @@
                                 new-value ((:output-parsing-fn view-m) new-value)]
                             ((:handle-model-event-fn view-m) view old-value new-value))))]
   (defn make-ValueModel [value-ref]
+    "A Model meant to hold a single value. See ContainerModel when composition is needed."
     (assert (ref? value-ref))
     {:type ::ValueModel
      :value value-ref
@@ -23,14 +24,23 @@
   (make-ValueModel (ref initial-value)))
 
 
+(defn vm-copy [source-vm]
+  "Creates a ValueModel. The initial value of it will be extracted from SOURCE-VM. Further changes (mutation of) to SOURCE-VM will not affect the
+ValueModel created and returned here."
+  (assert (isa? ::ValueModel (:type source-vm)))
+  (vm (get-value source-vm)))
+
+
 (defn get-value [value-model]
+  "Returns the value held in VALUE-MODEL. It will be safe from write-skew (STM)."
   (assert (= ::ValueModel (:type value-model)))
   (ensure (:value value-model)))
 
 
 (defn set-value [value-model new-value]
   "Sets VALUE-MODEL to NEW-VALUE and notifies Views of VALUE-MODEL of the change.
-Note that the Views are only notified when NEW-VALUE wasn't = to the old value of VALUE-MODEL"
+Note that the Views are only notified when NEW-VALUE isn't = to the old value of VALUE-MODEL. This (read of the old value) is safe with regards to
+write-skew (STM)."
   (assert (= ::ValueModel (:type value-model)))
   (let [old-value (ensure (:value value-model))]
     (when-not (= old-value new-value)
