@@ -1,5 +1,7 @@
 (in-ns 'symbolicweb.core)
 
+;; TODO: I guess it is possible to make this thing implement the Ref interface or whatever in such a way that @some-vm can be used instead of having to do
+;; (get-value some-vm).
 
 (declare ref?)
 
@@ -22,13 +24,6 @@
   "Creates a ValueModel. INITIAL-VALUE will be wrapped in a Ref."
   (assert (not (ref? initial-value)))
   (make-ValueModel (ref initial-value)))
-
-
-(defn vm-copy [source-vm]
-  "Creates a ValueModel. The initial value of it will be extracted from SOURCE-VM. Further changes (mutation of) to SOURCE-VM will not affect the
-ValueModel created and returned here."
-  (assert (isa? ::ValueModel (:type source-vm)))
-  (vm (get-value source-vm)))
 
 
 (defn get-value [value-model]
@@ -57,3 +52,10 @@ Note that the Views are only notified when the resulting value of FN and ARGS wa
     (let [new-value (ensure (:value value-model))]
       (when-not (= old-value new-value)
         ((:notify-views-fn value-model) value-model old-value new-value)))))
+
+
+(defn vm-copy [source-vm]
+  "Creates a ValueModel. The initial value of it will be extracted from SOURCE-VM. Further changes (mutation of) to SOURCE-VM will not affect the
+ValueModel created and returned here."
+  (assert (isa? ::ValueModel (:type source-vm)))
+  (vm (get-value source-vm)))
