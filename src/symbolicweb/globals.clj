@@ -82,8 +82,7 @@
 
 
 (def ^{:dynamic true
-       :doc "This is used by ADD-RESPONSE-CHUNK to determine whether we're currently handling an AJAX-request;
-probably based on some DOM/client side event."}
+       :doc "This is used by ADD-RESPONSE-CHUNK to determine whether we're currently handling an AJAX-request; probably based on some DOM/client side event."}
   *in-channel-request?*
   false)
 

@@ -59,8 +59,7 @@
                          (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
                                             (input-parsing-fn new-value)
                                             new-value)))
-                       :callback-data
-                       {:new-value "' + encodeURIComponent($(this).val()) + '"})))
+                       :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
 
 
 (derive ::CKEditor ::HTMLElement)

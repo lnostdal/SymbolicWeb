@@ -2,6 +2,24 @@
 
 (declare make-Application)
 
+
+(defn default-aux-handler []
+  "Attempt to handle auxiliary callbacks or events; AJAX requests that do not follow the SW protocol. These might come from 3rd
+party code or plugins or similar running on the browser end.
+Returns TRUE if the event was handled or FALSE if no callback was found for the event."
+  (assert false "TODO: DEFAULT-AUX-HANDLER")
+  (with-local-vars [handled? false]
+    (loop [aux-callbacks (:aux-callbacks @*viewport*)]
+      (when-first [aux-callback aux-callbacks]
+        (let [aux-callback (val aux-callback)]
+          (if ((:fit-fn aux-callback))
+            (do
+              ((:handler-fn aux-callback))
+              (var-set handled? true))
+            (recur (next aux-callbacks))))))
+    (var-get handled?)))
+
+
 ;; TODO: In general all this is silly, but it'll go away as soon as I switch to a sane backend (Netty?) and decouple the HTTP
 ;; request and response; i.e. I go event-based.
 (defn handle-out-channel-request []
@@ -36,23 +54,6 @@
         :headers {"Content-Type" "text/javascript; charset=UTF-8"
                   "Connection"   "keep-alive"}
         :body (str *in-channel-request?* "_sw_comet_response = true;")}))))
-
-
-(defn default-aux-handler []
-  "Attempt to handle auxiliary callbacks or events; AJAX requests that do not follow the SW protocol. These might come from 3rd
-party code or plugins or similar running on the browser end.
-Returns TRUE if the event was handled or FALSE if no callback was found for the event."
-  (assert false "TODO: DEFAULT-AUX-HANDLER")
-  (with-local-vars [handled? false]
-    (loop [aux-callbacks (:aux-callbacks @*viewport*)]
-      (when-first [aux-callback aux-callbacks]
-        (let [aux-callback (val aux-callback)]
-          (if ((:fit-fn aux-callback))
-            (do
-              ((:handler-fn aux-callback))
-              (var-set handled? true))
-            (recur (next aux-callbacks))))))
-    (var-get handled?)))
 
 
 (defn default-ajax-handler []

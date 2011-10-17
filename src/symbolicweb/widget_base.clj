@@ -148,7 +148,7 @@ Returns WIDGET."
   (assert (string? label-str))
   (apply make-HTMLElement "button" (vm label-str)
          :type ::Button
-         :escape-html? false
+         :escape-html? false ;; TODO: This is not safe wrt. XSS. Converting Button into a HTMLContainer will fix this though.
          attributes))
 
 
@@ -157,7 +157,6 @@ Returns WIDGET."
 The lifetime of this observer is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
   #_(assert (or (= :root lifetime)
                 (isa? lifetime ::Widget)))
-
   (with (apply make-HTMLElement "%make-View" model
                :type ::View
                :handle-model-event-fn (fn [view old-value new-value]

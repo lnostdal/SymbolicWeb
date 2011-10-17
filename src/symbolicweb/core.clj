@@ -24,6 +24,7 @@
   (:require symbolicweb.container-model-node)
   (:require symbolicweb.container-view)
   (:require symbolicweb.html-container)
+  (:require symbolicweb.dialog)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
   (:require symbolicweb.date-and-time))
@@ -43,7 +44,7 @@
         (def ^:dynamic *viewport* viewport)
         (binding [*application* application ;; Set thread-local bindings which will be used from now on.
                   *viewport* viewport]
-          (dosync
+          (dosync ;; TODO: Atoms should do here.
            (touch application)
            (touch viewport))
           ((:request-handler @application)))))))
