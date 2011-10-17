@@ -36,8 +36,4 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
 
 (defn show-ModalDialog [widget & options]
   (apply show-Dialog widget
-         ;; TODO: I seem to need this kind of thing rather often. Does something like this already exist in clj.core or in some of the contribs?
-         (with-local-vars [lst (list)]
-           (doseq [option (update-in (apply hash-map options) [:js-options] assoc :modal :true)]
-             (var-set lst (conj (var-get lst) (val option) (key option))))
-           (var-get lst))))
+         (alter-options options update-in [:js-options] assoc :modal :true)))

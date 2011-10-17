@@ -5,6 +5,18 @@
 (set! *print-level* 10)
 
 
+(defn alter-options [options fn & args]
+  "> (alter-options (list :js-options {:close (with-js (alert \"closed!\"))}
+                          :on-close (with-js (alert \"yep, really closed!\")))
+                    update-in [:js-options] assoc :modal :true)
+   (:js-options {:modal :true, :close \"alert(decodeURIComponent('closed%21'));\"}
+    :on-close \"alert(decodeURIComponent('yep%2C%20really%20closed%21'));\")"
+  (with-local-vars [lst (list)]
+    (doseq [option (apply fn (apply hash-map options) args)]
+      (var-set lst (conj (var-get lst) (val option) (key option))))
+    (var-get lst)))
+
+
 (defmacro typecase [e & clauses]
   ;; (str 'clojure.lang.PersistentVector)
   ;; (case (.getName (type []))
