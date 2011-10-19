@@ -210,7 +210,13 @@ Returns a string."
                            " window.location.reload();")))
 
 
-(defn reload-page []
+(defn reload-page
+  ([rel-url]
+     (dosync
+      (add-response-chunk (str "window.location. = " (url-encode-wrap rel-url) ";"))))
+  ([]
+     (dosync
+      (add-response-chunk "window.location.reload();"))))
 
 
 (defn replace-page [rel-url]
