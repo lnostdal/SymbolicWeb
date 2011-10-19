@@ -108,6 +108,17 @@
   `(~signature ~'%with-object))
 
 
+(defn map-to-js-options [opts]
+  (with-out-str
+    (doseq [opt opts]
+      (print (str (name (key opt)) ": "
+                  (with (val opt)
+                    (if (keyword? it)
+                      (name it)
+                      it))
+                  ", ")))))
+
+
 (defmacro defapp [name fit-fn application-constructor-fn]
   `(swap! -application-types-
           #(assoc % '~name {:fit-fn ~fit-fn
