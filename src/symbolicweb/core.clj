@@ -25,6 +25,7 @@
   (:require symbolicweb.container-view)
   (:require symbolicweb.html-container)
   (:require symbolicweb.checkbox)
+  (:require symbolicweb.img)
   (:require symbolicweb.dialog)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)

@@ -167,16 +167,6 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
       ((:connect-model-view-fn @it) model it))))
 
 
-(derive ::Img ::HTMLElement)
-(defn make-Img [model & attributes]
-  "HTML IMG element. MODEL represents the SRC attribute."
-  (apply make-HTMLElement "img" model
-         :type ::Img
-         :handle-model-event-fn (fn [widget old-value new-value]
-                                  (jqAttr widget "src" new-value))
-         attributes))
-
-
 (derive ::Link ::HTMLElement)
 (defn make-Link [model & attributes]
   "HTML Link (a href) element. MODEL represents the HREF attribute."
