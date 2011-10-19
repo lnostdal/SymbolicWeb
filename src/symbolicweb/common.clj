@@ -135,11 +135,9 @@
           (do ~@body)
           (catch Exception e#
             (dosync
-             (jqAppend (root-element)
-               (make-Dialog (mk-pre (vm (with-out-str (clojure.stacktrace/print-stack-trace e# 10))))
-                            {:modal :true :width 1500 :height 800
-                             :buttons "{ 'Ok': function() { $(this).dialog('close'); }}"})))))))))
-
+             (show-Dialog (mk-pre (vm (with-out-str (clojure.stacktrace/print-stack-trace e# 10))))
+                          :js-options {:modal :true :width 1500 :height 800
+                                       :buttons "{ 'Ok': function() { $(this).dialog('close'); }}"}))))))))
 
 (let [id-generator-value (atom 0)]
   (defn generate-uid []
