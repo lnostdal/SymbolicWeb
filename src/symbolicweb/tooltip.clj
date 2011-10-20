@@ -1,6 +1,8 @@
 (in-ns 'symbolicweb.core)
 
 
+;; TODO: http://view.jqueryui.com/master/demos/tooltip/delegation-mixbag.html "jzaefferer: ..or use the items option"
+
 (defn remove-Tooltip [context-widget]
   "Remove (destroy) Tooltip."
   (add-response-chunk (str "$('#" (:id @context-widget) "').tooltip('destroy');")
