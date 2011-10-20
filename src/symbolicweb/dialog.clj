@@ -22,10 +22,17 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
 
 
 (defn show-Dialog [widget & options]
-  (jqAppend (root-element)
-    (apply make-Dialog widget options)))
+  (with1 widget
+    (jqAppend (root-element)
+      (apply make-Dialog it options))))
 
 
 (defn show-ModalDialog [widget & options]
-  (apply show-Dialog widget
-         (alter-options options update-in [:js-options] assoc :modal :true)))
+  (with1 widget
+    (apply show-Dialog it
+           (alter-options options update-in [:js-options] assoc :modal :true))))
+
+
+(defn close-Dialog [widget]
+  (add-response-chunk (str "$('#" (:id @widget) "').dialog('close');")
+                      widget))
