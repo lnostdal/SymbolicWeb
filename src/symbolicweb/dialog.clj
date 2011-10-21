@@ -21,6 +21,10 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
                         it)))
 
 
+;;(with (show-Dialog (whc ["div"] [:p "Hello World"])
+;;                   :js-options {:buttons "[{ text: \"Ok\", click: function(){ $(this).dialog(\"close\"); }}]"})
+;;  (set-event-handler "dialogclose" it (fn [] (println "dialogclose"))))
+
 (defn show-Dialog [widget & options]
   (with1 widget
     (jqAppend (root-element)
