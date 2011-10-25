@@ -142,7 +142,7 @@
       (binding [*in-channel-request?* false]
         (try
           (do ~@body)
-          (catch Exception e#
+          (catch Throwable e# ;; TODO: Throwable is "wrong", but it also actually works.
             (dosync
              (show-Dialog (mk-pre (vm (with-out-str (clojure.stacktrace/print-stack-trace e# 10))))
                           :js-options {:modal :true :width 1500 :height 800
