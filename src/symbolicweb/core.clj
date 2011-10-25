@@ -28,6 +28,7 @@
   (:require symbolicweb.img)
   (:require symbolicweb.dialog)
   (:require symbolicweb.tooltip)
+  (:require symbolicweb.sticky)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
   (:require symbolicweb.date-and-time))
