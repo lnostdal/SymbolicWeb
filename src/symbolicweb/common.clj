@@ -50,6 +50,15 @@
           ~@body)))))
 
 
+(defmacro with-app-viewports [app & body]
+  "Run BODY in context of all Viewports of APP (session)."
+  `(binding [*application* (or ~app *application*)]
+     (doseq [~'viewport (vals (:viewports @*application*))]
+       (binding [*viewport* ~'viewport]
+         (dosync
+          ~@body)))))
+
+
 (defn get-widget [id]
   (get (:widgets @*viewport*) (str id)))
 
