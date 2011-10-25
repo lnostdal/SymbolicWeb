@@ -133,7 +133,7 @@ Returns WIDGET."
          attributes))
 
 
-;; TODO: Button is actually a container (HTMLContainer?).
+;; TODO: Button should actually be a container (HTMLContainer?).
 (derive ::Button ::HTMLElement)
 (defn make-Button [label-str & attributes]
   "Supply :MODEL as attribute if needed. This will override what's provided via LABEL-STR."

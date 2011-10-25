@@ -1,6 +1,9 @@
 (in-ns 'symbolicweb.core)
 
 
+;; TODO: Handle buttons. See USER-CHECK-EMAIL in fod/user.clj.
+
+
 (defn make-Dialog [widget & {:keys [js-options on-close]}]
   "\"Convert\" WIDGET into a jQuery UI Dialog.
 DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI Dialog docs.

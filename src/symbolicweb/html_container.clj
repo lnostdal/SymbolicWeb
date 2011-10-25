@@ -31,7 +31,7 @@ CONTENT-FN is something like:
   (fn [html-template]
     [[:.itembox] html-template
      [:.title] (mk-p title-model)])"
-  (apply make-HTMLElement "%dummy" (vm nil)
+  (apply make-HTMLElement "%HTMLTemplate" (vm nil)
          :type ::HTMLTemplate
          :handle-model-event-fn (fn [widget old-value new-value])
          :connect-model-view-fn (fn [model widget])
@@ -69,7 +69,8 @@ It still maintains the same Model <-> View relationship as a HTMLElement unless 
 
 (derive ::BlankTemplateElement ::TemplateElement)
 (defn make-BlankTemplateElement [& attributes]
-  "A TemplateElement which doesn't have a Model."
+  "A TemplateElement which doesn't have a Model.
+This might be used to setup events on some content from a template."
   (apply make-TemplateElement (vm "%make-BlankTemplateElement")
          :type ::BlankTemplateElement
          :handle-model-event-fn (fn [widget old-value new-value])
