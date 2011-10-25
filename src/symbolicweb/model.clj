@@ -40,7 +40,8 @@ write-skew (STM)."
   (let [old-value (ensure (:value value-model))]
     (when-not (= old-value new-value)
       (ref-set (:value value-model) new-value)
-      ((:notify-views-fn value-model) value-model old-value new-value))))
+      ((:notify-views-fn value-model) value-model old-value new-value)))
+  new-value)
 
 
 (defn alter-value [value-model fn & args]
