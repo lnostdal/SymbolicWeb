@@ -48,11 +48,7 @@ CONTENT-FN is something like:
                    (when-not (= (second td) w) ;; We don't want a circular parent / child relationship.
                      ;; For ADD-BRANCH only really, but there's some nice calls to ASSERT going on in SW too, so yeah.
                      ;; TODO: Aux html?
-                     (sw (second td)))
-                   ;; Here comes RENDER-EVENTS, but with ADD-RESPONSE-CHUNK used instead.
-                   (let [script (str (render-aux-js (second td)) (render-events (second td)))]
-                     (when (seq script)
-                       (add-response-chunk script (second td)))))
+                     (sw (second td))))
                  (apply str (emit* (var-get res)))))))
          attributes))
 

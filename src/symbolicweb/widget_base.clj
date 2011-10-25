@@ -13,25 +13,15 @@
                                          :or {js-before "return(true);"
                                               callback-data ""
                                               js-after ""}}]
-  (str "$('#" (:id widget) "').bind('" event-type "', "
-       "function(event){"
-       "swMsg('" (:id widget) "', '" event-type "', function(){" js-before "}, '"
-       (reduce (fn [acc key_val] (str acc (url-encode (str (key key_val))) "=" (val key_val) "&"))
-               ""
-               callback-data)
-       "', function(){" js-after "});"
-       "});"))
-
-
-(defn render-events [widget]
-  "Returns JS which will set up client/DOM side events."
   (let [widget @widget]
-    (when-not (empty? (:callbacks widget))
-      (with-out-str
-        (loop [callbacks (:callbacks widget)]
-          (when-first [[event-type [callback-fn callback-data]] callbacks]
-            (print (render-event widget event-type :callback-data callback-data))
-            (recur (rest callbacks))))))))
+    (str "$('#" (:id widget) "').bind('" event-type "', "
+         "function(event){"
+         "swMsg('" (:id widget) "', '" event-type "', function(){" js-before "}, '"
+         (reduce (fn [acc key_val] (str acc (url-encode (str (key key_val))) "=" (val key_val) "&"))
+                 ""
+                 callback-data)
+         "', function(){" js-after "});"
+         "});")))
 
 
 (defn render-aux-js [widget]
@@ -74,6 +64,8 @@
 Returns WIDGET."
   ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
   (alter widget update-in [:callbacks] assoc event-type [callback-fn callback-data])
+  (add-response-chunk (render-event widget event-type :callback-data callback-data)
+                      widget)
   widget)
 
 
@@ -135,7 +127,7 @@ Returns WIDGET."
                                   " id='" (:id w-m) "'" ((:render-static-attributes-fn w-m) w) ">"
                                   (render-aux-html w)
                                   "</" (:html-element-type w-m) ">"
-                                  (let [script (str (render-aux-js w) (render-events w))]
+                                  (let [script (str (render-aux-js w))]
                                     (when (seq script)
                                       (str "<script type='text/javascript'>" script "</script>"))))))
          attributes))
