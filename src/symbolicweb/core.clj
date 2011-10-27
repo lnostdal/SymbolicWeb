@@ -9,7 +9,7 @@
   (:use ring.middleware.params)
   (:use ring.middleware.cookies)
   (:use net.cgrand.enlive-html)
-  ;;(:use [clojure.java.jdbc :exclude (resultset-seq)])
+  (:use [clojure.java.jdbc :exclude (resultset-seq)])
   (:require [clojure.string :as str])
   (:require symbolicweb.model)
   (:require symbolicweb.globals)
@@ -43,15 +43,26 @@
     (binding [*out* *out*
               *err* *err*
               *request* request]
-      (let [[application viewport] (find-or-create-application-instance)]
-        (def ^:dynamic *application* application) ;; Set root bindings for easy REPL-inspection.
-        (def ^:dynamic *viewport* viewport)
-        (binding [*application* application ;; Set thread-local bindings which will be used from now on.
-                  *viewport* viewport]
-          (dosync ;; TODO: Atoms should do here.
-           (touch application)
-           (touch viewport))
-          ((:request-handler @application)))))))
+      (try
+        (let [[application viewport] (find-or-create-application-instance)]
+          (def ^:dynamic *application* application) ;; Set root bindings for easy REPL-inspection.
+          (def ^:dynamic *viewport* viewport)
+          (binding [*application* application ;; Set thread-local bindings which will be used from now on.
+                    *viewport* viewport]
+            (dosync ;; TODO: Atoms should do here.
+             (touch application)
+             (touch viewport))
+            ((:request-handler @application))))
+        (catch Throwable e
+          ;; TODO: Production / development modes? Send to both browser and development environment (Slime)? Etc.
+          {:status 200
+           :headers {"Content-Type" "text/html; charset=UTF-8"
+                     "Connection"   "keep-alive"}
+           :body
+           (with-out-str
+             (println "<html><body><pre>")
+             (clojure.stacktrace/print-stack-trace e 100)
+             (println "</pre></body></html>"))})))))
 
 
 (defn main [& args]
