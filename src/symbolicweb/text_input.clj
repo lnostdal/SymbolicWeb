@@ -18,12 +18,12 @@
                 :handle-model-event-fn (fn [widget _ new-value]
                                          (jqVal widget new-value))
                 attributes)
-         (set-event-handler "change" it
-                            (fn [& {:keys [new-value]}]
-                              (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
-                                                 (input-parsing-fn new-value)
-                                                 new-value)))
-                            :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
+    (set-event-handler "change" it
+                       (fn [& {:keys [new-value]}]
+                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                            (input-parsing-fn new-value)
+                                            new-value)))
+                       :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
 
 
 (derive ::HashedInput ::HTMLElement)
