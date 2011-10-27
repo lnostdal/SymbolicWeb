@@ -55,7 +55,7 @@
             ((:request-handler @application))))
         (catch Throwable e
           ;; TODO: Production / development modes? Send to both browser and development environment (Slime)? Etc.
-          {:status 200
+          {:status 500
            :headers {"Content-Type" "text/html; charset=UTF-8"
                      "Connection"   "keep-alive"}
            :body
