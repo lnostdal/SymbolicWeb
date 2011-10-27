@@ -28,21 +28,24 @@
 
 (derive ::HashedInput ::HTMLElement)
 (defn make-HashedInput [model salt & attributes]
-  "<input type='password' ..> type widget using salted SHA256 hashing on the client end.
-Note that the salted hash is still transferred (client -> server) in clear text form."
+  "<input type='password' ..> type widget using SHA256 hashing on the client and server end. It is salted on the server end.
+Note that the client-side hash halve is still transferred in clear text form from the client to the server. This is what happens:
+
+  (sha (str salt (sha hash)))"
   (with1 (apply make-HTMLElement "input" model
                 :type ::TextInput
                 :static-attributes {:type "password"}
                 :handle-model-event-fn (fn [_ _ _])
+                :input-parsing-fn (fn [input-str]
+                                    (sha (str salt input-str))) ;; Salt then hash a second time on server end.
                 attributes)
-         (set-event-handler "change" it
-                            (fn [& {:keys [new-value]}]
-                              (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
-                                                 (input-parsing-fn new-value)
-                                                 new-value)))
-                            :callback-data
-                            {:new-value "' + encodeURIComponent($.sha256(decodeURIComponent('"
-                             (url-encode (or salt "")) "') + $(this).val())) + '"})))
+    (set-event-handler "change" it
+                       (fn [& {:keys [new-value]}]
+                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                            (input-parsing-fn new-value)
+                                            new-value)))
+                       :callback-data
+                       {:new-value "' + encodeURIComponent($.sha256($(this).val())) + '"}))) ;; Hash once on client end.
 
 
 (derive ::IntInput ::TextInput)
