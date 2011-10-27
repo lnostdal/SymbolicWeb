@@ -30,7 +30,8 @@
 CONTENT-FN is something like:
   (fn [html-template]
     [[:.itembox] html-template
-     [:.title] (mk-p title-model)])"
+     [:.title] (mk-p title-model)
+     [:#sw-js-bootstrap] (sw-js-bootstrap)]) ;; String."
   (apply make-HTMLElement "%HTMLTemplate" (vm nil)
          :type ::HTMLTemplate
          :handle-model-event-fn (fn [widget old-value new-value])
@@ -38,25 +39,31 @@ CONTENT-FN is something like:
          :disconnect-model-view-fn (fn [widget])
          :render-html-fn
          (fn [w]
-           (let [w-m @w]
-             (let [transformation-data (content-fn w)]
-               (with-local-vars [res html-resource]
-                 (doseq [td (seq (partition 2 transformation-data))]
+           (let [w-m @w
+                 transformation-data (content-fn w)]
+             (with-local-vars [res html-resource]
+               (doseq [td (seq (partition 2 transformation-data))]
+                 (if (string? (second td))
                    (var-set res (transform (var-get res)
                                            (first td)
-                                           (set-attr "id" (widget-id-of (second td)))))
-                   (when-not (= (second td) w) ;; We don't want a circular parent / child relationship.
-                     ;; For ADD-BRANCH only really, but there's some nice calls to ASSERT going on in SW too, so yeah.
-                     ;; TODO: Aux html?
-                     (sw (second td))))
-                 (apply str (emit* (var-get res)))))))
+                                           (html-content (second td))))
+                   (do
+                     (var-set res (transform (var-get res)
+                                             (first td)
+                                             (set-attr "id" (widget-id-of (second td)))))
+                     (when-not (= (second td) w) ;; We don't want a circular parent / child relationship.
+                       ;; For ADD-BRANCH only really (since we already have the static HTML),
+                       ;; but there's some nice calls to ASSERT going on in SW too, so yeah.
+                       ;; TODO: Aux html?
+                       (sw (second td))))))
+               (apply str (emit* (var-get res))))))
          attributes))
 
 
 (derive ::TemplateElement ::HTMLElement)
 (defn make-TemplateElement [model & attributes]
   "A TemplateElement has already got its static HTML (:html-element-type etc.) defined for it via a template (make-HTMLTemplate).
-It still maintains the same Model <-> View relationship as a HTMLElement unless it is overridden."
+It still maintains the same Model <-> View relationship (jqHTML) as a HTMLElement unless it is overridden."
   (apply make-HTMLElement "%make-TemplateElement" model
          :type ::TemplateElement
          attributes))
