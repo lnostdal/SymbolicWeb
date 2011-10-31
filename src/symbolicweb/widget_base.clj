@@ -71,7 +71,7 @@ Returns WIDGET."
 
 (defn make-ID
   ([] (make-ID {}))
-  ([m] (assoc m :id (format "%x" (generate-uid)))))
+  ([m] (assoc m :id (format "sw-%x" (generate-uid)))))
 
 
 (defn make-WidgetBase [& key_vals]
