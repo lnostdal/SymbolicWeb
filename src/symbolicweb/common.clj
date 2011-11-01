@@ -224,7 +224,7 @@ Returns a string."
 
 (defn reload-page
   ([rel-url]
-     (add-response-chunk (str "window.location. = " (url-encode-wrap rel-url) ";")))
+     (add-response-chunk (str "window.location = " (url-encode-wrap rel-url) ";")))
   ([]
      (add-response-chunk "window.location.reload();")))
 
