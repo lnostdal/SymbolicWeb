@@ -58,6 +58,9 @@
 
          :connect-model-view-fn
          (fn [container-model container-view]
+           ;; Clear out stuff; e.g. "dummy content" from templating.
+           (add-response-chunk (with-js (jqEmpty container-view))
+                               container-view)
            ;; Add any already existing nodes to CONTAINER-VIEW.
            (loop [node (ensure (:head-node container-model))]
              (when node
