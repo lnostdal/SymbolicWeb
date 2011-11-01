@@ -50,30 +50,17 @@
 (defn find-or-create-application-instance []
   "Returns two values; a map structure representing an user session/Application, and a map structure representing the current
 Viewport."
-  (assert (thread-bound? #'*request*))
   (if-let [cookie-value (:value (get (:cookies *request*) "_sw_application_id"))]
     ;; Session cookie sent.
     (if-let [application (get @-applications- cookie-value)]
       ;; Session cookie sent, and Application found on server end.
-      (binding [*application* application]
-        (if-let [viewport-id (get (:query-params *request*) "_sw_viewport_id")]
-          ;; Viewport ID sent.
-          (if-let [viewport (get (:viewports @*application*) viewport-id)]
-            ;; Viewport ID sent, and Viewport found on server end.
-            (list application viewport)
-            ;; Viewport ID sent, but Viewport not found on server end.
-            (binding [*application* (make-Application [:rest-handler clear-session-page-handler :session? false])]
-              (list *application* ((:make-viewport-fn @*application*)))))
-          ;; Viewport ID not sent.
-          (list application ((:make-viewport-fn @*application*)))))
+      application
       ;; Session cookie sent, but Application not found on server end.
-      (binding [*application* (make-Application [:rest-handler clear-session-page-handler :session? false])]
-        (list *application* ((:make-viewport-fn @*application*)))))
+      (make-Application :rest-handler clear-session-page-handler :session? false))
     ;; Session cookie not sent; the user is requesting a brand new session or Application.
-    (binding [*application* (if-let [application-constructor (find-application-constructor)]
-                              (application-constructor)
-                              (make-Application [:rest-handler not-found-page-handler :session? false]))]
-      (list *application* ((:make-viewport-fn @*application*))))))
+    (if-let [application-constructor (find-application-constructor)]
+      (application-constructor)
+      (make-Application :rest-handler not-found-page-handler :session? false))))
 
 
 (defn undefapp [name]

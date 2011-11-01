@@ -44,15 +44,12 @@
               *err* *err*
               *request* request]
       (try
-        (let [[application viewport] (find-or-create-application-instance)]
-          (def ^:dynamic *application* application) ;; Set root bindings for easy REPL-inspection.
-          (def ^:dynamic *viewport* viewport)
-          (binding [*application* application ;; Set thread-local bindings which will be used from now on.
-                    *viewport* viewport]
-            (dosync ;; TODO: Atoms should do here.
-             (touch application)
-             (touch viewport))
-            ((:request-handler @application))))
+        (binding [*application* (find-or-create-application-instance)]
+          (dosync
+           (touch *application*))
+          ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
+          ;; Production / development modes needed here too. Logging, etc. etc..
+          ((:request-handler @*application*)))
         (catch Throwable e
           ;; TODO: Production / development modes? Send to both browser and development environment (Slime)? Etc.
           {:status 500
@@ -60,9 +57,12 @@
                      "Connection"   "keep-alive"}
            :body
            (with-out-str
-             (println "<html><body><pre>")
+             (println "<html><body><font face='sans-serif'>")
+             (println "<h3><a href='https://github.com/lnostdal/SymbolicWeb'>SymbolicWeb</a>: Top Level Server Exception (HTTP 500)</h3>")
+             (println "<pre>")
              (clojure.stacktrace/print-stack-trace e 100)
-             (println "</pre></body></html>"))})))))
+             (println "</pre>")
+             (println "</font></body></html>"))})))))
 
 
 (defn main [& args]
