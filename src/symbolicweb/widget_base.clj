@@ -123,8 +123,7 @@ Returns WIDGET."
                                                           "'"))))))
          :render-html-fn (fn [w]
                            (let [w-m @w]
-                             (str "<" (:html-element-type w-m)
-                                  " id='" (:id w-m) "'" ((:render-static-attributes-fn w-m) w) ">"
+                             (str "<" (:html-element-type w-m) " id='" (:id w-m) "'" ((:render-static-attributes-fn w-m) w) ">"
                                   (render-aux-html w)
                                   "</" (:html-element-type w-m) ">"
                                   (let [script (str (render-aux-js w))]
@@ -157,6 +156,11 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
     (if lifetime
       (add-branch lifetime it)
       ((:connect-model-view-fn @it) model it))))
+
+
+(defn mk-view [model lifetime handle-model-event-fn & attributes]
+  (apply make-View model lifetime :handle-model-event-fn handle-model-event-fn
+         attributes))
 
 
 (derive ::Link ::HTMLElement)
