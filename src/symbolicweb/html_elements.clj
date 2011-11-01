@@ -56,3 +56,10 @@
 
 (defn sw-span [model & attributes]
   (sw (apply mk-span model attributes)))
+
+
+(defn mk-div [model & attributes]
+  (apply make-HTMLElement "div" model attributes))
+
+(defn sw-div [model & attributes]
+  (sw (apply mk-div model attributes)))
