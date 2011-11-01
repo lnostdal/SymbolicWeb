@@ -68,19 +68,32 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (declare clear-session-page-handler)
 (defn default-request-handler []
+  "Default top-level request handler for both REST and AJAX/Comet type requests."
   (if (or (= (get (:headers *request*) "x-requested-with")
              "XMLHttpRequest")
-          (get (:query-params *request*) "_sw_request_type")) ;; jQuery doesn't use XHR for cross-domain background requests.
+          ;; jQuery doesn't use XHR for cross-domain background requests. I guess we only need this; not the XHR check above?
+          (get (:query-params *request*) "_sw_request_type"))
+    ;; AJAX.
     (if (= clear-session-page-handler (:rest-handler @*application*))
-      ;; Send an "AJAX style" (text/javascript content-type) clear-session response.
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Connection"   "keep-alive"}
+                 "Connection" "keep-alive"}
        :body (with-js (clear-session))}
-      ((:ajax-handler @*application*)))
-    (dosync
-     (with1 ((:rest-handler @*application*))
-       ((:reload-handler @*application*))))))
+      (if-let [viewport (get (:viewports @*application*)
+                             (get (:query-params *request*) "_sw_viewport_id"))]
+        (binding [*viewport* viewport]
+          (dosync (touch *viewport*))
+          ((:ajax-handler @*application*)))
+        {:status 200
+         :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                   "Connection" "keep-alive"}
+         :body (with-js (clear-session))}))
+    ;; REST.
+    (binding [*viewport* (when (:session? @*application*)
+                           ((:make-viewport-fn @*application*)))]
+      (dosync
+       ((:reload-handler @*application*))
+       ((:rest-handler @*application*))))))
 
 
 (defn default-rest-handler []
