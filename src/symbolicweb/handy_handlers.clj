@@ -182,4 +182,4 @@ html, body, #sw-root {
 
 (defapp empty-page
   (fn [] (is-url? "/empty-page/sw"))
-  (fn [] (make-Application [])))
+  (fn [] (make-Application)))

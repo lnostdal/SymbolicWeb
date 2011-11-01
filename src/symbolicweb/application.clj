@@ -1,37 +1,40 @@
 (in-ns 'symbolicweb.core)
 
-(defn make-Application [[& {:keys [request-handler reload-handler rest-handler ajax-handler aux-handler
-                                   session?]
-                            :or {request-handler #'default-request-handler
-                                 reload-handler (fn [])
-                                 rest-handler   #'default-rest-handler
-                                 ajax-handler   #'default-ajax-handler
-                                 aux-handler    #'default-aux-handler
-                                 session?       true}}]
-                        & app-args]
-  "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-."
+
+(defn app-agent []
+  (:agent @*application*))
+
+
+(defn make-Application [& app-args]
+  "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-. On page load (or refresh), the order of things executed are:
+
+  :MAKE-VIEWPORT-FN
+  :RELOAD-HANDLER
+  :REST-HANDLER"
   (let [application-id (generate-uuid)
-        application (ref (apply assoc {}
-                                :type ::Application
-                                :make-viewport-fn #'make-Viewport
-                                :session? session?
-                                :id application-id
-                                :id-generator (let [last-id (atom 0N)]
-                                                (fn [] (swap! last-id inc')))
-                                :last-activity-time (System/currentTimeMillis)
-                                :viewports {}
-                                :request-handler request-handler
-                                :reload-handler  reload-handler
-                                :rest-handler    rest-handler
-                                :ajax-handler    ajax-handler
-                                :aux-handler     aux-handler
-                                :html-title "[SymbolicWeb]"
-                                app-args))]
-    (when session?
-      (swap! -applications- #(assoc % application-id application))
+        application (apply assoc {}
+                           :type ::Application
+                           :agent (agent ::ApplicationAgent)
+                           :id application-id
+                           :id-generator (let [last-id (atom 0N)]
+                                           (fn [] (swap! last-id inc')))
+                           :last-activity-time (System/currentTimeMillis)
+                           :viewports {}
+                           :make-viewport-fn #'make-Viewport
+                           :request-handler #'default-request-handler
+                           :reload-handler (fn [])
+                           :rest-handler #'default-rest-handler
+                           :ajax-handler #'default-ajax-handler
+                           :aux-handler #'default-aux-handler
+                           :session? true
+                           :html-title "[SymbolicWeb]"
+                           app-args)
+        application-ref (ref application)]
+    (when (:session? application)
+      (swap! -applications- #(assoc % application-id application-ref))
       (dosync
        (set-value -num-applications-model- (count @-applications-))))
-    application))
+    application-ref))
 
 
 (defn find-application-constructor []
