@@ -4,16 +4,18 @@
 (defn make-Viewport
   "This will instantiate a new Viewport and also 'register' it as a part of *APPLICATION* and the server via -VIEWPORTS-."
   ([] (make-Viewport (make-ContainerView "div" (make-ContainerModel))))
-  ([root-widget]
+
+  ([root-widget & args]
      (let [viewport-id (str (generate-uid))]
        (binding [*viewport*
-                 (ref {:type ::Viewport
-                       :id viewport-id
-                       :last-activity-time (System/currentTimeMillis)
-                       :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
-                       :response-str ""
-                       :response-str-promise (promise)})]
-
+                 (ref (apply assoc {}
+                             :type ::Viewport
+                             :id viewport-id
+                             :last-activity-time (System/currentTimeMillis)
+                             :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
+                             :response-str ""
+                             :response-str-promise (promise)
+                             args))]
          (dosync
           (alter *viewport* assoc
                  :root-element root-widget
