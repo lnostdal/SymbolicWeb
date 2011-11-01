@@ -211,6 +211,11 @@ Returns a string."
        "\";"))
 
 
+(defn remove-session [application]
+  (let [application @application]
+    (swap! -applications- #(dissoc % (:id application)))))
+
+
 (declare add-response-chunk)
 (defn clear-session []
   (add-response-chunk (str (set-document-cookie :name "_sw_application_id" :value nil)
