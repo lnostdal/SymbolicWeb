@@ -191,10 +191,11 @@ Returns a string."
           :href href}])
 
 
-(defn set-document-cookie [& {:keys [application viewport domain? name value]
+(defn set-document-cookie [& {:keys [application viewport path domain? name value]
                               :or {application *application*
                                    viewport *viewport*
                                    domain? true
+                                   path "\" + window.location.pathname + \""
                                    name "name" ;;(cookie-name-of (server-of application))
                                    value "value"}}] ;;(cookie-value-of app)
   (str "document.cookie = \""
@@ -205,10 +206,20 @@ Returns a string."
          (str "expires=\""
               " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear()+1); return date.toUTCString(); })()"
               " + \"; ")
-         ;; MDC states that this could simply be 0, but I have not tested this.
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
-       "path=\" + window.location.pathname + \"; "
-       "\";"))
+       "path=" path "; "
+       "\";" \newline \newline
+
+       ;; By evaluating this in the exact same context where the cookie was set, we can be sure path and hostname etc. match.
+       "_sw_clear_session_fn = function(){"
+       "document.cookie = \""
+       name "=; "
+       (when domain?
+         "domain=.\" + window.location.hostname + \"; ")
+       "expires=Fri, 27 Jul 2001 02:47:11 UTC; "
+       "path=" path "; "
+       "\";};"
+       ))
 
 
 (defn remove-session [application]

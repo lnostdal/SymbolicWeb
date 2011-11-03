@@ -1,15 +1,13 @@
-// lnostdal@blackbox:~/symbolicweb$ java -jar /home/lnostdal/javascript/jquery/build/google-compiler-20091218.jar --js data/javascript/sw/sw-ajax.js >> sw-ajax.min.js.new
-
-
 /*
-For this file to bootstrap correctly the following variables must be bound:
+  For this file to bootstrap correctly the following variables must be bound:
 
-  * _sw_viewport_id [string]
+    * _sw_viewport_id [string]
 
-  * _sw_dynamic_subdomain [string]
+    * _sw_dynamic_subdomain [string]
+
+    * _sw_clear_session_fn [function]
 
 */
-
 
 
 /// swGetCurrentHash ///
