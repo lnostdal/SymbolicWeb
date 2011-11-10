@@ -5,6 +5,15 @@
 (set! *print-level* 10)
 
 
+(defn expected-response-type []
+  (let [accept-header (get (:headers *request*) "accept")]
+    (cond
+     (re-find #"text/javascript" accept-header) :javascript
+     (re-find #"text/html" accept-header) :html
+     (re-find #"text/plain" accept-header) :plain
+     true accept-header)))
+
+
 (defn viewport-of [widget]
   (:viewport @widget))
 
