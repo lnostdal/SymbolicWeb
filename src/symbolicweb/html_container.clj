@@ -24,6 +24,14 @@
      ~@body))
 
 
+(derive ::PostHTMLTemplate ::HTMLContainer)
+(defn make-PostHTMLTemplate [id content-fn & attributes]
+  "This applies templating to an already existing HTML element, specified by ID, on the page."
+  (with1 (%make-HTMLContainer (into ["%PostHTMLTemplate"] (into attributes (list id :id)))
+                              content-fn)
+    (render-html it)))
+
+
 (derive ::HTMLTemplate ::HTMLContainer)
 (defn make-HTMLTemplate [html-resource content-fn & attributes]
   "HTML-RESOURCE is the return-value of a call to HTML-RESOURCE from the Enlive library.
