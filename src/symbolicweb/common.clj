@@ -1,5 +1,6 @@
 (in-ns 'symbolicweb.core)
 
+(declare add-response-chunk)
 
 (set! *print-length* 10)
 (set! *print-level* 10)
@@ -151,6 +152,8 @@
                             :application-constructor-fn ~application-constructor-fn})))
 
 
+;; TODO: Support for timeout; with default value, and adjustable.
+(declare show-Dialog mk-pre)
 (defmacro with-ctx [[& send-off?] & body]
   "This will run BODY in the context of an Agent for the current session, i.e. whatever *APPLICATION* is bound to."
   `(~(if send-off? 'send-off 'send)
@@ -160,10 +163,13 @@
         (try
           (do ~@body)
           (catch Throwable e# ;; TODO: Throwable is "wrong", but it also actually works.
+            (clojure.stacktrace/print-stack-trace e# 10)
             (dosync
-             (show-Dialog (mk-pre (vm (with-out-str (clojure.stacktrace/print-stack-trace e# 10))))
-                          :js-options {:modal :true :width 1500 :height 800
-                                       :buttons "{ 'Ok': function() { $(this).dialog('close'); }}"}))))))))
+             (binding [*in-channel-request?* false]
+               (show-Dialog (mk-pre (vm (with-out-str (clojure.stacktrace/print-stack-trace e# 10))))
+                            :js-options {:modal :true :width 1500 :height 800
+                                         :buttons "{ 'Ok': function() { $(this).dialog('close'); }}"})))))))))
+
 
 (let [id-generator-value (atom 0)]
   (defn generate-uid []
