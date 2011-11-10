@@ -8,10 +8,13 @@
    (rem (rem seconds 3600) 60)]) ;; seconds
 
 
-(defn seconds-to-hms-str [seconds]
+(defn seconds-to-hms-str
   "This renders the result of SECONDS-TO-HMS into a string such as: 1h 5m 42s"
-  (let [[h m s] (seconds-to-hms seconds)]
-    (format "%02d:%02d:%02d" h m s)))
+  ([seconds] (seconds-to-hms-str seconds \:))
+
+  ([seconds separator]
+     (let [[h m s] (seconds-to-hms seconds)]
+       (format "%02d%c%02d%c%02d" h separator m separator s))))
 
 
 (defn hms-to-seconds [hours minutes seconds]
