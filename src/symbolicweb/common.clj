@@ -5,6 +5,14 @@
 (set! *print-level* 10)
 
 
+(defn viewport-of [widget]
+  (:viewport @widget))
+
+
+(defn application-of [widget]
+  (:application (viewport-of widget)))
+
+
 (defn alter-options [options fn & args]
   "> (alter-options (list :js-options {:close (with-js (alert \"closed!\"))}
                           :on-close (with-js (alert \"yep, really closed!\")))
