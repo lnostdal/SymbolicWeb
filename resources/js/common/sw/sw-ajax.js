@@ -5,8 +5,6 @@
 
     * _sw_dynamic_subdomain [string]
 
-    * _sw_clear_session_fn [function]
-
 */
 
 
@@ -37,22 +35,28 @@ var swURL, swDURL;
 
 (function (){
    var fn = function(dynamic_p, params){
-     return [window.location.protocol, "//",
-             (function(){ if(dynamic_p) return(_sw_dynamic_subdomain); else return(""); })(), // Sigh. ClojureScript?
-             window.location.host,
-             window.location.pathname,
-             "?_sw_viewport_id=" + _sw_viewport_id,
-             params
-            ].join('');
-     return "blah";
+     var res = [window.location.protocol, "//",
+                (function(){ if(dynamic_p) return(_sw_dynamic_subdomain); else return(""); })(),
+                window.location.host,
+                (function(){
+                   var str = "";
+                   for(var p = window.location.pathname.split("/"), i = 0; i < (p.length - 1); i++)
+                     if(p[i] != "")
+                       str += "/" + p[i];
+                   return str;
+                 })(),
+                "?_sw_viewport_id=", _sw_viewport_id,
+                params
+               ].join('');
+     return(res);
    };
 
-   // AJAX request; not vs. random sub-domain.
+   // Request; not vs. random sub-domain.
    swURL = function(params){
      return fn(false, params);
    };
 
-   // AJAX request (but jQuery will use <script> tag background loading); vs. random sub-domain.
+   // Request (but jQuery will use <script> tag background loading); vs. random sub-domain.
    swDURL = function(params){
      return fn(true, params);
    };})();
@@ -61,7 +65,6 @@ var swURL, swDURL;
 
 /// swAjax ///
 //////////////
-
 
 swAjax =
   (function(){
@@ -87,12 +90,17 @@ swAjax =
 
      return function(params, callback_data, after_fn){
        if(queue.push(function(){
-                       var url = [window.location.protocol, "//",
-                                  window.location.host,
-                                  window.location.pathname,
-                                  "?_sw_request_type=ajax",
-                                  "&_sw_viewport_id=", _sw_viewport_id,
-                                  params].join('');
+                       /*
+                        var url = [window.location.protocol, "//",
+                        window.location.host,
+                        window.location.pathname,
+                        "/sw",
+                        "?_sw_request_type=ajax",
+                        "&_sw_viewport_id=", _sw_viewport_id,
+                        params].join('');
+                        */
+
+                       var url = swURL(["&_sw_request_type=ajax", params].join(''));
 
                        var options = {
                          type: (function(){
@@ -125,7 +133,6 @@ swAjax =
 ///////////////
 
 _sw_comet_response = false;
-
 
 swComet =
   (function(){
@@ -239,19 +246,18 @@ function swRun(code_id, async_p, func){
 ////////////////////////
 
 /*
-$.address.change(function(event){
-    //alert(event.value);
-    swAjax("&_sw_event=url-hash-changed",
-           "&new-url-hash=" + encodeURIComponent(event.value));
-  });
-*/
+ $.address.change(function(event){
+ //alert(event.value);
+ swAjax("&_sw_event=url-hash-changed",
+ "&new-url-hash=" + encodeURIComponent(event.value));
+ });
+ */
 
 
 
 /// Boot! ///
 /////////////
 
-$(window).load(function()
-{
-  swComet("&do=refresh&hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
-});
+$(window).load(function(){
+                 swComet("&do=refresh&hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
+               });

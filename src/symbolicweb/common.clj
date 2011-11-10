@@ -196,41 +196,35 @@ Returns a string."
                                    viewport *viewport*
                                    domain? true
                                    path "\" + window.location.pathname + \""
-                                   name "name" ;;(cookie-name-of (server-of application))
-                                   value "value"}}] ;;(cookie-value-of app)
+                                   name "name"
+                                   value "value"}}]
   (str "document.cookie = \""
        name "=" (if value value "") "; "
        (when domain?
-         "domain=.\" + window.location.hostname + \"; ")
+         (if (= domain? true)
+           "domain=\" + window.location.hostname + \"; "
+           (str "domain=" domain? "; ")))
        (if value
          (str "expires=\""
               " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear()+1); return date.toUTCString(); })()"
               " + \"; ")
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=" path "; "
-       "\";" \newline \newline
+       "\";" \newline))
 
-       ;; By evaluating this in the exact same context where the cookie was set, we can be sure path and hostname etc. match.
-       "_sw_clear_session_fn = function(){"
-       "document.cookie = \""
-       name "=; "
-       (when domain?
-         "domain=.\" + window.location.hostname + \"; ")
-       "expires=Fri, 27 Jul 2001 02:47:11 UTC; "
-       "path=" path "; "
-       "\";};"
-       ))
+
+(defn set-default-session-cookie [value]
+  "If VALUE is NIL the cookie will be cleared."
+  (set-document-cookie :name "_sw_application_id" :value value :path "/" :domain? false))
+
+
+(defn set-default-login-cookie [value]
+  (set-document-cookie :name "_sw_login_id" :value value :path "/" :domain? false))
 
 
 (defn remove-session [application]
   (let [application @application]
     (swap! -applications- #(dissoc % (:id application)))))
-
-
-(declare add-response-chunk)
-(defn clear-session []
-  (add-response-chunk (str (set-document-cookie :name "_sw_application_id" :value nil)
-                           " window.location.reload();")))
 
 
 (defn reload-page
@@ -244,12 +238,22 @@ Returns a string."
   (add-response-chunk (str "window.location.replace(" (url-encode-wrap rel-url) ");")))
 
 
+(defn clear-session
+  ([] (clear-session *application*))
+  ([application]
+     ;; TODO: Do this on the server end instead or also?
+     (add-response-chunk (set-default-session-cookie nil))
+     (with-app-viewports application
+       (add-response-chunk "window.location.reload();"))))
+
+
 (defn clear-all-sessions []
+  ;; TODO: Do this on the server end instead or also.
   (doseq [id_application @-applications-]
-    (let [application (val id_application)]
-      (doseq [id_viewport (:viewports @application)]
+    (binding [*application*(val id_application)]
+      (doseq [id_viewport (:viewports @*application*)]
         (binding [*viewport* (val id_viewport)]
-          (clear-session))))))
+          (clear-session *application*))))))
 
 
 (defn is-url?
@@ -282,15 +286,20 @@ Returns a string."
            widget))))
 
 
-(defn sw-js-bootstrap []
-  (html
-   [:script {:type "text/javascript"}
-    (set-document-cookie :name "_sw_application_id" :value (:id @*application*))
-    "_sw_viewport_id = '" (:id @*viewport*) "'; "
-    "_sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
-                                  (str it ".")
-                                  "") "'; "]
-   [:script {:type "text/javascript" :defer "defer" :src "/js/common/sw/sw-ajax.js"}]))
+(defn sw-js-base-bootstrap []
+  (str (set-default-session-cookie (:id @*application*))
+       "_sw_viewport_id = '" (:id @*viewport*) "'; " \newline
+       "_sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
+                                     (str it ".")
+                                     "") "'; " \newline))
+
+
+(defn sw-js-bootstrap
+  ([] (sw-js-bootstrap "/"))
+  ([path]
+     (html
+      [:script {:type "text/javascript"} (sw-js-base-bootstrap path)]
+      [:script {:type "text/javascript" :defer "defer" :src "/js/common/sw/sw-ajax.js"}])))
 
 
 (defn sw-css-bootstrap []
