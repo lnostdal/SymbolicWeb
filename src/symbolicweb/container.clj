@@ -44,8 +44,8 @@ This is used to track visibility on the server-end. Use e.g. jqAppend to actuall
 end."
   (let [parent-m (if (= parent :root)
                    :root
-                   @parent)
-        child-m @child]
+                   (ensure parent))
+        child-m (ensure child)]
     (assert (not (:parent child-m)))
     (alter child assoc :parent parent)
     (when-not (= parent :root)
