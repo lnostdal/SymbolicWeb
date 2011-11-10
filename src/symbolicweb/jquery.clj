@@ -6,12 +6,6 @@
 (declare remove-branch)
 
 
-(defn ensure-content-str [content]
-  (if (widget? content)
-    (render-html content)
-    content))
-
-
 (defn jqHTML
   ([widget] (str "$('#" (widget-id-of widget) "').html();"))
   ([widget new-html]
@@ -19,45 +13,47 @@
                          widget)))
 
 
-(defn jqAttr
-  ([widget attribute-name]
-     (str "$('#" (widget-id-of widget) "').attr('" attribute-name "');"))
-  ([widget attribute-name value]
-     (add-response-chunk (str "$('#" (widget-id-of widget) "').attr('" attribute-name "'"
-                              ", " (url-encode-wrap value) ");")
-                         widget)))
-
-
-(defn jqAppend [parent content]
+(defn jqAppend [parent new-widget]
   "Inside."
-  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').append(" (url-encode-wrap (ensure-content-str content)) ");")
-                             parent))
-  (when (and (not *with-js?*) (widget? content))
-    (add-branch parent content)))
-
-
-(defn jqPrepend [parent content]
-  "Inside."
-  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap (ensure-content-str content)) ");")
+  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').append(" (url-encode-wrap (render-html new-widget parent)) ");")
                              parent)
-    (when (and (not *with-js?*) (widget? content))
-      (add-branch parent content))))
+    (when-not *with-js?*
+      (add-branch parent new-widget))))
 
 
-(defn jqAfter [widget content]
+(defn jqPrepend [parent new-widget]
+  "Inside."
+  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap (render-html new-widget parent)) ");")
+                             parent)
+    (when-not *with-js?*
+      (add-branch parent new-widget))))
+
+
+(defn jqAfter [widget new-widget]
   "Outside."
-  (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap (ensure-content-str content)) ");")
-                             (:parent @widget))
-    (when (and (not *with-js?*) (widget? content))
-      (add-branch (:parent @widget) content))))
+  (let [parent (:parent @widget)]
+    (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap (render-html new-widget widget)) ");")
+                               parent)
+      (when-not *with-js?*
+        (add-branch parent new-widget)))))
 
 
-(defn jqBefore [widget content]
+(defn jqBefore [widget new-widget]
   "Outside."
-  (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap (ensure-content-str content)) ");")
-                             (:parent @widget))
-    (when (and (not *with-js?*) (widget? content))
-      (add-branch (:parent @widget) content))))
+  (let [parent (:parent @widget)]
+    (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap (render-html new-widget widget)) ");")
+                               parent)
+      (when-not *with-js?*
+        (add-branch (:parent @widget) content)))))
+
+
+;; TODO: This thing hasn't been tested yet. Test before committing to git.
+(defn jqReplaceWith [widget new-widget]
+  (when-not *with-js?* (remove-branch widget))
+  (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').replaceWith(" (url-encode-wrap (render-html new-widget widget) ");")
+                                  widget))
+    (when-not *with-js?*
+      (add-branch widget new-widget))))
 
 
 (defn jqAddClass [widget class-name]
