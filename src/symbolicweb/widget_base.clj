@@ -37,26 +37,29 @@
 
 
 (declare add-branch)
-(defn render-html [widget]
+;; TODO: Make CONTEXT-WIDGET a required argument.
+(defn render-html [widget & [context-widget]]
   "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS."
-  (let [widget-m (ensure widget)
-        widget-type (:type widget-m)]
-    (cond
-     (isa? widget-type ::Widget)
-     (if (isa? widget-type ::HTMLContainer)
-       (binding [*in-html-container?* widget]
+  (binding [*application* (if context-widget (application-of context-widget) *application*)
+            *viewport* (if context-widget (viewport-of context-widget) *viewport*)]
+    (let [widget-m (ensure widget)
+          widget-type (:type widget-m)]
+      (cond
+       (isa? widget-type ::Widget)
+       (if (isa? widget-type ::HTMLContainer)
+         (binding [*in-html-container?* widget]
+           ((:render-html-fn widget-m) widget))
          ((:render-html-fn widget-m) widget))
-       ((:render-html-fn widget-m) widget))
 
-     true
-     (throw (Exception. (str "Can't render: " widget-m))))))
+       true
+       (throw (Exception. (str "Can't render: " widget-m)))))))
 
 
 (defn sw [widget]
   "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
   (assert *in-html-container?*)
   (add-branch *in-html-container?* widget)
-  (render-html widget))
+  (render-html widget *in-html-container?*))
 
 
 (defn set-event-handler [event-type widget callback-fn & {:keys [callback-data]}]
