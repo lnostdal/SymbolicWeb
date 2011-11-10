@@ -13,16 +13,19 @@
                              :id viewport-id
                              :last-activity-time (System/currentTimeMillis)
                              :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
-                             :response-str ""
-                             :response-str-promise (promise)
+                             :response-str (atom "")
+                             :response-promise (atom (promise))
+                             :response-sched-fn (atom (fn []))
                              args))]
          (dosync
+          (alter root-widget assoc
+                 :viewport *viewport*)
           (alter *viewport* assoc
+                 :application *application*
                  :root-element root-widget
                  :widgets {(:id @root-widget) root-widget})
           (add-branch :root root-widget)
           (alter *application* update-in [:viewports] assoc viewport-id *viewport*))
-
          (when (:session? @*application*)
            (swap! -viewports- #(assoc % viewport-id *viewport*)))
          *viewport*))))
@@ -40,22 +43,26 @@
 
 (defn add-response-chunk
   "Viewport is a REF so this will work. I.e., all changes done to Viewport will reset if a transaction fails."
-  ([new-chunk] (add-response-chunk new-chunk (root-element)))
+  ([new-chunk] (add-response-chunk new-chunk (if *with-js?* nil (root-element))))
   ([new-chunk widget]
      (letfn [(do-it []
-               (let [viewport (:viewport @widget)]
-                 (assert viewport)
-                 (if (and (thread-bound? #'*in-channel-request?*) (= *viewport* viewport)) ;; AJAX?
+               (let [viewport (viewport-of widget)
+                     viewport-m @viewport]
+                 (if (and (thread-bound? #'*in-channel-request?*) *in-channel-request?* (= *viewport* viewport))
                    (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
-                   (alter viewport
-                          #(let [promise (:response-str-promise %)]
-                             (when-not (realized? promise)
-                               (deliver promise 42))
-                             (update-in % [:response-str] str new-chunk \newline)))))
+                   (with-ctx [] ;; Send to an Agent which will run at DOSYNC (transaction) commit.
+                     (locking viewport
+                       (let [response-str (:response-str viewport-m)
+                             response-promise (:response-promise viewport-m)
+                             response-sched-fn (:response-sched-fn viewport-m)]
+                         (reset! response-str (str @response-str new-chunk \newline))
+                         (when-not (realized? @response-promise)
+                           (deliver @response-promise 42)
+                           (@response-sched-fn)))))))
                new-chunk)]
        (if *with-js?*
          new-chunk
-         (if (:viewport @widget) ;; Visible?
+         (if (viewport-of widget) ;; Visible?
            (do-it)
            (add-on-visible-fn widget do-it))))
      new-chunk))

@@ -20,23 +20,32 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (var-get handled?)))
 
 
-;; TODO: In general all this is silly, but it'll go away as soon as I switch to a sane backend (Netty?) and decouple the HTTP
-;; request and response; i.e. I go event-based.
-(defn handle-out-channel-request []
+(defn handle-out-channel-request [channel request]
   "Output channel."
-  {:status 200
-   :headers {"Content-Type" "text/javascript; charset=UTF-8"
-             "Connection"   "keep-alive"}
-   :body
-   (with-local-vars [our-response-str ""]
-     (deref (:response-str-promise @*viewport*) -comet-timeout- nil) ;; Hanging HTTP request.
-     (dosync
-      (alter *viewport* (fn [m]
-                          (var-set our-response-str (:response-str m))
-                          (assoc m
-                            :response-str ""
-                            :response-str-promise (promise)))))
-     (str (var-get our-response-str) "_sw_comet_response = true;"))})
+  (letfn [(do-it []
+            (locking *viewport*
+              (let [viewport-m @*viewport*
+                    response-str (:response-str viewport-m)
+                    response-promise (:response-promise viewport-m)
+                    response-sched-fn (:response-sched-fn viewport-m)]
+                (enqueue channel
+                         {:status 200
+                          :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                                    "Server" "SymbolicWeb"}
+                          :body (with1 (str @response-str "_sw_comet_response = true;")
+                                  (reset! response-str "")
+                                  (reset! response-promise (promise)))}))))]
+    (locking *viewport*
+      (let [viewport-m @*viewport*
+            response-promise (:response-promise viewport-m)
+            response-sched-fn (:response-sched-fn viewport-m)]
+        (if (realized? @response-promise)
+          (do-it)
+          (let [thread-bindings (get-thread-bindings)] ;; TODO: Is this really needed.
+            (reset! (:response-sched-fn viewport-m)
+                    (at (+ (now) -comet-timeout-)
+                        #(with-bindings thread-bindings
+                           (do-it))))))))))
 
 
 (defn handle-in-channel-request []
@@ -52,14 +61,15 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
        {:status 200
         :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                  "Connection"   "keep-alive"}
-        :body (str *in-channel-request?* "_sw_comet_response = true;")}))))
+                  "Server" "SymbolicWeb"}
+        :body *in-channel-request?*}))))
+
 
 
 (defn default-ajax-handler []
   (if-let [sw-request-type-str (get (:query-params *request*) "_sw_request_type")]
     (case sw-request-type-str
-      "comet" (handle-out-channel-request)
+      "comet" ((wrap-aleph-handler #'handle-out-channel-request) *request*)
       "ajax"  (handle-in-channel-request)
       (throw (Exception. (str "SymbolicWeb: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))
     (dosync
@@ -69,16 +79,14 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 (declare clear-session-page-handler)
 (defn default-request-handler []
   "Default top-level request handler for both REST and AJAX/Comet type requests."
-  (if (or (= (get (:headers *request*) "x-requested-with")
-             "XMLHttpRequest")
-          ;; jQuery doesn't use XHR for cross-domain background requests. I guess we only need this; not the XHR check above?
-          (get (:query-params *request*) "_sw_request_type"))
+  (if (get (:query-params *request*) "_sw_request_type") ;; sw-ajax.js adds this to our AJAX requests.
     ;; AJAX.
     (if (= clear-session-page-handler (:rest-handler @*application*))
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Connection" "keep-alive"}
-       :body (with-js (clear-session))}
+                 "Server" "SymbolicWeb"}
+       :body (str (set-default-session-cookie nil)
+                  "window.location.reload();")}
       (if-let [viewport (get (:viewports @*application*)
                              (get (:query-params *request*) "_sw_viewport_id"))]
         (binding [*viewport* viewport]
@@ -86,8 +94,9 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           ((:ajax-handler @*application*)))
         {:status 200
          :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                   "Connection" "keep-alive"}
-         :body (with-js (clear-session))}))
+                   "Server" "SymbolicWeb"}
+         :body
+         (with-js (clear-session))}))
     ;; REST.
     (binding [*viewport* (when (:session? @*application*)
                            ((:make-viewport-fn @*application*)))]
@@ -96,10 +105,46 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        ((:rest-handler @*application*))))))
 
 
+(defn clear-session-page-handler []
+  "Clears the session; removes client side cookies and reloads the page."
+  (let [accept-header (expected-response-type)]
+    (case accept-header
+      :javascript
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                 "Server" "SymbolicWeb"}
+       :body
+       (str ;; Clear session cookie and reload page.
+        (set-default-session-cookie nil)
+        ;; TODO: This can be removed later; it's used to clear out any old cookies from before TM joined us.
+        (set-document-cookie :name "_sw_application_id" :value nil :path "/free-or-deal/sw" :domain? ".dev.kitch.no")
+        "window.location.reload();")}
+
+      :html
+      {:status 200
+       :headers {"Content-Type" "text/html; charset=UTF-8"
+                 "Server" "SymbolicWeb"}
+       :body
+       (html
+        (doctype :xhtml-strict)
+        (xhtml-tag
+         "en"
+         [:head
+          [:title "Reloading page..."]
+          [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
+          ;; Clear session cookie and reload page.
+          [:script {:type "text/javascript"}
+           (set-default-session-cookie nil)]]
+         [:body {:onload "window.location.reload();"}
+          [:p "Reloading page..."]]))}
+
+     (println "CLEAR-SESSION-PAGE-HANDLER: Unknown HTTP ACCEPT header value:" accept-header))))
+
+
 (defn default-rest-handler []
   {:status  200
    :headers {"Content-Type"  "text/html; charset=UTF-8"
-             "Connection"    "keep-alive"
+             "Server" "SymbolicWeb"
              "Expires"       "Mon, 26 Jul 1997 05:00:00 GMT"
              "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
              "Pragma"        "no-cache"}
@@ -132,42 +177,20 @@ html, body, #sw-root {
 }"]
       (sw-css-bootstrap)
       (script-src "/js/common/jquery-1.6.4.min.js")
+      (script-src "/js/common/sw/jquery.sha256/jquery.sha256.js")
       (with-out-str
         (doseq [head-element (:head-elements @*application*)]
           (println head-element)))
       (sw-js-bootstrap)]
 
      [:body
-      (render-html (:root-element @*viewport*))]))})
-
-
-(defn clear-session-page-handler []
-  "Clears the session; removes client side cookies and reloads the page."
-  {:status 200
-   :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Connection"   "keep-alive"}
-   :body
-   (html
-    (doctype :xhtml-strict)
-    (xhtml-tag
-     "en"
-     [:head
-      [:title "[SymbolicWeb] Reloading page..."]
-      [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-      [:script {:type "text/javascript"}
-       ;; Clear session cookie and reload page.
-       (set-document-cookie :name "_sw_application_id" :value nil)
-       (set-document-cookie :name "_sw_application_id" :value nil :domain? false)]]
-
-     [:body {:onload "window.location.reload();"}
-      [:p "Reloading page..."]]))})
+      (render-html (:root-element @*viewport*) (:root-element @*viewport*))]))})
 
 
 (defn not-found-page-handler []
-  "This doesn't set a cookie on the client end."
   {:status 404
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Connection"   "keep-alive"}
+             "Server" "SymbolicWeb"}
    :body
    (html
     (doctype :xhtml-strict)
@@ -188,11 +211,11 @@ html, body, #sw-root {
       (fn-to-wrap)
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Connection"   "keep-alive"}
-       :body (str *in-channel-request?* "_sw_comet_response = true;")})))
+                 "Server" "SymbolicWeb"}
+       :body *in-channel-request?*})))
 
 
 
-(defapp empty-page
+#_(defapp empty-page
   (fn [] (is-url? "/empty-page/sw"))
   (fn [] (make-Application)))
