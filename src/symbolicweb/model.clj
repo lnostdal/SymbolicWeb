@@ -149,18 +149,23 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
            :trigger-initial-update? false))
 
 
-(defn db-backend-get [^String table-name ^Long id ^DBCache db-cache]
-  "SQL SELECT. Returns a map with translated, via :DB-HANDLE-OUTPUT-FN of DB-CACHE, keys and values."
-  (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" table-name) " WHERE id = ?;") id]
-    (with-local-vars [object-map {}]
-      (doseq [key_val (first res)]
-        (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
-          (when output-key
-            (let [vm-output-value (vm output-value)]
-              (var-set object-map (assoc (var-get object-map)
-                                    output-key vm-output-value))
-              (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value)))))
-      (var-get object-map))))
+(defn db-backend-get [^DBCache db-cache ^Long id ^clojure.lang.Ref obj]
+  "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
+Returns OBJ."
+  (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (. db-cache table-name)) " WHERE id = ?;") id]
+    (dosync
+     (doseq [key_val (first res)]
+       (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
+         (when output-key
+           (if (output-key @obj)
+             (do
+               (vm-set (output-key (ensure obj)) output-value)
+               (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure obj))))
+             (let [vm-output-value (vm output-value)]
+               (ref-set obj (assoc (ensure obj)
+                              output-key vm-output-value))
+               (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))))))
+     obj)))
 
 
 (declare db-cache-put)
@@ -234,18 +239,12 @@ that only one object with id ID exists in the cache and the system at any point 
                 (with-errors-logged
                   (with-sw-db
                     (apply cont-fn
-                           (if-let [new-obj ((. db-cache constructor-fn) db-cache id)] ;; I/O.
+                           (if-let [new-obj (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id))] ;; I/O.
                              (locking db-cache ;; Lock after I/O.
                                (if-let [cache-entry (. (. db-cache cache-data) get id)] ;; Check cache again while within lock.
                                  [cache-entry :hit]
                                  (do
                                    (db-cache-put db-cache id new-obj)
-                                   ;; TODO: Do we need to do this while within the lock? Or at all here? I guess we can do it pretty quickly if we
-                                   ;; make sure no SQL UPDATE is done; :TRIGGER-INITIAL-UPDATE? should be false for MK-VIEW in this case.
-                                   ;;(ensure-persistent db-cache new-obj)
-                                   #_(doseq [key_val new-obj]
-                                     (db-ensure-persistent-field db-cache @(:id (ensure new-obj)) (key key_val) (val key_val)))
-
                                    [new-obj :miss])))
                              [nil nil]))))))))
 
@@ -257,14 +256,15 @@ that only one object with id ID exists in the cache and the system at any point 
        remove id)))
 
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 (defn test-cache-perf [num-iterations object-id]
   (def -db-cache- (mk-db-cache "test"
                                (fn [db-cache id]
-                                 (dosync ;; TODO: Needed since mk-view calls add-view which calls alter (STM mutation).
-                                  (ref (db-backend-get "test" id db-cache))))
+                                 (ref {:value (vm "default")}))
                                nil
                                nil))
   (let [first-done? (promise)]
@@ -280,12 +280,10 @@ that only one object with id ID exists in the cache and the system at any point 
                      (fn [obj cache-state]))))))
 
 
-
 (defn test-cache-insert []
   (def -db-cache- (mk-db-cache "test"
                                (fn [db-cache id]
-                                 (dosync
-                                  (ref (db-backend-get "test" id db-cache))))
+                                 (ref {:value (vm "default value")}))
                                nil
                                nil))
   (let [new-obj (ref {:value (vm "non-random initial value")})]
@@ -387,7 +385,8 @@ Returns the object."
                           (let [object #_(ref {:id (vm nil)})
                                 (mk-new-object)]
                             (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" table-name) " WHERE id = ?;") id]
-                              (assert (not (empty? res)) (str "ENSURE-PERSISTENT: Object with ID " id " not found in table \"" table-name "\"."))
+                              (assert (not (empty? res)) (str "ENSURE-PERSISTENT: Object with ID " id " not found in table \""
+                                                              table-name "\"."))
                               (let [res (first res)]
                                 (doseq [key_val res]
                                   (let [[output-key output-value] (db-handle-output db-cache object (key key_val) (val key_val))]
