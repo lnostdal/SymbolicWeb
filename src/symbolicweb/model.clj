@@ -1,5 +1,11 @@
 (in-ns 'symbolicweb.core)
 
+;; MVC core and persistence (DB) abstraction
+;; -----------------------------------------
+;;
+;; TODO: Foreign keys. This should be easy, and fun.
+
+
 (declare mk-view ref?)
 
 
@@ -39,7 +45,7 @@
                (ref #{})
                (fn [value-model old-value new-value]
                  (doseq [view (ensure (. value-model views))]
-                   (let [view-m @view
+                   (let [view-m (ensure view)
                          new-value ((:output-parsing-fn view-m) new-value)]
                      ((:handle-model-event-fn view-m) view old-value new-value))))))
 
@@ -87,11 +93,9 @@ ValueModel created and returned here."
   (vm @value-model))
 
 
-;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;
 
-
-;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TODO: Persistance stuff comes here; move this to separate file later
 
 
 (defrecord DBCache
@@ -100,16 +104,12 @@ ValueModel created and returned here."
      agent
      ^String table-name
      constructor-fn ;; Function called on cache miss to construct the initial skeleton for the data from the DB to fill up.
-     ^ReferenceMap cache-data])
+     ^ReferenceMap cache-data]) ;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
 
 
 (defn default-db-handle-input [input-key input-value]
   "SW --> DB.
-DEREFs INPUT-VALUE if it is a ValueModel, so needs to be run within DOSYNC.
-If INPUT-VALUE is not a ValueModel, returns [NIL NIL] resulting in the entry not being stored in the DB."
-  #_(if (isa? (type input-value) ValueModel)
-      [input-key @input-value]
-      [nil nil])
+Default handler; passes everything through as is."
   [input-key input-value])
 
 (defn db-handle-input [^DBCache db-cache ^clojure.lang.Keyword input-key input-value]
@@ -121,7 +121,8 @@ represented by INPUT-KEY, is not to be stored in the DB."
     (default-db-handle-input input-key input-value)))
 
 (defn default-db-handle-output [output-key output-value]
-  "DB --> SW."
+  "DB --> SW.
+Default handler; passes everything through as is."
   [output-key output-value])
 
 (defn db-handle-output [^DBCache db-cache ^clojure.lang.Keyword output-key output-value]
@@ -137,8 +138,8 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
   "Setup reactive SQL UPDATEs for VALUE-MODEL."
   (mk-view value-model nil
            (fn [value-model old-value new-value]
-             (when-not (= old-value new-value) ;; TODO: Hum, is this needed? And anyways, comparison using = as a magic value is bad.
-               (let [[input-key input-value] (db-handle-input db-cache key new-value)]
+             (when-not (= old-value new-value) ;; TODO: This should probably be generalized and handled before the notification
+               (let [[input-key input-value] (db-handle-input db-cache key new-value)] ;; is even sent to callbacks.
                  (when input-key
                    (send-off (. db-cache agent)
                              (fn [_]
@@ -151,21 +152,22 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
 
 (defn db-backend-get [^DBCache db-cache ^Long id ^clojure.lang.Ref obj]
   "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
-Returns OBJ."
+Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
   (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (. db-cache table-name)) " WHERE id = ?;") id]
-    (dosync
-     (doseq [key_val (first res)]
-       (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
-         (when output-key
-           (if (output-key @obj)
-             (do
-               (vm-set (output-key (ensure obj)) output-value)
-               (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure obj))))
-             (let [vm-output-value (vm output-value)]
-               (ref-set obj (assoc (ensure obj)
-                              output-key vm-output-value))
-               (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))))))
-     obj)))
+    (when-let [res (first res)]
+      (dosync
+       (doseq [key_val res]
+         (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
+           (when output-key
+             (if (output-key (ensure obj))
+               (do
+                 (vm-set (output-key (ensure obj)) output-value)
+                 (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure obj))))
+               (let [vm-output-value (vm output-value)]
+                 (ref-set obj (assoc (ensure obj)
+                                output-key vm-output-value))
+                 (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))))))
+       obj))))
 
 
 (declare db-cache-put)
@@ -257,8 +259,8 @@ that only one object with id ID exists in the cache and the system at any point 
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;;;;;;;;;;;;;;;;;;;;;
+;; some quick  tests...
 
 
 (defn test-cache-perf [num-iterations object-id]
@@ -270,14 +272,16 @@ that only one object with id ID exists in the cache and the system at any point 
   (let [first-done? (promise)]
     (db-cache-get -db-cache- object-id
                   (fn [obj cache-state]
-                    (dbg-prin1 [obj cache-state])
+                    (dbg-prin1 [:db-cache-get-cb obj cache-state])
                     (deliver first-done? :yup)))
     (deref first-done?)
     (println "Cache is now hot; request object with ID" object-id "from it" num-iterations "times and print total time taken..")
     (time
      (dotimes [i num-iterations]
        (db-cache-get -db-cache- object-id
-                     (fn [obj cache-state]))))))
+                     (fn [obj cache-state]
+                       (dbg-prin1 [obj cache-state])))))))
+
 
 
 (defn test-cache-insert []
@@ -287,6 +291,7 @@ that only one object with id ID exists in the cache and the system at any point 
                                nil
                                nil))
   (let [new-obj (ref {:value (vm "non-random initial value")})]
+    ;; SQL INSERT.
     (dosync
      (db-backend-put new-obj -db-cache- (fn [new-obj]
                                           (dosync (dbg-prin1 @new-obj)))))
@@ -296,6 +301,7 @@ that only one object with id ID exists in the cache and the system at any point 
      (db-cache-get -db-cache- @(:id @new-obj)
                    (fn [obj cache-state]
                      (dbg-prin1 [obj cache-state]))))
+    ;; SQL UPDATE.
     (dosync
      (vm-set (:value @new-obj) (str "rand-int: " (rand-int 9999)))
      (dbg-prin1 @(:value @new-obj)))))
@@ -315,91 +321,21 @@ that only one object with id ID exists in the cache and the system at any point 
 
 
 
-#_(defn ensure-persistent [db-cache object-or-id & aux-data]
-  "If an object with an :ID field containing NIL is given for OBJECT-OR-ID, an SQL INSERT operation is done based on the fields
-in the object (default values) combined with AUX-DATA. Note that both AUX-DATA and the SQL INSERT operation might add additional
-fields to the object -- also note that the :ID field might not be set yet on returning from this function.
+(defn php-send [message-map]
+  "Send message to PHP end."
+  ;; TODO: Think about using the Async API here -- or wrap everything in an agent perhaps.
+  (let [conn (aleph.http.client/http-request {:auto-transform true
+                                              :method :get
+                                              :cookies (aleph.http.utils/hash->cookie
+                                                        {"x_plugin_api_key" "fod"
+                                                         "PHPSESSID" (:value (get (:cookies *request*) "PHPSESSID"))})
+                                              :url (str "http://dev.kitch.no/free-or-deal/sw/php/plugin_api/sw_plugin_api.php?data="
+                                                        (json/generate-string message-map))})]
+    (dbg-prin1 @conn)))
 
-If an integer or an object with a non-NIL :ID field is given for OBJECT-OR-ID, fetches the associated object from cache or DB
-and does an SQL UPDATE operation on it based on the data given by AUX-DATA if any.
 
-In both cases, an observer is created for each field in the object in question which will continiously sync to the related columns
-in the DB.
+(defn php-login! [id access-rights]
+  (php-send {:action "login" :id id
+             :access_rights access-rights}))
 
-AUX-DATA is parsed or handled the same way data from the DB is parsed or handled. I.e., via :DB-HANDLE-OUTPUT-FN of the cache.
 
-Returns the object."
-  (let [[id object] (if (number? object-or-id)
-                      [object-or-id nil]
-                      [@(:id @object-or-id) object-or-id])]
-    (letfn ([handle-aux-data [f]
-             (doseq [key_val aux-data]
-               (let [[input-key input-value] (db-handle-input db-cache object (key key_val) (val key_val))]
-                 (when input-key
-                   (f input-key input-value))))]
-
-            [do-observe-value-model [object key value-model]
-             ;; SQL UPDATE; observed and synced/updated in real-time.
-             (mk-view value-model nil
-                      (fn [value-model old-value new-value]
-                        (let [id @(:id @object)]
-                          (assert id)
-                          (let [[input-key input-value] (db-handle-input db-cache object key new-value)]
-                            (when input-key
-                              (update-values table-name ["id=?" id]
-                                             {(as-quoted-identifier \" input-key) input-value}))))))]
-
-              [do-init [object]
-               ;; SQL INSERT.
-               (when (not @(:id @object))
-                 (with-local-vars [record-data {}]
-                   ;; TODO: We only handle AUX-DATA here; what about already existing fields in OBJECT? AUX-DATA should take
-                   ;; AUX-DATA should take precedence; already existing fields in OBJECT being regarded as default values to be overridden.
-                   (doseq [key_val insert-data] ;; Build data structure which then will be converted to a single SQL INSERT statement.
-                     (let [key_val (first key_val)] ;; TODO: This seems dumb; {:key val} --> [:key val]
-                       (let [[input-key input-value] (db-handle-input db-cache object (key key_val) (val key_val))]
-                         (when input-key
-                           (if-let [field (input-key @object)]
-                             (vm-set field input-value)
-                             (ref-set object (assoc (ensure object) :input-key (vm input-value))))
-                           (var-set record-data (assoc (var-get record-data) (as-quoted-identifier \" input-key) input-value))))))
-                   ;; TODO: Use an agent here to make sure things don't change under our feet before we make a snapshot to the DB.
-                   (let [id (:id (insert-record table-name (var-get record-data)))]
-                     (vm-set (:id @object) id)
-                     (db-cache-put db-cache id object))))
-               ;; Setup observers which will do continious SQL UPDATEs.
-               (dorun (map (fn [elt]
-                             (let [k (key elt)
-                                   v (val elt)]
-                               (when (and (= ValueModel (type v))
-                                          (not= :id k))
-                                 (do-observe-value-model object k v))))
-                           (ensure object)))])
-      (if object
-        ;; INSERT / UPDATE (SW --> DB).
-        (do-init object)
-        ;; SELECT (DB --> SW).
-        (let [[object (let [[cache-entry cache-entry-found?] (db-cache-get db-cache id)]
-                        (if cache-entry-found?
-                          cache-entry
-                          (let [object #_(ref {:id (vm nil)})
-                                (mk-new-object)]
-                            (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" table-name) " WHERE id = ?;") id]
-                              (assert (not (empty? res)) (str "ENSURE-PERSISTENT: Object with ID " id " not found in table \""
-                                                              table-name "\"."))
-                              (let [res (first res)]
-                                (doseq [key_val res]
-                                  (let [[output-key output-value] (db-handle-output db-cache object (key key_val) (val key_val))]
-                                    (when output-key
-                                      (ref-set object (assoc (ensure object)
-                                                        output-key (vm output-value))))))))
-                            (db-cache-put db-cache id object)
-                            (do-init object)
-                            object)))]]
-          ;; Update object (CACHE-ENTRY) fields.
-          (doseq [key_val insert-data]
-            (let [key_val (first key_val)]
-              (let [[input-key input-value] (db-handle-input db-cache cache-entry (first key_val) (second key_val))]
-                (when input-key
-                  (vm-set (input-key @cache-entry) input-value)))))
-          cache-entry)))))
