@@ -42,7 +42,7 @@
 
 
 (defn add-response-chunk
-  "Viewport is a REF so this will work. I.e., all changes done to Viewport will reset if a transaction fails."
+  "Mutation is done in an agent; if a transaction fails nothing happens."
   ([new-chunk] (add-response-chunk new-chunk (if *with-js?* nil (root-element))))
   ([new-chunk widget]
      (letfn [(do-it []
@@ -58,7 +58,7 @@
                          (reset! response-str (str @response-str new-chunk \newline))
                          (when-not (realized? @response-promise)
                            (deliver @response-promise 42)
-                           (@response-sched-fn)))))))
+                           (.run @response-sched-fn)))))))
                new-chunk)]
        (if *with-js?*
          new-chunk
