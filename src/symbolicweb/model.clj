@@ -222,11 +222,9 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
    constructor-fn
    (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT)))
 
-
 (defonce -db-cache-constructors- (atom {})) ;; table-name -> fn
 (defonce -db-caches- ;; table-name -> ReferenceMap
   (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT))
-
 
 (defn get-db-cache [table-name]
   (if-let [db-cache (. -db-caches- get table-name)]
@@ -235,8 +233,13 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
       (if-let [db-cache (. -db-caches- get table-name)]
         db-cache
         (when-let [db-cache (get @-db-cache-constructors- table-name)]
-          (. -db-caches- put table-name db-cache)
-          db-cache)))))
+          (let [db-cache (db-cache)]
+            (. -db-caches- put table-name db-cache)
+            db-cache))))))
+
+(defn reset-db-cache [table-name]
+  (locking -db-caches-
+    (. -db-caches- remove table-name)))
 
 
 (defn db-cache-put [^DBCache db-cache ^Long id obj]
@@ -283,8 +286,8 @@ that only one object with id ID exists in the cache and the system at any point 
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;
-;; some quick  tests...
+;;;;;;;;;;;;;;;;;;;;;;
+;; some quick tests...
 
 
 (defn test-cache-perf [num-iterations object-id]
