@@ -109,28 +109,31 @@ ValueModel created and returned here."
 
 (defn default-db-handle-input [input-key input-value]
   "SW --> DB.
-Default handler; passes everything through as is."
-  [input-key input-value])
+Swaps - with _ for INPUT-KEY and passes INPUT-VALUE through as is."
+  (when input-key
+    [(keyword (str/replace (name input-key) #"-" "_"))
+     input-value]))
 
 (defn db-handle-input [^DBCache db-cache ^clojure.lang.Keyword input-key input-value]
   "SW --> DB.
 Returns two values in form of a vector [TRANSLATED-INPUT-KEY TRANSLATED-INPUT-VALUE] or returns NIL if the field in question,
 represented by INPUT-KEY, is not to be stored in the DB."
   (if-let [f (. db-cache db-handle-input-fn)]
-    (f input-key input-value)
+    (f db-cache input-key input-value)
     (default-db-handle-input input-key input-value)))
 
 (defn default-db-handle-output [output-key output-value]
   "DB --> SW.
-Default handler; passes everything through as is."
-  [output-key output-value])
+Swaps _ with - for OUTPUT-KEY and passes OUTPUT-VALUE through as is."
+  [(keyword (str/replace (name output-key) #"_" "-"))
+   output-value])
 
 (defn db-handle-output [^DBCache db-cache ^clojure.lang.Keyword output-key output-value]
   "DB --> SW.
 Returns two values in form of a vector [TRANSLATED-OUTPUT-KEY TRANSLATED-OUTPUT-VALUE] or returns NIL if the field in question,
 represented by OUTPUT-KEY, is not to be fetched from the DB."
   (if-let [f (. db-cache db-handle-output-fn)]
-    (f output-key output-value)
+    (f db-cache output-key output-value)
     (default-db-handle-output output-key output-value)))
 
 
@@ -171,38 +174,41 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
 
 
 (declare db-cache-put)
-(defn db-backend-put [object ^DBCache db-cache cont-fn]
+(defn db-backend-put
   "SQL INSERT of OBJECT whos keys and values are translated via DB-HANDLE-INPUT. This will also add OBJECT to DB-CACHE after the
 :ID field has been set -- which might happen some time after this function has returned."
-  (assert (or (not (:id (ensure object)))
-              (not @(:id (ensure object)))))
-  (with-local-vars [record-data {}]
-    (doseq [key_val (ensure object)]
-      (when (isa? (type (val key_val)) ValueModel) ;; TODO: Possible magic check. TODO: Foreign keys; ContainerModel.
-        (let [[input-key input-value] (db-handle-input db-cache (key key_val) @(val key_val))]
-          (when input-key
-            (var-set record-data (assoc (var-get record-data)
-                                   input-key input-value))))))
-    (let [record-data (var-get record-data)]
-      (send-off (. db-cache agent)
-                (fn [_]
-                  (with-errors-logged
-                    (let [res (with-sw-db (insert-record (. db-cache table-name) record-data))] ;; SQL INSERT.
-                      (db-cache-put db-cache (:id res) object) ;; We have our object ID; add object to cache.
-                      ;; Update and/or add fields in OBJECT where needed based on result of SQL INSERT operation.
-                      (dosync
-                       (doseq [key_val res]
-                         (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
-                           (when output-key
-                             (if (= ::not-found (get (ensure object) output-key ::not-found))
-                               (let [vm-output-value (vm output-value)]
-                                 (ref-set object (assoc (ensure object)
-                                                   output-key vm-output-value))
-                                 (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))
-                               (do
-                                 (vm-set (output-key (ensure object)) output-value)
-                                 (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure object)))))))))))
-                  (cont-fn object))))))
+  ([object ^DBCache db-cache cont-fn] (db-backend-put object db-cache cont-fn true))
+  ([object ^DBCache db-cache cont-fn update-cache?]
+     (assert (or (not (:id (ensure object)))
+                 (not @(:id (ensure object)))))
+     (with-local-vars [record-data {}]
+       (doseq [key_val (ensure object)]
+         (when (isa? (type (val key_val)) ValueModel) ;; TODO: Possible magic check. TODO: Foreign keys; ContainerModel.
+           (let [[input-key input-value] (db-handle-input db-cache (key key_val) @(val key_val))]
+             (when input-key
+               (var-set record-data (assoc (var-get record-data)
+                                      input-key input-value))))))
+       (let [record-data (var-get record-data)]
+         (send-off (. db-cache agent)
+                   (fn [_]
+                     (with-errors-logged
+                       (let [res (with-sw-db (insert-record (. db-cache table-name) record-data))] ;; SQL INSERT.
+                         (when update-cache?
+                           (db-cache-put db-cache (:id res) object)) ;; We have our object ID; add object to cache.
+                         ;; Update and/or add fields in OBJECT where needed based on result of SQL INSERT operation.
+                         (dosync
+                          (doseq [key_val res]
+                            (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
+                              (when output-key
+                                (if (= ::not-found (get (ensure object) output-key ::not-found))
+                                  (let [vm-output-value (vm output-value)]
+                                    (ref-set object (assoc (ensure object)
+                                                      output-key vm-output-value))
+                                    (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))
+                                  (do
+                                    (vm-set (output-key (ensure object)) output-value)
+                                    (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure object)))))))))))
+                     (cont-fn object)))))))
 
 
 (defn mk-db-cache [table-name constructor-fn db-handle-input-fn db-handle-output-fn]
