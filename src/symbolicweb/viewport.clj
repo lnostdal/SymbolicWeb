@@ -6,7 +6,7 @@
   ([] (make-Viewport (make-ContainerView "div" (make-ContainerModel))))
 
   ([root-widget & args]
-     (let [viewport-id (str (generate-uid))]
+     (let [viewport-id (cl-format false "~36R" (generate-uid))]
        (binding [*viewport*
                  (ref (apply assoc {}
                              :type ::Viewport
