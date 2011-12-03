@@ -4,6 +4,7 @@
 ;; -----------------------------------------
 ;;
 ;; TODO: Foreign keys. This should be easy, and fun.
+;; TODO: send-off -> with-errors-logged -> with-sw-db is repeated several times.
 
 
 (declare mk-view ref?)
@@ -107,7 +108,7 @@ ValueModel created and returned here."
      ^ReferenceMap cache-data]) ;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
 
 
-(defn default-db-handle-input [input-key input-value]
+(defn default-db-handle-input [^DBCache db-cache input-key input-value]
   "SW --> DB.
 Swaps - with _ for INPUT-KEY and passes INPUT-VALUE through as is."
   (when input-key
@@ -122,11 +123,12 @@ represented by INPUT-KEY, is not to be stored in the DB."
     (f db-cache input-key input-value)
     (default-db-handle-input input-key input-value)))
 
-(defn default-db-handle-output [output-key output-value]
+(defn default-db-handle-output [^DBCache db-cache output-key output-value]
   "DB --> SW.
 Swaps _ with - for OUTPUT-KEY and passes OUTPUT-VALUE through as is."
-  [(keyword (str/replace (name output-key) #"_" "-"))
-   output-value])
+  (when output-key
+    [(keyword (str/replace (name output-key) #"_" "-"))
+     output-value]))
 
 (defn db-handle-output [^DBCache db-cache ^clojure.lang.Keyword output-key output-value]
   "DB --> SW.
