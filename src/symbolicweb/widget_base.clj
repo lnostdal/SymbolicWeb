@@ -109,12 +109,12 @@ Returns WIDGET."
                                                    new-value)))
          :trigger-initial-update? true
          :connect-model-view-fn (fn [model widget]
-                                  (alter (:views model) conj widget)
+                                  (add-view model widget)
                                   (when (:trigger-initial-update? @widget)
                                     ((:handle-model-event-fn @widget)
                                      widget nil ((:output-parsing-fn @widget) (get-value model)))))
          :disconnect-model-view-fn (fn [widget]
-                                     (alter (:views model) disj widget))
+                                     (remove-view model widget))
          :render-static-attributes-fn (fn [w]
                                         (let [w-m @w]
                                           (with-out-str
