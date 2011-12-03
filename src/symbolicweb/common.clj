@@ -109,32 +109,6 @@
           (keys callback-data)))
 
 
-(defmacro dbg-prin1 [form]
-  `(let [res# ~form]
-     (println (str '~form " => " res#))
-     res#))
-
-
-(defmacro with [form & body]
-  `(let [~'it ~form]
-     ~@body))
-
-
-(defmacro with1 [form & body]
-  `(with ~form
-     ~@body
-     ~'it))
-
-
-(defmacro with-object [object & body]
-  "Used by OBJ."
-  `(let [~'%with-object ~object]
-     ~@body))
-
-(defmacro obj [signature]
-  `(~signature ~'%with-object))
-
-
 (defn map-to-js-options [opts]
   (with-out-str
     (doseq [opt opts]
@@ -173,8 +147,7 @@
 
 (let [id-generator-value (atom 0)]
   (defn generate-uid []
-    "Generates an unique ID; non-universal or pr. server instance based.
-Returns a string."
+    "Generates an unique ID; non-universal or pr. server instance based."
     (swap! id-generator-value inc)))
 
 
@@ -242,7 +215,9 @@ Returns a string."
 
 
 (defn set-default-login-cookie [value]
-  (set-document-cookie :name "_sw_login_id" :value value :path "/" :domain? false))
+  (str (set-document-cookie :name "_sw_login_id" :value value :path "/" :domain? false)
+       (when-not value
+         (set-document-cookie :name "PHPSESSID" :value value :path "/" :domain? false))))
 
 
 (defn remove-session [application]

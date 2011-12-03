@@ -23,17 +23,20 @@
   (:use aleph.http)
   (:use overtone.at-at)
 
+  (:require symbolicweb.macros)
   (:require symbolicweb.model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
+
+  (:require symbolicweb.container-model)
+  (:require symbolicweb.container-model-node)
+
   (:require symbolicweb.viewport)
   (:require symbolicweb.jquery)
   (:require symbolicweb.container)
   (:require symbolicweb.widget-base)
   (:require symbolicweb.text-input)
   (:require symbolicweb.html-elements)
-  (:require symbolicweb.container-model)
-  (:require symbolicweb.container-model-node)
   (:require symbolicweb.container-view)
   (:require symbolicweb.html-container)
   (:require symbolicweb.checkbox)
@@ -43,9 +46,7 @@
   (:require symbolicweb.sticky)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
-  (:require symbolicweb.date-and-time)
-  (:require symbolicweb.postgresql-test))
-
+  (:require symbolicweb.date-and-time))
 (in-ns 'symbolicweb.core)
 
 
