@@ -215,6 +215,22 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
    (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT)))
 
 
+(defonce -db-cache-constructors- (atom {})) ;; table-name -> fn
+(defonce -db-caches- ;; table-name -> ReferenceMap
+  (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT))
+
+
+(defn get-db-cache [table-name]
+  (if-let [db-cache (. -db-caches- get table-name)]
+    db-cache
+    (locking -db-caches-
+      (if-let [db-cache (. -db-caches- get table-name)]
+        db-cache
+        (when-let [db-cache (get @-db-cache-constructors- table-name)]
+          (. -db-caches- put table-name db-cache)
+          db-cache)))))
+
+
 (defn db-cache-put [^DBCache db-cache ^Long id obj]
   "If ID is NIL, store OBJ in DB then store association between the resulting id and OBJ in DB-CACHE.
 If ID is non-NIL, store association between ID and OBJ in DB-CACHE.
