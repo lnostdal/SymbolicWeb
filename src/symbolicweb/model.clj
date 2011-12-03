@@ -149,7 +149,7 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
                                (with-errors-logged
                                  (with-sw-db
                                    (update-values (. db-cache table-name) ["id=?" id]
-                                                  {(as-quoted-identifier \" key)input-value})))))))))
+                                                  {(as-quoted-identifier \" input-key) input-value})))))))))
            :trigger-initial-update? false))
 
 
