@@ -1,47 +1,52 @@
 (in-ns 'symbolicweb.core)
 
 
-;; TODO: Stuff like :LENGTH sucks. I should be able to use the Clojure standard function COUNT with ContainerModel as an argument.
-;; I guess I need to take a closer look at Clojure protocols, defrecord and deftype etc. when I have time. This might also make
-;; type-checking easier.
+;; Doubly linked list node.
+(deftype ContainerModelNode [container-model left right data])
 
-(derive ::ContainerModel ::Model)
+;; Doubly linked list.
+(deftype ContainerModel [head-node tail-node length views]
+  clojure.lang.Counted
+  (count [_]
+    (ensure length))
+
+  IModel
+  (add-view [_ view]
+    (alter views conj view))
+
+  (remove-view [_ view]
+    (alter views disj view)))
+
+
 (defn make-ContainerModel []
-  {:type ::ContainerModel
-   :head-node (ref nil)
-   :tail-node (ref nil)
-   :length (ref 0)
-   :views (ref #{})})
+  (ContainerModel. (ref nil) (ref nil) (ref 0) (ref #{})))
+
 
 
 (defn tail-node [container-model]
-  (assert (= ::ContainerModel (:type container-model)))
-  @(:tail-node container-model))
+  (ensure (. container-model tail-node)))
 
 (defn set-tail-node [container-model new-tail-node]
-  (assert (= ::ContainerModel (:type container-model)))
-  (assert (or (= ::ContainerModelNode (:type new-tail-node))
-              (not new-tail-node)))
-  (ref-set (:tail-node container-model) new-tail-node))
+  {:pre [(or (= ContainerModelNode (type new-tail-node))
+             (not new-tail-node))]}
+  (ref-set (. container-model tail-node)
+           new-tail-node))
 
 
 (defn head-node [container-model]
-  (assert (= ::ContainerModel (:type container-model)))
-  @(:head-node container-model))
+  (ensure (. container-model head-node)))
 
 (defn set-head-node [container-model new-head-node]
-  (assert (= ::ContainerModel (:type container-model)))
-  (assert (or (= ::ContainerModelNode (:type new-head-node))
-              (not new-head-node)))
-  (ref-set (:head-node container-model) new-head-node))
+  {:pre [(or (= ContainerModelNode (type new-head-node))
+             (not new-head-node))]}
+  (ref-set (. container-model head-node)
+           new-head-node))
 
 
-(declare handle-container-view-event)
 (defn notify-views [container-model event-sym & event-args]
-  (assert (= ::ContainerModel (:type container-model)))
-  (doseq [container-view (ensure (:views container-model))]
-    ;;(dbg-prin1 (:filter-node-fn @container-view)) ;; TODO!!!! on insert operations..
-    ((:handle-model-event-fn @container-view) container-view (apply list event-sym event-args))))
+  (doseq [container-view (ensure (. container-model views))]
+    ;;(dbg-prin1 (:filter-node-fn @container-view)) ;; TODO!!!! on insert operations.
+    ((:handle-model-event-fn (ensure container-view)) container-view (apply list event-sym event-args))))
 
 
 (declare prepend-container-model after-container-model-node)
@@ -49,8 +54,6 @@
   "Add NEW-NODE to end of the contained nodes in CONTAINER-MODEL.
 This mirrors the jQuery `append' function:
   http://api.jquery.com/append/"
-  (assert (= ::ContainerModel (:type container-model)))
-  (assert (= ::ContainerModelNode (:type new-node)))
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertEnd(List list, Node newNode)
@@ -60,37 +63,35 @@ This mirrors the jQuery `append' function:
     (after-container-model-node (tail-node container-model) new-node))) ;; insertAfter(list, list.lastNode, newNode)
 
 
-(declare before-container-model-node set-left-node set-right-node)
-(defn prepend-container-model [container-model new-node]
+(declare before-container-model-node set-left-node set-right-node container-model set-container-model)
+(defn prepend-container-model [container-m new-node]
   "Add NEW-NODE to beginning of the contained nodes in CONTAINER-MODEL.
 This mirrors the jQuery `prepend' function:
   http://api.jquery.com/prepend/"
-  (assert (= ::ContainerModel (:type container-model)))
-  (assert (= ::ContainerModelNode (:type new-node)))
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertBeginning(List list, Node newNode)
   ;;   if list.firstNode == null
-  (if (not (head-node container-model))
+  (if (not (head-node container-m))
     (do
       ;; These 3 lines are specific to us.
-      (assert (not @(:container-model new-node)))
-      (ref-set (:container-model new-node) container-model)
-      (alter (:length container-model) inc)
+      ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
+      (assert (not (container-model new-node)))
+      (set-container-model new-node container-m)
+      (alter (. container-m length) inc)
 
-      (set-head-node container-model new-node) ;; list.firstNode := newNode
-      (set-tail-node container-model new-node) ;; list.lastNode  := newNode
+      (set-head-node container-m new-node) ;; list.firstNode := newNode
+      (set-tail-node container-m new-node) ;; list.lastNode  := newNode
       (set-left-node new-node nil) ;; newNode.prev := null
       (set-right-node new-node nil) ;; newNode.next := null
-      (notify-views container-model 'prepend-container-model container-model new-node))
+      (notify-views container-m 'prepend-container-model container-model new-node))
     ;; else
-    (before-container-model-node (head-node container-model) new-node))) ;; insertBefore(list, list.firstNode, newNode)
+    (before-container-model-node (head-node container-m) new-node))) ;; insertBefore(list, list.firstNode, newNode)
 
 
 (declare remove-container-model-node)
 (defn clear-container-model [container-model]
   ;; Remove head node of CONTAINER-MODEL until trying to access the head node of CONTAINER-MODEL returns NIL.
-  (assert (= ::ContainerModel (:type container-model)))
   (loop [node (head-node container-model)]
     (when node
       (remove-container-model-node node)

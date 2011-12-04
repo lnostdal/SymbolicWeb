@@ -43,7 +43,7 @@
 
 (derive ::ContainerView ::HTMLElement)
 (defn make-ContainerView [html-element-type container-model & attributes]
-  (assert (isa? ::ContainerModel (:type container-model)))
+  {:pre [(= ContainerModel (type container-model))]}
   (apply make-HTMLElement html-element-type container-model
          :type ::ContainerView
 
@@ -62,21 +62,20 @@
            (add-response-chunk (with-js (jqEmpty container-view))
                                container-view)
            ;; Add any already existing nodes to CONTAINER-VIEW.
-           (loop [node (ensure (:head-node container-model))]
+           (loop [node (head-node container-model)]
              (when node
                (when ((:filter-node-fn @container-view) container-view node)
                  (jqAppend container-view (view-of-node-in-context container-view node)))
                (recur (ensure (:right node)))))
-           ;; Let CONTAINER-VIEW know about any future changes to CONTAINER-MODEL.
-           (alter (:views container-model) conj container-view))
+           (add-view container-model container-view))
 
          :disconnect-model-view-fn
          (fn [widget]
-           (alter (:views container-model) disj widget))
+           (remove-view container-model widget))
 
          :view-from-node-fn
          (fn [container-view node]
-           (make-HTMLElement "li" (:data node)))
+           (make-HTMLElement "li" (node-data node)))
 
          :view-of-node (ref {})
          attributes))

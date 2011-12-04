@@ -1,56 +1,54 @@
 (in-ns 'symbolicweb.core)
 
 
-;;(derive ::ContainerModelNode ::Model) ;; TODO: Think about this.. this is really sort of a wrapper for Models, right?
+;; NOTE: Moved to container_model.clj since forward declaring this doesn't seem to work.
+;; (deftype ContainerModelNode [container-model left right data])
+
+
 (defn make-ContainerModelNode [data]
   "Doubly linked list node."
-  {:type ::ContainerModelNode
-   :container-model (ref nil)
-   :left (ref left)
-   :right (ref right)
-   :data data})
+  (ContainerModelNode. (ref nil) (ref nil) (ref nil) data))
 
 
 (defn left-node [container-model-node]
-  (assert (= ::ContainerModelNode (:type container-model-node)))
-  @(:left container-model-node))
+  (ensure (. container-model-node left)))
 
 (defn set-left-node [container-model-node new-left-node]
-  (assert (= ::ContainerModelNode (:type container-model-node)))
-  (assert (or (= ::ContainerModelNode (:type new-left-node))
-              (not new-left-node)))
-  (ref-set (:left container-model-node) new-left-node))
+  {:pre [(or (= ContainerModelNode (type new-left-node))
+             (not new-left-node))]}
+  (ref-set (. container-model-node left)
+           new-left-node))
 
 
 (defn right-node [container-model-node]
-  (assert (= ::ContainerModelNode (:type container-model-node)))
-  @(:right container-model-node))
+  (ensure (. container-model-node right)))
 
 (defn set-right-node [container-model-node new-right-node]
-  (assert (= ::ContainerModelNode (:type container-model-node)))
-  (assert (or (= ::ContainerModelNode (:type new-right-node))
-              (not new-right-node)))
-  (ref-set (:right container-model-node) new-right-node))
+  {:pre [(or (= ContainerModelNode (type new-right-node))
+             (not new-right-node))]}
+  (ref-set (. container-model-node right)
+           new-right-node))
 
 
 (defn container-model [container-model-node]
-  (assert (= ::ContainerModelNode (:type container-model-node)))
-  @(:container-model container-model-node))
+  (ensure (. container-model-node container-model)))
 
 (defn set-container-model [container-model-node new-container-model]
-  (assert (= ::ContainerModelNode (:type container-model-node)))
-  (assert (= ::ContainerModel (:type new-container-model)))
-  (ref-set (:container-model container-model-node) new-container-model))
+  {:pre [(= ContainerModel (type new-container-model))]}
+  (ref-set (. container-model-node container-model) new-container-model))
+
+
+(defn node-data [container-model-node]
+  {:pre [(= ContainerModelNode (type container-model-node))]}
+  (. container-model-node data))
 
 
 (defn remove-container-model-node [node]
   "Pretty much does what you'd expect.
 This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
-  (assert (= ::ContainerModelNode (:type node)))
-  (let [container-model @(:container-model node)]
-    (assert (= ::ContainerModel (:type container-model)))
-    (alter (:length container-model) dec)
+  (let [container-model (ensure (. node container-model))]
+    (alter (. container-model length) dec)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
     ;;
@@ -77,13 +75,15 @@ This mirrors the jQuery `remove' function:
   "Add NEW-NODE to right side of EXISTING-NODE.
 This mirrors the jQuery `after' function:
   http://api.jquery.com/after/"
-  (assert (= ::ContainerModelNode (:type new-node)))
-  (assert (= ::ContainerModelNode (:type existing-node)))
-  (let [container-model @(:container-model existing-node)]
+  {:pre [(and (= ContainerModelNode (type new-node))
+              (= ContainerModelNode (type existing-node)))]}
+  (let [container-model (ensure (. existing-node container-model))]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
-    (assert (not @(:container-model new-node)))
-    (ref-set (:container-model new-node) container-model)
-    (alter (:length @(:container-model new-node)) inc)
+    (assert (not (ensure (. new-node container-model))))
+    (ref-set (. new-node container-model) container-model)
+    (alter (. (ensure (. new-node container-model))
+              length)
+           inc)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
@@ -111,13 +111,15 @@ This mirrors the jQuery `after' function:
   "Add NEW-NODE to left side of EXISTING-NODE.
 This mirrors the jQuery `before' function:
   http://api.jquery.com/before/"
-  (assert (= ::ContainerModelNode (:type new-node)))
-  (assert (= ::ContainerModelNode (:type existing-node)))
-  (let [container-model @(:container-model existing-node)]
+  {:pre [(and (= ContainerModelNode (type new-node))
+              (= ContainerModelNode (type existing-node)))]}
+  (let [container-model (ensure (. existing-node container-model))]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
-    (assert (not @(:container-model new-node)))
-    (ref-set (:container-model new-node) container-model)
-    (alter (:length @(:container-model new-node)) inc)
+    (assert (not (ensure (. new-node container-model))))
+    (ref-set (. new-node container-model) container-model)
+    (alter (. (ensure (. new-node container-model))
+              length)
+           inc)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
