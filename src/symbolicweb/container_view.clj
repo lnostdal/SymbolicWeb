@@ -66,7 +66,7 @@
              (when node
                (when ((:filter-node-fn @container-view) container-view node)
                  (jqAppend container-view (view-of-node-in-context container-view node)))
-               (recur (ensure (:right node)))))
+               (recur (right-node node))))
            (add-view container-model container-view))
 
          :disconnect-model-view-fn
