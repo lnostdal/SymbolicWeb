@@ -138,7 +138,13 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
          [:body {:onload "window.location.reload();"}
           [:p "Reloading page..."]]))}
 
-     (println "CLEAR-SESSION-PAGE-HANDLER: Unknown HTTP ACCEPT header value:" accept-header))))
+      :plugin-api
+      {:status 404
+       :headers {"Content-Type" "text/plain; charset=UTF-8"
+                 "Server" "SymbolicWeb"}
+       :body "This session has timed out."}
+
+      (println "CLEAR-SESSION-PAGE-HANDLER: Unknown HTTP ACCEPT header value:" accept-header))))
 
 
 (defn default-rest-handler []
@@ -216,6 +222,7 @@ html, body, #sw-root {
 
 
 
-#_(defapp empty-page
-  (fn [] (is-url? "/empty-page/sw"))
-  (fn [] (make-Application)))
+(defapp
+  [::EmptyPage #(is-url? "/empty-page/sw") "/empty-page/sw"]
+  (fn [app-type-data]
+    (make-Application)))

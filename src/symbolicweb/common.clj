@@ -12,6 +12,7 @@
      (re-find #"text/javascript" accept-header) :javascript
      (re-find #"text/html" accept-header) :html
      (re-find #"text/plain" accept-header) :plain
+     (re-find #"text/plugin-api" accept-header) :plugin-api
      true accept-header)))
 
 
@@ -120,10 +121,17 @@
                   ", ")))))
 
 
-(defmacro defapp [name fit-fn application-constructor-fn]
-  `(swap! -application-types-
-          #(assoc % '~name {:fit-fn ~fit-fn
-                            :application-constructor-fn ~application-constructor-fn})))
+(defn defapp [[name fit-fn cookie-path & args] application-constructor-fn]
+  (let [app-type-data (atom nil)]
+    (reset! app-type-data (apply assoc {}
+                                 :name name
+                                 :fit-fn fit-fn
+                                 :cookie-name "_sw_application_id"
+                                 :cookie-path cookie-path
+                                 :application-constructor-fn (fn [] (application-constructor-fn app-type-data))
+                                 :agent (agent name)
+                                 args))
+    (swap! -application-types- #(assoc % name @app-type-data))))
 
 
 ;; TODO: Support for timeout; with default value, and adjustable.
