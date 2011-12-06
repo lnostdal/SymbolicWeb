@@ -209,8 +209,8 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
                                     (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))
                                   (do
                                     (vm-set (output-key (ensure object)) output-value)
-                                    (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure object)))))))))))
-                     (cont-fn object)))))))
+                                    (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure object))))))))))
+                       (cont-fn object))))))))
 
 
 (defn mk-db-cache [table-name constructor-fn db-handle-input-fn db-handle-output-fn]
@@ -310,10 +310,10 @@ that only one object with id ID exists in the cache and the system at any point 
                        (dbg-prin1 [obj cache-state])))))))
 
 
-
 (defn test-cache-insert []
   (def -db-cache- (mk-db-cache "test"
                                (fn [db-cache id]
+                                 (println "hum")
                                  (ref {:value (vm "default value")}))
                                nil
                                nil))
@@ -343,22 +343,22 @@ that only one object with id ID exists in the cache and the system at any point 
 
 
 
-
-
-
-
-
 (defn php-send [message-map]
   "Send message to PHP end."
   ;; TODO: Think about using the Async API here -- or wrap everything in an agent perhaps.
   (let [conn (aleph.http.client/http-request {:auto-transform true
                                               :method :get
                                               :cookies (aleph.http.utils/hash->cookie
-                                                        {"x_plugin_api_key" "fod"
+                                                        {"x_plugin_api_key" "fod" ;; TODO: Magic value.
                                                          "PHPSESSID" (:value (get (:cookies *request*) "PHPSESSID"))})
-                                              :url (str "http://dev.kitch.no/free-or-deal/sw/php/plugin_api/sw_plugin_api.php?data="
+                                              :url (str "http://dev.kitch.no/free-or-deal/sw/php/plugin_api/sw_plugin_api.php?data=" ;; TODO: Magic value.
                                                         (json/generate-string message-map))})]
     (dbg-prin1 @conn)))
+
+
+(defn php-operation-complete-notification [operation-id args]
+  ;;(assoc args :operation_id operation-id)
+  (php-send args))
 
 
 (defn php-login! [id access-rights]
@@ -366,3 +366,29 @@ that only one object with id ID exists in the cache and the system at any point 
              :access_rights access-rights}))
 
 
+(defn blah []
+  (let [conn (aleph.http.client/http-request {:auto-transform true
+                                             :method :get
+                                             :cookies (aleph.http.utils/hash->cookie
+                                                       {"x_plugin_api_key" "fod"
+                                                        "session_id" "t89ffkkv1lvkfnbtq8oljlohn1"})
+                                             :url (str "http://dev.kitch.no/free-or-deal/sw/php/plugin_api/sw_plugin_api.php?data="
+                                                       (json/generate-string {:action "login"
+                                                                              :id 291}))}
+                                             1000)]
+    (dbg-prin1 @conn)
+    (lamina.connections/close-connection conn)))
+
+
+
+
+
+#_(defn blah2 []
+  (client/get
+   (str "http://dev.kitch.no/free-or-deal/sw/php/plugin_api/sw_plugin_api.php?data="
+        (url-encode (str "{\"action\": \"login\","
+                         "\"x_plugin_api_key\": \"fod\","
+                         "\"session_id\": \"" "t89ffkkv1lvkfnbtq8oljlohn1" "\","
+                         "\"id\": 261}")))
+   ;;"http://dev.kitch.no/blah.txt"
+   ))
