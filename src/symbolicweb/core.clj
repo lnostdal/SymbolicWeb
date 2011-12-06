@@ -29,7 +29,7 @@
   (:use overtone.at-at)
 
   (:require symbolicweb.macros)
-  (:require symbolicweb.postgresql-test)
+  (:require symbolicweb.database-common)
   (:require symbolicweb.model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
