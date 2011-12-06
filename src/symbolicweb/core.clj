@@ -1,17 +1,22 @@
 (ns symbolicweb.core
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])
+  (:use [clojure.pprint :only (cl-format)])
 
   (:import java.util.Calendar)
-  ;;(:import java.lang.ref.WeakReference)
   (:import (java.util.concurrent TimeoutException TimeUnit FutureTask))
 
+  (:import org.apache.commons.collections.map.ReferenceMap)
+
   (:use hiccup.core)
-  (:use hiccup.page-helpers)
+  (:use [hiccup.page-helpers :exclude (encode)])
 
   (:use [net.cgrand.enlive-html :exclude (at)])
 
+  (:use [cheshire.core :as json]) ;; JSON.
+
   (:use [clojure.java.jdbc :exclude (resultset-seq)])
+  (:import com.mchange.v2.c3p0.ComboPooledDataSource)
 
   ;; TODO: I think a lot of these things might be available via aleph?
   (:use ring.util.codec)
@@ -24,6 +29,7 @@
   (:use overtone.at-at)
 
   (:require symbolicweb.macros)
+  (:require symbolicweb.postgresql-test)
   (:require symbolicweb.model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
