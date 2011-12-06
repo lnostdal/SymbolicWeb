@@ -15,7 +15,8 @@
                              :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
                              :response-str (atom "")
                              :response-promise (atom (promise))
-                             :response-sched-fn (atom (fn []))
+                             :response-sched-fn (atom nil) ;;(atom (fn []))
+                             :response-agent (agent nil)
                              args))]
          (dosync
           (alter root-widget assoc
@@ -42,26 +43,31 @@
 
 
 (defn add-response-chunk
-  "Mutation is done in an agent; if a transaction fails nothing happens."
+  "Mutation is done in an agent; if a transaction fails, nothing happens."
   ([new-chunk] (add-response-chunk new-chunk (if *with-js?* nil (root-element))))
   ([new-chunk widget]
      (letfn [(do-it []
                (let [viewport (viewport-of widget)
                      viewport-m @viewport]
-                 (if (and (thread-bound? #'*in-channel-request?*) *in-channel-request?* (= *viewport* viewport))
+                 (if (and (thread-bound? #'*in-channel-request?*)
+                          *in-channel-request?*
+                          (= *viewport* viewport))
                    (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
-                   (with-ctx [] ;; Send to an Agent which will run at DOSYNC (transaction) commit.
-                     (locking viewport
-                       (let [response-str (:response-str viewport-m)
-                             response-promise (:response-promise viewport-m)
-                             response-sched-fn (:response-sched-fn viewport-m)]
-                         (reset! response-str (str @response-str new-chunk \newline))
-                         (when-not (realized? @response-promise)
-                           (deliver @response-promise 42)
-                           (.run @response-sched-fn)))))))
+                   (send (:response-agent viewport-m)
+                         (fn [_]
+                           (with-errors-logged
+                             (locking viewport
+                               (let [response-str (:response-str viewport-m)
+                                     response-promise (:response-promise viewport-m)
+                                     response-sched-fn (:response-sched-fn viewport-m)]
+                                 (reset! response-str (str @response-str new-chunk \newline))
+                                 (when-not (realized? @response-promise)
+                                   (deliver @response-promise 42)
+                                   (when @response-sched-fn
+                                     ;; TODO: This blocks! Hmmm.
+                                     (.run @response-sched-fn))))))))))
                new-chunk)]
-       (if *with-js?*
-         new-chunk
+       (when-not *with-js?*
          (if (viewport-of widget) ;; Visible?
            (do-it)
            (add-on-visible-fn widget do-it))))

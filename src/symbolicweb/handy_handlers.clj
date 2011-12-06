@@ -23,29 +23,28 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 (defn handle-out-channel-request [channel request]
   "Output channel."
   (letfn [(do-it []
-            (locking *viewport*
-              (let [viewport-m @*viewport*
-                    response-str (:response-str viewport-m)
-                    response-promise (:response-promise viewport-m)
-                    response-sched-fn (:response-sched-fn viewport-m)]
-                (enqueue channel
-                         {:status 200
-                          :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                                    "Server" "SymbolicWeb"}
-                          :body (with1 (str @response-str "_sw_comet_response = true;")
-                                  (reset! response-str "")
-                                  (reset! response-promise (promise)))}))))]
+            (let [viewport-m @*viewport*
+                  response-str (:response-str viewport-m)
+                  response-promise (:response-promise viewport-m)]
+              (enqueue channel
+                       {:status 200
+                        :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                                  "Server" "SymbolicWeb"}
+                        :body (with1 (str @response-str "_sw_comet_response = true;")
+                                (reset! response-str "")
+                                (reset! response-promise (promise)))})))]
     (locking *viewport*
       (let [viewport-m @*viewport*
-            response-promise (:response-promise viewport-m)
             response-sched-fn (:response-sched-fn viewport-m)]
-        (if (realized? @response-promise)
+        (if (realized? @(:response-promise viewport-m))
           (do-it)
-          (let [thread-bindings (get-thread-bindings)] ;; TODO: Is this really needed.
-            (reset! (:response-sched-fn viewport-m)
+          (let [thread-bindings (get-thread-bindings)]
+            (reset! response-sched-fn
                     (at (+ (now) -comet-timeout-)
                         #(with-bindings thread-bindings
-                           (do-it))))))))))
+                           (locking *viewport*
+                             (reset! response-sched-fn nil)
+                             (do-it)))))))))))
 
 
 (defn handle-in-channel-request []
