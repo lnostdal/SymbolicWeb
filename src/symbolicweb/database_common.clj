@@ -30,22 +30,16 @@
 
 
 (defn %with-sw-db [body-fn]
-  (with-connection -pooled-db-spec-
-    (.setTransactionIsolation (:connection clojure.java.jdbc.internal/*db*)
-                              java.sql.Connection/TRANSACTION_SERIALIZABLE)
-    (transaction
-     (try
-       (body-fn)
-       (catch java.lang.Exception exception
-         (letfn ([do-it [e]
-                  (if (= java.sql.BatchUpdateException (type e))
-                    (do
-                      (println e)
-                      (println (. e (getNextException))))
-                    (if e
-                      (do-it (. e (getCause)))
-                      (throw exception)))])
-           (do-it exception)))))))
+  ;; TODO: Perhaps the TRY/CATCH block here should be within the transaction?
+  ;; TODO: Find a way (ORLY...) to also print out the SQL query on error.
+  (try
+    (with-connection -pooled-db-spec-
+      (.setTransactionIsolation (:connection clojure.java.jdbc.internal/*db*)
+                                java.sql.Connection/TRANSACTION_SERIALIZABLE)
+      (transaction
+       (body-fn)))
+    (catch java.sql.SQLException exception
+      (print-sql-exception-chain exception))))
 
 
 (defmacro with-sw-db [& body]
