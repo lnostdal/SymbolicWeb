@@ -216,31 +216,11 @@ Fails (via assert) if an object with the same id already exists in DB-CACHE."
   OBJ :MISS -- Cache miss, but object found in DB.
   NIL NIL   -- Cache miss, and object not found in DB.
 
-Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
-that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
-:CONSTRUCTOR-FN from DB-CACHE."
-  (if-let [cache-entry (. (. db-cache cache-data) get id)]
-    (cont-fn cache-entry :hit)
-    (send-off (. db-cache agent)
-              (fn [_]
-                (with-errors-logged
-                  (with-sw-db
-                    (apply cont-fn
-                           (if-let [new-obj (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id))] ;; I/O.
-                             (locking db-cache ;; Lock after I/O.
-                               (if-let [cache-entry (. (. db-cache cache-data) get id)] ;; Check cache again while within lock.
-                                 [cache-entry :hit]
-                                 (do
-                                   (db-cache-put db-cache id new-obj)
-                                   [new-obj :miss])))
-                             [nil nil]))))))))
+..and returns a proto-type of the object and :PENDING:
 
+  PROTO-OBJ :PENDING
 
-(defn db-cache-get [^DBCache db-cache ^Long id cont-fn]
-  "Get object based on ID from DB-CACHE or backend (via CONSTRUCTOR-FN in DB-CACHE). Passes two arguments to CONT-FN:
-  OBJ :HIT  -- Cache hit.
-  OBJ :MISS -- Cache miss, but object found in DB.
-  NIL NIL   -- Cache miss, and object not found in DB.
+If no object with id ID exists in the cache or at the back-end, PROTO-OBJ (a REF) will be set to :DB-NOT-FOUND.
 
 Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
 that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
@@ -255,19 +235,18 @@ that only one object with id ID exists in the cache and the system at any point 
           (cont-fn cache-entry :hit)
           [cache-entry :hit])
         (let [new-obj-prototype ((. db-cache constructor-fn) db-cache id)]
+          (db-cache-put db-cache id new-obj-prototype)
           (send-off (. db-cache agent)
                     (fn [_]
                       (with-errors-logged
-                        (with-sw-db
-                          (apply cont-fn
+                        (apply cont-fn
+                               (with-sw-db
                                  (if-let [new-obj (db-backend-get db-cache id new-obj-prototype)]
-                                   (do
-                                     (db-cache-put db-cache id new-obj)
-                                     [new-obj :miss])
+                                   [new-obj :miss]
                                    (do
                                      (dosync (ref-set new-obj-prototype :db-not-found))
                                      [nil nil])))))))
-          [new-obj-prototype :miss])))))
+          [new-obj-prototype :pending])))))
 
 
 (defn db-cache-remove [^DBCache db-cache ^Long id]
