@@ -14,8 +14,7 @@
                              :last-activity-time (System/currentTimeMillis)
                              :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
                              :response-str (atom "")
-                             :response-promise (atom (promise))
-                             :response-sched-fn (atom nil) ;;(atom (fn []))
+                             :response-sched-fn (atom nil)
                              :response-agent (agent nil)
                              args))]
          (dosync
@@ -58,14 +57,10 @@
                            (with-errors-logged
                              (locking viewport
                                (let [response-str (:response-str viewport-m)
-                                     response-promise (:response-promise viewport-m)
                                      response-sched-fn (:response-sched-fn viewport-m)]
                                  (reset! response-str (str @response-str new-chunk \newline))
-                                 (when-not (realized? @response-promise)
-                                   (deliver @response-promise 42)
-                                   (when @response-sched-fn
-                                     ;; TODO: This blocks! Hmmm.
-                                     (.run @response-sched-fn))))))))))
+                                 (when @response-sched-fn
+                                   (.run @response-sched-fn))))))))) ;; [BLOCKING]
                new-chunk)]
        (when-not *with-js?*
          (if (viewport-of widget) ;; Visible?

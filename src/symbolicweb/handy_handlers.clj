@@ -31,14 +31,15 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                         :headers {"Content-Type" "text/javascript; charset=UTF-8"
                                   "Server" "SymbolicWeb"}
                         :body (with1 (str @response-str "_sw_comet_response = true;")
-                                (reset! response-str "")
-                                (reset! response-promise (promise)))})))]
+                                (reset! response-str ""))})))]
     (locking *viewport*
       (let [viewport-m @*viewport*
-            response-sched-fn (:response-sched-fn viewport-m)]
-        (if (realized? @(:response-promise viewport-m))
+            response-sched-fn (:response-sched-fn viewport-m)
+            response-str (:response-str viewport-m)]
+        (if (pos? (count @response-str))
           (do-it)
           (let [thread-bindings (get-thread-bindings)]
+            (assert (not @response-sched-fn))
             (reset! response-sched-fn
                     (at (+ (now) -comet-timeout-)
                         #(with-bindings thread-bindings
