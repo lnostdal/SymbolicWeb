@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
-;; NOTE: Moved to container_model.clj since forward declaring this doesn't seem to work.
+;; NOTE: ContainerModelNode class (deftype) moved to container_model.clj since forward declaring this doesn't seem to work.
 ;; (deftype ContainerModelNode [container-model left right data])
 
 

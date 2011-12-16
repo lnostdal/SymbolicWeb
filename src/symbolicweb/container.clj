@@ -4,17 +4,17 @@
 (defn ensure-visible [child parent]
   "Ensure CHILD and its children in turn is declared visible in context of PARENT.
 This will also call any FNs stored in :ON-VISIBLE-FNS for the children in question."
-    (let [viewport (if (= parent :root)
-                     *viewport*
-                     (:viewport @parent))
-          child-m @child]
-      (alter viewport update-in [:widgets] assoc (:id child-m) child) ;; DOM-events will find the widget now.
-      (alter child assoc :viewport viewport) ;; Widget will know which Viewport to send JS code to now.
-      ((:connect-model-view-fn child-m) (:model child-m) child)
-      (doseq [on-visible-fn (:on-visible-fns child-m)]
-        (on-visible-fn))
-      (doseq [child-of-child (:children child-m)]
-        (ensure-visible child-of-child child))))
+  (let [viewport (if (= parent :root)
+                   *viewport*
+                   (:viewport @parent))
+        child-m @child]
+    (alter viewport update-in [:widgets] assoc (:id child-m) child) ;; DOM-events will find the widget now.
+    (alter child assoc :viewport viewport) ;; Widget will know which Viewport to send JS code to now.
+    ((:connect-model-view-fn child-m) (:model child-m) child)
+    (doseq [on-visible-fn (:on-visible-fns child-m)]
+      (on-visible-fn))
+    (doseq [child-of-child (:children child-m)]
+      (ensure-visible child-of-child child))))
 
 
 (defn ensure-non-visible [widget]

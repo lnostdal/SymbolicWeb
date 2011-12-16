@@ -1,11 +1,16 @@
 (ns symbolicweb.core
+  (:use clojure.math.numeric-tower)
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])
+
   (:use [clojure.pprint :only (cl-format)])
 
   (:import java.util.Calendar)
   (:import (java.util.concurrent TimeoutException TimeUnit FutureTask))
 
+  ;; TODO: Needed for WIP in model.clj
+  ;;(:import java.util.WeakHashMap)
+  ;;(:import java.lang.ref.SoftReference)
   (:import org.apache.commons.collections.map.ReferenceMap)
 
   (:use hiccup.core)
@@ -29,8 +34,8 @@
   (:use overtone.at-at)
 
   (:require symbolicweb.macros)
-  (:require symbolicweb.database-common)
   (:require symbolicweb.model)
+  (:require symbolicweb.database-common)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
 
@@ -48,78 +53,52 @@
   (:require symbolicweb.checkbox)
   (:require symbolicweb.img)
   (:require symbolicweb.dialog)
+  (:require symbolicweb.combo-box)
   (:require symbolicweb.tooltip)
   (:require symbolicweb.sticky)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
-  (:require symbolicweb.date-and-time))
+  (:require symbolicweb.date-and-time)
+  )
 (in-ns 'symbolicweb.core)
 
 
-(def my-pool (mk-pool 5))
 
-
-(let [*out* *out*
-      *err* *err*]
+(let [bnds (get-thread-bindings)] ;; TODO: Think about this some more..
   (defn handler [request]
-    (swap! -request-counter- inc')
-    (binding [*out* *out*
-              *err* *err*
-              *request* request]
-      (case (get (:query-params *request*) "do")
-        "concurrency-test" ((wrap-aleph-handler (fn [channel request]
-                                                  (at (+ (now) 100)
-                                                      #(binding [*out* *out*
-                                                                 *err* *err*
-                                                                 *request* request]
-                                                         (enqueue channel
-                                                                  {:status 200
-                                                                   :headers {"Content-Type" "text/html; charset=UTF-8"}
-                                                                   :body "concurrency-test: pong!"}))
-                                                      my-pool)))
-                            *request*)
-        "sync-handler-test" (do
-                              (Thread/sleep 5000)
-                              {:status 200
-                               :headers {"Content-Type" "text/html; charset=UTF-8"}
-                               :body "sync-handler-test: pong!"})
+    (with-bindings bnds
+      (swap! -request-counter- inc')
+      (binding [*request* request]
         (try
           (binding [*application* (find-or-create-application-instance)]
             (dosync
              (touch *application*))
             ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
-            ;; Production / development modes needed here too. Logging, etc. etc..
+            ;; TODO: Production / development modes needed here too. Logging, etc. etc...
             ((:request-handler @*application*)))
           (catch Throwable e
-            (clojure.stacktrace/print-stack-trace e 10)
-            ;; TODO: Production / development modes? Send to both browser and development environment (Slime)? Etc.
-            (if (= :javascript (dbg-prin1 (expected-response-type)))
-              {:status 200
-               :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                         "Connection" "keep-alive"}
-               :body
-               ;; TODO: Figure out why this crap doesn't work.
-               (str
-                ;;(with-js (show-Notification (url-encode-wrap (with-out-str "blah"))))
-                ;;(with-js (show-Notification (url-encode-wrap (with-out-str "blah"))))
-                ;;(str "alert(decodeURIComponent(\"" (url-encode (with-out-str (clojure.stacktrace/print-stack-trace e 100))) "\"));")
-                ;;(str "alert(decodeURIComponent(\"" "blah" #_(url-encode (with-out-str (clojure.stacktrace/print-stack-trace e 100))) "\"));")
-                ;;"alert(" (url-encode-wrap (with-out-str (clojure.stacktrace/print-stack-trace e 100))) ");"
-                ;;"alert('cunt');"
-                ;;"alert(" (url-encode-wrap (with-out-str (clojure.stacktrace/print-stack-trace e 10))) ");"
-                "$.sticky(" (url-encode-wrap (with-out-str (clojure.stacktrace/print-stack-trace e 10))) ");"
-                )}
-              {:status 500
-               :headers {"Content-Type" "text/html; charset=UTF-8"
-                         "Connection" "keep-alive"}
-               :body
-               (with-out-str
-                 (println "<html><body><font face='sans-serif'>")
-                 (println "<h3><a href='https://github.com/lnostdal/SymbolicWeb'>SymbolicWeb</a>: Top Level Server Exception (HTTP 500)</h3>")
-                 (println "<pre>")
-                 (clojure.stacktrace/print-stack-trace e 100)
-                 (println "</pre>")
-                 (println "</font></body></html>"))})))))))
+            ;; Send to REPL first..
+            ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
+            (println) (println)
+            (println "SymbolicWeb.core/handler (core.clj); Top Level Exception")
+            (println "--------------------------------------------------------")
+            (clojure.stacktrace/print-stack-trace e 50)
+
+            ;; ..then send to HTTP client.
+            {:status 500
+             :headers {"Content-Type" "text/html; charset=UTF-8"
+                       "Server" "http://nostdal.org/"}
+             :body
+             (html
+              [:html
+               [:body {:style "font-family: sans-serif;"}
+                [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": Top Level Server Exception (HTTP 500)"]
+                [:pre
+                 \newline
+                 (with-out-str (clojure.stacktrace/print-stack-trace e 1000)) ;; TODO: Magic value.
+                 \newline]
+                [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))))
+
 
 
 (defn main [& args]

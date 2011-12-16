@@ -38,7 +38,6 @@
 
 
 (defn find-application-constructor []
-  (assert (thread-bound? #'*request*)) ;; Most :FIT-FNs will want to look at the HTTP request.
   (loop [app-types @-application-types-]
     (when-first [app-type app-types]
       (let [app-type (val app-type)]

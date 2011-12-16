@@ -2,6 +2,28 @@
 
 ;; Macros and dynamic variables.
 
+(def ^:dynamic *with-sw?* false)
+(def ^:dynamic *with-sw-ctx-fn* (fn [f] (f)))
+
+(let [*out* *out*
+      *err* *err*]
+  (defn %with-sw [f ctx-fn]
+    (binding [*with-sw?* true ;; So components can check whether they run within the dynamic context of WITH-SW.
+              *print-length* 10
+              *print-level* 10
+              *out* *out*
+              *err* *err*]
+      (ctx-fn f))))
+
+(defmacro with-sw [[ctx-fn] & body]
+  "Sets up the needed context (dynamic variables) needed by various components in SymbolicWeb."
+  `(%with-sw
+     (fn [] ~@body)
+     ~(if ctx-fn
+        ctx-fn
+        *with-sw-ctx-fn*)))
+
+
 (def ^:dynamic *request*)
 (def ^:dynamic *viewport*)
 (def ^:dynamic *application*)

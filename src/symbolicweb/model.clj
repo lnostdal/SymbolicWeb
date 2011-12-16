@@ -94,9 +94,33 @@ ValueModel created and returned here."
 
 
 ;; TODO: Watch multiple values.
-(defn vm-sync [^ValueModel value-model f]
+(defn vm-sync [^ValueModel value-model callback]
   "Returns a new ValueModel which is kept in sync with VALUE-MODEL via F.
-F takes a the same arguments as the MK-VIEW callback; NEW-VALUE can be referred to using %3."
+F takes the same arguments as the MK-VIEW callback; NEW-VALUE can be referred to using %3."
   (let [mid (vm nil)]
-    (mk-view value-model nil #(vm-set mid (apply f %&)))
+    (mk-view value-model nil #(vm-set mid (apply callback %&)))
     mid))
+
+
+(defn vm-syncs [value-models callback]
+  (let [mid (vm nil)]
+    (with-local-vars [once? false] ;; We only want to trigger an initial update once.
+      (dorun (map (fn [value-model]
+                    (mk-view value-model nil #(vm-set mid (apply callback %&))
+                             :trigger-initial-update? (when-not (var-get once?)
+                                                        (var-set once? true)
+                                                        true)))
+                  value-models)))
+    mid))
+
+
+#_(defn vm-syncs-test []
+  (dosync
+   (let [x (vm 0)
+         y (vm 0)
+         vms (vm-syncs [x y] (fn [v o n]
+                               (dbg-prin1 [@x @y])))]
+     (println "---")
+     (vm-set x 1)
+     (println "---")
+     (vm-set y 1))))

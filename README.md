@@ -72,6 +72,8 @@ found in jQuery. E.g., append, prepend, before and after:
   http://api.jquery.com/category/manipulation/dom-insertion-inside/
   http://api.jquery.com/category/manipulation/dom-insertion-outside/
 
+Code that blocks (I/O to DB etc.) is tagged with: [blocking]
+
 
 
 ## License

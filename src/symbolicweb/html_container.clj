@@ -52,17 +52,12 @@ CONTENT-FN is something like:
              (with-local-vars [res html-resource]
                (doseq [td (seq (partition 2 transformation-data))]
                  (if (string? (second td))
-                   (var-set res (transform (var-get res)
-                                           (first td)
+                   (var-set res (transform (var-get res) (first td)
                                            (html-content (second td))))
                    (do
-                     (var-set res (transform (var-get res)
-                                             (first td)
+                     (var-set res (transform (var-get res) (first td)
                                              (set-attr "id" (widget-id-of (second td)))))
                      (when-not (= (second td) w) ;; We don't want a circular parent / child relationship.
-                       ;; For ADD-BRANCH only really (since we already have the static HTML),
-                       ;; but there's some nice calls to ASSERT going on in SW too, so yeah.
-                       ;; TODO: Aux html?
                        (sw (second td))))))
                (apply str (emit* (var-get res))))))
          attributes))

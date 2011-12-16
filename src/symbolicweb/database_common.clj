@@ -189,9 +189,12 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
             (. -db-caches- put table-name db-cache)
             db-cache))))))
 
-(defn reset-db-cache [table-name]
+(defn db-reset-cache [table-name]
   (locking -db-caches-
     (. -db-caches- remove table-name)))
+
+(defn reset-db-cache [table-name]
+  (db-reset-cache table-name))
 
 
 (defn db-cache-put [^DBCache db-cache ^Long id obj]
@@ -210,11 +213,8 @@ Fails (via assert) if an object with the same id already exists in DB-CACHE."
   OBJ :MISS -- Cache miss, but object found in DB.
   NIL NIL   -- Cache miss, and object not found in DB.
 
-..and returns a proto-type of the object and :PENDING:
-
-  PROTO-OBJ :PENDING
-
-If no object with id ID exists in the cache or at the back-end, PROTO-OBJ (a REF) will be set to :DB-NOT-FOUND.
+Returns a prototype of the object on cache miss -- to be filled in at a later time. If no object with id ID exists in the cache or
+at the back-end, the prototype object (a REF) will be set to :DB-NOT-FOUND.
 
 Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
 that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
@@ -258,6 +258,11 @@ that only one object with id ID exists in the cache and the system at any point 
 
 (defn db-get [id table-name cont-fn]
   (db-cache-get (get-db-cache table-name) id cont-fn))
+
+
+;; TODO:
+(defn db-remove [id table-name]
+  #_(db-backend-remove id table-name))
 
 
 

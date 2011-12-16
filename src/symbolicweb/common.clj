@@ -1,8 +1,9 @@
 (in-ns 'symbolicweb.core)
 
-(declare add-response-chunk)
+(declare add-response-chunk ref?)
 
-(set! *print-length* 10)
+
+(set! *print-length* 30)
 (set! *print-level* 10)
 
 
@@ -21,7 +22,33 @@
 
 
 (defn application-of [widget]
-  (:application (viewport-of widget)))
+  (when-let [viewport (viewport-of widget)]
+    (:application @viewport)))
+
+
+#_(defn assoc-param ;; Stolen from Ring.
+  "Associate a key with a value. If the key already exists in the map, create a vector of values."
+  [map key val]
+  (assoc map key
+    (if-let [cur (map key)]
+      (if (vector? cur)
+        (conj cur val)
+        [cur val])
+      val)))
+
+
+(defn parse-params ;; Stolen from Ring.
+  "Parse parameters from a string into a map."
+  [^String param-string encoding]
+  (reduce
+   (fn [param-map encoded-param]
+     (if-let [[_ key val] (re-matches #"([^=]+)=(.*)" encoded-param)]
+       (assoc-param param-map
+                    (url-decode key encoding)
+                    (url-decode (or val "") encoding))
+        param-map))
+    {}
+    (str/split param-string #"&")))
 
 
 (defn alter-options [options fn & args]
@@ -136,10 +163,12 @@
 
 ;; TODO: Support for timeout; with default value, and adjustable.
 (declare show-Dialog mk-pre)
+(def some-agent (agent 42))
 (defmacro with-ctx [[& send-off?] & body]
   "This will run BODY in the context of an Agent for the current session, i.e. whatever *APPLICATION* is bound to."
   `(~(if send-off? 'send-off 'send)
-    (:agent @*application*)
+    ;;(:agent @*application*)
+    some-agent
     (fn [_#]
       (binding [*in-channel-request?* false]
         (try
@@ -237,7 +266,11 @@ Returns a string."
   ([rel-url]
      (add-response-chunk (str "window.location = " (url-encode-wrap rel-url) ";")))
   ([]
-     (add-response-chunk "window.location.reload();")))
+     ;; TODO: I guess we need three ways of reloading now.
+     ;;"window.location.reload(false);"
+     (add-response-chunk
+      ;; http://blog.nostdal.org/2011/12/reloading-or-refreshing-web-page-really.html
+      "window.location.href = window.location.href;")))
 
 
 (defn replace-page [rel-url]
@@ -271,7 +304,12 @@ Returns a string."
         url-path)))
 
 
+;; TODO: Rename to ROOT-VIEW.
 (defn root-element []
+  {:pre [(thread-bound? #'*viewport*)
+         (isa? (type *viewport*) clojure.lang.Ref)]
+   :post [(isa? (type %) clojure.lang.Ref)
+          (isa? (:type @%) ::WidgetBase)]}
   (:root-element @*viewport*))
 
 (defn root-model []
@@ -295,12 +333,21 @@ Returns a string."
 (defn sw-js-base-bootstrap []
   (str (set-default-session-cookie (:id @*application*))
        "_sw_viewport_id = '" (:id @*viewport*) "'; " \newline
-       "_sw_dynamic_subdomain = '" (if-let [it (str "sw-" (generate-uid))]
-                                     (str it ".")
-                                     "") "'; " \newline))
 
 
-(defn sw-js-bootstrap
+       "_sw_dynamic_subdomain = '"
+       (if-let [it (str "sw-" (generate-uid))]
+         (str it ".")
+         "") "'; " \newline))
+
+
+
+
+
+
+
+;; TODO: Not correct at the moment; SW-JS-BASE-BOOTSTAP takes no arguments now.
+#_(defn sw-js-bootstrap
   ([] (sw-js-bootstrap "/"))
   ([path]
      (html

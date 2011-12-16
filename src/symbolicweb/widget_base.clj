@@ -40,6 +40,7 @@
 ;; TODO: Make CONTEXT-WIDGET a required argument.
 (defn render-html [widget & [context-widget]]
   "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS."
+  ;; TODO: These will (sometimes) be bound to NIL on page redraw (at least)..
   (binding [*application* (if context-widget (application-of context-widget) *application*)
             *viewport* (if context-widget (viewport-of context-widget) *viewport*)]
     (let [widget-m (ensure widget)
@@ -80,6 +81,7 @@ Returns WIDGET."
 (defn make-WidgetBase [& key_vals]
   (ref (apply assoc (make-ID)
               :type ::WidgetBase
+              :viewport nil
               :on-visible-fns []
               :on-non-visible-fns []
               :children [] ;; Note that order etc. doesn't matter here; this is only used to track visibility on the client-end.
@@ -96,7 +98,9 @@ Returns WIDGET."
 
 (derive ::HTMLElement ::Widget)
 (defn make-HTMLElement [html-element-type model & attributes]
-  (assert (isa? (:type model) ::Model))
+  ;; TODO: Both should be a sub-type of Model (or IModel?).
+  #_{:pre [(or (= ValueModel (type model))
+             (= ContainerModel (type model)))]}
   (apply make-Widget
          :type ::HTMLElement
          :html-element-type html-element-type

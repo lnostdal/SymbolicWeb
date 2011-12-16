@@ -20,16 +20,17 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (var-get handled?)))
 
 
+(def -blah- (atom 0))
 (defn handle-out-channel-request [channel request]
   "Output channel."
   (letfn [(do-it []
+            (swap! -blah- inc)
             (let [viewport-m @*viewport*
-                  response-str (:response-str viewport-m)
-                  response-promise (:response-promise viewport-m)]
+                  response-str (:response-str viewport-m)]
               (enqueue channel
                        {:status 200
                         :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                                  "Server" "SymbolicWeb"}
+                                  "Server" -http-server-string-}
                         :body (with1 (str @response-str "_sw_comet_response = true;")
                                 (reset! response-str ""))})))]
     (locking *viewport*
@@ -39,13 +40,77 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         (if (pos? (count @response-str))
           (do-it)
           (let [thread-bindings (get-thread-bindings)]
-            (assert (not @response-sched-fn))
-            (reset! response-sched-fn
-                    (at (+ (now) -comet-timeout-)
-                        #(with-bindings thread-bindings
-                           (locking *viewport*
-                             (reset! response-sched-fn nil)
-                             (do-it)))))))))))
+            (if @response-sched-fn
+              (do
+                (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN.")
+                (.run @response-sched-fn))
+              (reset! response-sched-fn
+                      (at (+ (now) -comet-timeout-)
+                          #(with-bindings thread-bindings
+                             (locking *viewport*
+                               (reset! response-sched-fn nil)
+                               (do-it))))))))))))
+
+
+;; Future / promise.
+#_(defn handle-out-channel-request [channel request]
+  "Output channel."
+  (letfn [(do-it []
+            (let [viewport-m @*viewport*]
+              (send
+              (send-off (:response-agent viewport-m)
+                        (fn [chunks]
+                          (with-errors-logged
+                            (enqueue channel
+                                     {:status 200
+                                      :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                                                "Server" -http-server-string-}
+                                      :body (str chunks "_sw_comet_response = true;")})
+                            ""))))))]
+    (let [viewport-m @*viewport*
+          response-sched-fn (:response-sched-fn viewport-m)
+          response-agent (:response-agent viewport-m)]
+      (if (pos? (count @response-agent))
+        (do-it)
+        (let [thread-bindings (get-thread-bindings)]
+          (when @response-sched-fn
+            ;; TODO: We can't really reply to it using DO-IT since that'll clear out any queued data in RESPONSE-STR vs. a
+            ;; HTTP round-trip that probably has failed.
+            (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN."))
+          (reset! response-sched-fn
+                  (at (+ (now) -comet-timeout-)
+                      #(with-bindings thread-bindings
+                         (reset! response-sched-fn nil)
+                         (do-it)))))))))
+
+
+;; Agents
+#_(defn handle-out-channel-request [channel request]
+  "Output channel."
+  (letfn [(do-it [a]
+            (send a (fn [chunks]
+                      (with-errors-logged ;; TODO: Blocking I/O...
+                        (enqueue channel
+                                 {:status 200
+                                  :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                                            "Server" -http-server-string-}
+                                  :body (str chunks "_sw_comet_response = true;")}))
+                      "")))]
+    (let [viewport-m @*viewport*
+          response-sched-fn (:response-sched-fn viewport-m)
+          response-agent (:response-agent viewport-m)]
+      (if (pos? (count @response-agent))
+        (do-it response-agent)
+        (let [thread-bindings (get-thread-bindings)]
+          (when @response-sched-fn
+            ;; TODO: We can't really reply to it using DO-IT since that'll clear out any queued data in RESPONSE-STR vs. a HTTP
+            ;; round-trip that probably has failed.
+            (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN."))
+          (reset! response-sched-fn
+                  (at (+ (now) -comet-timeout-)
+                      #(with-bindings thread-bindings
+                         (reset! response-sched-fn nil)
+                         (do-it response-agent)))))))))
 
 
 (defn handle-in-channel-request []
@@ -61,9 +126,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
        {:status 200
         :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                  "Server" "SymbolicWeb"}
+                  "Server" -http-server-string-}
         :body *in-channel-request?*}))))
-
 
 
 (defn default-ajax-handler []
@@ -84,7 +148,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (if (= clear-session-page-handler (:rest-handler @*application*))
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" "SymbolicWeb"}
+                 "Server" -http-server-string-}
        :body (str (set-default-session-cookie nil)
                   "window.location.reload();")}
       (if-let [viewport (get (:viewports @*application*)
@@ -94,7 +158,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           ((:ajax-handler @*application*)))
         {:status 200
          :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                   "Server" "SymbolicWeb"}
+                   "Server" -http-server-string-}
          :body
          (with-js (clear-session))}))
     ;; REST.
@@ -112,7 +176,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       :javascript
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" "SymbolicWeb"}
+                 "Server" -http-server-string-}
        :body
        (str ;; Clear session cookie and reload page.
         (set-default-session-cookie nil)
@@ -150,7 +214,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 (defn default-rest-handler []
   {:status  200
    :headers {"Content-Type"  "text/html; charset=UTF-8"
-             "Server" "SymbolicWeb"
+             "Server" -http-server-string-
              "Expires"       "Mon, 26 Jul 1997 05:00:00 GMT"
              "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
              "Pragma"        "no-cache"}
@@ -187,7 +251,9 @@ html, body, #sw-root {
       (with-out-str
         (doseq [head-element (:head-elements @*application*)]
           (println head-element)))
-      (sw-js-bootstrap)]
+      ;;(sw-js-bootstrap)
+      (assert false "handler doesn't work atm. ... fix fix")
+      ]
 
      [:body
       (render-html (:root-element @*viewport*) (:root-element @*viewport*))]))})
@@ -196,7 +262,7 @@ html, body, #sw-root {
 (defn not-found-page-handler []
   {:status 404
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Server" "SymbolicWeb"}
+             "Server" -http-server-string-}
    :body
    (html
     (doctype :xhtml-strict)
@@ -217,12 +283,14 @@ html, body, #sw-root {
       (fn-to-wrap)
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" "SymbolicWeb"}
+                 "Server" -http-server-string-}
        :body *in-channel-request?*})))
 
 
 
 (defapp
-  [::EmptyPage #(is-url? "/empty-page/sw") "/empty-page/sw"]
+  [::EmptyPage
+   #(is-url? "/empty-page/sw")
+   "/empty-page/sw"]
   (fn [app-type-data]
     (make-Application)))

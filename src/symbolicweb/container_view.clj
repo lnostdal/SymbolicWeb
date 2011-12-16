@@ -38,29 +38,30 @@
       (let [node (nth event-args 0)]
         (if-let [view (view-of-node-in-context container-view node true)]
           (jqRemove view)
-          (assert false "ContainerView: Tried to remove Node, but no existing View of that Node was found."))))))
+          (println "ContainerView: Tried to remove Node, but no existing View of that Node was found."))))))
 
 
 (derive ::ContainerView ::HTMLElement)
 (defn make-ContainerView [html-element-type container-model & attributes]
-  {:pre [(= ContainerModel (type container-model))]}
   (apply make-HTMLElement html-element-type container-model
          :type ::ContainerView
 
-         :html-element-type "ul"
+         :html-element-type html-element-type
 
          ;; TODO: This thing isn't actually implemented proper yet. E.g., see the TODO in container_model.clj.
          :filter-node-fn (fn [container-view node] true)
 
          :handle-model-event-fn
-         (fn [widget operation-args]
-           (handle-container-view-event widget operation-args))
+         (fn [container-view operation-args]
+           (handle-container-view-event container-view operation-args))
 
          :connect-model-view-fn
          (fn [container-model container-view]
            ;; Clear out stuff; e.g. "dummy content" from templating.
-           (add-response-chunk (with-js (jqEmpty container-view))
-                               container-view)
+           ;; TODO: Since TM is using custom templating syntax for his PHP work, this doesn't seem to be needed any more. I.e.,
+           ;; Soup will drop the custom (invalid) content.
+           #_(add-response-chunk (with-js (jqEmpty container-view))
+                                 container-view)
            ;; Add any already existing nodes to CONTAINER-VIEW.
            (loop [node (head-node container-model)]
              (when node
@@ -70,8 +71,8 @@
            (add-view container-model container-view))
 
          :disconnect-model-view-fn
-         (fn [widget]
-           (remove-view container-model widget))
+         (fn [container-view]
+           (remove-view container-model container-view))
 
          :view-from-node-fn
          (fn [container-view node]
@@ -79,3 +80,26 @@
 
          :view-of-node (ref {})
          attributes))
+
+
+(defn make-ContainerModelProxy [container-model]
+  (let [container-model-proxy (make-ContainerModel :type ::ContainerModelProxy)
+        observer (make-ContainerView "%ContainerModelProxyDummyView" container-model
+                                     :view-from-node-fn
+                                     (fn [container-view node]
+                                       (make-ContainerModelNode (node-data node)))
+
+                                     :handle-model-event-fn
+                                     (fn [container-view operation-args])
+
+                                     :connect-model-view-fn
+                                     (fn [container-model container-view]
+                                       (add-view container-model container-view))
+
+                                     :disconnect-model-view-fn
+                                     (fn [container-view]
+                                       (remove-view container-model container-view))
+                                     )
+        ]
+    )
+  )

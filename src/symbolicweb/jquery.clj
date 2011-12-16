@@ -23,6 +23,7 @@
 
 (defn jqPrepend [parent new-widget]
   "Inside."
+  ;;(dbg-prin1 [(:type @parent) (:type @new-widget)])
   (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap (render-html new-widget parent)) ");")
                              parent)
     (when-not *with-js?*
@@ -32,6 +33,7 @@
 (defn jqAfter [widget new-widget]
   "Outside."
   (let [parent (:parent @widget)]
+    (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap (render-html new-widget widget)) ");")
                                parent)
       (when-not *with-js?*
@@ -41,10 +43,11 @@
 (defn jqBefore [widget new-widget]
   "Outside."
   (let [parent (:parent @widget)]
+    (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap (render-html new-widget widget)) ");")
                                parent)
       (when-not *with-js?*
-        (add-branch (:parent @widget) content)))))
+        (add-branch (:parent @widget) new-widget)))))
 
 
 ;; TODO: This thing hasn't been tested yet. Test before committing to git.

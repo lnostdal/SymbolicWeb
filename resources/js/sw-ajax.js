@@ -1,3 +1,6 @@
+"use strict"; // http://ejohn.org/blog/ecmascript-5-strict-mode-json-and-more/
+
+
 /*
   For this file to bootstrap correctly the following variables must be bound:
 
@@ -11,9 +14,9 @@
 /// swGetCurrentHash ///
 ////////////////////////
 
+var swGetCurrentHash;
 if($.browser.mozilla)
-  swGetCurrentHash =
-  function(){
+  swGetCurrentHash = function(){
     if((window.location.hash).length > 1)
       // https://bugzilla.mozilla.org/show_bug.cgi?id=378962 *sigh*
       return "#" + window.location.href.split("#")[1].replace(/%27/g, "'");
@@ -21,8 +24,7 @@ if($.browser.mozilla)
       return "#";
   };
 else
-  swGetCurrentHash =
-  function(){
+  swGetCurrentHash = function(){
     return location.hash;
   };
 
@@ -38,6 +40,7 @@ var swURL, swDURL;
      var res = [window.location.protocol, "//",
                 (function(){ if(dynamic_p) return(_sw_dynamic_subdomain); else return(""); })(),
                 window.location.host,
+                // TODO: Document this.
                 (function(){
                    var str = "";
                    for(var p = window.location.pathname.split("/"), i = 0; i < (p.length - 1); i++)
@@ -66,7 +69,7 @@ var swURL, swDURL;
 /// swAjax ///
 //////////////
 
-swAjax =
+var swAjax =
   (function(){
      var queue = new Array();
      var timer = false;
@@ -90,18 +93,7 @@ swAjax =
 
      return function(params, callback_data, after_fn){
        if(queue.push(function(){
-                       /*
-                        var url = [window.location.protocol, "//",
-                        window.location.host,
-                        window.location.pathname,
-                        "/sw",
-                        "?_sw_request_type=ajax",
-                        "&_sw_viewport_id=", _sw_viewport_id,
-                        params].join('');
-                        */
-
                        var url = swURL(["&_sw_request_type=ajax", params].join(''));
-
                        var options = {
                          type: (function(){
                                   // http://bit.ly/1z3xEu
@@ -116,11 +108,16 @@ swAjax =
                          data: callback_data,
                          cache: false,
                          dataType: "script",
-                         // TODO: 500 should be configurable.
-                         beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }},
+                         beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }}, // TODO: 500 should be configurable.
+                         error: function(xhr, ajax_options, thrown_error){
+                           $.sticky("<b>SymbolicWeb: HTTP 500</b><br/>Something went wrong. Check <b>console.error</b> for details.<br/><br/>Developers have been notified of this event.");
+                           handleRestOfQueue();
+                         },
                          complete: handleRestOfQueue
                        };
+
                        if(after_fn) options.success = after_fn;
+
                        $.ajax(options);
                      }) == 1) // if()..
          queue[0]();
@@ -132,16 +129,14 @@ swAjax =
 /// swComet ///
 ///////////////
 
-_sw_comet_response = false;
+var _sw_comet_response = false;
 
-swComet =
+var swComet  =
   (function(){
      function callback(){
        if(_sw_comet_response)
          _sw_comet_response = false, swComet('&do=ack');
        else
-         // FIXME: This stuff never happen for Webkit (it doesn't seem to be a big problem atm. though),
-         // or Opera (when random subdomains are used).
          setTimeout("swComet('');", 1000);
      }
 
@@ -153,9 +148,9 @@ swComet =
                complete: callback});
      }
 
-     // This returns what is assigned to the "swComet = ..." part above.
+     // This finally returns what is assigned to the "swComet = ..." part above.
      if($.browser.mozilla || $.browser.webkit)
-       // Stop "throbbing of doom".
+       // Stops "throbbing of doom".
        return function(params){ setTimeout(function(){ doIt(params); }, 0); };
      else
        return doIt;
@@ -259,5 +254,6 @@ function swRun(code_id, async_p, func){
 /////////////
 
 $(window).load(function(){
-                 swComet("&do=refresh&hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
+                 // &hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
+                 swComet("&do=refresh");
                });

@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <!-- Do want; http://blog.chromium.org/2009/09/introducing-google-chrome-frame.html -->
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>SymbolicWeb</title>
+
+    <!-- [LRN] Notifications for show-Notification (sticky.clj). -->
+    <link href="/js/common/sticky/sticky.css" rel="stylesheet" type="text/css" />
+
+    <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js" type="text/javascript"></script> --> <!-- [LRN] -->
+    <script src="/js/common/jquery-1.7.1.min.js" type="text/javascript"></script>
+
+    <!-- [LRN] Notifications for show-Notification (sticky.clj). -->
+    <script src="/js/common/sticky/sticky.js" type="text/javascript"></script>
+
+    <!-- [LRN] SHA256 one-way hash for make-HashedInput (text_input.clj). -->
+    <script src="/js/common/sw/jquery.sha256/jquery.sha256.js" type="text/javascript"></script>
+
+    <!-- [LRN] These two <script> elements bootstrap SW. -->
+    <script type="text/javascript">
+      // [LRN] Switched to non-sync (A)JAX request here because this must be loaded before sw-ajax.js is loaded.
+      // [LRN] TODO: We could probably make a single async call here, but it must return both the bootstrap and the sw-ajax.js
+      // content in one go -- or in the right order if separate responses.
+      $.ajax({
+        async: false,
+        type: "GET",
+        url: "/sw?page=sw-js-bootstrap&args=" + encodeURIComponent(window.location.search),
+        dataType: "script"
+      });
+    </script>
+  </head>
+
+  <body id="_body"> <!-- Setting ID allows SW to treat this as a widget via e.g. make-PostHTMLTemplate. -->
+  </body>
+</html>

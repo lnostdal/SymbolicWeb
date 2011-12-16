@@ -3,6 +3,7 @@
 (defn ref? [x]
   (= clojure.lang.Ref (type x)))
 
+(def -http-server-string- "nostdal.org")
 
 (def -comet-timeout- 29000)
 (def -viewport-timeout- (+ -comet-timeout- 30000))
@@ -23,7 +24,7 @@
   (vm 0))
 
 (def -applications-
-  "ID -> APPLICATION"
+  "SESSION-COOKIE-VALUE -> APPLICATION"
   (atom {}))
 
 (def -viewports-
@@ -66,26 +67,3 @@
                      (Thread/sleep 5000) ;; TODO: Probably too low, and magic value anyway.
                      (recur))))
     it))
-
-
-(def ^:dynamic *request*
-  "The current request data (map)."
-  nil)
-
-(def ^:dynamic *viewport*
-  "The current VIEWPORT."
-  nil)
-
-(def ^:dynamic *application*
-  "The current APPLICATION (session)."
-  nil)
-
-
-(def ^{:dynamic true
-       :doc "This is used by ADD-RESPONSE-CHUNK to determine whether we're currently handling an AJAX-request; probably based on some DOM/client side event."}
-  *in-channel-request?*
-  false)
-
-
-(def ^:dynamic *in-html-container?* false)
-(def ^:dynamic *html-container-accu-children* [])
