@@ -5,9 +5,6 @@
 
   (:use [clojure.pprint :only (cl-format)])
 
-  (:import java.util.Calendar)
-  (:import (java.util.concurrent TimeoutException TimeUnit FutureTask))
-
   ;; TODO: Needed for WIP in model.clj
   ;;(:import java.util.WeakHashMap)
   ;;(:import java.lang.ref.SoftReference)
@@ -45,6 +42,7 @@
   (:require symbolicweb.viewport)
   (:require symbolicweb.jquery)
   (:require symbolicweb.container)
+
   (:require symbolicweb.widget-base)
   (:require symbolicweb.text-input)
   (:require symbolicweb.html-elements)
@@ -56,10 +54,10 @@
   (:require symbolicweb.combo-box)
   (:require symbolicweb.tooltip)
   (:require symbolicweb.sticky)
+
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
-  (:require symbolicweb.date-and-time)
-  )
+  (:require symbolicweb.date-and-time))
 (in-ns 'symbolicweb.core)
 
 
