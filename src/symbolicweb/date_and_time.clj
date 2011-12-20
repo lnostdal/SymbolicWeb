@@ -29,10 +29,11 @@
     (jqCSS it "width" "30px")))
 
 
+;; TODO: Switch to Joda time (clj-time).
 ;; TODO: Parse international date format: http://download.oracle.com/javase/7/docs/api/java/util/Date.html#parse(java.lang.String)
 ;; TODO: Support for AM / PM. This means using Calendar/HOUR instead of Calendar/HOUR_OF_DAY etc..
 ;; .. set(int year, int month, int date) ..
-(defn make-TimeAtInput [model & date?]
+#_(defn make-TimeAtInput [model & date?]
   "Specific point in time related to server clock, think: At xx h xx m xx s.
 MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
   (assert (= (class (get-value model)) java.util.GregorianCalendar))
