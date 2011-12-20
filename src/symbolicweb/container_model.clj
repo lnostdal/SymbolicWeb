@@ -45,7 +45,6 @@
 
 (defn notify-views [container-model event-sym & event-args]
   (doseq [container-view (ensure (. container-model views))]
-    ;;(dbg-prin1 (:filter-node-fn @container-view)) ;; TODO!!!! on insert operations.
     ((:handle-model-event-fn (ensure container-view)) container-view (apply list event-sym event-args))))
 
 
