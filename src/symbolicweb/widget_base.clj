@@ -119,15 +119,7 @@ Returns WIDGET."
                                      widget nil ((:output-parsing-fn @widget) (get-value model)))))
          :disconnect-model-view-fn (fn [widget]
                                      (remove-view model widget))
-         :render-static-attributes-fn (fn [w]
-                                        (let [w-m @w]
-                                          (with-out-str
-                                            (doseq [key_val (:static-attributes w-m)]
-                                              (print (str " "
-                                                          (name (key key_val))
-                                                          "='"
-                                                          (name (val key_val)) ;; TODO: Escaping.
-                                                          "'"))))))
+         :render-static-attributes-fn #(cl-format false "~{~A = '~A'~^ ~}" (flatten (seq (:static-attributes @%))))
          :render-html-fn (fn [w]
                            (let [w-m @w]
                              (str "<" (:html-element-type w-m) " id='" (:id w-m) "'" ((:render-static-attributes-fn w-m) w) ">"
