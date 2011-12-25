@@ -209,38 +209,32 @@ Fails (via assert) if an object with the same id already exists in DB-CACHE."
 
 (defn db-cache-get [^DBCache db-cache ^Long id cont-fn]
   "Get object based on ID from DB-CACHE or backend (via CONSTRUCTOR-FN in DB-CACHE). Passes two arguments to CONT-FN:
+
   OBJ :HIT  -- Cache hit.
   OBJ :MISS -- Cache miss, but object found in DB.
   NIL NIL   -- Cache miss, and object not found in DB.
 
-Returns a prototype of the object on cache miss -- to be filled in at a later time. If no object with id ID exists in the cache or
-at the back-end, the prototype object (a REF) will be set to :DB-NOT-FOUND.
 
 Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
 that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
 :CONSTRUCTOR-FN from DB-CACHE."
   (if-let [cache-entry (. (. db-cache cache-data) get id)]
-    (do
-      (cont-fn cache-entry :hit)
-      [cache-entry :hit])
-    (locking db-cache
-      (if-let [cache-entry (. (. db-cache cache-data) get id)] ;; Check cache again while within lock.
-        (do
-          (cont-fn cache-entry :hit)
-          [cache-entry :hit])
-        (let [new-obj-prototype ((. db-cache constructor-fn) db-cache id)]
-          (db-cache-put db-cache id new-obj-prototype)
-          (send-off (. db-cache agent)
-                    (fn [_]
-                      (with-errors-logged
-                        (apply cont-fn
-                               (with-sw-db
-                                 (if-let [new-obj (db-backend-get db-cache id new-obj-prototype)]
-                                   [new-obj :miss]
-                                   (do
-                                     (dosync (ref-set new-obj-prototype :db-not-found))
-                                     [nil nil])))))))
-          [new-obj-prototype :pending])))))
+    (dosync (cont-fn cache-entry :hit))
+    (if-let [cache-entry (locking db-cache (. (. db-cache cache-data) get id))] ;; Check cache again while within lock.
+      (dosync (cont-fn cache-entry :hit))
+      (send-off (. db-cache agent)
+                (fn [_]
+                  (with-errors-logged
+                    (if-let [new-obj (with-sw-db (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id)))]
+                      ;; Check cache yet again while within lock; also possibly adding NEW-OBJ to it still within lock.
+                      (let [res (locking db-cache
+                                  (if-let [cache-entry (. (. db-cache cache-data) get id)]
+                                    [cache-entry :hit]
+                                    (do
+                                      (db-cache-put db-cache id new-obj)
+                                      [new-obj :miss])))]
+                        (dosync (apply cont-fn res)))
+                      (dosync (cont-fn nil nil))))))))) ;; Entry with id ID not found in DB-CACHE.
 
 
 (defn db-cache-remove [^DBCache db-cache ^Long id]
