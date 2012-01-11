@@ -7,7 +7,9 @@
 
 
 (defn jqHTML
-  ([widget] (str "$('#" (widget-id-of widget) "').html();"))
+  ([widget]
+     (str "$('#" (widget-id-of widget) "').html();"))
+
   ([widget new-html]
      (add-response-chunk (str "$('#" (widget-id-of widget) "').html(" (url-encode-wrap (str new-html)) ");")
                          widget)))

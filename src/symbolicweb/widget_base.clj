@@ -99,8 +99,8 @@ Returns WIDGET."
 (derive ::HTMLElement ::Widget)
 (defn make-HTMLElement [html-element-type model & attributes]
   ;; TODO: Both should be a sub-type of Model (or IModel?).
-  #_{:pre [(or (= ValueModel (type model))
-             (= ContainerModel (type model)))]}
+  #_{:pre [(or (= ValueModel (type model)) ;; TODO: (isa? (type model) Model)
+               (= ContainerModel (type model)))]}
   (apply make-Widget
          :type ::HTMLElement
          :html-element-type html-element-type
@@ -115,11 +115,12 @@ Returns WIDGET."
          :connect-model-view-fn (fn [model widget]
                                   (add-view model widget)
                                   (when (:trigger-initial-update? @widget)
-                                    ((:handle-model-event-fn @widget)
-                                     widget nil ((:output-parsing-fn @widget) (get-value model)))))
+                                    ((:handle-model-event-fn @widget) widget nil ((:output-parsing-fn @widget) @model))))
          :disconnect-model-view-fn (fn [widget]
                                      (remove-view model widget))
-         :render-static-attributes-fn #(cl-format false "~{~A = '~A'~^ ~}" (flatten (seq (:static-attributes @%))))
+         :render-static-attributes-fn #(cl-format false "~{ ~A='~A'~}"
+                                                  (flatten (map (fn [e] [(name (key e)) (val e)])
+                                                                (:static-attributes @%))))
          :render-html-fn (fn [w]
                            (let [w-m @w]
                              (str "<" (:html-element-type w-m) " id='" (:id w-m) "'" ((:render-static-attributes-fn w-m) w) ">"

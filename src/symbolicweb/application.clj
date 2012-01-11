@@ -18,6 +18,8 @@
                            :id application-id
                            :id-generator (let [last-id (atom 0N)]
                                            (fn [] (swap! last-id inc')))
+                           :logged-in? (vm false)
+                           :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
                            :last-activity-time (System/currentTimeMillis)
                            :viewports {}
                            :make-viewport-fn #'make-Viewport
@@ -47,8 +49,6 @@
 
 
 (defn find-or-create-application-instance []
-  "Returns two values; a map structure representing an user session/Application, and a map structure representing the current
-Viewport."
   (if-let [cookie-value (:value (get (:cookies *request*) "_sw_application_id"))]
     ;; Session cookie sent.
     (if-let [application (get @-applications- cookie-value)]

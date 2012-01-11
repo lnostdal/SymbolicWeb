@@ -46,12 +46,20 @@
      res#))
 
 
-(defmacro with-errors-logged [& body]
-  `(try
-     (do ~@body)
-     (catch Throwable e# ;; TODO: Throwable is "wrong", but it also actually works.
-       (clojure.stacktrace/print-stack-trace e# 20))))
+(defn %with-errors-logged [f]
+  (try
+    (f)
+    (catch Throwable e ;; TODO: Throwable is "wrong", but it also actually works.
+      (try
+        ;; TODO: Send this stuff to a ValueModel which'll print to STDOUT and present it to the user and what not.
+        (clojure.stacktrace/print-stack-trace e 50)
+        (catch Throwable e
+          (println "%WITH-ERRORS-LOGGED: Dodge überfail... :(")
+          (Thread/sleep 1000)))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
+
+(defmacro with-errors-logged [& body]
+  `(%with-errors-logged (fn [] ~@body)))
 
 
 (defmacro with [form & body]
@@ -72,3 +80,13 @@
 
 (defmacro obj [signature]
   `(~signature ~'%with-object))
+
+
+;; Not really a macro, but screw it; model.clj needs it, and since common.clj needs model.clj it doesn't fit in common.clj where it
+;; should.
+(defn check-type [obj type]
+  (assert (isa? (class obj) type)
+          (str "CHECK-TYPE: Expected " type ", but got: "
+               (if obj
+                 (str "<" (class obj) ": " obj ">")
+                 "NIL"))))

@@ -341,16 +341,10 @@ Returns a string."
   (str (set-default-session-cookie (:id @*application*))
        "_sw_viewport_id = '" (:id @*viewport*) "'; " \newline
 
-
        "_sw_dynamic_subdomain = '"
        (if-let [it (str "sw-" (generate-uid))]
          (str it ".")
          "") "'; " \newline))
-
-
-
-
-
 
 
 ;; TODO: Not correct at the moment; SW-JS-BASE-BOOTSTAP takes no arguments now.
@@ -372,3 +366,17 @@ Returns a string."
 (defmacro with-js [& body]
   `(binding [*with-js?* true]
      ~@body))
+
+
+
+(defn remove-limited [vec item limit]
+  (with-local-vars [lim limit]
+    (mapcat (fn [elt]
+              (if (= elt item)
+                (if (zero? (var-get lim))
+                  [elt]
+                  (do
+                    (var-set lim (- (var-get lim) 1))
+                    []))
+                [elt]))
+            vec)))

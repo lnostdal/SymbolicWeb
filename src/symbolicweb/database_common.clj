@@ -31,15 +31,13 @@
 
 (defn %with-sw-db [body-fn]
   ;; TODO: Perhaps the TRY/CATCH block here should be within the transaction?
-  ;; TODO: Find a way (ORLY...) to also print out the SQL query on error.
-  (try
-    (with-connection -pooled-db-spec-
-      (.setTransactionIsolation (:connection clojure.java.jdbc.internal/*db*)
-                                java.sql.Connection/TRANSACTION_SERIALIZABLE)
-      (transaction
-       (body-fn)))
-    (catch java.sql.SQLException exception
-      (print-sql-exception-chain exception))))
+  ;; TODO: Find a way (ORLY...) to also print out the SQL query on error. This is why software sucks; APIs designed by fucking
+  ;; retards.
+  (with-connection -pooled-db-spec-
+    (.setTransactionIsolation (:connection clojure.java.jdbc.internal/*db*)
+                              java.sql.Connection/TRANSACTION_SERIALIZABLE)
+    (transaction
+     (body-fn))))
 
 
 (defmacro with-sw-db [& body]
@@ -60,43 +58,43 @@
      ^ReferenceMap cache-data]) ;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
 
 
-(defn default-db-handle-input [^DBCache db-cache input-key input-value]
+(defn default-db-handle-input [db-cache object input-key input-value]
   "SW --> DB.
 Swaps - with _ for INPUT-KEY and passes INPUT-VALUE through as is."
   (when input-key
     [(keyword (str/replace (name input-key) #"-" "_"))
      input-value]))
 
-(defn db-handle-input [^DBCache db-cache ^clojure.lang.Keyword input-key input-value]
+(defn db-handle-input [db-cache object input-key input-value]
   "SW --> DB.
 Returns two values in form of a vector [TRANSLATED-INPUT-KEY TRANSLATED-INPUT-VALUE] or returns NIL if the field in question,
 represented by INPUT-KEY, is not to be stored in the DB."
   (if-let [f (. db-cache db-handle-input-fn)]
-    (f db-cache input-key input-value)
-    (default-db-handle-input input-key input-value)))
+    (f db-cache object input-key input-value)
+    (default-db-handle-input object input-key input-value)))
 
-(defn default-db-handle-output [^DBCache db-cache output-key output-value]
+(defn default-db-handle-output [db-cache object output-key output-value]
   "DB --> SW.
 Swaps _ with - for OUTPUT-KEY and passes OUTPUT-VALUE through as is."
   (when output-key
     [(keyword (str/replace (name output-key) #"_" "-"))
      output-value]))
 
-(defn db-handle-output [^DBCache db-cache ^clojure.lang.Keyword output-key output-value]
+(defn db-handle-output [db-cache object output-key output-value]
   "DB --> SW.
 Returns two values in form of a vector [TRANSLATED-OUTPUT-KEY TRANSLATED-OUTPUT-VALUE] or returns NIL if the field in question,
 represented by OUTPUT-KEY, is not to be fetched from the DB."
   (if-let [f (. db-cache db-handle-output-fn)]
-    (f db-cache output-key output-value)
-    (default-db-handle-output output-key output-value)))
+    (f db-cache object output-key output-value)
+    (default-db-handle-output db-cache object output-key output-value)))
 
 
-(defn db-ensure-persistent-field [^DBCache db-cache ^Long id ^clojure.lang.Keyword key ^ValueModel value-model]
+(defn db-ensure-persistent-field [db-cache object ^Long id ^clojure.lang.Keyword key ^ValueModel value-model]
   "Setup reactive SQL UPDATEs for VALUE-MODEL."
   (mk-view value-model nil
            (fn [value-model old-value new-value]
              (when-not (= old-value new-value) ;; TODO: This should probably be generalized and handled before the notification
-               (let [[input-key input-value] (db-handle-input db-cache key new-value)] ;; is even sent to callbacks.
+               (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
                  (when input-key
                    (send-off (. db-cache agent)
                              (fn [_]
@@ -107,23 +105,23 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
            :trigger-initial-update? false))
 
 
-(defn db-backend-get [^DBCache db-cache ^Long id ^clojure.lang.Ref obj]
+(defn db-backend-get [db-cache ^Long id ^clojure.lang.Ref obj]
   "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
 Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
   (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (. db-cache table-name)) " WHERE id = ?;") id]
     (when-let [res (first res)]
       (dosync
        (doseq [key_val res]
-         (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
+         (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
            (when output-key
              (if (output-key (ensure obj))
                (do
                  (vm-set (output-key (ensure obj)) output-value)
-                 (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure obj))))
+                 (db-ensure-persistent-field db-cache obj (:id res) output-key (output-key (ensure obj))))
                (let [vm-output-value (vm output-value)]
                  (ref-set obj (assoc (ensure obj)
                                 output-key vm-output-value))
-                 (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))))))
+                 (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value))))))
        obj))))
 
 
@@ -131,14 +129,14 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
 (defn db-backend-put
   "SQL INSERT of OBJECT whos keys and values are translated via DB-HANDLE-INPUT. This will also add OBJECT to DB-CACHE after the
 :ID field has been set -- which might happen some time after this function has returned."
-  ([object ^DBCache db-cache cont-fn] (db-backend-put object db-cache cont-fn true))
-  ([object ^DBCache db-cache cont-fn update-cache?]
+  ([object db-cache cont-fn] (db-backend-put object db-cache cont-fn true))
+  ([object db-cache cont-fn update-cache?]
      (assert (or (not (:id (ensure object)))
                  (not @(:id (ensure object)))))
      (with-local-vars [record-data {}]
        (doseq [key_val (ensure object)]
          (when (isa? (type (val key_val)) ValueModel) ;; TODO: Possible magic check. TODO: Foreign keys; ContainerModel.
-           (let [[input-key input-value] (db-handle-input db-cache (key key_val) @(val key_val))]
+           (let [[input-key input-value] (db-handle-input db-cache object (key key_val) @(val key_val))]
              (when input-key
                (var-set record-data (assoc (var-get record-data)
                                       input-key input-value))))))
@@ -148,20 +146,20 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
                      (with-errors-logged
                        (let [res (with-sw-db (insert-record (. db-cache table-name) record-data))] ;; SQL INSERT.
                          (when update-cache?
-                           (db-cache-put db-cache (:id res) object)) ;; We have our object ID; add object to cache.
-                         ;; Update and/or add fields in OBJECT where needed based on result of SQL INSERT operation.
+                           (db-cache-put db-cache (:id res) object))
                          (dosync
                           (doseq [key_val res]
-                            (let [[output-key output-value] (db-handle-output db-cache (key key_val) (val key_val))]
+                            (let [[output-key output-value] (db-handle-output db-cache object (key key_val) (val key_val))]
                               (when output-key
+                                ;; Update or add fields in OBJECT where needed based on result of SQL INSERT operation.
                                 (if (= ::not-found (get (ensure object) output-key ::not-found))
                                   (let [vm-output-value (vm output-value)]
-                                    (ref-set object (assoc (ensure object)
-                                                      output-key vm-output-value))
-                                    (db-ensure-persistent-field db-cache (:id res) output-key vm-output-value))
+                                    (ref-set object (assoc (ensure object) output-key vm-output-value)) ;; Update.
+                                    (db-ensure-persistent-field db-cache object (:id res) output-key vm-output-value))
                                   (do
-                                    (vm-set (output-key (ensure object)) output-value)
-                                    (db-ensure-persistent-field db-cache (:id res) output-key (output-key (ensure object))))))))))
+                                    (vm-set (output-key (ensure object)) output-value) ;; Add.
+                                    (db-ensure-persistent-field db-cache object (:id res) output-key
+                                                                (output-key (ensure object))))))))))
                        (cont-fn object))))))))
 
 
@@ -179,6 +177,8 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
   (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT))
 
 (defn get-db-cache [table-name]
+  ;; A cache for TABLE-NAME must be found.
+  {:post [(if % true (do (println "GET-DB-CACHE: No cache found for" table-name) false))]}
   (if-let [db-cache (. -db-caches- get table-name)]
     db-cache
     (locking -db-caches-
@@ -197,17 +197,18 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
   (db-reset-cache table-name))
 
 
-(defn db-cache-put [^DBCache db-cache ^Long id obj]
+(defn db-cache-put [db-cache ^Long id obj]
   "If ID is NIL, store OBJ in DB then store association between the resulting id and OBJ in DB-CACHE.
 If ID is non-NIL, store association between ID and OBJ in DB-CACHE.
 Fails (via assert) if an object with the same id already exists in DB-CACHE."
-  (locking db-cache
-    (let [cache-data (. db-cache cache-data)]
-      (assert (not (. cache-data containsKey id)) "DB-CACHE-PUT: Ups. This shouldn't happen.")
-      (. cache-data put id obj))))
+  (let [id (Long. id)] ;; Because (. (int 261) equals 261) => false
+    (locking db-cache
+      (let [cache-data (. db-cache cache-data)]
+        (assert (not (. cache-data containsKey id)) "DB-CACHE-PUT: Ups. This shouldn't happen.")
+        (. cache-data put id obj)))))
 
 
-(defn db-cache-get [^DBCache db-cache ^Long id cont-fn]
+(defn db-cache-get [db-cache ^Long id cont-fn]
   "Get object based on ID from DB-CACHE or backend (via CONSTRUCTOR-FN in DB-CACHE). Passes two arguments to CONT-FN:
 
   OBJ :HIT  -- Cache hit.
@@ -218,30 +219,32 @@ Fails (via assert) if an object with the same id already exists in DB-CACHE."
 Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
 that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
 :CONSTRUCTOR-FN from DB-CACHE."
-  (if-let [cache-entry (. (. db-cache cache-data) get id)]
-    (dosync (cont-fn cache-entry :hit))
-    (if-let [cache-entry (locking db-cache (. (. db-cache cache-data) get id))] ;; Check cache again while within lock.
+  (let [id (Long. id)] ;; Because (. (int 261) equals 261) => false
+    (if-let [cache-entry (. (. db-cache cache-data) get id)]
       (dosync (cont-fn cache-entry :hit))
-      (send-off (. db-cache agent)
-                (fn [_]
-                  (with-errors-logged
-                    (if-let [new-obj (with-sw-db (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id)))]
-                      ;; Check cache yet again while within lock; also possibly adding NEW-OBJ to it still within lock.
-                      (let [res (locking db-cache
-                                  (if-let [cache-entry (. (. db-cache cache-data) get id)]
-                                    [cache-entry :hit]
-                                    (do
-                                      (db-cache-put db-cache id new-obj)
-                                      [new-obj :miss])))]
-                        (dosync (apply cont-fn res)))
-                      (dosync (cont-fn nil nil))))))))) ;; Entry with id ID not found in DB-CACHE.
+      (if-let [cache-entry (locking db-cache (. (. db-cache cache-data) get id))] ;; Check cache again while within lock.
+        (dosync (cont-fn cache-entry :hit))
+        (send-off (. db-cache agent)
+                  (fn [_]
+                    (with-errors-logged
+                      (if-let [new-obj (with-sw-db (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id)))]
+                        ;; Check cache yet again while within lock; also possibly adding NEW-OBJ to it still within lock.
+                        (let [res (locking db-cache
+                                    (if-let [cache-entry (. (. db-cache cache-data) get id)]
+                                      [cache-entry :hit]
+                                      (do
+                                        (db-cache-put db-cache id new-obj)
+                                        [new-obj :miss])))]
+                          (dosync (apply cont-fn res)))
+                        (dosync (cont-fn nil nil)))))))))) ;; Entry with id ID not found in DB-CACHE.
 
 
-(defn db-cache-remove [^DBCache db-cache ^Long id]
+(defn db-cache-remove [db-cache ^Long id]
   "Removes object based on ID from DB-CACHE."
-  (locking db-cache
-    (. (. db-cache cache-data)
-       remove id)))
+  (let [id (Long. id)] ;; Because (. (Int. 261) equals 261) => false
+    (locking db-cache
+      (. (. db-cache cache-data)
+         remove id))))
 
 
 (defn db-put

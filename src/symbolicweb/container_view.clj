@@ -11,7 +11,7 @@
          (let [new-view ((:view-from-node-fn @container-view) container-view node)]
            (alter (:view-of-node @container-view) assoc node new-view)
            ;; TODO: This is too specific; "visibility" shouldn't be mentioned here.
-           (add-on-non-visible-fn new-view (fn [] (alter (:view-of-node @container-view) dissoc node)))
+            (add-on-non-visible-fn new-view (fn [] (alter (:view-of-node @container-view) dissoc node)))
            new-view)))))
 
 
@@ -160,7 +160,7 @@
               (println "sync-ContainerModel: Tried to remove Node, but no existing View (proxied Node) of that Node was found."))))))))
 
 
-(defn sync-ContainerModel [container-model & attributes]
+(defn sync-ContainerModel [container-model filter-node-fn & attributes]
   "Returns a ContainerModel that is synced with CONTAINER-MODEL via an intermediate :FILTER-NODE-FN.
 To state this differently; operations done vs CONTAINER-MODEL are forwarded to the ContainerModel returned by this function."
   (let [container-model-proxy (make-ContainerModel)
@@ -169,6 +169,7 @@ To state this differently; operations done vs CONTAINER-MODEL are forwarded to t
                         :view-from-node-fn
                         (fn [observer node]
                           ;; TODO: This is somewhat hacky indeed.
+                          ;; We basically do this because of the call to ADD-ON-NON-VISIBLE-FN in VIEW-OF-NODE-IN-CONTEXT.
                           (make-HTMLElement "%ContainerModelProxyNodeDummyView" (node-data node)
                                             :-proxied-node node
                                             :-node (make-ContainerModelNode (node-data node))))
@@ -192,6 +193,9 @@ To state this differently; operations done vs CONTAINER-MODEL are forwarded to t
                         (fn [observer]
                           (println "TODO: sync-ContainerModel, :disconnect-model-view-fn")
                           (remove-view container-model observer))
+
+                        :filter-node-fn
+                        filter-node-fn
 
                         attributes)]
     ;; TODO: The connection has an infinite lifetime. See make-View in widget_base.clj for how more View based stuff deal with this.

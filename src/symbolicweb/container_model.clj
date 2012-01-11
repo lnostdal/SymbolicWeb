@@ -8,7 +8,7 @@
 (deftype ContainerModel [head-node tail-node length views]
   clojure.lang.Counted
   (count [_]
-    (ensure length))
+    (dosync (ensure length)))
 
   IModel
   (add-view [_ view]

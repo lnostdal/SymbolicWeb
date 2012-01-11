@@ -35,24 +35,31 @@
 ;; TODO: Hack; forward decl and def since -GC-THREAD- is started right away.
 (defn ensure-non-visible [widget])
 (defn do-gc []
-  ;;(println "..DO-GC.!")
+  ;;(println "DO-GC")
   (let [now (System/currentTimeMillis)
         checker-fn (fn [cnt timeout]
                      (doseq [obj @cnt]
-                       (let [obj @(val obj)]
+                       (let [obj-ref (val obj)
+                             obj @(val obj)]
                          (when (< timeout (- now (:last-activity-time obj)))
-                           (swap! cnt #(dissoc % (:id obj)))
+                           (swap! cnt #(dissoc % (:id obj))) ;; Remove from -APPLICATIONS- or -VIEWPORTS-.
                            (case (:type obj)
                              ::Application
                              (dosync
                               ;;(println "GC: Application")
-                              (set-value -num-applications-model- (count @-applications-)))
+                              (vm-set -num-applications-model- (count @-applications-))
+                              ;; UserModel -/-> Application.
+                              (when-let [user-model @(:user-model obj)]
+                                (vm-alter (:applications user-model) disj obj-ref)))
+
                              ::Viewport
                              (dosync
-                              ;;(println "GC: Viewport")
-                              ;; This will ensure that Models that hang around "for a long time" (e.g. global vars)
-                              ;; doesn't try to forward their updates to Widgets in stale Viewports.
-                              (ensure-non-visible (:root-element obj))))))))]
+                              ;;(println "DO-GC: Viewport")
+                              ;; This will ensure that Models that hang around "for a long time" (e.g. global vars) doesn't try
+                              ;; to forward their updates to Widgets in stale Viewports.
+                              (ensure-non-visible (:root-element obj))
+                              ;; Application -/-> Viewport.
+                              (alter (:application obj) update-in [:viewports] dissoc (:id obj))))))))]
     (checker-fn -applications- -application-timeout-)
     (checker-fn -viewports- -viewport-timeout-)))
 
@@ -60,10 +67,10 @@
 ;; This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
 ;; properties removing unused or timed out sessions.
 (defonce -gc-thread-
-  (let [it (agent 42)]
+  (let [it (agent 42)] ;; TODO: Error handler!
     (send-off it (fn [_]
                    (loop []
                      (do-gc)
-                     (Thread/sleep 5000) ;; TODO: Probably too low, and magic value anyway.
+                     (Thread/sleep 10000) ;; TODO: Probably too low, and magic value anyway.
                      (recur))))
     it))

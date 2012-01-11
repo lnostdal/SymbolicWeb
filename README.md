@@ -1,8 +1,8 @@
 # SymbolicWeb
 
-AJAX/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI) thing for Clojure.
+AJAX/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI) thing written in Clojure.
 
-SW was originally written for Common Lisp, and that version is still found at this location albeit unmaintained:
+SW was originally written in Common Lisp, and that version is still found at this location albeit unmaintained:
 
   https://github.com/lnostdal/old-SymbolicWeb
 

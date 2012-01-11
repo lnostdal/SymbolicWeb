@@ -1,5 +1,8 @@
 (in-ns 'symbolicweb.core)
 
+;; View and Viewport related concerns
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn ensure-visible [child parent]
   "Ensure CHILD and its children in turn is declared visible in context of PARENT.

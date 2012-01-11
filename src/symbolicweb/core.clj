@@ -43,6 +43,8 @@
   (:require symbolicweb.jquery)
   (:require symbolicweb.container)
 
+  (:require symbolicweb.user)
+
   (:require symbolicweb.widget-base)
   (:require symbolicweb.text-input)
   (:require symbolicweb.html-elements)
@@ -96,7 +98,6 @@
                  (with-out-str (clojure.stacktrace/print-stack-trace e 1000)) ;; TODO: Magic value.
                  \newline]
                 [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))))
-
 
 
 (defn main [& args]
