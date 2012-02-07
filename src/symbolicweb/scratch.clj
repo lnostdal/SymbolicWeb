@@ -3,25 +3,50 @@
 
 (defn synced-container-models-with-filtering []
   (dosync
-   (let [common (make-ContainerModel)
-         odd-only (add-view common (make-ContainerModelProxy
-                                    container-model :filter-node-fn #(odd? (node-data %2))))
-         even-only (add-view common (make-ContainerModelProxy
-                                     container-model :filter-node-fn #(even? (node-data %2))))
-         obj-0 (vm 0)
-         obj-1 (vm 1)
-         obj-2 (vm 2)
-         obj-3 (vm 3)]
-     (append-container-model common (make-ContainerModelNode obj-0))
-     (append-container-model common (make-ContainerModelNode obj-1))
-     (append-container-model common (make-ContainerModelNode obj-2))
-     (append-container-model common (make-ContainerModelNode obj-3))
-     common)))
+   (let [common (with1 (make-ContainerModel)
+                  (append-container-model it (make-ContainerModelNode (vm 4)))
+                  (append-container-model it (make-ContainerModelNode (vm 5))))
+         odd-only (sync-ContainerModel common #(odd? @(node-data %2)))
+         even-only (sync-ContainerModel common #(even? @(node-data %2)))
+         node-zero (make-ContainerModelNode (vm 0))]
 
+     (append-container-model common node-zero)
+     (append-container-model common (make-ContainerModelNode (vm 1)))
+     (append-container-model common (make-ContainerModelNode (vm 2)))
+     (append-container-model common (make-ContainerModelNode (vm 3)))
 
+     ;; TODO: Ok, this is where the tricky part is. Do I monitor all values then re-apply
+     ;; filtering on change via r-c-m-n and a-c-m (or similar; depending on ordering..)?
+     ;; Let's think about what a change of either value or even the filter itself might mean:
+     ;;
+     ;;   * It might mean the value must be added to a ContainerModel where it did not exist before.
+     ;;   * It might mean the value must be removed from a ContainerModel where it did exist before.
+     ;;
+     ;; Removing is quite trivial, and to add properly with regards to positioning we need the "outer" node.
+     ;;
+     ;; Ok,for the "outer" ContainerModel, I'll need
 
+     (vm-set (node-data node-zero) 7)
+     (remove-container-model-node node-zero)
+     (append-container-model common (make-ContainerModelNode (node-data node-zero)))
 
+     (println "COMMON")
+     (loop [node (head-node common)]
+       (when node
+         (println @(node-data node))
+         (recur (right-node node))))
 
+     (println "\nODD-ONLY")
+     (loop [node (head-node odd-only)]
+       (when node
+         (println @(node-data node))
+         (recur (right-node node))))
+
+     (println "\nEVEN-ONLY")
+     (loop [node (head-node even-only)]
+       (when node
+         (println @(node-data node))
+         (recur (right-node node)))))))
 
 
 

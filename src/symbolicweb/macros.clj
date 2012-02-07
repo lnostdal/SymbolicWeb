@@ -1,5 +1,7 @@
 (in-ns 'symbolicweb.core)
 
+(def -db-timeout-ms- 5000)
+
 ;; Macros and dynamic variables.
 
 (def ^:dynamic *with-sw?* false)

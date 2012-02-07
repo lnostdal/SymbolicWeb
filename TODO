@@ -1,0 +1,33 @@
+;;;; TODO ;;;;
+;;;;;;;;;;;;;;
+
+* I need to be able to wrap an entire HTTP response handler in a DB transaction with
+  isolation level `serializable'.
+
+* ADD-RESPONSE-CHUNK shouldn't signal :RESPONSE-STR-PROMISE immediately; wrap AJAX handler in e.g. WITH-JS-BULK?
+
+* Login and long-term session management. Storage of session related data in DB.
+
+* One Agent in common for the Models of each Application type. Viewports have to grab this to do input (e.g. DOM events).
+  One Agent for each Viewport. Models have to grab this to do output. I guess this will happen transparently in or via ADD-RESPONSE-CHUNK.
+
+* SEND-OF vs. Agent for DB stuff, but this only happens "behind" Models.
+
+* Security: Widgets with :ESCAPE-HTML? set to false; think about injection of <script> tags here (session stealing).
+  This applies to even the basic TextInput widget used for e.g. input of usernames.
+
+* Some reusable system for handling of long sessions.
+
+* It should be able to bootstrap or connect to the SW back-end simply by loading a single .js-file.
+
+
+
+;; Indentation problems
+;;;;;;;;;;;;;;;;;;;;;;;
+
+<joegallo> (eval-after-load 'clojure-mode '(add-hook 'clojure-mode-hook (lambda () (put-clojure-indent 'your-macro-here 'defun))))
+<joegallo> more or less
+<joegallo> that'll handle the indenting, but not highlighting like a keyword (which is nice for macros)
+<joegallo> for the highlighting, you'd want a similar callback, or just use the same one, and this inside:
+<joegallo> (font-lock-add-keywords 'clojure-mode '(("(\\(your-fn-here\\)" (1 font-lock-keyword-face))))
+<joegallo> again, more or less

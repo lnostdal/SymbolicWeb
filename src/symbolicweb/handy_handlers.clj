@@ -20,13 +20,12 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (var-get handled?)))
 
 
-(def -blah- (atom 0))
 (defn handle-out-channel-request [channel request]
   "Output channel."
   (letfn [(do-it []
-            (swap! -blah- inc)
             (let [viewport-m @*viewport*
                   response-str (:response-str viewport-m)]
+              (swap! -jadda- inc)
               (enqueue channel
                        {:status 200
                         :headers {"Content-Type" "text/javascript; charset=UTF-8"

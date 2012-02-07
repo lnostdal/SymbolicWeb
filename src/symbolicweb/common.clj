@@ -383,3 +383,19 @@ Returns a string."
                  [elt]))
              vec))))
 
+
+(def -sw-io-agent-error-handler-
+  (fn [the-agent exception]
+    (try
+      (println "-SW-IO-AGENT-ERROR-HANDLER-, thrown: ")
+      (clojure.stacktrace/print-stack-trace exception 50)
+      (catch Throwable inner-exception
+        (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
+        (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
+
+(defonce -sw-io-agent- (agent 42 :error-handler #'-sw-io-agent-error-handler-))
+
+(defmacro with-sw-io [options & body]
+  "Runs BODY in an Agent."
+  `(send-off ,(if (not-empty ~options) ~options -sw-io-agent-)
+             (fn [_#] ~@body)))

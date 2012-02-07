@@ -45,6 +45,21 @@
                           *in-channel-request?*
                           (= *viewport* viewport))
 
+(def -blah- (atom 0))
+(def -jadda- (atom 0))
+
+(defn aoeu [viewport viewport-m new-chunk]
+  (swap! -blah- inc)
+  (with-errors-logged ;; TODO: I/O.
+    (locking viewport
+      (let [response-str (:response-str viewport-m)
+            response-sched-fn (:response-sched-fn viewport-m)]
+        ;; TODO: RESET! here seems to cause load problems.
+        (reset! response-str (str @response-str new-chunk \newline))
+        (when @response-sched-fn
+          (.run @response-sched-fn))))))
+
+
 (defn add-response-chunk
   "Mutation is done in an agent; if a transaction fails, nothing happens."
   ([new-chunk] (add-response-chunk new-chunk (if *with-js?* nil (root-element))))
@@ -54,16 +69,11 @@
                      viewport-m @viewport]
                  (if false
                    (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
-                   (send (:response-agent viewport-m)
-                         (fn [_]
-                           (with-errors-logged ;; TODO: I/O.
-                             (locking viewport
-                               (let [response-str (:response-str viewport-m)
-                                     response-sched-fn (:response-sched-fn viewport-m)]
-                                 ;; TODO: RESET! here seems to cause load problems.
-                                 (reset! response-str (str @response-str new-chunk \newline))
-                                 (when @response-sched-fn
-                                   (.run @response-sched-fn))))))))))] ;; [BLOCKING]
+                   (do
+                     ;;(swap! -jadda- inc)
+                     ;;(aoeu viewport viewport-m new-chunk)
+                     (send (:response-agent viewport-m) (fn [_] (aoeu viewport viewport-m new-chunk)))
+                     ))))]
        (when-not *with-js?*
          (if (viewport-of widget) ;; Visible?
            (do-it)

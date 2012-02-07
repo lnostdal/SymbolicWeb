@@ -24,6 +24,7 @@
      ~@body))
 
 
+;; TODO: This should support the same "syntax" as HTMLTemplate.
 (derive ::PostHTMLTemplate ::HTMLContainer)
 (defn make-PostHTMLTemplate [id content-fn & attributes]
   "This applies templating to an already existing HTML element, specified by ID, on the page."
