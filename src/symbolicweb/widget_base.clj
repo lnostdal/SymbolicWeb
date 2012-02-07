@@ -159,6 +159,7 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
 
 
 (defn mk-view [model lifetime handle-model-event-fn & attributes]
+  "HANDLE-MODEL-EVENT-FN: Takes 3 arguments; VIEW OLD-VALUE NEW-VALUE."
   (apply make-View model lifetime :handle-model-event-fn handle-model-event-fn
          attributes))
 

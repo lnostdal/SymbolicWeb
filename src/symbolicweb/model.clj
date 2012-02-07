@@ -1,12 +1,5 @@
 (in-ns 'symbolicweb.core)
 
-;; MVC core and persistence (DB) abstraction
-;; -----------------------------------------
-;;
-;; TODO: Foreign keys. This should be easy, and fun.
-;; TODO: send-off -> with-errors-logged -> with-sw-db is repeated several times.
-
-
 (declare mk-view ref?)
 
 
@@ -77,11 +70,11 @@ write-skew (STM)."
   "Alters (calls clojure.core/alter on) VALUE-MODEL using FN and ARGS and notifies Views of VALUE-MODEL of the change.
 Note that the Views are only notified when the resulting value of FN and ARGS wasn't = to the old value of VALUE-MODEL."
   {:pre [(check-type value-model ValueModel)]}
-  (let [old-value @value-model]
-    (apply alter (%vm-inner-ref value-model) fn args)
-    (let [new-value @value-model]
-      (when-not (= old-value new-value)
-        ((. value-model notify-views-fn) value-model old-value new-value)))))
+  (let [old-value @value-model
+        new-value (apply alter (%vm-inner-ref value-model) fn args)]
+    (when-not (= old-value new-value)
+      ((. value-model notify-views-fn) value-model old-value new-value))
+    new-value))
 
 (defn vm-alter [ value-model fn & args]
   (apply alter-value value-model fn args))

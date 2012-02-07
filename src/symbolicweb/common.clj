@@ -371,12 +371,15 @@ Returns a string."
 
 (defn remove-limited [vec item limit]
   (with-local-vars [lim limit]
-    (mapcat (fn [elt]
-              (if (= elt item)
-                (if (zero? (var-get lim))
-                  [elt]
-                  (do
-                    (var-set lim (- (var-get lim) 1))
-                    []))
-                [elt]))
-            vec)))
+    (doall ;; Clojure being lazy by-default for these kinds of things is retarded...
+     (mapcat (fn [elt]
+
+               (if (= elt item)
+                 (if (zero? (var-get lim))
+                   [elt]
+                   (do
+                     (var-set lim (- (var-get lim) 1))
+                     []))
+                 [elt]))
+             vec))))
+
