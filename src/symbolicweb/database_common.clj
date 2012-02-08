@@ -1,18 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-(let [db-host  "localhost"
-      db-port  5432
-      db-name  "temp"
-      user     "temp"
-      password "temp"]
-  (def -db-spec- {:classname "org.postgresql.Driver"
-                  :subprotocol "postgresql"
-                  :subname (str "//" db-host ":" db-port "/" db-name)
-                  :user user
-                  :password password}))
-
-
 (defn mk-db-pool [spec]
   (let [cpds (doto (ComboPooledDataSource.)
                (.setDriverClass (:classname spec))
@@ -23,25 +11,28 @@
                (.setMaxIdleTimeExcessConnections (* 30 60))
                ;; Expire connections after 3 hours of inactivity:
                (.setMaxIdleTime (* 3 60 60)))]
-    {:datasource cpds}))
+    (delay {:datasource cpds})))
 
 
-(defonce -pooled-db-spec- (mk-db-pool -db-spec-))
+(defonce -pooled-db-spec-
+  (atom (mk-db-pool (let [db-host  "localhost"
+                          db-port  5432
+                          db-name  "temp"
+                          user     "temp"
+                          password "temp"]
+                      {:classname "org.postgresql.Driver"
+                       :subprotocol "postgresql"
+                       :subname (str "//" db-host ":" db-port "/" db-name)
+                       :user user
+                       :password password}))))
 
-
-(def ^:dynamic *with-sw-db-context* [])
-
-(defn finalize-db-transaction [context]
-  (dosync
-   (doseq [cnt @context]
-     (cnt))))
 
 (defn %with-sw-db [body-fn]
   ;; TODO: Find a way (ORLY...) to also print out the SQL query on error. This is why software sucks; APIs designed by fucking
   ;; retards.
   ;; TODO: On transaction conflict (check exception type); retry automatically (..I think..).
   (try
-    (with-connection -pooled-db-spec-
+    (with-connection @@-pooled-db-spec- ;; DEREF Atom, then Delay.
       (.setTransactionIsolation (:connection clojure.java.jdbc.internal/*db*)
                                 java.sql.Connection/TRANSACTION_SERIALIZABLE)
       (transaction
