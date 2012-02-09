@@ -50,7 +50,7 @@
 
 (defn aoeu [viewport viewport-m new-chunk]
   (swap! -blah- inc)
-  (with-errors-logged ;; TODO: I/O.
+  (with-errors-logged
     (locking viewport
       (let [response-str (:response-str viewport-m)
             response-sched-fn (:response-sched-fn viewport-m)]

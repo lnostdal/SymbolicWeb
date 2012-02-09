@@ -23,7 +23,7 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
 (defn ensure-non-visible [widget]
   "Remove WIDGET and its children from the DOM."
   (let [widget-m @widget]
-    ((:disconnect-model-view-fn widget-m) widget)
+    ((:disconnect-model-view-fn widget-m) widget) ;; Model -/-> View.
     ;; Remove WIDGET from children of parent of WIDGET.
     (when (and (:parent widget-m)
                (not (= :root (:parent widget-m))))
