@@ -81,10 +81,6 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                (recur (right-node node))))
            (add-view container-model container-view))
 
-         :disconnect-model-view-fn
-         (fn [container-view]
-           (remove-view container-model container-view))
-
          :view-from-node-fn
          (fn [container-view node]
            (make-HTMLElement "li" (node-data node)))

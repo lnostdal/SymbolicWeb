@@ -240,7 +240,7 @@ Fails (via assert) if an object with the same id already exists in DB-CACHE."
         (. cache-data put id obj)))))
 
 
-(defn db-cache-get [db-cache ^Long id]
+(defn db-cache-get [db-cache ^Long id construction-fn]
   "Get object based on ID from DB-CACHE or backend (via CONSTRUCTOR-FN in DB-CACHE).
 
 Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
@@ -258,7 +258,7 @@ that only one object with id ID exists in the cache and the system at any point 
               cache-entry
               (do
                 (db-cache-put db-cache id new-obj)
-                new-obj)))
+                (construction-fn new-obj))))
           nil)))))
 
 
@@ -269,8 +269,8 @@ that only one object with id ID exists in the cache and the system at any point 
       (. (. db-cache cache-data)
          remove id))))
 
+
 (defn db-put
-  "Async; non-blocking. Result is passod to CONT-FN."
   ([object table-name]
      (db-put object table-name true))
   ([object table-name update-cache?]
@@ -279,10 +279,13 @@ that only one object with id ID exists in the cache and the system at any point 
                      update-cache?)))
 
 
-(defn db-get [id table-name]
-  "Sync; blocking."
-  (db-cache-get (db-get-cache table-name) id))
-
+(defn db-get
+  "Sync; blocking.
+CONSTRUCTION-FN is called with the resulting (returning) object as argument on cache miss."
+  ([id table-name]
+     (db-get id table-name (fn [obj] obj)))
+  ([id table-name construction-fn]
+     (db-cache-get (db-get-cache table-name) id construction-fn)))
 
 
 ;; TODO:

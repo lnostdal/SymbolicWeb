@@ -81,7 +81,7 @@ It still maintains the same Model <-> View relationship (jqHTML) as a HTMLElemen
 (derive ::BlankTemplateElement ::TemplateElement)
 (defn make-BlankTemplateElement [& attributes]
   "A TemplateElement which doesn't have a Model.
-This might be used to setup events on some content from a template."
+This might be used to setup events on some static content from a template."
   (apply make-TemplateElement (vm "%make-BlankTemplateElement")
          :type ::BlankTemplateElement
          :handle-model-event-fn (fn [widget old-value new-value])

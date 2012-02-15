@@ -387,7 +387,7 @@ Returns a string."
 (def -sw-io-agent-error-handler-
   (fn [the-agent exception]
     (try
-      (println "-SW-IO-AGENT-ERROR-HANDLER-, thrown: ")
+      (println "-SW-IO-AGENT-ERROR-HANDLER-, thrown:")
       (clojure.stacktrace/print-stack-trace exception 50)
       (catch Throwable inner-exception
         (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
