@@ -25,7 +25,6 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
   (letfn [(do-it []
             (let [viewport-m @*viewport*
                   response-str (:response-str viewport-m)]
-              (swap! -jadda- inc)
               (enqueue channel
                        {:status 200
                         :headers {"Content-Type" "text/javascript; charset=UTF-8"
@@ -49,67 +48,6 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                              (locking *viewport*
                                (reset! response-sched-fn nil)
                                (do-it))))))))))))
-
-
-;; Future / promise.
-#_(defn handle-out-channel-request [channel request]
-  "Output channel."
-  (letfn [(do-it []
-            (let [viewport-m @*viewport*]
-              (send
-              (send-off (:response-agent viewport-m)
-                        (fn [chunks]
-                          (with-errors-logged
-                            (enqueue channel
-                                     {:status 200
-                                      :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                                                "Server" -http-server-string-}
-                                      :body (str chunks "_sw_comet_response = true;")})
-                            ""))))))]
-    (let [viewport-m @*viewport*
-          response-sched-fn (:response-sched-fn viewport-m)
-          response-agent (:response-agent viewport-m)]
-      (if (pos? (count @response-agent))
-        (do-it)
-        (let [thread-bindings (get-thread-bindings)]
-          (when @response-sched-fn
-            ;; TODO: We can't really reply to it using DO-IT since that'll clear out any queued data in RESPONSE-STR vs. a
-            ;; HTTP round-trip that probably has failed.
-            (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN."))
-          (reset! response-sched-fn
-                  (at (+ (now) -comet-timeout-)
-                      #(with-bindings thread-bindings
-                         (reset! response-sched-fn nil)
-                         (do-it)))))))))
-
-
-;; Agents
-#_(defn handle-out-channel-request [channel request]
-  "Output channel."
-  (letfn [(do-it [a]
-            (send a (fn [chunks]
-                      (with-errors-logged ;; TODO: Blocking I/O...
-                        (enqueue channel
-                                 {:status 200
-                                  :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                                            "Server" -http-server-string-}
-                                  :body (str chunks "_sw_comet_response = true;")}))
-                      "")))]
-    (let [viewport-m @*viewport*
-          response-sched-fn (:response-sched-fn viewport-m)
-          response-agent (:response-agent viewport-m)]
-      (if (pos? (count @response-agent))
-        (do-it response-agent)
-        (let [thread-bindings (get-thread-bindings)]
-          (when @response-sched-fn
-            ;; TODO: We can't really reply to it using DO-IT since that'll clear out any queued data in RESPONSE-STR vs. a HTTP
-            ;; round-trip that probably has failed.
-            (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN."))
-          (reset! response-sched-fn
-                  (at (+ (now) -comet-timeout-)
-                      #(with-bindings thread-bindings
-                         (reset! response-sched-fn nil)
-                         (do-it response-agent)))))))))
 
 
 (defn handle-in-channel-request []

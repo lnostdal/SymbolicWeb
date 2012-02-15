@@ -41,15 +41,7 @@
   (alter widget update-in [:on-non-visible-fns] conj fn))
 
 
-#_(and (thread-bound? #'*in-channel-request?*)
-                          *in-channel-request?*
-                          (= *viewport* viewport))
-
-(def -blah- (atom 0))
-(def -jadda- (atom 0))
-
-(defn aoeu [viewport viewport-m new-chunk]
-  (swap! -blah- inc)
+(defn add-response-chunk-agent-fn [viewport viewport-m new-chunk]
   (with-errors-logged
     (locking viewport
       (let [response-str (:response-str viewport-m)
@@ -67,74 +59,29 @@
      (letfn [(do-it []
                (let [viewport (viewport-of widget)
                      viewport-m @viewport]
-                 (if false
-                   (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
+                 ;; TODO: M-m-m-mega hack. Why isn't REMOVE-VIEW called vs. TemplateElements and it seems some other widgets
+                 ;; held in HTMLContainers?
+                 ;; Are children not added to HTMLTemplate?
+                 (if (< (* -viewport-timeout- 3) ;; NOTE: Times 3!
+                        (- (System/currentTimeMillis) (:last-activity-time viewport-m)))
                    (do
-                     ;;(swap! -jadda- inc)
-                     ;;(aoeu viewport viewport-m new-chunk)
-                     (send (:response-agent viewport-m) (fn [_] (aoeu viewport viewport-m new-chunk)))
-                     ))))]
+                     ;; Ok, it seems :VIEWPORT is set and :PARENT is not set to :DEAD so so this means ENSURE-NON-VISIBLE
+                     ;; has _not_ been called yet -- which is strange.
+                     (remove-view (:model @widget) widget)
+                     ;;(dbg-prin1 [(:type @widget) (:id @widget)])
+                     (when (not= :dead (:parent @widget))
+                       ;;(dbg-prin1 [(:type @widget) (:id @widget)]) ;; This one is interesting; uncomment when working on this.
+                       (def -lost-widget- widget))
+                     )
+                   (if false
+                     (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
+                     (send (:response-agent viewport-m)
+                           (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk)))))))]
        (when-not *with-js?*
          (if (viewport-of widget) ;; Visible?
            (do-it)
-           (add-on-visible-fn widget do-it))))
-     new-chunk))
-
-
-;; Future / promise.
-#_(defn add-response-chunk
-  "Mutation is done in an agent; if a transaction fails, nothing happens."
-  ([new-chunk] (add-response-chunk new-chunk (if *with-js?* nil (root-element))))
-  ([new-chunk widget]
-     (letfn [(do-it []
-               (let [viewport (viewport-of widget)
-                     viewport-m @viewport]
-                 (if (and (thread-bound? #'*in-channel-request?*)
-                          *in-channel-request?*
-                          (= *viewport* viewport))
-                   (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
-                   (send (:response-agent viewport-m)
-                         (fn [existing-chunks]
-                           (with-errors-logged
-                             (let [response-sched-fn (:response-sched-fn viewport-m)]
-                               (when @response-sched-fn
-                                 ;; TODO: Or perhaps the following?
-                                 ;;(.execute @default-pool* @response-sched-fn)
-                                 (.run @response-sched-fn))
-                               (str existing-chunks new-chunk \newline))))))))]
-       (when-not *with-js?*
-         (if (viewport-of widget) ;; Visible?
-           (do-it)
-           (add-on-visible-fn widget do-it))))
-     new-chunk))
-
-
-;; Agents.
-#_(defn add-response-chunk
-  "Mutation is done in an agent; if a transaction fails, nothing happens."
-  ([new-chunk] (add-response-chunk new-chunk (if *with-js?* nil (root-element))))
-  ([new-chunk widget]
-     (letfn [(do-it []
-               (let [viewport (viewport-of widget)
-                     viewport-m @viewport]
-                 (if (and (thread-bound? #'*in-channel-request?*)
-                          *in-channel-request?*
-                          (= *viewport* viewport))
-                   (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
-                   (send (:response-agent viewport-m)
-                         (fn [existing-chunks]
-                           (with-errors-logged ;; TODO: Blocking I/O...
-                             (let [response-sched-fn (:response-sched-fn viewport-m)]
-                               (when @response-sched-fn
-                                 ;; TODO: Or perhaps the following?
-                                 ;;(.execute @default-pool* @response-sched-fn)
-                                 (.run @response-sched-fn))))
-                           (str existing-chunks new-chunk \newline))))))]
-       (when-not *with-js?*
-         (if (viewport-of widget) ;; Visible?
-           (do-it)
-            (add-on-visible-fn widget do-it))))
-      new-chunk))
+           (add-on-visible-fn widget do-it)))
+       new-chunk)))
 
 
 (defn handle-widget-event [widget event-name]

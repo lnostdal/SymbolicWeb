@@ -34,6 +34,8 @@
 
 ;; TODO: Hack; forward decl and def since -GC-THREAD- is started right away.
 (defn ensure-non-visible [widget])
+;; This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
+;; properties removing unused or timed out sessions.
 (defn do-gc []
   ;;(println "DO-GC")
   (let [now (System/currentTimeMillis)
@@ -63,14 +65,19 @@
     (checker-fn -applications- -application-timeout-)
     (checker-fn -viewports- -viewport-timeout-)))
 
+(def -gc-thread-error-handler-
+  (fn [the-agent exception]
+    (try
+      (println "-GC-THREAD-ERROR-HANDLER-, thrown:")
+      (clojure.stacktrace/print-stack-trace exception 50)
+      (catch Throwable inner-exception
+        (println "-GC-THREAD-ERROR-HANDLER-: Dodge überfail... :(")
+        (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
-;; This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
-;; properties removing unused or timed out sessions.
 (defonce -gc-thread-
-  (let [it (agent 42)] ;; TODO: Error handler!
+  (with1 (agent 42 :error-handler #'-gc-thread-error-handler-)
     (send-off it (fn [_]
                    (loop []
                      (do-gc)
                      (Thread/sleep 10000) ;; TODO: Probably too low, and magic value anyway.
-                     (recur))))
-    it))
+                     (recur))))))
