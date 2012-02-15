@@ -20,4 +20,6 @@
                  [c3p0/c3p0 "0.9.1.2"]] ;; DB connection pooling.
   :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
              "-server" "-XX:+TieredCompilation"
-             "-XX:-OmitStackTraceInFastThrow"]) ;; http://stackoverflow.com/a/2070568/160305
+             "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
+             "-XX:+HeapDumpOnOutOfMemoryError"
+             ])
