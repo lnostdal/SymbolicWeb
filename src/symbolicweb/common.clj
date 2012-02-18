@@ -339,21 +339,12 @@ Returns a string."
 
 (defn sw-js-base-bootstrap []
   (str (set-default-session-cookie (:id @*application*))
-       "_sw_viewport_id = '" (:id @*viewport*) "'; " \newline
-
-       "_sw_dynamic_subdomain = '"
-       (if-let [it (str "sw-" (generate-uid))]
-         (str it ".")
-         "") "'; " \newline))
-
-
-;; TODO: Not correct at the moment; SW-JS-BASE-BOOTSTAP takes no arguments now.
-#_(defn sw-js-bootstrap
-  ([] (sw-js-bootstrap "/"))
-  ([path]
-     (html
-      [:script {:type "text/javascript"} (sw-js-base-bootstrap path)]
-      [:script {:type "text/javascript" :defer "defer" :src "/js/common/sw/sw-ajax.js"}])))
+       "_sw_viewport_id = '" (:id @*viewport*) "';" \newline
+       "_sw_comet_timeout_ts = " -comet-timeout- ";" \newline
+       (cl-format false "_sw_dynamic_subdomain = '~A';~%"
+                  (if-let [it (str "sw-" (generate-uid))]
+                    (str it ".")
+                    ""))))
 
 
 (defn sw-css-bootstrap []

@@ -2,13 +2,14 @@
 
 
 /*
-  For this file to bootstrap correctly the following variables must be bound:
+ For this file to bootstrap correctly the following variables must be bound:
 
-    * _sw_viewport_id [string]
+   * _sw_viewport_id [string]
 
-    * _sw_dynamic_subdomain [string]
+   * _sw_dynamic_subdomain [string]
 
-*/
+   * _sw_comet_timeout_ts [integer; timestamp]
+ */
 
 
 /// swGetCurrentHash ///
@@ -27,6 +28,31 @@ else
   swGetCurrentHash = function(){
     return location.hash;
   };
+
+
+
+/// swAddOnLoadFN ///
+/////////////////////
+
+var swAddOnLoadFN, swDoOnLoadFNs;
+(function (){
+   var funs = new Array();
+
+   swAddOnLoadFN = function(fun){
+     funs.push(fun);
+   };
+
+   swDoOnLoadFNs = function(){
+     try {
+       for(var fn in funs){
+         funs[fn]();
+       }
+     }
+     catch(err){
+       console.error(err);
+     }
+   };
+ })();
 
 
 
@@ -130,12 +156,15 @@ var swAjax =
 ///////////////
 
 var _sw_comet_response = false;
+var _sw_comet_last_response_ts = null;
 
 var swComet  =
   (function(){
      function callback(){
-       if(_sw_comet_response)
+       if(_sw_comet_response){
+         _sw_comet_last_response_ts = new Date().getTime();
          _sw_comet_response = false, swComet('&do=ack');
+       }
        else
          setTimeout("swComet('');", 1000);
      }
@@ -250,10 +279,35 @@ function swRun(code_id, async_p, func){
 
 
 
+/// swCometTimeout ///
+///////////////////////
+
+/* [TM] Function checks for swComet timeout in relation to the specified <timeout_ms> (millisec from last request) */
+function swCometTimeout(timeout_ms) {
+  return ((new Date().getTime() - _sw_comet_last_response_ts) > timeout_ms);
+}
+
+
+
 /// Boot! ///
 /////////////
 
-$(window).load(function(){
-                 // &hash=" + encodeURIComponent(encodeURIComponent(swGetCurrentHash().substr(1))));
-                 swComet("&do=refresh");
-               });
+$(window).on('load', function(){
+  swComet("&do=refresh");
+
+  var sw_timeout_poll = null;
+  var sw_timeout_poll_ms = 5000;
+  var sw_comet_timeout_ts_window = 5000;
+
+  $(document).on('mousemove', function(e){
+    if(sw_timeout_poll == null || (new Date().getTime() - sw_timeout_poll) > sw_timeout_poll_ms){
+      sw_timeout_poll = new Date().getTime();
+      // Check if the SW Comet request has timed out, if it has - refresh the page
+      // Check timeout against the defined_sw_comet_timeout_ts + a window (for slow connections).
+      if(swCometTimeout(_sw_comet_timeout_ts + sw_comet_timeout_ts_window)){
+        console.error('swComet has timed out, rebooting...');
+        window.location.href = window.location.href;
+      }
+    }
+  });
+});
