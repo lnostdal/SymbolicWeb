@@ -25,7 +25,6 @@
 
 (defn jqPrepend [parent new-widget]
   "Inside."
-  ;;(dbg-prin1 [(:type @parent) (:type @new-widget)])
   (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap (render-html new-widget parent)) ");")
                              parent)
     (when-not *with-js?*

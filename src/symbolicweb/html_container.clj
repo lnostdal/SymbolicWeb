@@ -50,16 +50,17 @@ CONTENT-FN is something like:
          (fn [w]
            (let [w-m @w
                  transformation-data (content-fn w)]
+             ;; The Enlive API is total bullshit so we do this instead of trying to be idiomatic.
              (with-local-vars [res html-resource]
-               (doseq [td (seq (partition 2 transformation-data))]
-                 (if (string? (second td))
-                   (var-set res (transform (var-get res) (first td)
-                                           (html-content (second td))))
+               (doseq [[selector content] (partition 2 transformation-data)]
+                 (if (string? content)
+                   (var-set res (transform (var-get res) selector
+                                           (html-content content)))
                    (do
-                     (var-set res (transform (var-get res) (first td)
-                                             (set-attr "id" (widget-id-of (second td)))))
-                     (when-not (= (second td) w) ;; We don't want a circular parent / child relationship.
-                       (sw (second td))))))
+                     (var-set res (transform (var-get res) selector
+                                             (set-attr "id" (widget-id-of content))))
+                     (when-not (= content w) ;; We don't want a circular parent / child relationship.
+                       (sw content)))))
                (apply str (emit* (var-get res))))))
          attributes))
 
@@ -71,7 +72,6 @@ It still maintains the same Model <-> View relationship (jqHTML) as a HTMLElemen
   (apply make-HTMLElement "%make-TemplateElement" model
          :type ::TemplateElement
          attributes))
-
 
 (defn mk-te [model & attributes]
   "Short for make-TemplateElement."

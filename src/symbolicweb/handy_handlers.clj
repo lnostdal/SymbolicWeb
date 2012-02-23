@@ -22,32 +22,30 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (defn handle-out-channel-request [channel request]
   "Output channel."
-  (letfn [(do-it []
-            (let [viewport-m @*viewport*
-                  response-str (:response-str viewport-m)]
-              (enqueue channel
-                       {:status 200
-                        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                                  "Server" -http-server-string-}
-                        :body (with1 (str @response-str "_sw_comet_response = true;")
-                                (reset! response-str ""))})))]
+  (letfn [(do-it [response-str]
+            (enqueue channel
+                     {:status 200
+                      :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                                "Server" -http-server-string-}
+                      :body (with1 (str @response-str "_sw_comet_response = true;")
+                              (reset! response-str ""))}))]
     (locking *viewport*
       (let [viewport-m @*viewport*
             response-sched-fn (:response-sched-fn viewport-m)
             response-str (:response-str viewport-m)]
         (if (pos? (count @response-str))
-          (do-it)
-          (let [thread-bindings (get-thread-bindings)]
-            (if @response-sched-fn
-              (do
-                (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN.")
-                (.run @response-sched-fn))
-              (reset! response-sched-fn
-                      (at (+ (now) -comet-timeout-)
-                          #(with-bindings thread-bindings
-                             (locking *viewport*
-                               (reset! response-sched-fn nil)
-                               (do-it))))))))))))
+          (do-it response-str)
+          (if @response-sched-fn
+            (do
+              (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN.")
+              (.run @response-sched-fn))
+            (reset! response-sched-fn
+                    (at (+ (now) -comet-timeout-)
+                        #(locking *viewport*
+                           (when @response-sched-fn
+                             (reset! response-sched-fn nil)
+                             (do-it response-str))
+                           nil))))))))) ;; TODO: Return value leaking?
 
 
 (defn handle-in-channel-request []
@@ -58,13 +56,12 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         widget (get (:widgets @*viewport*) widget-id)
         callback (get (:callbacks @widget) callback-id)
         [callback-fn callback-data] callback]
-    (dosync
-     (binding [*in-channel-request?* ""]
-       (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
-       {:status 200
-        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                  "Server" -http-server-string-}
-        :body *in-channel-request?*}))))
+    (binding [*in-channel-request?* ""]
+      (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                 "Server" -http-server-string-}
+       :body *in-channel-request?*})))
 
 
 (defn default-ajax-handler []
@@ -73,8 +70,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       "comet" ((wrap-aleph-handler #'handle-out-channel-request) *request*)
       "ajax"  (handle-in-channel-request)
       (throw (Exception. (str "SymbolicWeb: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))
-    (dosync
-     ((:aux-handler @*application*)))))
+    ((:aux-handler @*application*))))
 
 
 (declare clear-session-page-handler)
@@ -91,19 +87,17 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       (if-let [viewport (get (:viewports @*application*)
                              (get (:query-params *request*) "_sw_viewport_id"))]
         (binding [*viewport* viewport]
-          (dosync (touch *viewport*))
+          (touch *viewport*)
           ((:ajax-handler @*application*)))
         {:status 200
          :headers {"Content-Type" "text/javascript; charset=UTF-8"
                    "Server" -http-server-string-}
-         :body
-         (with-js (clear-session))}))
+         :body (with-js (clear-session))}))
     ;; REST.
     (binding [*viewport* (when (:session? @*application*)
                            ((:make-viewport-fn @*application*)))]
-      (dosync
-       ((:reload-handler @*application*))
-       ((:rest-handler @*application*))))))
+      ((:reload-handler @*application*))
+      ((:rest-handler @*application*)))))
 
 
 (defn clear-session-page-handler []

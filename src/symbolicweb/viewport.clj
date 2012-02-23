@@ -11,7 +11,7 @@
                  (ref (apply assoc {}
                              :type ::Viewport
                              :id viewport-id
-                             :last-activity-time (System/currentTimeMillis)
+                             :last-activity-time (atom (System/currentTimeMillis))
                              :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
                              :response-str (atom "")
                              :response-sched-fn (atom nil)
@@ -24,7 +24,7 @@
                  :application *application*
                  :root-element root-widget
                  :widgets {(:id @root-widget) root-widget})
-          (add-branch :root root-widget)
+          (add-branch *viewport* root-widget)
           (alter *application* update-in [:viewports] assoc viewport-id *viewport*))
          (when (:session? @*application*)
            (swap! -viewports- #(assoc % viewport-id *viewport*)))
@@ -33,12 +33,12 @@
 
 (defn add-on-visible-fn [widget fn]
   "FN is code to execute when WIDGET is added to the client/DOM end."
-  (alter widget update-in [:on-visible-fns] conj fn))
+  (swap! (:on-visible-fns @widget) conj fn))
 
 
 (defn add-on-non-visible-fn [widget fn]
   "FN is code to execute when WIDGET is removed from the client/DOM end."
-  (alter widget update-in [:on-non-visible-fns] conj fn))
+  (swap! (:on-non-visible-fns @widget) conj fn))
 
 
 (defn add-response-chunk-agent-fn [viewport viewport-m new-chunk]
@@ -46,7 +46,6 @@
     (locking viewport
       (let [response-str (:response-str viewport-m)
             response-sched-fn (:response-sched-fn viewport-m)]
-        ;; TODO: RESET! here seems to cause load problems.
         (reset! response-str (str @response-str new-chunk \newline))
         (when @response-sched-fn
           (.run @response-sched-fn))))))
@@ -67,14 +66,16 @@
                    (do
                      ;; Ok, it seems :VIEWPORT is set and :PARENT is not set to :DEAD so so this means ENSURE-NON-VISIBLE
                      ;; has _not_ been called yet -- which is strange.
-                     (remove-view (:model @widget) widget)
+                     ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
                      ;;(dbg-prin1 [(:type @widget) (:id @widget)])
                      (when (not= :dead (:parent @widget))
                        ;;(dbg-prin1 [(:type @widget) (:id @widget)]) ;; This one is interesting; uncomment when working on this.
-                       (def -lost-widget- widget))
-                     )
+                       (remove-branch widget)
+                       (def -lost-widget- widget)))
                    (if false
                      (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
+                     ;; TODO: Ok, I can't use Agents, so here I'll need to store the chunks in the Viewport object and send
+                     ;; them when the DB transaction is complete.
                      (send (:response-agent viewport-m)
                            (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk)))))))]
        (when-not *with-js?*

@@ -20,9 +20,9 @@
                 attributes)
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]
-                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
-                                            (input-parsing-fn new-value)
-                                            new-value)))
+                         (vm-set model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                         (input-parsing-fn new-value)
+                                         new-value)))
                        :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
 
 
@@ -41,9 +41,9 @@ Note that the client-side hash halve is still transferred in clear text form fro
                 attributes)
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]
-                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
-                                            (input-parsing-fn new-value)
-                                            new-value)))
+                         (vm-set model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                         (input-parsing-fn new-value)
+                                         new-value)))
                        :callback-data
                        {:new-value "' + encodeURIComponent($.sha256($(this).val())) + '"}))) ;; Hash once on client end.
 
@@ -65,9 +65,9 @@ Note that the client-side hash halve is still transferred in clear text form fro
                 attributes)
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]
-                         (set-value model (if-let [input-parsing-fn (:input-parsing-fn @it)]
-                                            (input-parsing-fn new-value)
-                                            new-value)))
+                         (vm-set model (if-let [input-parsing-fn (:input-parsing-fn @it)]
+                                         (input-parsing-fn new-value)
+                                         new-value)))
                        :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
 
 

@@ -43,7 +43,7 @@
   ;; TODO: These will (sometimes) be bound to NIL on page redraw (at least)..
   (binding [*application* (if context-widget (application-of context-widget) *application*)
             *viewport* (if context-widget (viewport-of context-widget) *viewport*)]
-    (let [widget-m (ensure widget)
+    (let [widget-m @widget
           widget-type (:type widget-m)]
       (cond
        (isa? widget-type ::Widget)
@@ -82,8 +82,8 @@ Returns WIDGET."
   (ref (apply assoc (make-ID)
               :type ::WidgetBase
               :viewport nil
-              :on-visible-fns []
-              :on-non-visible-fns []
+              :on-visible-fns (atom [])
+              :on-non-visible-fns (atom [])
               :children [] ;; Note that order etc. doesn't matter here; this is only used to track visibility on the client-end.
               :callbacks {} ;; event-name -> [handler-fn callback-data]
               :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
@@ -98,9 +98,6 @@ Returns WIDGET."
 
 (derive ::HTMLElement ::Widget)
 (defn make-HTMLElement [html-element-type model & attributes]
-  ;; TODO: Both should be a sub-type of Model (or IModel?).
-  #_{:pre [(or (= ValueModel (type model)) ;; TODO: (isa? (type model) Model)
-               (= ContainerModel (type model)))]}
   (apply make-Widget
          :type ::HTMLElement
          :html-element-type html-element-type
@@ -146,8 +143,8 @@ Returns WIDGET."
 (defn make-View [model lifetime & attributes]
   "Supply :HANDLE-MODEL-EVENT-FN and you'll have an observer ('callback') of MODEL that is not a Widget.
 The lifetime of this observer is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
-  #_(assert (or (= :root lifetime)
-                (isa? lifetime ::Widget)))
+  #_(assert (or (= *viewport* lifetime)
+                (isa? (:type @lifetime) ::Widget)))
   (with (apply make-HTMLElement "%make-View" model
                :type ::View
                :handle-model-event-fn (fn [view old-value new-value]

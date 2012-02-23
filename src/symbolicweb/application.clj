@@ -20,7 +20,7 @@
                                            (fn [] (swap! last-id inc')))
                            :logged-in? (vm false)
                            :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
-                           :last-activity-time (System/currentTimeMillis)
+                           :last-activity-time (atom (System/currentTimeMillis))
                            :viewports {}
                            :make-viewport-fn #'make-Viewport
                            :request-handler #'default-request-handler
@@ -35,7 +35,7 @@
     (when (:session? application)
       (swap! -applications- #(assoc % application-id application-ref))
       (dosync
-       (set-value -num-applications-model- (count @-applications-))))
+       (vm-set -num-applications-model- (count @-applications-))))
     application-ref))
 
 

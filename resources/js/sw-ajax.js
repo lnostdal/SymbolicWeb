@@ -156,14 +156,15 @@ var swAjax =
 ///////////////
 
 var _sw_comet_response = false;
-var _sw_comet_last_response_ts = null;
+var _sw_comet_last_response_ts = new Date().getTime();
 
 var swComet  =
   (function(){
      function callback(){
        if(_sw_comet_response){
          _sw_comet_last_response_ts = new Date().getTime();
-         _sw_comet_response = false, swComet('&do=ack');
+         _sw_comet_response = false;
+         swComet('&do=ack');
        }
        else
          setTimeout("swComet('');", 1000);
@@ -177,7 +178,6 @@ var swComet  =
                complete: callback});
      }
 
-     // This finally returns what is assigned to the "swComet = ..." part above.
      if($.browser.mozilla || $.browser.webkit)
        // Stops "throbbing of doom".
        return function(params){ setTimeout(function(){ doIt(params); }, 0); };
@@ -216,15 +216,6 @@ function swMsg(widget_id, callback_id, js_before, callback_data, js_after){
 
 function swTerminateSession(){
   swAjax("&_sw_event=terminate-session", "", function(){ window.location.reload(); });
-}
-
-
-
-/// swDisplaySessionInfo ///
-////////////////////////////
-
-function swDisplaySessionInfo(){
-  swAjax("&_sw_event=display-session-info", "");
 }
 
 
@@ -279,35 +270,28 @@ function swRun(code_id, async_p, func){
 
 
 
-/// swCometTimeout ///
-///////////////////////
-
-/* [TM] Function checks for swComet timeout in relation to the specified <timeout_ms> (millisec from last request) */
-function swCometTimeout(timeout_ms) {
-  return ((new Date().getTime() - _sw_comet_last_response_ts) > timeout_ms);
-}
-
-
-
 /// Boot! ///
 /////////////
 
 $(window).on('load', function(){
   swComet("&do=refresh");
+               
+  (function(){
+     var sw_mouse_poll_ts = new Date().getTime();
+     var sw_mouse_poll_interval_ms = 5000;
+     var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
+     
+     $(document).on('mousemove', function(e){
+       if((new Date().getTime() - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
+         sw_mouse_poll_ts = new Date().getTime();
+         if((new Date().getTime() - _sw_comet_last_response_ts)
+            > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
+           console.error('swComet has timed out, rebooting...');
+           //alert("sw-ajax.js: Dead page; reloading! This should normally not happen (very often)...");
+           window.location.href = window.location.href;
+         }
+       }
+     });
+  })();
 
-  var sw_timeout_poll = null;
-  var sw_timeout_poll_ms = 5000;
-  var sw_comet_timeout_ts_window = 5000;
-
-  $(document).on('mousemove', function(e){
-    if(sw_timeout_poll == null || (new Date().getTime() - sw_timeout_poll) > sw_timeout_poll_ms){
-      sw_timeout_poll = new Date().getTime();
-      // Check if the SW Comet request has timed out, if it has - refresh the page
-      // Check timeout against the defined_sw_comet_timeout_ts + a window (for slow connections).
-      if(swCometTimeout(_sw_comet_timeout_ts + sw_comet_timeout_ts_window)){
-        console.error('swComet has timed out, rebooting...');
-        window.location.href = window.location.href;
-      }
-    }
-  });
 });

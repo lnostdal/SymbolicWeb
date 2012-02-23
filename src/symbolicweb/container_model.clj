@@ -5,17 +5,22 @@
 (deftype ContainerModelNode [container-model left right data])
 
 ;; Doubly linked list.
-(deftype ContainerModel [head-node tail-node length views]
+(deftype ContainerModel [head-node tail-node length
+                         ^:volatile-mutable views]
   clojure.lang.Counted
   (count [_]
     (dosync (ensure length)))
 
   IModel
   (add-view [_ view]
-    (alter views conj view))
+    (set! views (conj views view)))
 
   (remove-view [_ view]
-    (alter views disj view)))
+    (set! views (disj views view)))
+
+  (get-views [_]
+    views))
+
 
 
 (defn make-ContainerModel []

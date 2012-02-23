@@ -3,11 +3,11 @@
 (defn ref? [x]
   (= clojure.lang.Ref (type x)))
 
-(def -http-server-string- "nostdal.org")
+(def -http-server-string- "SymbolicWeb (nostdal.org)")
 
-(def -comet-timeout- 29000)
-(def -viewport-timeout- (+ -comet-timeout- 30000))
-(def -application-timeout- (+ -viewport-timeout- 30000))
+(def -comet-timeout- 9000) ;; Long poll with a 9 second timeout ("long poll every 9 seconds").
+(def -viewport-timeout- (+ -comet-timeout- 10000)) ;; 10 seconds since comet timeout and still no new request (long poll)?
+(def -application-timeout- (+ -viewport-timeout- 10000)) ;; 10 seconds since comet timeout and still no new request (long poll)?
 
 (def -request-counter-
   "Number of HTTP requests since server started."
@@ -35,7 +35,7 @@
 ;; TODO: Hack; forward decl and def since -GC-THREAD- is started right away.
 (defn ensure-non-visible [widget])
 ;; This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
-;; properties removing unused or timed out sessions.
+;; properties removing unused or timed out sessions / viewports.
 (defn do-gc []
   ;;(println "DO-GC")
   (let [now (System/currentTimeMillis)
@@ -44,11 +44,10 @@
                        (let [obj-ref (val obj)
                              obj @(val obj)]
                          (when (< timeout (- now (:last-activity-time obj)))
-                           (swap! cnt #(dissoc % (:id obj))) ;; Remove from -APPLICATIONS- or -VIEWPORTS-.
+                           (swap! cnt #(dissoc % (:id obj))) ;; Remove OBJ from -APPLICATIONS- or -VIEWPORTS- global.
                            (case (:type obj)
                              ::Application
                              (dosync
-                              ;;(println "GC: Application")
                               (vm-set -num-applications-model- (count @-applications-))
                               ;; UserModel -/-> Application.
                               (when-let [user-model @(:user-model obj)]
@@ -56,7 +55,6 @@
 
                              ::Viewport
                              (dosync
-                              ;;(println "DO-GC: Viewport")
                               ;; This will ensure that Models that hang around "for a long time" (e.g. global vars) doesn't try
                               ;; to forward their updates to Widgets in stale Viewports.
                               (ensure-non-visible (:root-element obj))
