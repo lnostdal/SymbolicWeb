@@ -282,16 +282,15 @@ $(window).on('load', function(){
      var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
      
      $(document).on('mousemove', function(e){
-       if((new Date().getTime() - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
-         sw_mouse_poll_ts = new Date().getTime();
-         if((new Date().getTime() - _sw_comet_last_response_ts)
+       var ts = new Date().getTime();
+       if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
+         sw_mouse_poll_ts = ts;
+         if((ts - _sw_comet_last_response_ts)
             > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
-           console.error('swComet has timed out, rebooting...');
-           //alert("sw-ajax.js: Dead page; reloading! This should normally not happen (very often)...");
+           console.log('swComet has timed out, rebooting...');
            window.location.href = window.location.href;
          }
        }
      });
   })();
-
 });
