@@ -370,3 +370,42 @@ Returns a string."
   "Runs BODY in an Agent."
   `(send-off ,(if (not-empty ~options) ~options -sw-io-agent-)
              (fn [_#] ~@body)))
+
+
+
+
+;;; SWSYNC stuff
+;;;;;;;;;;;;;;;;
+
+(declare with-sw-db) ;; It's actually a funtion now, so..
+
+(def ^:dynamic *swsync-operations*)
+(def ^:dynamic *swsync-db-operations*)
+
+(defn %swsync [bodyfn]
+  (assert (not *in-sw-db?*))
+  (dosync
+   (binding [*swsync-operations* (atom [])
+             *swsync-db-operations* (atom [])]
+     (bodyfn)
+     (when-not (or (empty? @*swsync-operations*)
+                   (empty? @*swsync-db-operations*))
+       (with-sw-io [] ;; At this point we can be sure DOSYNC won't roll back; we're in an Agent.
+         (when-not (empty? @*swsync-db-operations*)
+           (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
+             (fn [_]
+               (doseq [f @*swsync-db-operations*]
+                 (f)))))
+         (when-not (empty? @*swsync-operations*)
+           (doseq [f @*swsync-operations*]
+             (f))))))))
+
+(defmacro swsync [& body]
+  "DOSYNC where database operations (SWSYNC-DBOP) are gathered up and executed within a single db transaction in an Agent."
+  `(%swsync (fn [] ~@body)))
+
+(defmacro swop [& body]
+  `(swap! *swsync-operations* conj (fn [] ~@body)))
+
+(defmacro swsync-dbop [& body]
+  `(swap! *swsync-db-operations* conj (fn [] ~@body)))

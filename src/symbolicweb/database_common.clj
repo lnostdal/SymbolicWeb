@@ -91,7 +91,8 @@
           (try
             (.setTransactionIsolation conn java.sql.Connection/TRANSACTION_SERIALIZABLE)
             (.setAutoCommit conn false) ;; Start transaction.
-            (let [result (body-fn (fn [callback] (var-set after-fn callback)))]
+            (let [result (binding [*in-sw-db?* true]
+                           (body-fn (fn [callback] (var-set after-fn callback))))]
               (.execute stmt (str "PREPARE TRANSACTION '" id-str "';"))
               (.commit conn) (.setAutoCommit conn true) ;; Semi-end transaction.
               (var-set commit-inner-transaction? true)
@@ -104,10 +105,7 @@
             (finally
              (if (var-get commit-inner-transaction?)
                (if (var-get commit-prepared-transaction?)
-                 (do
-                   (.execute stmt (str "COMMIT PREPARED '" id-str "';"))
-                   ;; TODO: At this point we can commit the *SWSYNC* "transaction".
-                   )
+                 (.execute stmt (str "COMMIT PREPARED '" id-str "';"))
                  (.execute stmt (str "ROLLBACK PREPARED '" id-str "';")))
                (do (.rollback conn) (.setAutoCommit conn true)))
              (.close stmt))))))))
@@ -230,11 +228,12 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
   "Setup reactive SQL UPDATEs for VALUE-MODEL."
   (mk-view value-model nil
            (fn [value-model old-value new-value]
-             (when-not (= old-value new-value) ;; TODO: This should probably be generalized and handled before the notification
+             (when-not (= old-value new-value) ;; TODO: Needed?
                (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
                  (when input-key
-                   (update-values (. db-cache table-name) ["id=?" id]
-                                  {(as-quoted-identifier \" input-key) input-value})))))
+                   (swsync-dbop
+                    (update-values (. db-cache table-name) ["id=?" id]
+                                   {(as-quoted-identifier \" input-key) input-value}))))))
            :trigger-initial-update? false))
 
 
@@ -248,14 +247,14 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
          (doseq [key_val res]
            (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
              (when output-key
-               (if (output-key obj-m)
+               (if-let [output-vm (output-key obj-m)]
                  (do
-                   (vm-set (output-key obj-m) output-value)
-                   (db-ensure-persistent-field db-cache obj (:id res) output-key (output-key obj-m)))
+                   (vm-set output-vm output-value)
+                   (db-ensure-persistent-field db-cache obj (:id res) output-key output-vm))
                  (let [vm-output-value (vm output-value)]
                    (ref-set obj (assoc (ensure obj) output-key vm-output-value))
-                   (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value)))))))
-       obj))))
+                   (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value))))))))
+      obj)))
 
 
 (declare db-cache-put)
@@ -264,13 +263,14 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
 UPDATE-CACHE? is given a FALSE value."
   ([obj db-cache] (db-backend-put obj db-cache true))
   ([obj db-cache update-cache?]
+     (io!)
      (let [record-data
            (dosync
-            (assert (or (not (dosync (:id (ensure obj))))
-                        (not (dosync @(:id (ensure obj))))))
+            (assert (or (not (:id (ensure obj)))
+                        (not @(:id (ensure obj)))))
             (with-local-vars [record-data {}]
               (doseq [key_val (ensure obj)]
-                (when (isa? (type (val key_val)) ValueModel) ;; TODO: Possible magic check. TODO: Foreign keys; ContainerModel.
+                (when (isa? (class (val key_val)) ValueModel)
                   (let [[input-key input-value] (db-handle-input db-cache obj (key key_val) @(val key_val))]
                     (when input-key
                       (var-set record-data (assoc (var-get record-data)
@@ -333,7 +333,7 @@ UPDATE-CACHE? is given a FALSE value."
 
 
 (defn db-cache-put [db-cache ^Long id obj]
-  "If ID is NIL, store OBJ in DB then store association between the resulting id and OBJ in DB-CACHE.
+  "If ID is NIL, store OBJ in DB then store association between the resulting id (from DB) and OBJ in DB-CACHE.
 If ID is non-NIL, store association between ID and OBJ in DB-CACHE.
 Fails (via assert) if an object with the same id already exists in DB-CACHE."
   (let [id (Long. id)] ;; Because (. (int 261) equals 261) => false
@@ -354,15 +354,15 @@ that only one object with id ID exists in the cache and the system at any point 
       cache-entry
       (if-let [cache-entry (locking db-cache (. (. db-cache cache-data) get id))] ;; Check cache again while within lock.
         cache-entry
-        (if-let [new-obj (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id))]
-          ;; Check cache yet again while within lock; also possibly adding NEW-OBJ to it still within lock.
-          (locking db-cache
-            (if-let [cache-entry (. (. db-cache cache-data) get id)]
-              cache-entry
-              (do
-                (db-cache-put db-cache id new-obj)
-                (construction-fn new-obj))))
-          nil)))))
+        (binding [*in-sw-db?* false] ;; We're OK with this stuff manipulating ValueModel data.
+          (if-let [new-obj (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id))]
+            ;; Check cache yet again while within lock; also possibly adding NEW-OBJ to it still within lock.
+            (locking db-cache
+              (if-let [cache-entry (. (. db-cache cache-data) get id)]
+                cache-entry
+                (with1 (construction-fn new-obj)
+                  (db-cache-put db-cache id new-obj))))
+            nil))))))
 
 
 (defn db-cache-remove [db-cache ^Long id]

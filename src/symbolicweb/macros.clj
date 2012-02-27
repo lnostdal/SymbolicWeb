@@ -92,3 +92,6 @@
                (if obj
                  (str "<" (class obj) ": " obj ">")
                  "NIL"))))
+
+
+(def ^:dynamic *in-sw-db?* false)
