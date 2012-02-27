@@ -35,7 +35,7 @@
     (when (:session? application)
       (swap! -applications- #(assoc % application-id application-ref))
       (dosync
-       (vm-set -num-applications-model- (count @-applications-))))
+       (vm-alter -num-applications-model- + 1)))
     application-ref))
 
 

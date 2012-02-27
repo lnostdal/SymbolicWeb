@@ -48,7 +48,7 @@
                            (case (:type obj)
                              ::Application
                              (dosync
-                              (vm-set -num-applications-model- (count @-applications-))
+                              (vm-alter -num-applications-model- - 1)
                               ;; UserModel -/-> Application.
                               (when-let [user-model @(:user-model obj)]
                                 (vm-alter (:applications user-model) disj obj-ref)))
