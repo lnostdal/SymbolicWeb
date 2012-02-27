@@ -43,13 +43,14 @@ var swAddOnLoadFN, swDoOnLoadFNs;
    };
 
    swDoOnLoadFNs = function(){
-     try {
-       for(var fn in funs){
-         funs[fn]();
+     for(var fun in funs){
+       try {
+         funs[fun]();
        }
-     }
-     catch(err){
-       console.error(err);
+       catch(err){
+         console.error("swDoOnLoadFNs:\n" + funs[fun]);
+         console.error(err);
+       }
      }
    };
  })();
