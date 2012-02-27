@@ -1,5 +1,6 @@
 (in-ns 'symbolicweb.core)
 
+
 (defn ref? [x]
   (= clojure.lang.Ref (type x)))
 
@@ -43,7 +44,7 @@
                      (doseq [obj @cnt]
                        (let [obj-ref (val obj)
                              obj @(val obj)]
-                         (when (< timeout (- now (:last-activity-time obj)))
+                         (when (< timeout (- now @(:last-activity-time obj)))
                            (swap! cnt #(dissoc % (:id obj))) ;; Remove OBJ from -APPLICATIONS- or -VIEWPORTS- global.
                            (case (:type obj)
                              ::Application

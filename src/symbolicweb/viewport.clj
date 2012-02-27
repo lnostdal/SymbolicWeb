@@ -62,7 +62,7 @@
                  ;; held in HTMLContainers?
                  ;; Are children not added to HTMLTemplate?
                  (if (< (* -viewport-timeout- 3) ;; NOTE: Times 3!
-                        (- (System/currentTimeMillis) (:last-activity-time viewport-m)))
+                        (- (System/currentTimeMillis) @(:last-activity-time viewport-m)))
                    (do
                      ;; Ok, it seems :VIEWPORT is set and :PARENT is not set to :DEAD so so this means ENSURE-NON-VISIBLE
                      ;; has _not_ been called yet -- which is strange.
@@ -74,8 +74,6 @@
                        (def -lost-widget- widget)))
                    (if false
                      (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
-                     ;; TODO: Ok, I can't use Agents, so here I'll need to store the chunks in the Viewport object and send
-                     ;; them when the DB transaction is complete.
                      (send (:response-agent viewport-m)
                            (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk)))))))]
        (when-not *with-js?*

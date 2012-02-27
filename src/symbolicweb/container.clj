@@ -18,7 +18,7 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
     (alter child assoc :viewport viewport) ;; Widget will know which Viewport to send JS code to now.
     ;; Model --> Widget.
     ((:connect-model-view-fn child-m) (:model child-m) child)
-    (doseq [on-visible-fn (:on-visible-fns child-m)]
+    (doseq [on-visible-fn @(:on-visible-fns child-m)]
       (on-visible-fn))
     ;; Recurse down to all children of CHILD and so on.
     (doseq [child-of-child (:children child-m)]
@@ -53,7 +53,7 @@ end."
              assoc :children (remove widget (:children (:parent widget-m))))
       (doseq [child (:children widget-m)]
         (ensure-non-visible child))
-      (doseq [on-non-visible-fn (:on-non-visible-fns widget-m)]
+      (doseq [on-non-visible-fn @(:on-non-visible-fns widget-m)]
         (on-non-visible-fn))
       ;; Viewport -/-> Widget.
       (alter (:viewport widget-m) update-in [:widgets]
