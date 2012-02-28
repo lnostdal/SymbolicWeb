@@ -76,8 +76,8 @@ var swURL, swDURL;
                    return str;
                  })(),
                 "?_sw_viewport_id=", _sw_viewport_id,
-                params
-               ].join('');
+                params.join("")
+               ].join("");
      return(res);
    };
 
@@ -120,11 +120,11 @@ var swAjax =
 
      return function(params, callback_data, after_fn){
        if(queue.push(function(){
-                       var url = swURL(["&_sw_request_type=ajax", params].join(''));
+                       var url = swURL(["&_sw_request_type=ajax", params]);
                        var options = {
                          type: (function(){
                                   // http://bit.ly/1z3xEu
-                                  // MAX for 'GET' is apparently 2048 (IE). We stay a bit below this just in case.
+                                  // MAX for GET is apparently 2048 (IE). We stay a bit below this just in case.
                                   //console.log(callback_data.length + url.length);
                                   if(callback_data.length + url.length > 1950)
                                     return "POST";
@@ -165,15 +165,15 @@ var swComet  =
        if(_sw_comet_response){
          _sw_comet_last_response_ts = new Date().getTime();
          _sw_comet_response = false;
-         swComet('&do=ack');
+         swComet("&do=ack");
        }
        else
-         setTimeout("swComet('');", 1000);
+         setTimeout("swComet('&do=timeout');", 1000);
      }
 
      function doIt(params){
        $.ajax({type: "GET",
-               url: swURL("&_sw_request_type=comet", params),
+               url: swURL(["&_sw_request_type=comet", params]),
                dataType: "script",
                cache: false,
                complete: callback});
@@ -274,7 +274,7 @@ function swRun(code_id, async_p, func){
 /// Boot! ///
 /////////////
 
-$(window).on('load', function(){
+$(window).on("load", function(){
   swComet("&do=refresh");
                
   (function(){
@@ -282,16 +282,29 @@ $(window).on('load', function(){
      var sw_mouse_poll_interval_ms = 5000;
      var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
      
-     $(document).on('mousemove', function(e){
+     $(document).on("mousemove", function(e){
        var ts = new Date().getTime();
        if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
          sw_mouse_poll_ts = ts;
          if((ts - _sw_comet_last_response_ts)
             > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
-           console.log('swComet has timed out, rebooting...');
+           console.log("swComet has timed out, rebooting...");
            window.location.href = window.location.href;
          }
        }
      });
   })();
+});
+
+
+
+/// Shutdown! ///
+/////////////////
+
+// GC the server side Viewport object and all its Widgets (and their incomming connections from the Model/DB) on page unload.
+$(window).on("unload", function(){
+  $.ajax({type: "GET",
+          url: swURL(["&_sw_request_type=ajax", ["&do=unload"]]),
+          cache: false,
+          async: false});
 });

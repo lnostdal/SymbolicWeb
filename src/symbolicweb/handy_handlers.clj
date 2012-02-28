@@ -21,7 +21,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 
 (defn handle-out-channel-request [channel request]
-  "Output channel."
+  "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [response-str]
             (enqueue channel
                      {:status 200
@@ -49,19 +49,29 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 
 (defn handle-in-channel-request []
-  "Input channel."
-  (let [query-params (:query-params *request*)
-        widget-id (get query-params "_sw_widget-id")
-        callback-id (get query-params "_sw_callback-id")
-        widget (get (:widgets @*viewport*) widget-id)
-        callback (get @(:callbacks @widget) callback-id)
-        [callback-fn callback-data] callback]
-    (binding [*in-channel-request?* ""]
-      (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" -http-server-string-}
-       :body *in-channel-request?*})))
+  "Input (AJAX) channel."
+  (cond
+   (= "unload" (get (:query-params *request*) "do"))
+   (do
+     (gc-viewport *viewport*)
+     {:status 200
+      :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                "Server" -http-server-string-}
+      :body "console.log('SW got unload notification!');"})
+
+   true
+   (let [query-params (:query-params *request*)
+         widget-id (get query-params "_sw_widget-id")
+         callback-id (get query-params "_sw_callback-id")
+         widget (get (:widgets @*viewport*) widget-id)
+         callback (get @(:callbacks @widget) callback-id)
+         [callback-fn callback-data] callback]
+     (binding [*in-channel-request?* ""]
+       (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
+       {:status 200
+        :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                  "Server" -http-server-string-}
+        :body *in-channel-request?*}))))
 
 
 (defn default-ajax-handler []

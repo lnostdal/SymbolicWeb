@@ -399,14 +399,13 @@ Returns a string."
        return-value))))
 
 (defmacro swsync [& body]
-  "DOSYNC where database operations (SWDBOP) are gathered up and executed within a single DB transaction in an Agent
-after Clojure side transaction is done."
+  "A DOSYNC where database operations (SWDBOP) are gathered up and executed within a single DB transaction in an Agent
+after Clojure side transaction (DOSYNC) is done."
   `(%swsync (fn [] ~@body)))
 
 (defmacro swop [& body]
   "Wrapper for general IO operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
   `(swap! *swsync-operations* conj (fn [] ~@body)))
-
 
 (defmacro swdbop [& body]
   "Wrapper for DB type IO operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
