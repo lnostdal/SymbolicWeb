@@ -3,83 +3,74 @@
 (declare mk-view ref?)
 
 
+;; TODO: Rename to ADD-OBSERVER, REMOVE-OBSERVER and GET-OBSERVERS?
 (defprotocol IModel
-  (add-view [vm view])
-  (remove-view [vm view])
-  (get-views [vm]))
+  (add-view [model view])
+  (remove-view [model view])
+  (get-views [model])
+  (notify-views [model args]))
+
 
 (defprotocol IValueModel
-  (vm-set [vm new-value]))
+  (vm-set [vm new-value]) ;; Get is DEREF or @ (via clojure.lang.IDeref).
+  (%vm-ref [vm]))
 
 
-(deftype ValueModel [^:unsynchronized-mutable value-fn
-                     ^:unsynchronized-mutable views
-                     notify-views-fn]
-
+(deftype ValueModel [^:unsynchronized-mutable value-ref
+                     ^:unsynchronized-mutable views-ref
+                     ^:unsynchronized-mutable %notify-views-fn]
   clojure.lang.IDeref
   (deref [_]
-    (value-fn :get nil))
+    (ensure value-ref))
+
 
   IValueModel
   (vm-set [vm new-value]
-    (let [old-value @vm]
+    (when *in-sw-db?*
+      (assert *pending-prepared-transaction?*
+              "ValueModel: Mutation of ValueModel within WITH-SW-DB not allowed while DB transaction is not held (HOLDING-TRANSACTION)."))
+    (let [old-value (ensure value-ref)]
       (when-not (= old-value new-value)
-        (value-fn :set new-value)
-        ((. vm notify-views-fn) vm old-value new-value)))
+        (ref-set value-ref new-value)
+        (notify-views vm [old-value new-value])))
     new-value)
+
+  (%vm-ref [_]
+    value-ref)
+
 
   IModel
   (add-view [_ view]
-    (set! views (conj views view)))
-
+    (alter views-ref conj view))
 
   (remove-view [_ view]
-    (set! views (disj views view)))
+    (alter views-ref disj view))
 
   (get-views [_]
-    views))
+    (ensure views-ref))
+
+  (notify-views [vm args]
+    (apply %notify-views-fn vm args)))
 
 
-(defn mk-db-value [initial-value table-name id field-name]
-  (let [value (atom initial-value)]
-    (fn [op new-value]
-      (case op
-        :get
-        (do
-          ;; Avoid write-skew.
-          (db-stmt (str "SELECT id FROM " table-name " WHERE id = " id " FOR UPDATE;"))
-          @value)
+(defmethod print-method ValueModel [^ValueModel value-model stream]
+  (print-method (%vm-ref value-model) stream))
 
-        :set
-        (do
-          (update-values table-name ["id = ?" id]
-                         {field-name new-value})
-          (reset! value new-value))))))
 
 
 (defn vm [value]
-  (ValueModel. (let [value (atom value)]
-                 (fn [op new-value]
-                   (case op
-                     :get @value
-                     :set (reset! value new-value))))
-               #{}
-               (fn [value-model old-value new-value]
+  (ValueModel. (ref value)
+               (ref #{})
+               (fn [^ValueModel value-model old-value new-value]
                  (doseq [view (get-views value-model)]
                    (let [view-m @view
                          new-value ((:output-parsing-fn view-m) new-value)]
-                     ;; TODO:  Since we're not using Refs, we can't "gather up" things to send to Viewports using calls to
-                     ;; Agents anymore. In short it seems any use of Clojure STM is a bad idea here and pretty much everywhere.
-                     ((:handle-model-event-fn view-m) view old-value new-value))))))
+                     (when-not (= old-value new-value) ;; After translation via :OUTPUT-PARSING-FN.
+                       ((:handle-model-event-fn view-m) view old-value new-value)))))))
 
 
 (defn vm-alter [^ValueModel value-model fn & args]
-  "Alters (calls clojure.core/alter on) VALUE-MODEL using FN and ARGS and notifies Views of VALUE-MODEL of the change.
-Note that the Views are only notified when the resulting value of FN and ARGS wasn't = to the old value of VALUE-MODEL."
-  #_(let [old-value @value-model
-        new-value (apply alter (%vm-get-inner-ref value-model) fn args)]
-    (when-not (= old-value new-value)
-      ((:notify-views-fn value-model) value-model old-value new-value))))
+  (vm-set value-model (apply fn @value-model args)))
 
 
 (defn vm-copy [^ValueModel value-model]
@@ -90,8 +81,9 @@ See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
 
 
 (defn vm-sync [^ValueModel value-model lifetime callback]
-  "Returns a new ValueModel which is kept in sync with VALUE-MODEL via F.
-F takes the same arguments as the MK-VIEW callback; NEW-VALUE can be referred to using %3."
+  "Returns a new ValueModel which is kept in sync with VALUE-MODEL via CALLBACK.
+CALLBACK takes the same arguments as the MK-VIEW callback, [VM OLD-VALUE NEW-VALUE], and the return value of CALLBACK will be the
+the returned ValueModel."
   (let [mid (vm nil)]
     (mk-view value-model lifetime #(vm-set mid (apply callback %&)))
     mid))
@@ -100,12 +92,11 @@ F takes the same arguments as the MK-VIEW callback; NEW-VALUE can be referred to
 (defn vm-syncs [value-models lifetime callback]
   (let [mid (vm nil)]
     (with-local-vars [once? false] ;; We only want to trigger an initial update once.
-      (dorun (map (fn [value-model]
-                    (mk-view value-model lifetime #(vm-set mid (apply callback %&))
-                             :trigger-initial-update? (when-not (var-get once?)
-                                                        (var-set once? true)
-                                                        true)))
-                  value-models)))
+      (doseq [value-model value-models]
+        (mk-view value-model lifetime #(vm-set mid (apply callback %&))
+                 :trigger-initial-update? (when-not (var-get once?)
+                                            (var-set once? true)
+                                            true))))
     mid))
 
 

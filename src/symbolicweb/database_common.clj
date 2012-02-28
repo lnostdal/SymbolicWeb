@@ -27,79 +27,60 @@
                        :password password}))))
 
 
-
-(defn finalize-with-sw-ctx [ctx]
-  (doseq [f ctx]
-    (f)))
-
-(def ^:dynamic *with-sw-ctx*)
-
-(defmacro with-sw-ctx [& body]
-  `(do
-     (assert (not (thread-bound? #'*with-sw-ctx*)))
-     (binding [*with-sw-ctx* (atom [])]
-       (with1 ~@body
-         (finalize-with-sw-ctx @*with-sw-ctx*)))))
-
-(defn sw-ctx-add-fn [f]
-  (swap! *with-sw-ctx* conj f))
-
-(defmacro in-sw-ctx [& body]
-  `(sw-ctx-add-fn (fn [] ~@body)))
-
-
-#_(locking -pooled-db-spec-
-    (with-sw-ctx
-      (transaction
-       (body-fn))))
-
-
-(def ^:dynamic *pending-prepared-transaction?* false)
-
-(defn %with-sw-connection [body-fn]
-  (io!
-   (assert (not *pending-prepared-transaction?*))
-   (try
-     (with-connection @@-pooled-db-spec- ;; DEREF Atom, then Delay.
-       (body-fn))
-     (catch java.sql.SQLException e
-       (if (= "40001" (. e getSQLState))
-         (do
-           (println "%WITH-SW-CONNECTION: Serialization conflict; retrying!")
-           (%with-sw-connection body-fn))
-         (do
-           (print-sql-exception-chain e)
-           (throw e)))))))
-
-(defmacro with-sw-connection [& body]
-  `(%with-sw-connection (fn [] ~@body)))
+(let [java-jdbc-top-level-db-bnd clojure.java.jdbc.internal/*db*]
+  (defn %with-sw-connection [body-fn]
+    (io! "WITH-SW-CONNECTION: Cannot be used directly while within Clojure transaction (DOSYNC or SWSYNC).")
+    (assert (not *in-sw-db?*)
+            "WITH-SW-CONNECTION: Nesting of WITH-SW-CONNECTION forms not allowed.")
+    (assert (not *pending-prepared-transaction?*)
+            "WITH-SW-CONNECTION: This is not meant to be used within WITH-SW-DB's HOLDING-TRANSACTION callback. Use SWSYNC and SWDBOP instead?")
+    (binding [clojure.java.jdbc.internal/*db* java-jdbc-top-level-db-bnd]
+      (try
+        (with-connection @@-pooled-db-spec-
+          (body-fn))
+        (catch java.sql.SQLException e
+          (if (= "40001" (. e getSQLState))
+            (do
+              (println "WITH-SW-CONNECTION: Serialization conflict; retrying!")
+              (%with-sw-connection body-fn))
+            (do
+              (print-sql-exception-chain e)
+              (throw e))))))))
 
 
 (defn with-sw-db [body-fn]
-  ;; TODO: Check whether we're already in a WITH-SW-DB context and just call BODY-FN directly here if we are! What do we do about
-  ;; its AFTER-FN though? Perhaps we should simply disallow nesting of WITH-SW-DB forms.
+  "BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
+finalized after HOLDING-TRANSACTION has finished executing.
+HOLDING-TRANSACTION is called when the transaction is pending finalization, and it takes one argument; TRANSACTION-ID (string).
+If either BODY-FN or HOLDING-TRANSACTION throws an exception, the transaction, in either pre-pending or pending state, is rolled
+back.
+Note that actually calling HOLDING-TRANSACTION is optional, and that further, direct i.e. non-Agent, DB operations within
+HOLDING-TRANSACTION is not allowed."
   (with-sw-connection
     ;; The BINDING here is sort of a hack to ensure that java.jdbc's UPDATE-VALUES etc. type functions doesn't create
     ;; inner transactions which will commit even though we'd want them to roll back here in WITH-SW-DB.
-    (binding [clojure.java.jdbc.internal/*db* (update-in clojure.java.jdbc.internal/*db* [:level] inc)]
+    (binding [clojure.java.jdbc.internal/*db* (update-in clojure.java.jdbc.internal/*db* [:level] inc)
+              *in-sw-db?* true]
       (let [id-str (str (generate-uid))
             conn (:connection clojure.java.jdbc.internal/*db*)
             stmt (.createStatement conn)]
-        (with-local-vars [after-fn nil
+        (with-local-vars [holding-transaction-fn nil
                           commit-inner-transaction? false
                           commit-prepared-transaction? false]
           (try
             (.setTransactionIsolation conn java.sql.Connection/TRANSACTION_SERIALIZABLE)
             (.setAutoCommit conn false) ;; Start transaction.
-            (let [result (binding [*in-sw-db?* true]
-                           (body-fn (fn [callback] (var-set after-fn callback))))]
+            (let [result (body-fn (fn [holding-transaction]
+                                    (assert (not (var-get holding-transaction-fn))
+                                            "WITH-SW-DB: HOLDING-TRANSACTION callback should only be called once.")
+                                    (var-set holding-transaction-fn holding-transaction)))]
               (.execute stmt (str "PREPARE TRANSACTION '" id-str "';"))
-              (.commit conn) (.setAutoCommit conn true) ;; Semi-end transaction.
+              (.commit conn) (.setAutoCommit conn true) ;; Semi-end transaction; it's left in a pending state until FINALLY below.
               (var-set commit-inner-transaction? true)
-              (when-let [after-fn (var-get after-fn)]
+              (when-let [holding-transaction (var-get holding-transaction-fn)]
                 (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current DB connection while we do this..
                           *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
-                  (after-fn id-str)))
+                  (holding-transaction id-str)))
               (var-set commit-prepared-transaction? true)
               result)
             (finally
@@ -159,7 +140,6 @@
                                        (dosync (alter local conj "after-transaction #1"))
                                        (Thread/sleep 1000)
                                        (println "after-transaction #1: end")))))))]
-
     (Thread/sleep 500) ;; To make sure the first ts has gotten to its call to Thread/sleep.
     (with-sw-db
       (fn [after-transaction]
@@ -225,13 +205,14 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
 
 
 (defn db-ensure-persistent-field [db-cache object ^Long id ^clojure.lang.Keyword key ^ValueModel value-model]
-  "Setup reactive SQL UPDATEs for VALUE-MODEL."
+  "SQL `UPDATE ...'.
+Setup reactive SQL UPDATEs for VALUE-MODEL."
   (mk-view value-model nil
            (fn [value-model old-value new-value]
              (when-not (= old-value new-value) ;; TODO: Needed?
                (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
                  (when input-key
-                   (swsync-dbop
+                   (swdbop
                     (update-values (. db-cache table-name) ["id=?" id]
                                    {(as-quoted-identifier \" input-key) input-value}))))))
            :trigger-initial-update? false))
@@ -247,12 +228,12 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
          (doseq [key_val res]
            (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
              (when output-key
-               (if-let [output-vm (output-key obj-m)]
+               (if-let [output-vm (output-key obj-m)] ;; Does field OUTPUT-KEY already exist in OBJ?
                  (do
-                   (vm-set output-vm output-value)
+                   (vm-set output-vm output-value) ;; If so, mutate it.
                    (db-ensure-persistent-field db-cache obj (:id res) output-key output-vm))
                  (let [vm-output-value (vm output-value)]
-                   (ref-set obj (assoc (ensure obj) output-key vm-output-value))
+                   (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; If not, add it.
                    (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value))))))))
       obj)))
 
@@ -263,7 +244,7 @@ Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
 UPDATE-CACHE? is given a FALSE value."
   ([obj db-cache] (db-backend-put obj db-cache true))
   ([obj db-cache update-cache?]
-     (io!)
+     (io! "DB-BACKEND-PUT: This (I/O) cannot be done within DOSYNC or SWSYNC.")
      (let [record-data
            (dosync
             (assert (or (not (:id (ensure obj)))
@@ -349,6 +330,7 @@ Fails (via assert) if an object with the same id already exists in DB-CACHE."
 Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
 that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
 :CONSTRUCTOR-FN from DB-CACHE."
+  (io! "DB-CACHE-GET: This (I/O) cannot be done within DOSYNC or SWSYNC.")
   (let [id (Long. id)] ;; Because (. (int 261) equals 261) => false
     (if-let [cache-entry (. (. db-cache cache-data) get id)]
       cache-entry
@@ -374,6 +356,7 @@ that only one object with id ID exists in the cache and the system at any point 
 
 
 (defn db-put
+  "SQL `INSERT ...'."
   ([object table-name]
      (db-put object table-name true))
   ([object table-name update-cache?]
@@ -382,9 +365,8 @@ that only one object with id ID exists in the cache and the system at any point 
                      update-cache?)))
 
 
-;; TODO: Probably deprecated in place for WITH-DB-OBJ.
 (defn db-get
-  "Sync; blocking.
+  "SQL `SELECT ...'.
 CONSTRUCTION-FN is called with the resulting (returning) object as argument on cache miss."
   ([id table-name]
      (db-get id table-name (fn [obj] obj)))
@@ -392,7 +374,7 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
      (db-cache-get (db-get-cache table-name) id construction-fn)))
 
 
-(defn %with-db-obj [id table-name body-fn]
+#_(defn %with-db-obj [id table-name body-fn]
   (let [db-cache (db-get-cache table-name)]
     (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" table-name) " WHERE id = ? LIMIT 1 FOR UPDATE;") id]
       (if-let [res (first res)]
@@ -403,7 +385,7 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
         (throw (Exception. (str "%WITH-DB-OBJ: No object with ID " id " found in `" table-name "'")))))))
 
 
-(defmacro with-db-obj [obj-sym id table-name & body]
+#_(defmacro with-db-obj [obj-sym id table-name & body]
   `(%with-db-obj ~id ~table-name (fn [~obj-sym] ~@body)))
 
 
@@ -415,6 +397,7 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
 
 ;; TODO:
 (defn db-remove [id table-name]
+  "SQL `DELETE FROM ...'."
   #_(db-backend-remove id table-name))
 
 

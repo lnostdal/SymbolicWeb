@@ -95,3 +95,9 @@
 
 
 (def ^:dynamic *in-sw-db?* false)
+(def ^:dynamic *pending-prepared-transaction?* false)
+
+
+(declare %with-sw-connection)
+(defmacro with-sw-connection [& body]
+  `(%with-sw-connection (fn [] ~@body)))
