@@ -18,10 +18,10 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 (defn node-of-view-in-context [container-model view]
-  (loop [node (head-node container-model)]
+  (loop [node (cm-head-node container-model)]
     (let [widget (node-data node)]
       (dbg-prin1 widget)
-      (when-let [next-node (right-node node)]
+      (when-let [next-node (cmn-right-node node)]
         (recur next-node)))))
 
 
@@ -29,24 +29,24 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
   "Forward Container related operations/events to the View end."
   (let [[event-sym & event-args] event-args]
     (case event-sym
-      prepend-container-model
+      cm-prepend
       (let [container-model (nth event-args 0)
             new-node (nth event-args 1)]
         (jqPrepend container-view (view-of-node-in-context container-view new-node)))
 
-      after-container-model-node
+      cmn-after
       (let [existing-node (nth event-args 0)
             new-node (nth event-args 1)]
         (jqAfter (view-of-node-in-context container-view existing-node true)
                  (view-of-node-in-context container-view new-node)))
 
-      before-container-model-node
+      cmn-before
       (let [existing-node (nth event-args 0)
             new-node (nth event-args 1)]
         (jqBefore (view-of-node-in-context container-view existing-node true)
                   (view-of-node-in-context container-view new-node)))
 
-      remove-container-model-node
+      cmn-remove
       (let [node (nth event-args 0)]
         (if-let [view (view-of-node-in-context container-view node true)]
           (jqRemove view)
@@ -74,11 +74,11 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
            #_(add-response-chunk (with-js (jqEmpty container-view))
                                  container-view)
            ;; Add any already existing nodes to CONTAINER-VIEW.
-           (loop [node (head-node container-model)]
+           (loop [node (cm-head-node container-model)]
              (when node
                (when ((:filter-node-fn @container-view) container-model node)
                  (jqAppend container-view (view-of-node-in-context container-view node)))
-               (recur (right-node node))))
+               (recur (cmn-right-node node))))
            (add-view container-model container-view))
 
          :view-from-node-fn
@@ -101,15 +101,15 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
      ;; Iterate from NODE starting position outwards; left and right, finding closest relative Node.
      (if-let [node_pos (if-let [view (view-of-node-in-context container-view node find-only?)]
                          [(:-node @view) :direct]
-                         (loop [l-node (left-node node)
-                                r-node (right-node node)]
+                         (loop [l-node (cmn-left-node node)
+                                r-node (cmn-right-node node)]
                            (when (or l-node r-node)
                              (if-let [view (and l-node (view-of-node-in-context container-view l-node true))]
                                [(:-node @view) :left]
                                (if-let [view (and r-node (view-of-node-in-context container-view r-node true))]
                                  [(:-node @view) :right]
-                                 (recur (when l-node (left-node l-node))
-                                        (when r-node (right-node r-node))))))))]
+                                 (recur (when l-node (cmn-left-node l-node))
+                                        (when r-node (cmn-right-node r-node))))))))]
        node_pos
        [nil :empty-container-proxy])))
 
@@ -117,14 +117,14 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 (defn handle-container-observer-event [container-model-proxy observer event-args]
   (let [[event-sym & event-args] event-args]
     (case event-sym
-      prepend-container-model
+      cm-prepend
       (let [container-model (nth event-args 0)
             new-node (nth event-args 1)]
         (when ((:filter-node-fn @observer) container-model-proxy new-node)
-          (prepend-container-model container-model-proxy
-                                   (first (node-of-node-in-context observer new-node false)))))
+          (cm-prepend container-model-proxy
+                      (first (node-of-node-in-context observer new-node false)))))
 
-      after-container-model-node
+      cmn-after
       (let [existing-node (nth event-args 0)
             new-node (nth event-args 1)]
         (when ((:filter-node-fn @observer) container-model-proxy new-node)
@@ -132,15 +132,15 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                 rel-new-node (:-node @(view-of-node-in-context observer new-node false))]
             (case rel-pos
               (:direct :left)
-              (after-container-model-node rel-existing-node rel-new-node)
+              (cmn-after rel-existing-node rel-new-node)
 
               :right
-              (before-container-model-node rel-existing-node rel-new-node)
+              (cmn-before rel-existing-node rel-new-node)
 
               :empty-container-proxy
-              (prepend-container-model container-model-proxy rel-new-node)))))
+              (cm-prepend container-model-proxy rel-new-node)))))
 
-      before-container-model-node
+      cmn-before
       (let [existing-node (nth event-args 0)
             new-node (nth event-args 1)]
         (when ((:filter-node-fn @observer) container-model-proxy new-node)
@@ -148,18 +148,18 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                 rel-new-node (:-node @(view-of-node-in-context observer new-node false))]
             (case rel-pos
               (:direct :right)
-              (before-container-model-node rel-existing-node rel-new-node)
+              (cmn-before rel-existing-node rel-new-node)
 
               :left
-              (after-container-model-node rel-existing-node rel-new-node)
+              (cmn-after rel-existing-node rel-new-node)
 
               :empty-container-proxy
-              (prepend-container-model container-model-proxy rel-new-node)))))
+              (cm-prepend container-model-proxy rel-new-node)))))
 
-      remove-container-model-node
+      cmn-remove
       (let [node (nth event-args 0)]
         (when-let [rel-existing-node (first (node-of-node-in-context observer node true))]
-          (remove-container-model-node rel-existing-node))))))
+          (cmn-remove rel-existing-node))))))
 
 
 (defn sync-ContainerModel [container-model filter-node-fn & attributes]
@@ -183,12 +183,12 @@ To state this differently; operations done vs CONTAINER-MODEL are forwarded to t
                         :connect-model-view-fn
                         (fn [container-model observer]
                           ;; Add any already existing nodes to CONTAINER-MODEL-PROXY.
-                          (loop [node (head-node container-model)]
+                          (loop [node (cm-head-node container-model)]
                             (when node
                               (when ((:filter-node-fn @observer) container-model-proxy node)
-                                (append-container-model container-model-proxy
-                                                        (:-node @(view-of-node-in-context observer node false))))
-                              (recur (right-node node))))
+                                (cm-append container-model-proxy
+                                           (:-node @(view-of-node-in-context observer node false))))
+                              (recur (cmn-right-node node))))
                           (add-view container-model observer))
 
                         :disconnect-model-view-fn

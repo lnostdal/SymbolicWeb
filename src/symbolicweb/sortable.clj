@@ -13,16 +13,16 @@
                              (var-get nodes))
            container-model (container-model (:node-of-view @(get-widget (first new-order-ids))))
            existing-order-nodes (with-local-vars [nodes []]
-                                  (loop [node (head-node container-model)]
+                                  (loop [node (cm-head-node container-model)]
                                     (var-set nodes (conj (var-get nodes) node))
-                                    (when-let [right-node (right-node node)]
+                                    (when-let [right-node (cmn-right-node node)]
                                       (recur right-node)))
                                   (var-get nodes))]
        ;; TODO: Quite crude redraw.
        ;; This also fucks up stuff that still thinks the old nodes are what holds our current view of auctions.
        (doseq [node new-order-nodes]
-         (append-container-model container-model (make-ContainerModelNode (node-data node))))
+         (cm-append container-model (cmn (node-data node))))
        (doseq [node existing-order-nodes]
-         (remove-container-model-node node))
+         (cmn-remove node))
        (when callback (callback new-order-nodes))))
    :callback-data {:new-order (str "' + encodeURIComponent(JSON.stringify($('#" (:id @widget) "').sortable('toArray'))) + '")}))

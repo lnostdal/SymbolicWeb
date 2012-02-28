@@ -5,98 +5,109 @@
 (deftype ContainerModelNode [container-model left right data])
 
 ;; Doubly linked list.
-(deftype ContainerModel [head-node tail-node length
-                         ^:volatile-mutable views]
+(deftype ContainerModel [head-node
+                         tail-node
+                         length
+                         ^:unsynchronized-mutable views-ref
+                         ^:unsynchronized-mutable %notify-views-fn]
   clojure.lang.Counted
   (count [_]
     (dosync (ensure length)))
 
   IModel
   (add-view [_ view]
-    (set! views (conj views view)))
+    (alter views-ref conj view))
 
   (remove-view [_ view]
-    (set! views (disj views view)))
+    (alter views-ref disj view))
 
   (get-views [_]
-    views))
+    (ensure views-ref))
+
+  (notify-views [cm args]
+    (apply %notify-views-fn cm args)))
 
 
 
 (defn make-ContainerModel []
-  (ContainerModel. (ref nil) (ref nil) (ref 0) (ref #{})))
+  (ContainerModel. (ref nil)
+                   (ref nil)
+                   (ref 0)
+                   (ref #{})
+                   (fn [cm event-sym & event-args]
+                     (doseq [container-view (get-views cm)]
+                       ((:handle-model-event-fn @container-view) container-view (apply list event-sym event-args))))))
 
 
+(defn cm []
+  (make-ContainerModel))
 
-(defn tail-node [container-model]
-  (ensure (. container-model tail-node)))
 
-(defn set-tail-node [container-model new-tail-node]
+(defn cm-tail-node [^ContainerModel cm]
+  (ensure (. cm tail-node)))
+
+(defn cm-set-tail-node [^ContainerModel cm new-tail-node]
   {:pre [(or (= ContainerModelNode (type new-tail-node))
              (not new-tail-node))]}
-  (ref-set (. container-model tail-node)
+  (ref-set (. cm tail-node)
            new-tail-node))
 
 
-(defn head-node [container-model]
-  (ensure (. container-model head-node)))
+(defn cm-head-node [^ContainerModel cm]
+  (ensure (. cm head-node)))
 
-(defn set-head-node [container-model new-head-node]
+(defn cm-set-head-node [^ContainerModel cm new-head-node]
   {:pre [(or (= ContainerModelNode (type new-head-node))
              (not new-head-node))]}
-  (ref-set (. container-model head-node)
+  (ref-set (. cm head-node)
            new-head-node))
 
 
-(defn notify-views [container-model event-sym & event-args]
-  (doseq [container-view (ensure (. container-model views))]
-    ((:handle-model-event-fn (ensure container-view)) container-view (apply list event-sym event-args))))
-
-
-(declare prepend-container-model after-container-model-node)
-(defn append-container-model [container-model new-node]
-  "Add NEW-NODE to end of the contained nodes in CONTAINER-MODEL.
+(declare cm-prepend cmn-after)
+(defn cm-append [^ContainerModel cm new-node]
+  "Add NEW-NODE to end of the contained nodes in CM.
 This mirrors the jQuery `append' function:
   http://api.jquery.com/append/"
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertEnd(List list, Node newNode)
-  (if (not (tail-node container-model)) ;; if list.lastNode == null
-    (prepend-container-model container-model new-node) ;; insertBeginning(list, newNode)
+  (if (not (cm-tail-node cm)) ;; if list.lastNode == null
+    (cm-prepend cm new-node) ;; insertBeginning(list, newNode)
   ;; else
-    (after-container-model-node (tail-node container-model) new-node))) ;; insertAfter(list, list.lastNode, newNode)
+    (cmn-after (cm-tail-node cm) new-node))) ;; insertAfter(list, list.lastNode, newNode)
 
 
-(declare before-container-model-node set-left-node set-right-node container-model set-container-model)
-(defn prepend-container-model [container-m new-node]
-  "Add NEW-NODE to beginning of the contained nodes in CONTAINER-MODEL.
+(declare cmn-before cmn-set-left-node cmn-set-right-node container-model set-container-model)
+(defn cm-prepend [^ContainerModel cm new-node]
+  "Add NEW-NODE to beginning of the contained nodes in CM.
 This mirrors the jQuery `prepend' function:
   http://api.jquery.com/prepend/"
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertBeginning(List list, Node newNode)
   ;;   if list.firstNode == null
-  (if (not (head-node container-m))
+  (if (not (cm-head-node cm))
     (do
       ;; These 3 lines are specific to us.
       ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
       (assert (not (container-model new-node)))
-      (set-container-model new-node container-m)
-      (alter (. container-m length) inc)
+      (set-container-model new-node cm)
+      (alter (. cm length) inc)
 
-      (set-head-node container-m new-node) ;; list.firstNode := newNode
-      (set-tail-node container-m new-node) ;; list.lastNode  := newNode
-      (set-left-node new-node nil) ;; newNode.prev := null
-      (set-right-node new-node nil) ;; newNode.next := null
-      (notify-views container-m 'prepend-container-model container-model new-node))
+      (cm-set-head-node cm new-node) ;; list.firstNode := newNode
+      (cm-set-tail-node cm new-node) ;; list.lastNode  := newNode
+      (cmn-set-left-node new-node nil) ;; newNode.prev := null
+      (cmn-set-right-node new-node nil) ;; newNode.next := null
+
+      (notify-views cm ['cm-prepend cm new-node]))
     ;; else
-    (before-container-model-node (head-node container-m) new-node))) ;; insertBefore(list, list.firstNode, newNode)
+    (cmn-before (cm-head-node cm) new-node))) ;; insertBefore(list, list.firstNode, newNode)
 
 
-(declare remove-container-model-node)
-(defn clear-container-model [container-model]
-  ;; Remove head node of CONTAINER-MODEL until trying to access the head node of CONTAINER-MODEL returns NIL.
-  (loop [node (head-node container-model)]
+(declare cmn-remove)
+(defn cm-clear [^ContainerModel cm]
+  ;; Remove head node of CM until trying to access the head node of CM returns NIL.
+  (loop [node (cm-head-node cm)]
     (when node
-      (remove-container-model-node node)
-      (recur (head-node container-model)))))
+      (cmn-remove node)
+      (recur (cm-head-node cm)))))

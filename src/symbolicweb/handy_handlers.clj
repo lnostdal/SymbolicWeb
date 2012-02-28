@@ -54,7 +54,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         widget-id (get query-params "_sw_widget-id")
         callback-id (get query-params "_sw_callback-id")
         widget (get (:widgets @*viewport*) widget-id)
-        callback (get (:callbacks @widget) callback-id)
+        callback (get @(:callbacks @widget) callback-id)
         [callback-fn callback-data] callback]
     (binding [*in-channel-request?* ""]
       (apply callback-fn ((:parse-callback-data-handler @widget) widget callback-data))
@@ -96,8 +96,11 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     ;; REST.
     (binding [*viewport* (when (:session? @*application*)
                            ((:make-viewport-fn @*application*)))]
-      ((:reload-handler @*application*))
-      ((:rest-handler @*application*)))))
+      (dosync
+       ((:reload-handler @*application*))
+       (with1 ((:rest-handler @*application*))
+         (when *viewport*
+           (add-response-chunk "swDoOnLoadFNs();")))))))
 
 
 (defn clear-session-page-handler []

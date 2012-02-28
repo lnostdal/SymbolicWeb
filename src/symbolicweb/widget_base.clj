@@ -67,7 +67,7 @@
   "Set an event handler for WIDGET.
 Returns WIDGET."
   ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
-  (alter widget update-in [:callbacks] assoc event-type [callback-fn callback-data])
+  (swap! (:callbacks @widget) assoc event-type [callback-fn callback-data])
   (add-response-chunk (render-event widget event-type :callback-data callback-data)
                       widget)
   widget)
@@ -85,7 +85,7 @@ Returns WIDGET."
               :on-visible-fns (atom [])
               :on-non-visible-fns (atom [])
               :children [] ;; Note that order etc. doesn't matter here; this is only used to track visibility on the client-end.
-              :callbacks {} ;; event-name -> [handler-fn callback-data]
+              :callbacks (atom {}) ;; event-name -> [handler-fn callback-data]
               :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
               :parse-callback-data-handler #'default-parse-callback-data-handler
               key_vals)))
@@ -103,7 +103,7 @@ Returns WIDGET."
          :html-element-type html-element-type
          :model model
          :escape-html? true
-         :output-parsing-fn (fn [new-value] new-value)
+         :output-parsing-fn #(identity %)
          :handle-model-event-fn (fn [widget old-value new-value]
                                   (jqHTML widget (if (:escape-html? @widget)
                                                    (escape-html new-value)
@@ -143,8 +143,7 @@ Returns WIDGET."
 (defn make-View [model lifetime & attributes]
   "Supply :HANDLE-MODEL-EVENT-FN and you'll have an observer ('callback') of MODEL that is not a Widget.
 The lifetime of this observer is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
-  #_(assert (or (= *viewport* lifetime)
-                (isa? (:type @lifetime) ::Widget)))
+  ;; TODO: HTMLElement is waay too specific for this; need some sort of common base type.
   (with (apply make-HTMLElement "%make-View" model
                :type ::View
                :handle-model-event-fn (fn [view old-value new-value]

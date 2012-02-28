@@ -26,9 +26,9 @@
                          (dbg-prin1 new-value)
                          ;; Search for Node matching NEW-VALUE.
                          (dosync
-                          (loop [node (head-node container-model)]
+                          (loop [node (cm-head-node container-model)]
                             (when node
                               (if (= new-value (:id @(node-data node)))
                                 (do (println "match found!") (println))
-                                (recur (right-node node)))))))
+                                (recur (cmn-right-node node)))))))
                        :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))

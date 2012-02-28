@@ -181,17 +181,6 @@ Returns a string."
   (str (java.util.UUID/randomUUID)))
 
 
-;; TODO: I messed up once; shared IDs where they shouldn't be.
-#_(defn generate-aid
-  "Generate Application/session scoped unique ID."
-  ([]
-     (if *application*
-       (generate-aid @*application*)
-       (generate-uid)))
-  ([application]
-     ((:id-generator application))))
-
-
 (defn time-since-last-activity [obj]
   (- (System/currentTimeMillis)
      (:last-activity-time @obj)))
@@ -291,12 +280,8 @@ Returns a string."
         url-path)))
 
 
-;; TODO: Rename to ROOT-VIEW.
 (defn root-element []
-  {:pre [(thread-bound? #'*viewport*)
-         (isa? (type *viewport*) clojure.lang.Ref)]
-   :post [(isa? (type %) clojure.lang.Ref)
-          (isa? (:type @%) ::WidgetBase)]}
+  (assert (thread-bound? #'*viewport*))
   (:root-element @*viewport*))
 
 (defn root-model []
@@ -344,7 +329,6 @@ Returns a string."
   (with-local-vars [lim limit]
     (doall ;; Clojure being lazy by-default for these kinds of things is retarded...
      (mapcat (fn [elt]
-
                (if (= elt item)
                  (if (zero? (var-get lim))
                    [elt]
@@ -354,6 +338,10 @@ Returns a string."
                  [elt]))
              vec))))
 
+
+
+;;; WITH-SW-IO
+;;;;;;;;;;;;;;
 
 (def -sw-io-agent-error-handler-
   (fn [the-agent exception]
@@ -366,16 +354,20 @@ Returns a string."
 
 (defonce -sw-io-agent- (agent 42 :error-handler #'-sw-io-agent-error-handler-))
 
+(defn %with-sw-io [options body-fn]
+  (send-off (if (not-empty options)
+              options
+              -sw-io-agent-)
+            body-fn))
+
 (defmacro with-sw-io [options & body]
   "Runs BODY in an Agent."
-  `(send-off ,(if (not-empty ~options) ~options -sw-io-agent-)
-             (fn [_#] ~@body)))
+  `(%with-sw-io ~options (fn [_#] ~@body)))
 
 
 
-
-;;; SWSYNC stuff
-;;;;;;;;;;;;;;;;
+;;; SWSYNC
+;;;;;;;;;;
 
 (declare with-sw-db) ;; It's actually a funtion now, so..
 
@@ -383,29 +375,39 @@ Returns a string."
 (def ^:dynamic *swsync-db-operations*)
 
 (defn %swsync [bodyfn]
-  (assert (not *in-sw-db?*))
+  (io! "SWSYNC: Nesting of SWSYNC forms not allowed. Nor can SWSYNC be placed inside a DOSYNC form.")
+  (when *in-sw-db?*
+    (assert *pending-prepared-transaction?*
+            "SWSYNC: SWSYNC is meant be used within WITH-SW-DB callback context; HOLDING-TRANSACTION or outside of WITH-SW-DB context entirely."))
   (dosync
    (binding [*swsync-operations* (atom [])
              *swsync-db-operations* (atom [])]
-     (bodyfn)
-     (when-not (or (empty? @*swsync-operations*)
-                   (empty? @*swsync-db-operations*))
-       (with-sw-io [] ;; At this point we can be sure DOSYNC won't roll back; we're in an Agent.
-         (when-not (empty? @*swsync-db-operations*)
-           (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
-             (fn [_]
-               (doseq [f @*swsync-db-operations*]
-                 (f)))))
-         (when-not (empty? @*swsync-operations*)
-           (doseq [f @*swsync-operations*]
-             (f))))))))
+     (let [return-value (bodyfn)]
+       (when-not (and (empty? @*swsync-operations*)
+                      (empty? @*swsync-db-operations*))
+         (with-sw-io [] ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
+           (when-not (empty? @*swsync-db-operations*)
+             (binding [*in-sw-db?* false ;; TODO: Kind of silly; needed to make WITH-SW-CONNECTION work by force.
+                       *pending-prepared-transaction?* false]
+               (with-sw-connection ;; All pending DB operations execute within a _single_ DB transaction.
+                 (binding [*pending-prepared-transaction?* true]
+                   (doseq [f @*swsync-db-operations*]
+                     (f))))))
+           (when-not (empty? @*swsync-operations*)
+             (doseq [f @*swsync-operations*]
+               (f)))))
+       return-value))))
 
 (defmacro swsync [& body]
-  "DOSYNC where database operations (SWSYNC-DBOP) are gathered up and executed within a single db transaction in an Agent."
+  "DOSYNC where database operations (SWDBOP) are gathered up and executed within a single DB transaction in an Agent
+after Clojure side transaction is done."
   `(%swsync (fn [] ~@body)))
 
 (defmacro swop [& body]
+  "Wrapper for general IO operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
   `(swap! *swsync-operations* conj (fn [] ~@body)))
 
-(defmacro swsync-dbop [& body]
+
+(defmacro swdbop [& body]
+  "Wrapper for DB type IO operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
   `(swap! *swsync-db-operations* conj (fn [] ~@body)))

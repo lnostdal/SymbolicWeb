@@ -35,8 +35,9 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
 
 (defn show-Dialog [widget & options]
   ;; TODO: Yeah, (ROOT-ELEMENT) doesn't generally mean the same thing anymore when the root can be the entire document.
-  (jqAppend (root-element) ;;(:main-content-view @*viewport*)
-    (apply make-Dialog widget options)))
+  (dosync ;; TODO: This seems a bit wonky. It's needed/"handy" because jqAppend actually manipulates the Model end of things.
+   (jqAppend (root-element) ;;(:main-content-view @*viewport*)
+     (apply make-Dialog widget options))))
 
 
 (defn show-ModalDialog [widget & options]
