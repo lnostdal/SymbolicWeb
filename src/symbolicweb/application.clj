@@ -9,7 +9,6 @@
   "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-. On page load (or refresh), the order of things executed are:
 
   :MAKE-VIEWPORT-FN
-  :RELOAD-HANDLER
   :REST-HANDLER"
   (let [application-id (generate-uuid)
         application (apply assoc {}
@@ -24,7 +23,6 @@
                            :viewports {}
                            :make-viewport-fn #'make-Viewport
                            :request-handler #'default-request-handler
-                           :reload-handler (fn [])
                            :rest-handler #'default-rest-handler
                            :ajax-handler #'default-ajax-handler
                            :aux-handler #'default-aux-handler

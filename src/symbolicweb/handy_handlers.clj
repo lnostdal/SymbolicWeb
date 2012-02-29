@@ -107,7 +107,6 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (binding [*viewport* (when (:session? @*application*)
                            ((:make-viewport-fn @*application*)))]
       (dosync
-       ((:reload-handler @*application*))
        (with1 ((:rest-handler @*application*))
          (when *viewport*
            (add-response-chunk "swDoOnLoadFNs();")))))))
