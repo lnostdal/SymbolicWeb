@@ -358,7 +358,12 @@ Returns a string."
   (send-off (if (not-empty options)
               options
               -sw-io-agent-)
-            body-fn))
+            (fn [old-res]
+              (binding [clojure.java.jdbc.internal/*db* nil
+                        *in-sw-db?* false
+                        *pending-prepared-transaction?* false]
+                (body-fn old-res)))))
+
 
 (defmacro with-sw-io [options & body]
   "Runs BODY in an Agent."
