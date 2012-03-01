@@ -34,6 +34,8 @@
             "WITH-SW-CONNECTION: Nesting of WITH-SW-CONNECTION forms not allowed.")
     (assert (not *pending-prepared-transaction?*)
             "WITH-SW-CONNECTION: This is not meant to be used within WITH-SW-DB's HOLDING-TRANSACTION callback. Use SWSYNC and SWDBOP instead?")
+    (assert (not (:connection clojure.java.jdbc.internal/*db*))
+            "WITH-SW-CONNECTION: Cannot be nested.")
     (binding [clojure.java.jdbc.internal/*db* java-jdbc-top-level-db-bnd]
       (try
         (with-connection @@-pooled-db-spec-
@@ -74,8 +76,9 @@ HOLDING-TRANSACTION is not allowed."
                                     (assert (not (var-get holding-transaction-fn))
                                             "WITH-SW-DB: HOLDING-TRANSACTION callback should only be called once.")
                                     (var-set holding-transaction-fn holding-transaction)))]
-              (.execute stmt (str "PREPARE TRANSACTION '" id-str "';"))
-              (.commit conn) (.setAutoCommit conn true) ;; Semi-end transaction; it's left in a pending state until FINALLY below.
+              (when (var-get holding-transaction-fn)
+                (.execute stmt (str "PREPARE TRANSACTION '" id-str "';")))
+              (.commit conn) (.setAutoCommit conn true) ;; Commit or semi-commit transaction.
               (var-set commit-inner-transaction? true)
               (when-let [holding-transaction (var-get holding-transaction-fn)]
                 (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current DB connection while we do this..
@@ -86,7 +89,8 @@ HOLDING-TRANSACTION is not allowed."
             (finally
              (if (var-get commit-inner-transaction?)
                (if (var-get commit-prepared-transaction?)
-                 (.execute stmt (str "COMMIT PREPARED '" id-str "';"))
+                 (when (var-get holding-transaction-fn)
+                   (.execute stmt (str "COMMIT PREPARED '" id-str "';")))
                  (.execute stmt (str "ROLLBACK PREPARED '" id-str "';")))
                (do (.rollback conn) (.setAutoCommit conn true)))
              (.close stmt))))))))
