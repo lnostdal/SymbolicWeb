@@ -10,18 +10,20 @@ SW was originally written in Common Lisp, and that version is still found at thi
 
 ## Status
 
-Very, very alpha -- and this doesn't do anything much useful yet.
+Very, very alpha.
 
 
 
 ## Usage
+
+*This is out of date; if you really want to try this just get in touch instead for now.*
 
 For PHP support if that's needed:
 
     php-cgi -b 127.0.0.1:6666 &
 
 
-Lighttpd 1.5.x (from svn/git) is used for the boring static content. To enable serving from port 80 we do:
+Lighttpd 1.5.x (from svn/git) is used (recommended) for the boring static content. To enable serving from port 80 we do:
 
     sudo setcap 'cap_net_bind_service=+ep' /usr/local/sbin/lighttpd
 
@@ -69,17 +71,16 @@ I'm aiming at a 132 column width using 1920x1080 monitors:
 Naming of Container (container_model.clj and container_model_node.clj) related functions follow or match the naming
 found in jQuery. E.g., append, prepend, before and after:
 
-  http://api.jquery.com/category/manipulation/dom-insertion-inside/
-  http://api.jquery.com/category/manipulation/dom-insertion-outside/
-
-Code that blocks (I/O to DB etc.) is tagged with: [blocking]
+* http://api.jquery.com/category/manipulation/dom-insertion-inside/
+* http://api.jquery.com/category/manipulation/dom-insertion-outside/
 
 
 
 ## License
 
-Copyright (C) 2011 Lars Rune Nøstdal
+Copyright (C) 2011, 2012 Lars Rune Nøstdal
 
 Distributed under the GNU Affero General Public License (for now):
-  http://en.wikipedia.org/wiki/Affero_General_Public_License
-  http://www.gnu.org/licenses/agpl.html
+
+* http://en.wikipedia.org/wiki/Affero_General_Public_License
+* http://www.gnu.org/licenses/agpl.html
