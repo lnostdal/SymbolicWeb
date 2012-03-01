@@ -380,10 +380,10 @@ Returns a string."
 (def ^:dynamic *swsync-db-operations*)
 
 (defn %swsync [bodyfn]
-  (io! "SWSYNC: Nesting of SWSYNC forms not allowed. Nor can SWSYNC be placed inside a DOSYNC form.")
+  (io! "SWSYNC: Nesting of SWSYNC (or SWSYNC inside DOSYNC) contexts not allowed.")
   (when *in-sw-db?*
     (assert *pending-prepared-transaction?*
-            "SWSYNC: SWSYNC is meant be used within WITH-SW-DB callback context; HOLDING-TRANSACTION or outside of WITH-SW-DB context entirely."))
+            "SWSYNC: SWSYNC is meant to be used within the WITH-SW-DB callback context HOLDING-TRANSACTION or outside of WITH-SW-DB context entirely."))
   (dosync
    (binding [*swsync-operations* (atom [])
              *swsync-db-operations* (atom [])]
@@ -392,10 +392,9 @@ Returns a string."
                       (empty? @*swsync-db-operations*))
          (with-sw-io [] ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
            (when-not (empty? @*swsync-db-operations*)
-             (binding [*in-sw-db?* false ;; TODO: Kind of silly; needed to make WITH-SW-CONNECTION work by force.
-                       *pending-prepared-transaction?* false]
-               (with-sw-connection ;; All pending DB operations execute within a _single_ DB transaction.
-                 (binding [*pending-prepared-transaction?* true]
+             (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
+               (fn [_]
+                 (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
                    (doseq [f @*swsync-db-operations*]
                      (f))))))
            (when-not (empty? @*swsync-operations*)

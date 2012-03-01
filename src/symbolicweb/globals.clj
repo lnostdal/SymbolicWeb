@@ -33,9 +33,13 @@
   (atom {}))
 
 
+
+;; TODO: Hack; def (instead of just forward decl) since -GC-THREAD- is started right away.
+(defn ensure-non-visible [widget])
+
 (defn gc-viewport [viewport]
   (dosync
-   (let [viewport-m @viewport]
+   (let [viewport-m (ensure viewport)]
      (swap! -viewports- #(dissoc % (:id viewport-m))) ;; Remove VIEWPORT from -VIEWPORTS- global.
      ;; This will ensure that Models that hang around "for a long time" (e.g. global vars) doesn't try
      ;; to forward their updates to Widgets in stale Viewports.
@@ -43,9 +47,6 @@
      ;; Application -/-> Viewport.
      (alter (:application viewport-m) update-in [:viewports] dissoc (:id viewport-m)))))
 
-
-;; TODO: Hack; forward decl and def since -GC-THREAD- is started right away.
-(defn ensure-non-visible [widget])
 ;; This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
 ;; properties removing unused or timed out sessions / viewports.
 (defn do-gc []

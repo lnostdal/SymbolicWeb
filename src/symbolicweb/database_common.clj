@@ -133,7 +133,7 @@ HOLDING-TRANSACTION is not allowed."
   (let [local (ref [])
         f (future
             (with-sw-db
-              (fn [after-transaction]
+              (fn [holding-transaction]
                 (with-query-results res ["SELECT * FROM test WHERE id = ?;" 78]
                   (println "inner-transaction #1 before:" res)
                   (update-values :test ["id = ?" 78] {:value (inc (Integer/parseInt (:value (first res))))}))
@@ -143,14 +143,13 @@ HOLDING-TRANSACTION is not allowed."
                 (dosync (alter local conj "inner-transaction #1"))
 
                 (when do-after
-                  (after-transaction (fn [tid]
-                                       (println "after-transaction #1: begin")
-                                       (dosync (alter local conj "after-transaction #1"))
+                  (holding-transaction (fn [tid]
+                                       (println "holding-transaction #1: begin")
+                                       (dosync (alter local conj "holding-transaction #1"))
                                        (Thread/sleep 1000)
-                                       (println "after-transaction #1: end")))))))]
-    (Thread/sleep 500) ;; To make sure the first ts has gotten to its call to Thread/sleep.
+                                       (println "holding-transaction #1: end")))))))]
     (with-sw-db
-      (fn [after-transaction]
+      (fn [holding-transaction]
         (with-query-results res ["SELECT * FROM test WHERE id = ?;" 78]
           (println "inner-transaction #2 before:" res)
           (update-values :test ["id = ?" 78] {:value (inc (Integer/parseInt (:value (first res))))}))
@@ -158,11 +157,12 @@ HOLDING-TRANSACTION is not allowed."
           (println "inner-transaction #2 after:" res))
         (dosync (alter local conj "inner-transaction #2"))
         (when do-after
-          (after-transaction (fn [tid]
+          (holding-transaction (fn [tid]
                                (dosync
-                                (println "after-transaction #2: begin")
-                                (alter local conj "after-transaction #2")
-                                (println "after-transaction #2: begin")))))))
+                                (println "holding-transaction #2: begin")
+                                (alter local conj "holding-transaction #2")
+                                (Thread/sleep 500) ;; To make sure the first ts has gotten to its call to Thread/sleep.
+                                (println "holding-transaction #2: end")))))))
     @f
     @local))
 

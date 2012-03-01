@@ -123,8 +123,6 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        :body
        (str ;; Clear session cookie and reload page.
         (set-default-session-cookie nil)
-        ;; TODO: This can be removed later; it's used to clear out any old cookies from before TM joined us.
-        (set-document-cookie :name "_sw_application_id" :value nil :path "/free-or-deal/sw" :domain? ".dev.kitch.no")
         "window.location.reload();")}
 
       :html
