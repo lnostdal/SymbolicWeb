@@ -83,9 +83,13 @@ HOLDING-TRANSACTION is not allowed."
               (when-let [holding-transaction (var-get holding-transaction-fn)]
                 (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current DB connection while we do this..
                           *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
-                  (holding-transaction id-str)))
+                  (holding-transaction (fn [] (throw (Exception. "%with-sw-db-abort"))))))
               (var-set commit-prepared-transaction? true)
               result)
+            (catch Exception e
+              (if (= "%with-sw-db-abort" (.getMessage e))
+                (println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
+                (throw e)))
             (finally
              (if (var-get commit-inner-transaction?)
                (if (var-get commit-prepared-transaction?)
