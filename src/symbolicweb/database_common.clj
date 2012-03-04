@@ -99,6 +99,7 @@ HOLDING-TRANSACTION is not allowed."
                (do (.rollback conn) (.setAutoCommit conn true)))
              (.close stmt))))))))
 
+
 (defn db-stmt [sql-str]
   (let [stmt (.createStatement (:connection clojure.java.jdbc.internal/*db*))]
     (.execute stmt sql-str)
@@ -111,20 +112,6 @@ HOLDING-TRANSACTION is not allowed."
       (doseq [res res]
         (println "deleting prepared transaction:" (:gid res))
         (db-stmt (str "ROLLBACK PREPARED '" (:gid res) "';"))))))
-
-
-(reset! -pooled-db-spec-
-        (mk-db-pool (let [db-host  "localhost"
-                          db-port  5432
-                          db-name  "temp"
-                          user     "temp"
-                          password "xrEj7MY4e0"]
-                      {:classname "org.postgresql.Driver"
-                       :subprotocol "postgresql"
-                       :subname (str "//" db-host ":" db-port "/" db-name)
-                       :user user
-                       :password password})))
-
 
 
 ;; To test out serialization conflict:

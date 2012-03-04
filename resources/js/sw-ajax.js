@@ -1,15 +1,17 @@
 "use strict"; // http://ejohn.org/blog/ecmascript-5-strict-mode-json-and-more/
 
 
-/*
- For this file to bootstrap correctly the following variables must be bound:
 
-   * _sw_viewport_id [string]
+/// swHandleError ///
+/////////////////////
 
-   * _sw_dynamic_subdomain [string]
+function swHandleError(jq_xhr, text_status, error_thrown){
+  if(jq_xhr.status == 200){
+    $.sticky("<b>SymbolicWeb</b><p>Client side error.</p><p>Check <b>console.error</b> for details.</p><p>Developers have _not_ (TODO: fix) been notified of this event.</p>");
+    console.error([error_thrown, jq_xhr.responseText, jq_xhr]);
+  }
+}
 
-   * _sw_comet_timeout_ts [integer; timestamp]
- */
 
 
 /// swGetCurrentHash ///
@@ -136,7 +138,7 @@ var swAjax =
                          cache: false,
                          dataType: "script",
                          beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }}, // TODO: 500 should be configurable.
-                         error: function(xhr, ajax_options, thrown_error){
+                         error: function(jq_xhr, text_status, thrown_error){
                            $.sticky("<b>SymbolicWeb: HTTP 500</b><br/>Something went wrong. Check <b>console.error</b> for details.<br/><br/>Developers have been notified of this event.");
                            handleRestOfQueue();
                          },
@@ -176,6 +178,9 @@ var swComet  =
                url: swURL(["&_sw_request_type=comet", params]),
                dataType: "script",
                cache: false,
+               error: function(jq_xhr, text_status, error_thrown){
+                 swHandleError(jq_xhr, text_status, error_thrown);
+               },
                complete: callback});
      }
 
@@ -258,48 +263,14 @@ function swRun(code_id, async_p, func){
 
 
 
-/// address-bar.lisp ///
-////////////////////////
-
-/*
- $.address.change(function(event){
- //alert(event.value);
- swAjax("&_sw_event=url-hash-changed",
- "&new-url-hash=" + encodeURIComponent(event.value));
- });
- */
-
-
-
-/// Boot! ///
-/////////////
-
-$(window).on("load", function(){
-  swComet("&do=refresh");
-               
-  (function(){
-     var sw_mouse_poll_ts = new Date().getTime();
-     var sw_mouse_poll_interval_ms = 5000;
-     var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
-     
-     $(document).on("mousemove", function(e){
-       var ts = new Date().getTime();
-       if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
-         sw_mouse_poll_ts = ts;
-         if((ts - _sw_comet_last_response_ts)
-            > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
-           console.log("swComet has timed out, rebooting...");
-           window.location.href = window.location.href;
-         }
-       }
-     });
-  })();
-});
-
-
-
-/// Shutdown! ///
+/// Shutdown ///
 /////////////////
+
+// So unload event fires on (some, but still not all ..sigh) navigation in Opera too.
+if(typeof(opera) != 'undefined'){
+  opera.setOverrideHistoryNavigationMode('compatible');
+  history.navigationMode = 'compatible';
+}
 
 // GC the server side Viewport object and all its Widgets (and their incomming connections from the Model/DB) on page unload.
 $(window).on("unload", function(){
@@ -308,3 +279,41 @@ $(window).on("unload", function(){
           cache: false,
           async: false});
 });
+
+
+
+
+
+
+/// Boot! ///
+/////////////
+
+function swBoot(url){
+  // Pre-boot; sets _sw_viewport_id etc..
+  $.ajax({
+    async: false,
+    type: "GET",
+    url: url,
+    dataType: "script",
+    success: function(){ 
+      // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
+      swComet("&do=refresh");
+      // ..and set up something that'll ensure the channel stays alive 
+      // when faced with JS dying after computer waking up from suspend etc..
+      var sw_mouse_poll_ts = new Date().getTime();
+      var sw_mouse_poll_interval_ms = 5000;
+      var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
+      $(document).on("mousemove", function(e){
+        var ts = new Date().getTime();
+        if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
+          sw_mouse_poll_ts = ts;
+          if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
+            console.log("SymbolicWeb: Client connection JS-loop has died: rebooting...");
+            window.location.href = window.location.href;
+          }
+        }
+      });
+    }});
+}
+
+
