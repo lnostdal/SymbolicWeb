@@ -58,6 +58,7 @@ If either BODY-FN or HOLDING-TRANSACTION throws an exception, the transaction, i
 back.
 Note that actually calling HOLDING-TRANSACTION is optional, and that further, direct i.e. non-Agent, DB operations within
 HOLDING-TRANSACTION is not allowed."
+  (assert (fn? body-fn))
   (with-sw-connection
     ;; The BINDING here is sort of a hack to ensure that java.jdbc's UPDATE-VALUES etc. type functions doesn't create
     ;; inner transactions which will commit even though we'd want them to roll back here in WITH-SW-DB.
@@ -75,6 +76,7 @@ HOLDING-TRANSACTION is not allowed."
             (let [result (body-fn (fn [holding-transaction]
                                     (assert (not (var-get holding-transaction-fn))
                                             "WITH-SW-DB: HOLDING-TRANSACTION callback should only be called once.")
+                                    (assert (fn? holding-transaction))
                                     (var-set holding-transaction-fn holding-transaction)))]
               (when (var-get holding-transaction-fn)
                 (.execute stmt (str "PREPARE TRANSACTION '" id-str "';")))
