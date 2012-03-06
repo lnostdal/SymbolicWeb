@@ -9,7 +9,7 @@
 
                  [org.apache.commons/collections "3.2.1"] ;; For soft hash cache.
 
-                 [cheshire "2.1.1-SNAPSHOT"] ;; JSON.
+                 [cheshire "2.2.3-SNAPSHOT"] ;; JSON.
 
                  [hiccup "0.3.8"] ;; HTML generation.
                  [enlive "1.2.0-alpha1"] ;; HTML templating.
