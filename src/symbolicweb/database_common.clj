@@ -244,7 +244,7 @@ UPDATE-CACHE? is given a FALSE value."
      (io! "DB-BACKEND-PUT: This (I/O) cannot be done within DOSYNC or SWSYNC.")
      (let [record-data
            (dosync
-            (assert (or (not (:id (ensure obj)))
+            #_(assert (or (not (:id (ensure obj)))
                         (not @(:id (ensure obj)))))
             (with-local-vars [record-data {}]
               (doseq [key_val (ensure obj)]
