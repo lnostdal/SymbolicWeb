@@ -267,21 +267,19 @@ function swRun(code_id, async_p, func){
 /////////////////
 
 // So unload event fires on (some, but still not all ..sigh) navigation in Opera too.
-if(typeof(opera) != 'undefined'){
-  opera.setOverrideHistoryNavigationMode('compatible');
-  history.navigationMode = 'compatible';
+if(typeof(opera) != "undefined"){
+  opera.setOverrideHistoryNavigationMode("compatible");
+  history.navigationMode = "compatible";
 }
 
 // GC the server side Viewport object and all its Widgets (and their incomming connections from the Model/DB) on page unload.
 $(window).on("unload", function(){
-  $.ajax({type: "GET",
-          url: swURL(["&_sw_request_type=ajax", ["&do=unload"]]),
-          cache: false,
-          async: false});
+  if(typeof(_sw_viewport_id) != "undefined")
+    $.ajax({type: "GET",
+            url: swURL(["&_sw_request_type=ajax", ["&do=unload"]]),
+            cache: false,
+            async: false});
 });
-
-
-
 
 
 
@@ -313,7 +311,8 @@ function swBoot(url){
           }
         }
       });
-    }});
+    }
+  });
 }
 
 
