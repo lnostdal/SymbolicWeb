@@ -269,7 +269,8 @@ UPDATE-CACHE? is given a FALSE value."
                     (db-ensure-persistent-field db-cache obj (:id res)
                                                 output-key vm-output-value))
                   (do
-                    (vm-set (output-key obj-m) output-value) ;; Update.
+                    (binding [*pending-prepared-transaction?* true]
+                      (vm-set (output-key obj-m) output-value)) ;; Update.
                     (db-ensure-persistent-field db-cache obj (:id res)
                                                 output-key (output-key obj-m))))))))))
      obj))
