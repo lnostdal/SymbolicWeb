@@ -6,6 +6,7 @@
   (set-event-handler
    "sortupdate" widget
    (fn [& {:keys [new-order]}]
+     (dosync
      (let [new-order-ids (json/decode new-order)
            new-order-nodes (with-local-vars [nodes []]
                              (doseq [widget-id new-order-ids]
@@ -24,5 +25,5 @@
          (cm-append container-model (cmn (node-data node))))
        (doseq [node existing-order-nodes]
          (cmn-remove node))
-       (when callback (callback new-order-nodes))))
+       (when callback (callback new-order-nodes)))))
    :callback-data {:new-order (str "' + encodeURIComponent(JSON.stringify($('#" (:id @widget) "').sortable('toArray'))) + '")}))
