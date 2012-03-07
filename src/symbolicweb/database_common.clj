@@ -244,7 +244,7 @@ UPDATE-CACHE? is given a FALSE value."
      (io! "DB-BACKEND-PUT: This (I/O) cannot be done within DOSYNC or SWSYNC.")
      (let [record-data
            (dosync
-            #_(assert (or (not (:id (ensure obj)))
+            (assert (or (not (:id (ensure obj)))
                         (not @(:id (ensure obj)))))
             (with-local-vars [record-data {}]
               (doseq [key_val (ensure obj)]
@@ -262,7 +262,7 @@ UPDATE-CACHE? is given a FALSE value."
           (doseq [key_val res]
             (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
               (when output-key
-                ;; Update and add fields in OBJ where needed based on result of SQL INSERT operation.
+                ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
                 (if (= ::not-found (get obj-m output-key ::not-found))
                   (let [vm-output-value (vm output-value)]
                     (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; Add.
