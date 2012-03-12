@@ -27,7 +27,7 @@
       (alter @*observed-vms* conj value-model)
       (let [bnds (get-thread-bindings)]
         (observe value-model *observed-vms-lifetime* false
-                 (fn [_]
+                 (fn [& _]
                    (with-bindings bnds
                      (*observed-vms-body-fn*))))))
     return-value))

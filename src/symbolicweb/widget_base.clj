@@ -162,7 +162,7 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
 
 
 (defn observe [model lifetime initial-sync? callback & attributes]
-  (apply mk-view model lifetime (fn [_ _ new-value] (callback new-value))
+  (apply mk-view model lifetime (fn [_ old-value new-value] (callback old-value new-value))
          :type ::Observer
          :trigger-initial-update? initial-sync?
          attributes))
