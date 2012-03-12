@@ -1,7 +1,11 @@
 (in-ns 'symbolicweb.core)
 
-(declare mk-view ref?)
+(declare mk-view ref? observe)
 
+
+(def ^:dynamic *observed-vms*)
+(def ^:dynamic *observed-vms-lifetime*)
+(def ^:dynamic *observed-vms-body-fn*)
 
 ;; TODO: Rename to ADD-OBSERVER, REMOVE-OBSERVER and GET-OBSERVERS?
 (defprotocol IModel
@@ -16,12 +20,26 @@
   (%vm-ref [vm]))
 
 
+(defn %vm-deref [value-model value-ref]
+  (let [return-value (ensure value-ref)]
+    (when (and (thread-bound? #'*observed-vms*)
+               (not (get (ensure @*observed-vms*) value-model))) ;; Not already observed?
+      (alter @*observed-vms* conj value-model)
+      (let [bnds (get-thread-bindings)]
+        (observe value-model *observed-vms-lifetime* false
+                 (fn [_]
+                   (with-bindings bnds
+                     (*observed-vms-body-fn*))))))
+    return-value))
+
+
+
 (deftype ValueModel [^:unsynchronized-mutable value-ref
                      ^:unsynchronized-mutable views-ref
                      ^:unsynchronized-mutable %notify-views-fn]
   clojure.lang.IDeref
-  (deref [_]
-    (ensure value-ref))
+  (deref [value-model]
+    (%vm-deref value-model value-ref))
 
 
   IValueModel
@@ -41,10 +59,18 @@
 
   IModel
   (add-view [_ view]
-    (alter views-ref conj view))
+    (if (get (ensure views-ref) view)
+      false
+      (do
+        (alter views-ref conj view)
+        true)))
 
   (remove-view [_ view]
-    (alter views-ref disj view))
+    (if (get (ensure views-ref) view)
+      (do
+        (alter views-ref disj view)
+        true)
+      false))
 
   (get-views [_]
     (ensure views-ref))
@@ -55,7 +81,6 @@
 
 (defmethod print-method ValueModel [^ValueModel value-model stream]
   (print-method (%vm-ref value-model) stream))
-
 
 
 (defn vm [value]
@@ -80,24 +105,46 @@ See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
   (vm @value-model))
 
 
-(defn vm-sync [^ValueModel value-model lifetime callback]
+(defn vm-sync
   "Returns a new ValueModel which is kept in sync with VALUE-MODEL via CALLBACK.
-CALLBACK takes the same arguments as the MK-VIEW callback, [VM OLD-VALUE NEW-VALUE], and the return value of CALLBACK will be the
-the returned ValueModel."
-  (let [mid (vm nil)]
-    (mk-view value-model lifetime #(vm-set mid (apply callback %&)))
-    mid))
+CALLBACK takes a single argument, [NEW-VALUE], and the continious return value of CALLBACK will always be the contained value
+of ValueModel."
+  ([^ValueModel value-model lifetime callback]
+     (vm-sync value-model lifetime callback true))
+  ([^ValueModel value-model lifetime callback initial-sync?]
+     (let [mid (vm nil)]
+       (mk-view value-model lifetime (fn [value-model old-value new-value]
+                                       (vm-set mid (callback new-value)))
+                :trigger-initial-update? initial-sync?)
+       mid)))
 
 
-(defn vm-syncs [value-models lifetime callback]
-  (let [mid (vm nil)]
-    (with-local-vars [once? false] ;; We only want to trigger an initial update once.
-      (doseq [value-model value-models]
-        (mk-view value-model lifetime #(vm-set mid (apply callback %&))
-                 :trigger-initial-update? (when-not (var-get once?)
-                                            (var-set once? true)
-                                            true))))
-    mid))
+(defn vm-syncs
+  ([value-models lifetime callback]
+     (vm-syncs value-models lifetime callback true))
+  ([value-models lifetime callback initial-sync?]
+     (let [mid (vm nil)]
+       (with-local-vars [already-synced? false] ;; We only want to trigger an initial update once.
+         (doseq [value-model value-models]
+           (check-type value-model ValueModel)
+           (mk-view value-model lifetime (fn [& _] (vm-set mid (callback)))
+                    :trigger-initial-update? (when initial-sync?
+                                               (when-not (var-get already-synced?)
+                                                 (var-set already-synced? true)
+                                                 true)))))
+       mid)))
+
+
+(defn %with-observed-vms [lifetime body-fn]
+  (binding [*observed-vms* (atom (ref #{}))
+            *observed-vms-lifetime* lifetime
+            *observed-vms-body-fn* body-fn]
+    (body-fn)))
+
+(defmacro with-observed-vms [lifetime & body]
+  `(%with-observed-vms ~lifetime (fn [] ~@body)))
+
+
 
 
 #_(defn vm-syncs-test []

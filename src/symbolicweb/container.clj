@@ -12,10 +12,12 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
         viewport (let [parent-type (:type parent-m)]
                    (cond
                     (isa? parent-type ::Viewport) parent
-                    (isa? parent-type ::Widget) (:viewport parent-m)))]
+                    (isa? parent-type ::Widget) @(:viewport parent-m)))]
     ;; Viewport --> Widget.
-    (alter viewport update-in [:widgets] assoc (:id child-m) child) ;; DOM-events will find the widget now.
-    (alter child assoc :viewport viewport) ;; Widget will know which Viewport to send JS code to now.
+    (alter viewport update-in
+           [:widgets] assoc (:id child-m) child)
+    ;; Widget --> Viewport
+    (vm-set (:viewport child-m) viewport) ;; Widget will know which Viewport to send JS code to now.
     ;; Model --> Widget.
     ((:connect-model-view-fn child-m) (:model child-m) child)
     (doseq [on-visible-fn @(:on-visible-fns child-m)]
@@ -38,7 +40,7 @@ end."
       (alter parent update-in [:children] conj child))
     ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.
     (when (or (isa? (:type parent-m) ::Viewport) ;; :ROOT-ELEMENT?
-              (:viewport parent-m)) ;; Is the widget visible (added to a Viewport)?
+              @(:viewport parent-m)) ;; Is the widget visible (added to a Viewport)?
       (ensure-visible child parent))))
 
 
@@ -56,12 +58,13 @@ end."
       (doseq [on-non-visible-fn @(:on-non-visible-fns widget-m)]
         (on-non-visible-fn))
       ;; Viewport -/-> Widget.
-      (alter (:viewport widget-m) update-in [:widgets]
-             dissoc (:id widget-m))
+      (alter @(:viewport widget-m) update-in
+             [:widgets] dissoc (:id widget-m))
+      ;; Widget -/-> Viewport.
       (alter widget assoc
              :parent nil
-             :viewport nil
-             :children []))))
+             :children [])
+      (vm-set (:viewport widget-m) nil))))
 
 (defn remove-branch [branch-root-node]
   "Remove BRANCH-ROOT-NODE and its children."

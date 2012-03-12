@@ -18,7 +18,7 @@
 
 
 (defn viewport-of [widget]
-  (:viewport @widget))
+  @(:viewport @widget))
 
 
 (defn application-of [widget]

@@ -16,10 +16,18 @@
 
   IModel
   (add-view [_ view]
-    (alter views-ref conj view))
+    (if (get (ensure views-ref) view)
+      false
+      (do
+        (alter views-ref conj view)
+        true)))
 
   (remove-view [_ view]
-    (alter views-ref disj view))
+    (if (get (ensure views-ref) view)
+      (do
+        (alter views-ref disj view)
+        true)
+      false))
 
   (get-views [_]
     (ensure views-ref))

@@ -18,8 +18,7 @@
                              :response-agent (agent nil)
                              args))]
          (dosync
-          (alter root-widget assoc
-                 :viewport *viewport*)
+          (vm-set (:viewport @root-widget) *viewport*)
           (alter *viewport* assoc
                  :application *application*
                  :root-element root-widget

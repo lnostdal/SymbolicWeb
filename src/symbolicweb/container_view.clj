@@ -20,7 +20,6 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 (defn node-of-view-in-context [container-model view]
   (loop [node (cm-head-node container-model)]
     (let [widget (node-data node)]
-      (dbg-prin1 widget)
       (when-let [next-node (cmn-right-node node)]
         (recur next-node)))))
 
@@ -69,17 +68,21 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
          :connect-model-view-fn
          (fn [container-model container-view]
-           ;; Clear out stuff; e.g. "dummy content" from templating.
-           ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
-           #_(add-response-chunk (with-js (jqEmpty container-view))
-                                 container-view)
-           ;; Add any already existing nodes to CONTAINER-VIEW.
-           (loop [node (cm-head-node container-model)]
-             (when node
-               (when ((:filter-node-fn @container-view) container-model node)
-                 (jqAppend container-view (view-of-node-in-context container-view node)))
-               (recur (cmn-right-node node))))
-           (add-view container-model container-view))
+           (when (add-view container-model container-view)
+             ;; Clear out stuff; e.g. "dummy content" from templating.
+             ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
+             #_(add-response-chunk (with-js (jqEmpty container-view))
+                                   container-view)
+             ;; Add any already existing nodes to CONTAINER-VIEW.
+             (loop [node (cm-head-node container-model)]
+               (when node
+                 (when ((:filter-node-fn @container-view) container-model node)
+                   (jqAppend container-view (view-of-node-in-context container-view node)))
+                 (recur (cmn-right-node node))))))
+
+         :disconnect-model-view-fn
+         (fn [container-view]
+           (remove-view container-model container-view))
 
          :view-from-node-fn
          (fn [container-view node]

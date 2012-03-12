@@ -17,7 +17,7 @@
 
 (defn jqAppend [parent new-widget]
   "Inside."
-  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').append(" (url-encode-wrap (render-html new-widget parent)) ");")
+  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').append(" (url-encode-wrap (render-html new-widget)) ");")
                              parent)
     (when-not *with-js?*
       (add-branch parent new-widget))))
@@ -25,7 +25,7 @@
 
 (defn jqPrepend [parent new-widget]
   "Inside."
-  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap (render-html new-widget parent)) ");")
+  (with1 (add-response-chunk (str "$('#" (widget-id-of parent) "').prepend(" (url-encode-wrap (render-html new-widget)) ");")
                              parent)
     (when-not *with-js?*
       (add-branch parent new-widget))))
@@ -35,7 +35,7 @@
   "Outside."
   (let [parent (:parent @widget)]
     (assert (or parent *with-js?*))
-    (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap (render-html new-widget widget)) ");")
+    (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap (render-html new-widget)) ");")
                                parent)
       (when-not *with-js?*
         (add-branch parent new-widget)))))
@@ -45,7 +45,7 @@
   "Outside."
   (let [parent (:parent @widget)]
     (assert (or parent *with-js?*))
-    (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap (render-html new-widget widget)) ");")
+    (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap (render-html new-widget)) ");")
                                parent)
       (when-not *with-js?*
         (add-branch (:parent @widget) new-widget)))))
@@ -54,7 +54,7 @@
 ;; TODO: This thing hasn't been tested yet. Test before committing to git.
 (defn jqReplaceWith [widget new-widget]
   (when-not *with-js?* (remove-branch widget))
-  (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').replaceWith(" (url-encode-wrap (render-html new-widget widget) ");")
+  (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').replaceWith(" (url-encode-wrap (render-html new-widget) ");")
                                   widget))
     (when-not *with-js?*
       (add-branch widget new-widget))))
