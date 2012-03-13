@@ -39,7 +39,7 @@ end."
       ;; Parent --> Child.
       (alter parent update-in [:children] conj child))
     ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.
-    (when (or (isa? (:type parent-m) ::Viewport) ;; :ROOT-ELEMENT?
+    (when (or (isa? (:type parent-m) ::Viewport) ;; A Viewport is always visible; :ROOT-ELEMENT.
               @(:viewport parent-m)) ;; Is the widget visible (added to a Viewport)?
       (ensure-visible child parent))))
 

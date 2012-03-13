@@ -136,6 +136,16 @@ Returns WIDGET."
          attributes))
 
 
+(derive ::Link ::HTMLElement)
+(defn make-Link [model & attributes]
+  "HTML Link (a href) element. MODEL represents the HREF attribute."
+  (apply make-HTMLElement "a" model
+         :type ::Link
+         :handle-model-event-fn (fn [widget old-value new-value]
+                                  (jqAttr widget "href" new-value))
+         attributes))
+
+
 (defn make-View [model lifetime & attributes]
   "Supply :HANDLE-MODEL-EVENT-FN and you'll have an observer ('callback') of MODEL that is not a Widget.
 The lifetime of this observer is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
@@ -145,12 +155,11 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
                 :handle-model-event-fn (fn [view old-value new-value]
                                          (assert false "make-View: No callback (:handle-model-event-fn) supplied."))
                 attributes)
-    (if lifetime
-      (do
-        ;; TODO: ADD-BRANCH might also call :CONNECT-MODEL-VIEW-FN but it won't have any effect if called more than once.
-        (add-branch lifetime it)
-        ((:connect-model-view-fn @it) model it))
-      ((:connect-model-view-fn @it) model it))))
+    (when lifetime
+      ;; TODO: ADD-BRANCH might also call :CONNECT-MODEL-VIEW-FN if LIFETIME is or turns visible (:VIEWPORT),
+      ;; but it won't have any effect if called more than once.
+      (add-branch lifetime it))
+    ((:connect-model-view-fn @it) model it)))
 
 
 (defn mk-view [model lifetime handle-model-event-fn & attributes]
@@ -165,14 +174,4 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
   (apply mk-view model lifetime (fn [_ old-value new-value] (callback old-value new-value))
          :type ::Observer
          :trigger-initial-update? initial-sync?
-         attributes))
-
-
-(derive ::Link ::HTMLElement)
-(defn make-Link [model & attributes]
-  "HTML Link (a href) element. MODEL represents the HREF attribute."
-  (apply make-HTMLElement "a" model
-         :type ::Link
-         :handle-model-event-fn (fn [widget old-value new-value]
-                                  (jqAttr widget "href" new-value))
          attributes))
