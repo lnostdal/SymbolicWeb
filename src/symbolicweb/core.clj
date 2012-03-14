@@ -65,43 +65,43 @@
 
 
 (defn handler [request]
-    (swap! -request-counter- inc')
-    (binding [*request* request
-              ;; Clojure printing isn't very solid; pretty printing with circular checks is needed!
-              *print-level* 2]
-      (try
-        (binding [*application* (find-or-create-application-instance)]
-          (touch *application*)
-          ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
-          ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-          ((:request-handler @*application*)))
-        (catch Throwable e
-          ;; Send to REPL first..
-          ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
-          (println) (println)
-          (println "SymbolicWeb.core/handler (core.clj); Top Level Exception")
-          (println "--------------------------------------------------------")
-          (clojure.stacktrace/print-stack-trace e 50)
+  (swap! -request-counter- inc')
+  (binding [*request* request
+            ;; Clojure printing isn't very solid; pretty printing with circular checks is needed!
+            *print-level* 2]
+    (try
+      (binding [*application* (find-or-create-application-instance)]
+        (touch *application*)
+        ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
+        ;; TODO: Production / development modes needed here too. Logging, etc. etc...
+        ((:request-handler @*application*)))
+      (catch Throwable e
+        ;; Send to REPL first..
+        ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
+        (println) (println)
+        (println "SymbolicWeb.core/handler (core.clj); Top Level Exception")
+        (println "--------------------------------------------------------")
+        (clojure.stacktrace/print-stack-trace e 50)
 
-          ;; ..then send to HTTP client.
-          {:status 500
-           :headers {"Content-Type" "text/html; charset=UTF-8"
-                     "Server" "http://nostdal.org/"}
-           :body
-           (html
-            [:html
-             [:body {:style "font-family: sans-serif;"}
-              [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": Top Level Server Exception (HTTP 500)"]
-              [:pre
-               \newline
-               (with-out-str (clojure.stacktrace/print-stack-trace e 1000)) ;; TODO: Magic value.
-               \newline]
-              [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))
+        ;; ..then send to HTTP client.
+        {:status 500
+         :headers {"Content-Type" "text/html; charset=UTF-8"
+                   "Server" "http://nostdal.org/"}
+         :body
+         (html
+          [:html
+           [:body {:style "font-family: sans-serif;"}
+            [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": Top Level Server Exception (HTTP 500)"]
+            [:pre
+             \newline
+             (with-out-str (clojure.stacktrace/print-stack-trace e 1000)) ;; TODO: Magic value.
+             \newline]
+            [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))
 
 
 ;; TODO: STOP-SW-SERVER doesn't actually work. Hm.
 (defn main
   ([] (main 8080))
   ([port]
-     (defonce stop-sw-server (start-http-server (wrap-ring-handler (wrap-cookies (wrap-params #'handler)))
+     (defonce stop-sw-server (start-http-server (wrap-ring-handler (wrap-cookies (wrap-params handler)))
                                                 {:port port}))))
