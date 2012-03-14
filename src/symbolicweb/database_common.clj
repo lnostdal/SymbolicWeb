@@ -312,8 +312,7 @@ UPDATE-CACHE? is given a FALSE value."
 
 
 (defn db-cache-put [db-cache ^Long id obj]
-  "If ID is NIL, store OBJ in DB then store association between the resulting id (from DB) and OBJ in DB-CACHE.
-If ID is non-NIL, store association between ID and OBJ in DB-CACHE.
+  "Store association between ID and OBJ in DB-CACHE.
 Fails (via assert) if an object with the same id already exists in DB-CACHE."
   (let [id (Long. id)] ;; Because (. (int 261) equals 261) => false
     (locking db-cache

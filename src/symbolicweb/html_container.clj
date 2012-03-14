@@ -47,9 +47,9 @@ CONTENT-FN is something like:
          :connect-model-view-fn (fn [model widget])
          :disconnect-model-view-fn (fn [widget])
          :render-html-fn
-         (fn [w]
-           (let [w-m @w
-                 transformation-data (content-fn w)]
+         (fn [template-widget]
+           (let [template-widget-m @template-widget
+                 transformation-data (content-fn template-widget)]
              ;; The Enlive API is total bullshit so we do this instead of trying to be idiomatic.
              (with-local-vars [res html-resource]
                (doseq [[selector content] (partition 2 transformation-data)]
@@ -59,8 +59,8 @@ CONTENT-FN is something like:
                    (do
                      (var-set res (transform (var-get res) selector
                                              (set-attr "id" (widget-id-of content))))
-                     (when-not (= content w) ;; We don't want a circular parent / child relationship.
-                       (sw content)))))
+                     (when-not (= content template-widget) ;; We don't want a circular parent / child relationship.
+                       (sw content))))) ;; Basically calls ADD-BRANCH making content (a Widget) a child of TEMPLATE-WIDGET.
                (apply str (emit* (var-get res))))))
          attributes))
 

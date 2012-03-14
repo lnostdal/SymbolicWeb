@@ -68,7 +68,7 @@
                      ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
                      ;;(dbg-prin1 [(:type @widget) (:id @widget)])
                      (when (not= :dead (:parent @widget))
-                       ;;(dbg-prin1 [(:type @widget) (:id @widget)]) ;; This one is interesting; uncomment when working on this.
+                       (dbg-prin1 [(:type @widget) (:id @widget)]) ;; This one is interesting; uncomment when working on this.
                        (remove-branch widget)
                        (def -lost-widget- widget)))
                    (if false
