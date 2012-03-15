@@ -347,7 +347,7 @@ Returns a string."
   (fn [the-agent exception]
     (try
       (println "-SW-IO-AGENT-ERROR-HANDLER-, thrown:")
-      (clojure.stacktrace/print-stack-trace exception 50)
+      (clojure.stacktrace/print-stack-trace exception 1000)
       (catch Throwable inner-exception
         (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
@@ -355,11 +355,10 @@ Returns a string."
 (defonce -sw-io-agent- (agent 42 :error-handler #'-sw-io-agent-error-handler-))
 
 (defn %with-sw-io [options body-fn]
-  (send-off (if (not-empty options)
-              options
-              -sw-io-agent-)
+  (send-off -sw-io-agent-
             (fn [old-res]
-              (binding [clojure.java.jdbc.internal/*db* nil
+              (binding [;; TODO: Are these needed since I'm now running a patched Clj anyway?
+                        clojure.java.jdbc.internal/*db* nil
                         *in-sw-db?* false
                         *pending-prepared-transaction?* false]
                 (body-fn old-res)))))
