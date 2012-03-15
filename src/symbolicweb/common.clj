@@ -390,16 +390,18 @@ Returns a string."
      (let [return-value (bodyfn)]
        (when-not (and (empty? @*swsync-operations*)
                       (empty? @*swsync-db-operations*))
-         (with-sw-io [] ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
-           (when-not (empty? @*swsync-db-operations*)
-             (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
-               (fn [_]
-                 (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
-                   (doseq [f @*swsync-db-operations*]
+         (let [swsync-operations *swsync-operations*
+               swsync-db-operations *swsync-db-operations*]
+           (with-sw-io [] ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
+             (when-not (empty? @swsync-db-operations)
+               (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
+                 (fn [_]
+                   (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
+                     (doseq [f @swsync-db-operations]
                      (f))))))
-           (when-not (empty? @*swsync-operations*)
-             (doseq [f @*swsync-operations*]
-               (f)))))
+             (when-not (empty? @swsync-operations)
+               (doseq [f @swsync-operations]
+                 (f))))))
        return-value))))
 
 (defmacro swsync [& body]
