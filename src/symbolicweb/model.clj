@@ -5,7 +5,9 @@
 
 (def ^:dynamic *observed-vms*)
 (def ^:dynamic *observed-vms-lifetime*)
+(def ^:dynamic *observed-vms-active-body-fns*)
 (def ^:dynamic *observed-vms-body-fn*)
+
 
 ;; TODO: Rename to ADD-OBSERVER, REMOVE-OBSERVER and GET-OBSERVERS?
 (defprotocol IModel
@@ -23,13 +25,23 @@
 (defn %vm-deref [value-model value-ref]
   (let [return-value (ensure value-ref)]
     (when (and (thread-bound? #'*observed-vms*)
-               (not (get (ensure @*observed-vms*) value-model))) ;; Not already observed?
-      (alter @*observed-vms* conj value-model)
-      (let [bnds (get-thread-bindings)]
-        (observe value-model *observed-vms-lifetime* false
+               (not (get (ensure *observed-vms*) value-model))) ;; Not already observed?
+      (alter *observed-vms* conj value-model)
+      (let [observed-vms *observed-vms*
+            observed-vms-lifetime *observed-vms-lifetime*
+            observed-vms-body-fn *observed-vms-body-fn*]
+        (observe value-model observed-vms-lifetime false
                  (fn [& _]
-                   (with-bindings bnds
-                     (*observed-vms-body-fn*))))))
+                   (when-not (get *observed-vms-active-body-fns* observed-vms-body-fn)
+                     (binding [*observed-vms* observed-vms
+                               *observed-vms-body-fn* observed-vms-body-fn
+                               *observed-vms-lifetime* observed-vms-lifetime
+                               *observed-vms-active-body-fns* (conj (if (thread-bound? #'*observed-vms-active-body-fns*)
+                                                                      *observed-vms-active-body-fns*
+                                                                      #{})
+                                                                    observed-vms-body-fn)]
+                       (observed-vms-body-fn)))))))
+
     return-value))
 
 
@@ -136,41 +148,14 @@ of ValueModel."
 
 
 (defn %with-observed-vms [lifetime body-fn]
-  (binding [*observed-vms* (atom (ref #{}))
+  (binding [*observed-vms* (ref #{})
+            *observed-vms-active-body-fns* (conj (if (thread-bound? #'*observed-vms-active-body-fns*)
+                                                   *observed-vms-active-body-fns*
+                                                   #{})
+                                                 body-fn)
             *observed-vms-lifetime* lifetime
             *observed-vms-body-fn* body-fn]
     (body-fn)))
 
 (defmacro with-observed-vms [lifetime & body]
   `(%with-observed-vms ~lifetime (fn [] ~@body)))
-
-
-
-
-#_(defn vm-syncs-test []
-  (dosync
-   (let [x (vm 0)
-         y (vm 0)
-         vms (vm-syncs [x y] (fn [v o n]
-                               (dbg-prin1 [@x @y])))]
-     (println "---")
-     (vm-set x 1)
-     (println "---")
-     (vm-set y 1))))
-
-
-
-
-#_(defn dosync-and-finally []
-  (let [r (ref 0)]
-    (letfn [(test []
-              (dosync
-               (try
-                 (println "blah")
-                 (alter r inc)
-                 (Thread/sleep 500)
-                 (finally (println "i'm always here")))))]
-      (let [f (future (test))]
-        (test)
-        @f)
-      @r)))
