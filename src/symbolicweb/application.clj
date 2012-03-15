@@ -14,6 +14,7 @@
         application (apply assoc {}
                            :type ::Application
                            :agent (agent ::ApplicationAgent)
+                           :cookies (atom nil)
                            :id application-id
                            :id-generator (let [last-id (atom 0N)]
                                            (fn [] (swap! last-id inc')))
@@ -47,17 +48,18 @@
 
 
 (defn find-or-create-application-instance []
-  (if-let [cookie-value (:value (get (:cookies *request*) "_sw_application_id"))]
-    ;; Session cookie sent.
-    (if-let [application (get @-applications- cookie-value)]
-      ;; Session cookie sent, and Application found on server end.
-      application
-      ;; Session cookie sent, but Application not found on server end.
-      (make-Application :rest-handler clear-session-page-handler :session? false))
-    ;; Session cookie not sent; the user is requesting a brand new session or Application.
-    (if-let [application-constructor (find-application-constructor)]
-      (application-constructor)
-      (make-Application :rest-handler not-found-page-handler :session? false))))
+  (with1 (if-let [cookie-value (:value (get (:cookies *request*) "_sw_application_id"))]
+           ;; Session cookie sent.
+           (if-let [application (get @-applications- cookie-value)]
+             ;; Session cookie sent, and Application found on server end.
+             application
+             ;; Session cookie sent, but Application not found on server end.
+             (make-Application :rest-handler clear-session-page-handler :session? false))
+           ;; Session cookie not sent; the user is requesting a brand new session or Application.
+           (if-let [application-constructor (find-application-constructor)]
+             (application-constructor)
+             (make-Application :rest-handler not-found-page-handler :session? false)))
+    (reset! (:cookies @it) (:cookies *request*))))
 
 
 (defn undefapp [name]
