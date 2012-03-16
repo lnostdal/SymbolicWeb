@@ -116,13 +116,13 @@ of ValueModel."
      (vm-sync value-model lifetime callback true))
   ([^ValueModel value-model lifetime callback initial-sync?]
      (let [mid (vm nil)]
-       (mk-view value-model lifetime (fn [value-model old-value new-value]
-                                       (vm-set mid (callback new-value)))
-                :trigger-initial-update? initial-sync?)
+       (observe value-model lifetime initial-sync?
+                #(vm-set mid (callback %2)))
        mid)))
 
 
 (defn vm-syncs
+  "CALLBACK takes no arguments."
   ([value-models lifetime callback]
      (vm-syncs value-models lifetime callback true))
   ([value-models lifetime callback initial-sync?]
@@ -130,11 +130,11 @@ of ValueModel."
        (with-local-vars [already-synced? false] ;; We only want to trigger an initial update once.
          (doseq [value-model value-models]
            (check-type value-model ValueModel)
-           (mk-view value-model lifetime (fn [& _] (vm-set mid (callback)))
-                    :trigger-initial-update? (when initial-sync?
-                                               (when-not (var-get already-synced?)
-                                                 (var-set already-synced? true)
-                                                 true)))))
+           (observe value-model lifetime (when initial-sync?
+                                           (when-not (var-get already-synced?)
+                                             (var-set already-synced? true)
+                                             true))
+                    (fn [_ _] (vm-set mid (callback))))))
        mid)))
 
 
