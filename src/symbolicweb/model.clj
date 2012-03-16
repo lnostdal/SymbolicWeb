@@ -3,10 +3,8 @@
 (declare mk-view ref? observe)
 
 
-(def ^:dynamic *observed-vms*)
-(def ^:dynamic *observed-vms-lifetime*)
-(def ^:dynamic *observed-vms-active-body-fns*)
-(def ^:dynamic *observed-vms-body-fn*)
+(def ^:dynamic *observed-vms-ctx*)
+(def ^:dynamic *observed-vms-active-body-fns* #{})
 
 
 ;; TODO: Rename to ADD-OBSERVER, REMOVE-OBSERVER and GET-OBSERVERS?
@@ -24,24 +22,17 @@
 
 (defn %vm-deref [value-model value-ref]
   (let [return-value (ensure value-ref)]
-    (when (and (thread-bound? #'*observed-vms*)
-               (not (get (ensure *observed-vms*) value-model))) ;; Not already observed?
-      (alter *observed-vms* conj value-model)
-      (let [observed-vms *observed-vms*
-            observed-vms-lifetime *observed-vms-lifetime*
-            observed-vms-body-fn *observed-vms-body-fn*]
-        (observe value-model observed-vms-lifetime false
+    (when (and (thread-bound? #'*observed-vms-ctx*)
+               (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
+      (alter (:vms *observed-vms-ctx*) conj value-model)
+      (let [observed-vms-ctx *observed-vms-ctx*]
+        (observe value-model (:lifetime observed-vms-ctx) false
                  (fn [& _]
-                   (when-not (get *observed-vms-active-body-fns* observed-vms-body-fn)
-                     (binding [*observed-vms* observed-vms
-                               *observed-vms-body-fn* observed-vms-body-fn
-                               *observed-vms-lifetime* observed-vms-lifetime
-                               *observed-vms-active-body-fns* (conj (if (thread-bound? #'*observed-vms-active-body-fns*)
-                                                                      *observed-vms-active-body-fns*
-                                                                      #{})
-                                                                    observed-vms-body-fn)]
-                       (observed-vms-body-fn)))))))
-
+                   (when-not (get *observed-vms-active-body-fns* (:body-fn observed-vms-ctx))
+                     (binding [*observed-vms-ctx* observed-vms-ctx
+                               *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
+                                                                    (:body-fn observed-vms-ctx))]
+                       ((:body-fn observed-vms-ctx))))))))
     return-value))
 
 
@@ -148,13 +139,10 @@ of ValueModel."
 
 
 (defn %with-observed-vms [lifetime body-fn]
-  (binding [*observed-vms* (ref #{})
-            *observed-vms-active-body-fns* (conj (if (thread-bound? #'*observed-vms-active-body-fns*)
-                                                   *observed-vms-active-body-fns*
-                                                   #{})
-                                                 body-fn)
-            *observed-vms-lifetime* lifetime
-            *observed-vms-body-fn* body-fn]
+  (binding [*observed-vms-ctx* {:vms (ref #{})
+                                :lifetime lifetime
+                                :body-fn body-fn}
+            *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns* body-fn)]
     (body-fn)))
 
 (defmacro with-observed-vms [lifetime & body]
