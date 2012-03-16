@@ -162,6 +162,7 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
     ((:connect-model-view-fn @it) model it)))
 
 
+(derive ::Observer ::WidgetBase)
 (defn mk-view [model lifetime handle-model-event-fn & attributes]
   "HANDLE-MODEL-EVENT-FN: Takes 3 arguments; VIEW OLD-VALUE NEW-VALUE."
   (apply make-View model lifetime
@@ -171,6 +172,7 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
 
 
 (defn observe [model lifetime initial-sync? callback & attributes]
+  "CALLBACK takes two arguments; [OLD-VALUE NEW-VALUE]."
   (apply mk-view model lifetime (fn [_ old-value new-value] (callback old-value new-value))
          :type ::Observer
          :trigger-initial-update? initial-sync?
