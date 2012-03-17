@@ -260,10 +260,12 @@ Returns a string."
 
 (defn clear-session [application]
   ;; TODO: Do this on the server end instead or also?
-  (add-response-chunk (set-default-session-cookie nil))
   (with-app-viewports application
-    (add-response-chunk "window.location.href = window.location.href;"
-                        (:root-element @viewport))))
+    (add-response-chunk-viewport (set-default-session-cookie nil)
+                                 viewport)
+    (add-response-chunk-viewport "window.location.href = window.location.href;"
+                                 viewport)))
+
 
 
 #_(defn clear-all-sessions []
