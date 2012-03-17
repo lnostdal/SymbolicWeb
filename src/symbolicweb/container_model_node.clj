@@ -94,6 +94,7 @@ This mirrors the jQuery `after' function:
     ;; function insertAfter(List list, Node node, Node newNode)
     ;;  newNode.prev := node
     (cmn-set-left-node new-node existing-node)
+
     ;;  newNode.next := node.next
     (cmn-set-right-node new-node (cmn-right-node existing-node))
 

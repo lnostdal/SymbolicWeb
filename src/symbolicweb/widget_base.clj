@@ -78,8 +78,8 @@ Returns WIDGET."
   (ref (apply assoc (make-ID)
               :type ::WidgetBase
               :viewport (vm nil)
-              :on-visible-fns (atom [])
-              :on-non-visible-fns (atom [])
+              :on-visible-fns (ref [])
+              :on-non-visible-fns (ref [])
               :children [] ;; Note that order etc. doesn't matter here; this is only used to track visibility on the client-end.
               :callbacks (atom {}) ;; event-name -> [handler-fn callback-data]
               :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))

@@ -31,19 +31,20 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
       cm-prepend
       (let [container-model (nth event-args 0)
             new-node (nth event-args 1)]
-        (jqPrepend container-view (view-of-node-in-context container-view new-node)))
+        (jqPrepend container-view
+          (view-of-node-in-context container-view new-node)))
 
       cmn-after
       (let [existing-node (nth event-args 0)
             new-node (nth event-args 1)]
         (jqAfter (view-of-node-in-context container-view existing-node true)
-                 (view-of-node-in-context container-view new-node)))
+          (view-of-node-in-context container-view new-node)))
 
       cmn-before
       (let [existing-node (nth event-args 0)
             new-node (nth event-args 1)]
         (jqBefore (view-of-node-in-context container-view existing-node true)
-                  (view-of-node-in-context container-view new-node)))
+          (view-of-node-in-context container-view new-node)))
 
       cmn-remove
       (let [node (nth event-args 0)]

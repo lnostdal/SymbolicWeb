@@ -26,11 +26,6 @@
         *with-sw-ctx-fn*)))
 
 
-(def ^:dynamic *request*)
-(def ^:dynamic *viewport*)
-(def ^:dynamic *application*)
-
-
 (def ^{:dynamic true
        :doc "This is used by ADD-RESPONSE-CHUNK to determine whether we're currently handling an AJAX-request; probably based on some DOM/client side event."}
   *in-channel-request?*

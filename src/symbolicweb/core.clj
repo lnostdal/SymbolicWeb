@@ -66,15 +66,13 @@
 
 (defn handler [request]
   (swap! -request-counter- inc')
-  (binding [*request* request
-            ;; Clojure printing isn't very solid; pretty printing with circular checks is needed!
-            *print-level* 2]
+  (binding [*print-level* 2] ;; Clojure printing isn't very solid; pretty printing with circular checks is needed!
     (try
-      (binding [*application* (find-or-create-application-instance)]
-        (touch *application*)
+      (let [application (find-or-create-application-instance request)]
+        (touch application)
         ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
         ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-        ((:request-handler @*application*)))
+        ((:request-handler @application) request application))
       (catch Throwable e
         ;; Send to REPL first..
         ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it

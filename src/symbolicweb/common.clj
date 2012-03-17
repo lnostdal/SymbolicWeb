@@ -1,20 +1,24 @@
 (in-ns 'symbolicweb.core)
 
-(declare add-response-chunk ref?)
+(declare add-response-chunk add-response-chunk-viewport ref?)
 
 
 (set! *print-length* 30)
 (set! *print-level* 10)
 
 
-(defn expected-response-type []
-  (let [accept-header (get (:headers *request*) "accept")]
+(defn expected-response-type [request]
+  (let [accept-header (get (:headers request) "accept")]
     (cond
      (re-find #"text/javascript" accept-header) :javascript
      (re-find #"text/html" accept-header) :html
      (re-find #"text/plain" accept-header) :plain
      (re-find #"text/plugin-api" accept-header) :plugin-api
      true accept-header)))
+
+
+(defn viewport-vm-of [widget]
+  (:viewport @widget))
 
 
 (defn viewport-of [widget]
@@ -87,33 +91,33 @@
 
 
 (defmacro with-all-viewports [& body]
-  "Handy when testing things in the REPL."
+  "Handy when testing things in the REPL.
+APPLICATION and VIEWPORT are bound within BODY."
   `(doseq [~'application (vals @-applications-)]
      (doseq [~'viewport (vals (:viewports @~'application))]
-       (binding [*application* ~'application
-                 *viewport* ~'viewport]
-         (dosync
-          ~@body)))))
+       (dosync
+        ~@body))))
 
 
 (defmacro with-app-viewports [app & body]
-  "Run BODY in context of all Viewports of APP (Application)."
-  `(binding [*application* (or ~app *application*)]
-     (doseq [~'viewport (vals (:viewports @*application*))]
-       (binding [*viewport* ~'viewport]
-         (dosync
-          ~@body)))))
+  "Run BODY in context of all Viewports of APP (Application).
+APPLICATION and VIEWPORT are bound within BODY."
+  `(let [~'application ~app]
+     (doseq [~'viewport (vals (:viewports @~'application))]
+       (dosync
+        ~@body))))
 
 
 (defmacro with-user-viewports [user-model & body]
-  "Run BODY in context of all Viewports in all Applications of USER-MODEL (UserModelBase)."
+  "Run BODY in context of all Viewports in all Applications of USER-MODEL (UserModelBase).
+APPLICATION and VIEWPORT are bound within BODY."
   `(doseq [application# @(:applications @~user-model)]
      (with-app-viewports application#
        ~@body)))
 
 
-(defn get-widget [id]
-  (get (:widgets @*viewport*) (str id)))
+(defn get-widget [id viewport]
+  (get (:widgets @viewport) (str id)))
 
 
 (defn children-of [widget]
@@ -138,9 +142,9 @@
   (= clojure.lang.Agent (type x)))
 
 
-(defn default-parse-callback-data-handler [widget callback-data]
+(defn default-parse-callback-data-handler [request widget callback-data]
   (mapcat (fn [key]
-            (list key (get (:params *request*) (str key))))
+            (list key (get (:params request) (str key))))
           (keys callback-data)))
 
 
@@ -200,10 +204,8 @@ Returns a string."
           :href href}])
 
 
-(defn set-document-cookie [& {:keys [application viewport path domain? name value]
-                              :or {application *application*
-                                   viewport *viewport*
-                                   domain? true
+(defn set-document-cookie [& {:keys [path domain? name value]
+                              :or {domain? true
                                    path "\" + window.location.pathname + \""
                                    name "name"
                                    value "value"}}]
@@ -239,59 +241,50 @@ Returns a string."
 
 
 (defn reload-page
-  ([rel-url]
-     (add-response-chunk (str "window.location = " (url-encode-wrap rel-url) ";")))
-  ([]
+  ([viewport rel-url]
+     (add-response-chunk-viewport (str "window.location = " (url-encode-wrap rel-url) ";")
+                                  viewport))
+  ([viewport]
      ;; TODO: I guess we need three ways of reloading now.
      ;;"window.location.reload(false);"
-     (add-response-chunk
-      ;; http://blog.nostdal.org/2011/12/reloading-or-refreshing-web-page-really.html
-      "window.location.href = window.location.href;")))
+     ;; http://blog.nostdal.org/2011/12/reloading-or-refreshing-web-page-really.html
+     (add-response-chunk-viewport "window.location.href = window.location.href;"
+                                  viewport)))
+
+
 
 
 (defn replace-page [rel-url]
   (add-response-chunk (str "window.location.replace(" (url-encode-wrap rel-url) ");")))
 
 
-(defn clear-session
-  ([] (clear-session *application*))
-  ([application]
-     ;; TODO: Do this on the server end instead or also?
-     (add-response-chunk (set-default-session-cookie nil))
-     (with-app-viewports application
-       (add-response-chunk "window.location.reload();"))))
+(defn clear-session [application]
+  ;; TODO: Do this on the server end instead or also?
+  (add-response-chunk (set-default-session-cookie nil))
+  (with-app-viewports application
+    (add-response-chunk "window.location.href = window.location.href;"
+                        (:root-element @viewport))))
 
 
-(defn clear-all-sessions []
+#_(defn clear-all-sessions []
   ;; TODO: Do this on the server end instead or also.
   (doseq [id_application @-applications-]
-    (binding [*application*(val id_application)]
+    (binding [*application* (val id_application)]
       (doseq [id_viewport (:viewports @*application*)]
         (binding [*viewport* (val id_viewport)]
           (clear-session *application*))))))
 
 
 (defn is-url?
-  ([url-path]
-     (assert (thread-bound? #'*request*))
-     (is-url? url-path (:uri *request*)))
   ([url-path uri]
      (= (subs uri 0 (min (count url-path) (count uri)))
         url-path)))
 
 
-(defn root-element []
-  (assert (thread-bound? #'*viewport*))
-  (:root-element @*viewport*))
-
-(defn root-model []
-  (:model @(root-element)))
-
-
 (defn alert
-  ([msg] (alert msg (root-element)))
-  ([msg widget] (add-response-chunk (str "alert(" (url-encode-wrap msg) ");")
-                                    widget)))
+  ([msg widget]
+     (add-response-chunk (str "alert(" (url-encode-wrap msg) ");")
+                         widget)))
 
 
 (defn widget-id-of [widget]
@@ -302,9 +295,9 @@ Returns a string."
            widget))))
 
 
-(defn sw-js-base-bootstrap []
-  (str (set-default-session-cookie (:id @*application*))
-       "_sw_viewport_id = '" (:id @*viewport*) "';" \newline
+(defn sw-js-base-bootstrap [application viewport]
+  (str (set-default-session-cookie (:id @application))
+       "_sw_viewport_id = '" (:id @viewport) "';" \newline
        "_sw_comet_timeout_ts = " -comet-timeout- ";" \newline
        (cl-format false "_sw_dynamic_subdomain = '~A';~%"
                   (if-let [it (str "sw-" (generate-uid))]
@@ -322,7 +315,6 @@ Returns a string."
 (defmacro with-js [& body]
   `(binding [*with-js?* true]
      ~@body))
-
 
 
 (defn remove-limited [vec item limit]

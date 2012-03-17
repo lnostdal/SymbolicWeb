@@ -3,5 +3,6 @@
 ;; https://github.com/danjenkins/Sticky
 
 ;; TODO: Leaky DOM.
-(defn show-Notification [message]
-  (add-response-chunk (str "$.sticky(" (url-encode-wrap message) ");")))
+(defn show-Notification [message viewport]
+  (add-response-chunk-viewport (str "$.sticky(" (url-encode-wrap message) ");")
+                               viewport))

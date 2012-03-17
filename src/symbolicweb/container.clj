@@ -76,5 +76,5 @@ end."
     (remove-branch child)))
 
 
-(defn clear-root []
-  (jqEmpty (root-element)))
+(defn clear-root [viewport]
+  (jqEmpty (:root-element @viewport)))

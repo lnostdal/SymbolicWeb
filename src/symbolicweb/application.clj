@@ -1,10 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn app-agent []
-  (:agent @*application*))
-
-
 (defn make-Application [& app-args]
   "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-. On page load (or refresh), the order of things executed are:
 
@@ -22,7 +18,8 @@
                            :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
                            :last-activity-time (atom (System/currentTimeMillis))
                            :viewports {}
-                           :make-viewport-fn #'make-Viewport
+                           :make-viewport-fn (fn [request application]
+                                               (throw (Exception. "make-Application: No :MAKE-VIEWPORT-FN given.")))
                            :request-handler #'default-request-handler
                            :rest-handler #'default-rest-handler
                            :ajax-handler #'default-ajax-handler
@@ -47,8 +44,8 @@
           (recur (next app-types)))))))
 
 
-(defn find-or-create-application-instance []
-  (with1 (if-let [cookie-value (:value (get (:cookies *request*) "_sw_application_id"))]
+(defn find-or-create-application-instance [request]
+  (with1 (if-let [cookie-value (:value (get (:cookies request) "_sw_application_id"))]
            ;; Session cookie sent.
            (if-let [application (get @-applications- cookie-value)]
              ;; Session cookie sent, and Application found on server end.
@@ -59,7 +56,7 @@
            (if-let [application-constructor (find-application-constructor)]
              (application-constructor)
              (make-Application :rest-handler not-found-page-handler :session? false)))
-    (reset! (:cookies @it) (:cookies *request*))))
+    (reset! (:cookies @it) (:cookies request))))
 
 
 (defn undefapp [name]
