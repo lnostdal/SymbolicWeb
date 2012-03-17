@@ -36,7 +36,7 @@
   (let [parent (:parent @widget)]
     (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').after(" (url-encode-wrap (render-html new-widget)) ");")
-                               parent)
+                               new-widget)
       (when-not *with-js?*
         (add-branch parent new-widget)))))
 
@@ -46,7 +46,7 @@
   (let [parent (:parent @widget)]
     (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').before(" (url-encode-wrap (render-html new-widget)) ");")
-                               parent)
+                               widget)
       (when-not *with-js?*
         (add-branch (:parent @widget) new-widget)))))
 
@@ -55,7 +55,7 @@
 (defn jqReplaceWith [widget new-widget]
   (when-not *with-js?* (remove-branch widget))
   (with1 (add-response-chunk (str "$('#" (widget-id-of widget) "').replaceWith(" (url-encode-wrap (render-html new-widget) ");")
-                                  widget))
+                                  new-widget))
     (when-not *with-js?*
       (add-branch widget new-widget))))
 
