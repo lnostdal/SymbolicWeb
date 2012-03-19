@@ -5,13 +5,11 @@
 
   (:use [clojure.pprint :only (cl-format)])
 
-  ;; TODO: Needed for WIP in model.clj
-  ;;(:import java.util.WeakHashMap)
-  ;;(:import java.lang.ref.SoftReference)
   (:import org.apache.commons.collections.map.ReferenceMap)
 
   (:use hiccup.core)
-  (:use [hiccup.page-helpers :exclude (encode)])
+  (:use [hiccup.util :exclude (url-encode)])
+  (:use [hiccup.page])
 
   (:use [net.cgrand.enlive-html :exclude (at)])
 
@@ -20,7 +18,6 @@
   (:use [clojure.java.jdbc :exclude (resultset-seq)])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource)
 
-  ;; TODO: I think a lot of these things might be available via aleph?
   (:use ring.util.codec)
   (:use ring.middleware.params)
   (:use ring.middleware.cookies)
@@ -61,7 +58,7 @@
   (:require symbolicweb.application)
   (:require symbolicweb.date-and-time)
   (:require symbolicweb.sortable))
-(in-ns 'symbolicweb.core)
+
 
 
 (defn handler [request]

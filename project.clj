@@ -9,17 +9,17 @@
 
                  [org.apache.commons/collections "3.2.1"] ;; For soft hash cache.
 
-                 [cheshire "2.2.3-SNAPSHOT"] ;; JSON.
+                 [cheshire "3.0.1-SNAPSHOT"] ;; JSON.
 
-                 [hiccup "0.3.8"] ;; HTML generation.
+                 [hiccup "1.0.0-beta1"] ;; HTML generation.
                  [enlive "1.2.0-alpha1"] ;; HTML templating.
-                 [ring/ring-core "1.0.1"] ;; HTTP protocol handling.
+                 [ring/ring-core "1.1.0-SNAPSHOT"] ;; HTTP protocol handling.
 
-                 [org.clojure/java.jdbc "0.1.2-SNAPSHOT"] ;; SQL/DB handling.
+                 [org.clojure/java.jdbc "0.1.4-SNAPSHOT"] ;; SQL/DB handling.
                  [postgresql/postgresql "9.1-901.jdbc4"] ;; PostgreSQL JDBC driver.
                  [c3p0/c3p0 "0.9.1.2"]] ;; DB connection pooling.
+  :plugins [[swank-clojure "1.5.0-SNAPSHOT"]]
   :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
              "-server" "-XX:+TieredCompilation"
              "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
-             "-XX:+HeapDumpOnOutOfMemoryError"
-             ])
+             "-XX:+HeapDumpOnOutOfMemoryError"])
