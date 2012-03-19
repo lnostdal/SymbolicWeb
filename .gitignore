@@ -4,6 +4,7 @@ pom.xml
 /lib/
 /classes/
 .lein-deps-sum
+.lein-plugins
 .emacs-desktop
 .emacs.desktop
 resources/js/jquery.sha256
