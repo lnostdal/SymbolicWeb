@@ -167,6 +167,7 @@ HOLDING-TRANSACTION is not allowed."
      agent
      ^String table-name
      constructor-fn ;; Function called on cache miss to construct the initial skeleton for the data from the DB to fill up.
+     after-fn ;; Function called after CONSTRUCTOR-FN and after the DB data has been filled in for the object.
      ^ReferenceMap cache-data]) ;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
 
 
@@ -204,15 +205,14 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
 (defn db-ensure-persistent-field [db-cache object ^Long id ^clojure.lang.Keyword key ^ValueModel value-model]
   "SQL `UPDATE ...'.
 Setup reactive SQL UPDATEs for VALUE-MODEL."
-  (mk-view value-model nil
-           (fn [value-model old-value new-value]
+  (observe value-model nil false
+           (fn [old-value new-value]
              (when-not (= old-value new-value) ;; TODO: Needed?
                (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
                  (when input-key
                    (swdbop
                     (update-values (. db-cache table-name) ["id=?" id]
-                                   {(as-quoted-identifier \" input-key) input-value}))))))
-           :trigger-initial-update? false))
+                                   {(as-quoted-identifier \" input-key) input-value}))))))))
 
 
 (defn db-backend-get [db-cache ^Long id ^clojure.lang.Ref obj]
@@ -272,18 +272,20 @@ UPDATE-CACHE? is given a FALSE value."
                     (binding [*pending-prepared-transaction?* true]
                       (vm-set (output-key obj-m) output-value)) ;; Update.
                     (db-ensure-persistent-field db-cache obj (:id res)
-                                                output-key (output-key obj-m))))))))))
+                                                output-key (output-key obj-m))))))))
+        ((. db-cache after-fn) obj)))
      obj))
 
 
 
-(defn mk-db-cache [table-name constructor-fn db-handle-input-fn db-handle-output-fn]
+(defn mk-db-cache [table-name constructor-fn after-fn db-handle-input-fn db-handle-output-fn]
   (DBCache.
    (if db-handle-input-fn db-handle-input-fn default-db-handle-input)
    (if db-handle-output-fn db-handle-output-fn default-db-handle-output)
    (agent :db-cache-agent)
    table-name
    constructor-fn
+   after-fn
    (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT)))
 
 (defonce -db-cache-constructors- (atom {})) ;; table-name -> fn
@@ -321,7 +323,7 @@ Fails (via assert) if an object with the same id already exists in DB-CACHE."
         (. cache-data put id obj)))))
 
 
-(defn db-cache-get [db-cache ^Long id construction-fn]
+(defn db-cache-get [db-cache ^Long id after-construction-fn]
   "Get object based on ID from DB-CACHE or backend (via CONSTRUCTOR-FN in DB-CACHE).
 
 Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
@@ -339,7 +341,7 @@ that only one object with id ID exists in the cache and the system at any point 
             (locking db-cache
               (if-let [cache-entry (. (. db-cache cache-data) get id)]
                 cache-entry
-                (with1 (construction-fn new-obj)
+                (with1 (dosync (after-construction-fn ((. db-cache after-fn) new-obj)))
                   (db-cache-put db-cache id new-obj))))
             nil))))))
 
@@ -367,8 +369,8 @@ that only one object with id ID exists in the cache and the system at any point 
 CONSTRUCTION-FN is called with the resulting (returning) object as argument on cache miss."
   ([id table-name]
      (db-get id table-name (fn [obj] obj)))
-  ([id table-name construction-fn]
-     (db-cache-get (db-get-cache table-name) id construction-fn)))
+  ([id table-name after-construction-fn]
+     (db-cache-get (db-get-cache table-name) id after-construction-fn)))
 
 
 #_(defn %with-db-obj [id table-name body-fn]
