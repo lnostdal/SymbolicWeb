@@ -1,6 +1,6 @@
 (in-ns 'symbolicweb.core)
 
-(declare add-response-chunk add-response-chunk-viewport ref?)
+(declare add-response-chunk ref?)
 
 
 (set! *print-length* 30)
@@ -242,14 +242,14 @@ Returns a string."
 
 (defn reload-page
   ([viewport rel-url]
-     (add-response-chunk-viewport (str "window.location = " (url-encode-wrap rel-url) ";")
-                                  viewport))
+     (add-response-chunk (str "window.location = " (url-encode-wrap rel-url) ";")
+                         viewport))
   ([viewport]
      ;; TODO: I guess we need three ways of reloading now.
      ;;"window.location.reload(false);"
      ;; http://blog.nostdal.org/2011/12/reloading-or-refreshing-web-page-really.html
-     (add-response-chunk-viewport "window.location.href = window.location.href;"
-                                  viewport)))
+     (add-response-chunk "window.location.href = window.location.href;"
+                         viewport)))
 
 
 
@@ -261,10 +261,10 @@ Returns a string."
 (defn clear-session [application]
   ;; TODO: Do this on the server end instead or also?
   (with-app-viewports application
-    (add-response-chunk-viewport (set-default-session-cookie nil)
-                                 viewport)
-    (add-response-chunk-viewport "window.location.href = window.location.href;"
-                                 viewport)))
+    (add-response-chunk (set-default-session-cookie nil)
+                        viewport)
+    (add-response-chunk "window.location.href = window.location.href;"
+                        viewport)))
 
 
 
