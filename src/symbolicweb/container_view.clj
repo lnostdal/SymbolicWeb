@@ -61,9 +61,6 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
          :html-element-type html-element-type
 
-         ;; TODO: This thing isn't actually implemented proper yet. E.g., see the TODO in container_model.clj.
-         :filter-node-fn (fn [container-model node] true)
-
          :handle-model-event-fn
          (fn [container-view operation-args]
            (handle-container-view-event container-view operation-args))
@@ -78,8 +75,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
              ;; Add any already existing nodes to CONTAINER-VIEW.
              (loop [node (cm-head-node container-model)]
                (when node
-                 (when ((:filter-node-fn @container-view) container-model node)
-                   (jqAppend container-view (view-of-node-in-context container-view node)))
+                 (jqAppend container-view (view-of-node-in-context container-view node))
                  (recur (cmn-right-node node))))))
 
          :disconnect-model-view-fn
@@ -92,6 +88,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
          :view-of-node (ref {})
          attributes))
+
 
 
 
