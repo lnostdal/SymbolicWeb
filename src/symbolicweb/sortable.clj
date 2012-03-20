@@ -11,11 +11,9 @@
       (let [new-order-ids (json/decode new-order)
             new-order-nodes (with-local-vars [nodes []]
                               (doseq [widget-id new-order-ids]
-                                (var-set nodes (conj (var-get nodes) (:node-of-view @(get-widget widget-id)))))
+                                (var-set nodes (conj (var-get nodes) (:node-of-view @(get-widget widget-id (viewport-of widget))))))
                               (var-get nodes))
-            container-model (do
-                              ;;(container-model (:node-of-view @(get-widget (first new-order-ids))))
-                              (:model @widget))
+            container-model (:model @widget)
             existing-order-nodes (with-local-vars [nodes []]
                                    (loop [node (cm-head-node container-model)]
                                      (var-set nodes (conj (var-get nodes) node))
