@@ -373,77 +373,7 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
      (db-cache-get (db-get-cache table-name) id after-construction-fn)))
 
 
-#_(defn %with-db-obj [id table-name body-fn]
-  (let [db-cache (db-get-cache table-name)]
-    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" table-name) " WHERE id = ? LIMIT 1 FOR UPDATE;") id]
-      (if-let [res (first res)]
-        (let [fresh-obj ((. db-cache constructor-fn) db-cache id)]
-          (do
-            (dbg-prin1 res)
-            (body-fn fresh-obj)))
-        (throw (Exception. (str "%WITH-DB-OBJ: No object with ID " id " found in `" table-name "'")))))))
-
-
-#_(defmacro with-db-obj [obj-sym id table-name & body]
-  `(%with-db-obj ~id ~table-name (fn [~obj-sym] ~@body)))
-
-
-#_(with-sw-db
-  (with-db-obj auction-model 4255 "auctions"
-    (println "hi!")))
-
-
-
 ;; TODO:
 (defn db-remove [id table-name]
   "SQL `DELETE FROM ...'."
   #_(db-backend-remove id table-name))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;
-;; Some quick tests...
-
-
-(defn test-cache-perf [num-iterations object-id]
-  (def -db-cache- (mk-db-cache "test"
-                               (fn [db-cache id]
-                                 (ref {:value (vm "default")}))
-                               nil
-                               nil))
-  (let [first-done? (promise)]
-    (db-cache-get -db-cache- object-id
-                  (fn [obj cache-state]
-                    (dbg-prin1 [:db-cache-get-cb obj cache-state])
-                    (deliver first-done? :yup)))
-    (deref first-done?)
-    (println "Cache is now hot; request object with ID" object-id "from it" num-iterations "times and print total time taken..")
-    (time
-     (dotimes [i num-iterations]
-       (db-cache-get -db-cache- object-id
-                     (fn [obj cache-state]
-                       (dbg-prin1 [obj cache-state])))))))
-
-
-(defn test-cache-insert []
-  (def -db-cache- (mk-db-cache "test"
-                               (fn [db-cache id]
-                                 (println "hum")
-                                 (ref {:value (vm "default value")}))
-                               nil
-                               nil))
-  (let [new-obj (ref {:value (vm "non-random initial value")})]
-    ;; SQL INSERT.
-    (dosync
-     (db-backend-put new-obj -db-cache- (fn [new-obj]
-                                          (dosync (dbg-prin1 @new-obj)))))
-    (Thread/sleep 1000)
-    (dosync
-     (dbg-prin1 @new-obj)
-     (db-cache-get -db-cache- @(:id @new-obj)
-                   (fn [obj cache-state]
-                     (dbg-prin1 [obj cache-state]))))
-    ;; SQL UPDATE.
-    (dosync
-     (vm-set (:value @new-obj) (str "rand-int: " (rand-int 9999)))
-     (dbg-prin1 @(:value @new-obj)))))
