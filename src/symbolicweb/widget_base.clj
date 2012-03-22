@@ -36,13 +36,13 @@
     (render-aux-html-fn widget)))
 
 
-(declare add-branch)
 (defn render-html [widget]
   "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS."
   (let [widget-m @widget
         widget-type (:type widget-m)]
     (cond
      (isa? widget-type ::Widget)
+     ;; TODO: Why can't the :render-html-fn for the widget in question set up this binding itself?
      (if (isa? widget-type ::HTMLContainer)
        (binding [*in-html-container?* widget]
          ((:render-html-fn widget-m) widget))

@@ -35,7 +35,7 @@ end."
     (assert (not (:parent child-m))) ;; Make sure CHILD doesn't have a parent already.
     ;; Parent <-- Child.
     (alter child assoc :parent parent)
-    (when-not (isa? (:type parent-m) ::Viewport) ;; Viewport only has a single child; the :ROOT-ELEMENT.
+    (when-not (isa? (:type parent-m) ::Viewport) ;; Viewport only has a single child; the :ROOT-ELEMENT, and it's already set.
       ;; Parent --> Child.
       (alter parent update-in [:children] conj child))
     ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.

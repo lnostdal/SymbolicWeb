@@ -217,7 +217,8 @@ Setup reactive SQL UPDATEs for VALUE-MODEL."
 
 (defn db-backend-get [db-cache ^Long id ^clojure.lang.Ref obj]
   "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
-Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE)."
+Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE).
+This does not add the item to the cache."
   (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (. db-cache table-name)) " WHERE id = ? LIMIT 1;") id]
     (when-let [res (first res)]
       (dosync
