@@ -51,13 +51,13 @@
     (if (= ::Viewport (:type @widget))
       (let [viewport widget
             viewport-m @widget]
-        (send-off (:response-agent viewport-m)
-                  (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk))))
+        (send (:response-agent viewport-m)
+              (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk))))
       (letfn [(do-it []
                 (let [viewport (viewport-of widget)
                       viewport-m @viewport]
                   ;; TODO: M-m-m-mega hack. Why isn't REMOVE-VIEW called vs. TemplateElements and it seems some other widgets
-                  ;; held in HTMLContainers?
+                  ;; held in HTMLContainers in some cases?
                   ;; Are children not added to HTMLTemplate?
                   (if (< (* -viewport-timeout- 3) ;; NOTE: Times 3!
                          (- (System/currentTimeMillis) @(:last-activity-time viewport-m)))
@@ -67,13 +67,12 @@
                       ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
                       ;;(dbg-prin1 [(:type @widget) (:id @widget)])
                       (when (not= :dead (:parent @widget))
-                        ;;(dbg-prin1 [(:type @widget) (:id @widget)]) ;; This one is interesting; uncomment when working on this.
+                        (dbg-prin1 [(:type @widget) (:id @widget)]) ;; This one is interesting; uncomment when working on this.
                         (remove-branch widget)
                         (def -lost-widget- widget)))
-                    (if false
-                      (set! *in-channel-request?* (str *in-channel-request?* new-chunk \newline))
-                      (send-off (:response-agent viewport-m)
-                                (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk)))))))]
+                    (send (:response-agent viewport-m)
+                          (fn [_]
+                            (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
         (if (viewport-of widget) ;; Visible?
           (do-it)
           (add-on-visible-fn widget do-it)))))

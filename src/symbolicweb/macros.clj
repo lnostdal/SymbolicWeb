@@ -26,12 +26,6 @@
         *with-sw-ctx-fn*)))
 
 
-(def ^{:dynamic true
-       :doc "This is used by ADD-RESPONSE-CHUNK to determine whether we're currently handling an AJAX-request; probably based on some DOM/client side event."}
-  *in-channel-request?*
-  false)
-
-
 (def ^:dynamic *in-html-container?* false)
 (def ^:dynamic *html-container-accu-children* [])
 

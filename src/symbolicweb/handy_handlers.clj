@@ -45,7 +45,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                            (when @response-sched-fn
                              (reset! response-sched-fn nil)
                              (do-it response-str))
-                           nil))))))))) ;; TODO: Return value leaking?
+                           nil)))))))))
 
 
 (defn handle-in-channel-request [request application viewport]
@@ -66,12 +66,11 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
          widget (get (:widgets @viewport) widget-id)
          callback (get @(:callbacks @widget) callback-id)
          [callback-fn callback-data] callback]
-     (binding [*in-channel-request?* ""]
-       (apply callback-fn ((:parse-callback-data-handler @widget) request widget callback-data))
-       {:status 200
-        :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                  "Server" -http-server-string-}
-        :body *in-channel-request?*}))))
+     (apply callback-fn ((:parse-callback-data-handler @widget) request widget callback-data))
+     {:status 200
+      :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                "Server" -http-server-string-}
+      :body ""})))
 
 
 (defn default-ajax-handler [request application viewport]
@@ -221,13 +220,12 @@ html, body, #sw-root {
 
 
 (defn simple-aux-handler [fn-to-wrap]
+  (assert false "SIMPLE-AUX-HANDLER: Does this thing still work?")
   (fn []
-    (binding [*in-channel-request?* ""]
-      (fn-to-wrap)
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" -http-server-string-}
-       :body *in-channel-request?*})))
+    {:status 200
+     :headers {"Content-Type" "text/javascript; charset=UTF-8"
+               "Server" -http-server-string-}
+     :body (fn-to-wrap)}))
 
 
 
