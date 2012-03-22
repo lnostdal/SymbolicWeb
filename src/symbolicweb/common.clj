@@ -290,11 +290,7 @@ Returns a string."
 
 
 (defn widget-id-of [widget]
-  (if (string? widget)
-    widget
-    (:id (if (ref? widget)
-           @widget
-           widget))))
+  (:id @widget))
 
 
 (defn sw-js-base-bootstrap [application viewport]
