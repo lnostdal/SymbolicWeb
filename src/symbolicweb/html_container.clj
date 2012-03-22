@@ -38,9 +38,9 @@
   "HTML-RESOURCE is the return-value of a call to HTML-RESOURCE from the Enlive library.
 CONTENT-FN is something like:
   (fn [html-template]
-    [[:.itembox] html-template
-     [:.title] (mk-p title-model)
-     [:#sw-js-bootstrap] (sw-js-bootstrap)]) ;; String."
+    [\".itembox\" html-template
+     \".title\" (mk-p title-model)
+     \"#sw-js-bootstrap\" (sw-js-bootstrap)]) ;; String."
   (apply make-HTMLElement "%HTMLTemplate" (vm nil)
          :type ::HTMLTemplate
          :handle-model-event-fn (fn [widget old-value new-value])
@@ -48,20 +48,22 @@ CONTENT-FN is something like:
          :disconnect-model-view-fn (fn [widget])
          :render-html-fn
          (fn [template-widget]
-           (let [template-widget-m @template-widget
-                 transformation-data (content-fn template-widget)]
-             ;; The Enlive API is total bullshit so we do this instead of trying to be idiomatic.
-             (with-local-vars [res html-resource]
-               (doseq [[selector content] (partition 2 transformation-data)]
+           (let [transformation-data (content-fn template-widget)
+                 html-resource (.clone html-resource)]
+             (doseq [[selector content] (partition 2 transformation-data)]
+               (let [element (-> html-resource
+                                 (.select selector)
+                                 (.first))]
+                 (assert element (str "HTMLTemplate: No element found for selector: " selector))
                  (if (string? content)
-                   (var-set res (transform (var-get res) selector
-                                           (html-content content)))
+                   ;; NOTE: I could do (.html content) here. That would actually parse the
+                   ;; HTML and add it to our HTML-RESOURCE for the next iteration to pick up.
+                   (.text element content)
                    (do
-                     (var-set res (transform (var-get res) selector
-                                             (set-attr "id" (widget-id-of content))))
-                     (when-not (= content template-widget) ;; We don't want a circular parent / child relationship.
-                       (sw content))))) ;; Basically calls ADD-BRANCH making content (a Widget) a child of TEMPLATE-WIDGET.
-               (apply str (emit* (var-get res))))))
+                     (.attr element "id" (widget-id-of content))
+                     (when-not (= content template-widget)
+                       (sw content))))))
+             (.html (.select html-resource "body"))))
          attributes))
 
 

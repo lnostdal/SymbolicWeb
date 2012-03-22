@@ -11,7 +11,7 @@
   (:use [hiccup.util :exclude (url-encode)])
   (:use [hiccup.page])
 
-  (:use [net.cgrand.enlive-html :exclude (at)])
+  (:import [org.jsoup Jsoup])
 
   (:use [cheshire.core :as json]) ;; JSON.
 
