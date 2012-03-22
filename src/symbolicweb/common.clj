@@ -134,7 +134,7 @@ APPLICATION and VIEWPORT are bound within BODY."
   obj)
 
 
-(defn url-encode-wrap [text]
+(defn url-encode-wrap [^java.lang.String text]
   (str "decodeURIComponent('" (str/replace (url-encode text) "+" "%20") "')"))
 
 
