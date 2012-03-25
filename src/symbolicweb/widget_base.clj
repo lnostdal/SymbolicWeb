@@ -148,7 +148,8 @@ Returns WIDGET."
 
 (defn make-View [model lifetime & attributes]
   "Supply :HANDLE-MODEL-EVENT-FN and you'll have an observer ('callback') of MODEL that is not a Widget.
-The lifetime of this observer is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
+The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
+MODEL)."
   ;; TODO: HTMLElement is waay too specific for this; need some sort of common base type.
   (with1 (apply make-HTMLElement "%make-View" model
                 :type ::Observer
@@ -164,7 +165,9 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
 
 (derive ::Observer ::WidgetBase)
 (defn mk-view [model lifetime handle-model-event-fn & attributes]
-  "HANDLE-MODEL-EVENT-FN: Takes 3 arguments; VIEW OLD-VALUE NEW-VALUE."
+  "HANDLE-MODEL-EVENT-FN: Takes 3 arguments; VIEW OLD-VALUE NEW-VALUE.
+The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
+MODEL)."
   (apply make-View model lifetime
          :type ::Observer
          :handle-model-event-fn handle-model-event-fn
@@ -172,7 +175,9 @@ The lifetime of this observer is governed by LIFETIME and can be a View/Widget o
 
 
 (defn observe [model lifetime initial-sync? callback & attributes]
-  "CALLBACK takes two arguments; [OLD-VALUE NEW-VALUE]."
+  "CALLBACK takes two arguments; [OLD-VALUE NEW-VALUE].
+The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
+MODEL)."
   (apply mk-view model lifetime (fn [_ old-value new-value] (callback old-value new-value))
          :type ::Observer
          :trigger-initial-update? initial-sync?

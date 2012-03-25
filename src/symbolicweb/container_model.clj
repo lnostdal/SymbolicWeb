@@ -1,5 +1,7 @@
 (in-ns 'symbolicweb.core)
 
+;; TODO: Add an async version of this with a Ref only at the "top" or "head" (I think).
+
 
 ;; Doubly linked list node.
 (deftype ContainerModelNode [container-model left right data])

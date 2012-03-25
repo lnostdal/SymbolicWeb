@@ -124,12 +124,14 @@ VALUE-MODEL)."
 
 
 (defn vm-syncs
-  "CALLBACK takes no arguments."
+  "CALLBACK takes no arguments.
+The lifetime of these connections are governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
+VALUE-MODEL)."
   ([value-models lifetime callback]
      (vm-syncs value-models lifetime callback true))
   ([value-models lifetime callback initial-sync?]
      (let [mid (vm nil)]
-       (with-local-vars [already-synced? false] ;; We only want to trigger an initial update once.
+       (with-local-vars [already-synced? false] ;; We only want to trigger an initial sync once.
          (doseq [value-model value-models]
            (check-type value-model ValueModel)
            (observe value-model lifetime (when initial-sync?
