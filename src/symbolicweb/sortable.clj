@@ -20,8 +20,16 @@
                                      (when-let [right-node (cmn-right-node node)]
                                        (recur right-node)))
                                    (var-get nodes))]
+
+        ;; Do some simple checks to ensure the client doesn't have less (or different) nodes than the server as we start removing
+        ;; EXISTING-ORDER-NODES on the server end the adding only a few of them back via NEW-ORDER-NODES.
+        (assert (= (count new-order-nodes)
+                   (count existing-order-nodes)))
+        (doseq [new-node new-order-nodes]
+          (assert (not= -1 (.indexOf existing-order-nodes new-node))))
+
         ;; TODO: Quite crude redraw.
-        ;; This also fucks up stuff that still thinks the old nodes are what holds our current view of auctions.
+        ;; This also fucks up stuff (uhm, what stuff?) that still thinks the old nodes are what holds our current view of auctions.
         (doseq [node existing-order-nodes]
           (cmn-remove node))
         (time
