@@ -57,7 +57,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
      {:status 200
       :headers {"Content-Type" "text/javascript; charset=UTF-8"
                 "Server" -http-server-string-}
-      :body "console.log('SymbolicWeb: Server got DOM unload notification.');"})
+      :body "" ;;"console.log('SymbolicWeb: Server got DOM unload notification.');"
+      })
 
    true
    (let [query-params (:query-params request)
