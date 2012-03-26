@@ -242,40 +242,42 @@ This does not add the item to the cache."
 UPDATE-CACHE? is given a FALSE value."
   ([obj db-cache] (db-backend-put obj db-cache true))
   ([obj db-cache update-cache?]
-     (io! "DB-BACKEND-PUT: This (I/O) cannot be done within DOSYNC or SWSYNC.")
-     (let [record-data
-           (dosync
-            (assert (or (not (:id (ensure obj)))
-                        (not @(:id (ensure obj)))))
-            (with-local-vars [record-data {}]
-              (doseq [key_val (ensure obj)]
-                (when (isa? (class (val key_val)) ValueModel)
-                  (let [[input-key input-value] (db-handle-input db-cache obj (key key_val) @(val key_val))]
-                    (when input-key
-                      (var-set record-data (assoc (var-get record-data)
-                                             input-key input-value))))))
-              (var-get record-data)))
-           res (insert-record (. db-cache table-name) record-data)] ;; SQL INSERT.
-       (when update-cache?
-         (db-cache-put db-cache (:id res) obj))
-       (dosync
-        (let [obj-m (ensure obj)]
-          (doseq [key_val res]
-            (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
-              (when output-key
-                ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
-                (if (= ::not-found (get obj-m output-key ::not-found))
-                  (let [vm-output-value (vm output-value)]
-                    (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; Add.
-                    (db-ensure-persistent-field db-cache obj (:id res)
-                                                output-key vm-output-value))
-                  (do
-                    (binding [*pending-prepared-transaction?* true]
-                      (vm-set (output-key obj-m) output-value)) ;; Update.
-                    (db-ensure-persistent-field db-cache obj (:id res)
-                                                output-key (output-key obj-m))))))))
-        ((. db-cache after-fn) obj)))
-     obj))
+     (with-sw-db
+       (fn [holding-transaction]
+         (let [record-data
+               (dosync
+                (assert (or (not (:id (ensure obj)))
+                            (not @(:id (ensure obj)))))
+                (with-local-vars [record-data {}]
+                  (doseq [key_val (ensure obj)]
+                    (when (isa? (class (val key_val)) ValueModel)
+                      (let [[input-key input-value] (db-handle-input db-cache obj (key key_val) @(val key_val))]
+                        (when input-key
+                          (var-set record-data (assoc (var-get record-data)
+                                                 input-key input-value))))))
+                  (var-get record-data)))
+               res (insert-record (. db-cache table-name) record-data)] ;; SQL INSERT.
+           (when update-cache?
+             (db-cache-put db-cache (:id res) obj))
+           (holding-transaction
+            (fn [_]
+              (swsync
+               (let [obj-m (ensure obj)]
+                 (doseq [key_val res]
+                   (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
+                     (when output-key
+                       ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
+                       (if (= ::not-found (get obj-m output-key ::not-found))
+                         (let [vm-output-value (vm output-value)]
+                           (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; Add.
+                           (db-ensure-persistent-field db-cache obj (:id res)
+                                                       output-key vm-output-value))
+                         (do
+                           (vm-set (output-key obj-m) output-value) ;; Update.
+                           (db-ensure-persistent-field db-cache obj (:id res)
+                                                       output-key (output-key obj-m))))))))
+               ((. db-cache after-fn) obj))
+              obj)))))))
 
 
 
