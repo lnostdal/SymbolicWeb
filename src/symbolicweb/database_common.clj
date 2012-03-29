@@ -53,11 +53,11 @@
 (defn with-sw-db [body-fn]
   "BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
 finalized after HOLDING-TRANSACTION has finished executing.
-HOLDING-TRANSACTION is called when the transaction is pending finalization, and it takes one argument; TRANSACTION-ID (string).
+HOLDING-TRANSACTION is called when the transaction is pending finalization, and it takes one argument; ABORT-TRANSACTION (fn).
 If either BODY-FN or HOLDING-TRANSACTION throws an exception, the transaction, in either pre-pending or pending state, is rolled
 back.
 Note that actually calling HOLDING-TRANSACTION is optional, and that further, direct i.e. non-Agent, DB operations within
-HOLDING-TRANSACTION is not allowed."
+HOLDING-TRANSACTION are not allowed."
   (assert (fn? body-fn))
   (with-sw-connection
     ;; The BINDING here is sort of a hack to ensure that java.jdbc's UPDATE-VALUES etc. type functions doesn't create
