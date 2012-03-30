@@ -219,21 +219,24 @@ Setup reactive SQL UPDATEs for VALUE-MODEL."
   "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
 Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE).
 This does not add the item to the cache."
-  (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (. db-cache table-name)) " WHERE id = ? LIMIT 1;") id]
-    (when-let [res (first res)]
-      (dosync
-       (let [obj-m (ensure obj)]
-         (doseq [key_val res]
-           (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
-             (when output-key
-               (if-let [output-vm (output-key obj-m)] ;; Does field OUTPUT-KEY already exist in OBJ?
-                 (do
-                   (vm-set output-vm output-value) ;; If so, mutate it.
-                   (db-ensure-persistent-field db-cache obj (:id res) output-key output-vm))
-                 (let [vm-output-value (vm output-value)]
-                   (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; If not, add it.
-                   (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value))))))))
-      obj)))
+  (if (not *in-sw-db?*)
+    (with-sw-connection (db-backend-get db-cache id obj))
+    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (. db-cache table-name))
+                                  " WHERE id = ? LIMIT 1;") id]
+      (when-let [res (first res)]
+        (dosync
+         (let [obj-m (ensure obj)]
+           (doseq [key_val res]
+             (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
+               (when output-key
+                 (if-let [output-vm (output-key obj-m)] ;; Does field OUTPUT-KEY already exist in OBJ?
+                   (do
+                     (vm-set output-vm output-value) ;; If so, mutate it.
+                     (db-ensure-persistent-field db-cache obj (:id res) output-key output-vm))
+                   (let [vm-output-value (vm output-value)]
+                     (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; If not, add it.
+                     (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value))))))))
+        obj))))
 
 
 (declare db-cache-put)

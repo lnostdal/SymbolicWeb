@@ -102,8 +102,8 @@ APPLICATION and VIEWPORT are bound within BODY."
 (defmacro with-app-viewports [app & body]
   "Run BODY in context of all Viewports of APP (Application).
 APPLICATION and VIEWPORT are bound within BODY."
-  `(let [~'application ~app]
-     (doseq [~'viewport (vals (:viewports @~'application))]
+  `(let [application# ~app]
+     (doseq [~'viewport (vals (:viewports @application#))]
        (dosync
         ~@body))))
 
@@ -111,9 +111,10 @@ APPLICATION and VIEWPORT are bound within BODY."
 (defmacro with-user-viewports [user-model & body]
   "Run BODY in context of all Viewports in all Applications of USER-MODEL (UserModelBase).
 APPLICATION and VIEWPORT are bound within BODY."
-  `(doseq [application# @(:applications @~user-model)]
-     (with-app-viewports application#
-       ~@body)))
+  `(let [user-model# ~user-model]
+     (doseq [application# (dosync @(:applications @user-model#))]
+       (with-app-viewports application#
+         ~@body))))
 
 
 (defn get-widget [id viewport]
@@ -345,14 +346,8 @@ Returns a string."
 (defonce -sw-io-agent- (agent 42 :error-handler #'-sw-io-agent-error-handler-))
 
 (defn %with-sw-io [options body-fn]
-  (send-off -sw-io-agent-
-            (fn [old-res]
-              (binding [;; TODO: Are these needed since I'm now running a patched Clj anyway?
-                        clojure.java.jdbc.internal/*db* nil
-                        *in-sw-db?* false
-                        *pending-prepared-transaction?* false]
-                (body-fn old-res)))))
-
+  (send-off -sw-io-agent- (fn [old-res]
+                            (body-fn old-res))))
 
 (defmacro with-sw-io [options & body]
   "Runs BODY in an Agent."
