@@ -4,17 +4,58 @@
 
 
 ;; Doubly linked list node.
-(deftype ContainerModelNode [container-model left right data])
+(defprotocol IContainerModelNode
+  (cmn-left-node [node])
+  (cmn-set-left-node [node new-left-node])
+  (cmn-right-node [node])
+  (cmn-set-right-node [node new-right-node])
+
+  (cmn-container-model [node])
+  (cmn-set-container-model [node new-container-model])
+
+  (cmn-data [node]))
+
+(deftype ContainerModelNode [^:unsynchronized-mutable %container-model
+                             ^:unsynchronized-mutable left
+                             ^:unsynchronized-mutable right
+                             ^:unsynchronized-mutable data] ;; Not a Ref, but read-only anyway.
+  IContainerModelNode
+  (cmn-left-node [_]
+    (ensure left))
+  (cmn-set-left-node [_ new-left-node]
+    (ref-set left new-left-node))
+
+  (cmn-right-node [_]
+    (ensure right))
+  (cmn-set-right-node [_ new-right-node]
+    (ref-set right new-right-node))
+
+  (cmn-container-model [_]
+    (ensure %container-model))
+  (cmn-set-container-model [_ new-container-model]
+    (ref-set %container-model new-container-model))
+
+  (cmn-data [_]
+    data))
+
 
 ;; Doubly linked list.
-(deftype ContainerModel [head-node
-                         tail-node
+(defprotocol IContainerModel
+  (cm-tail-node [cm])
+  (cm-set-tail-node [cm new-tail-node])
+
+  (cm-head-node [cm])
+  (cm-set-head-node [cm new-head-node]))
+
+(deftype ContainerModel [^:unsynchronized-mutable head-node
+                         ^:unsynchronized-mutable tail-node
                          length
                          ^:unsynchronized-mutable views-ref
                          ^:unsynchronized-mutable %notify-views-fn]
   clojure.lang.Counted
   (count [_]
     (dosync (ensure length)))
+
 
   IModel
   (add-view [_ view]
@@ -35,7 +76,21 @@
     (ensure views-ref))
 
   (notify-views [cm args]
-    (apply %notify-views-fn cm args)))
+    (apply %notify-views-fn cm args))
+
+
+  IContainerModel
+  (cm-tail-node [_]
+    (ensure tail-node))
+
+  (cm-set-tail-node [_ new-tail-node]
+    (ref-set tail-node new-tail-node))
+
+  (cm-head-node [_]
+    (ensure head-node))
+
+  (cm-set-head-node [_ new-head-node]
+    (ref-set head-node new-head-node)))
 
 
 
@@ -44,7 +99,7 @@
                    (ref nil)
                    (ref 0)
                    (ref #{})
-                   (fn [cm event-sym & event-args]
+                   (fn [^ContainerModel cm event-sym & event-args]
                      (doseq [container-view (get-views cm)]
                        ((:handle-model-event-fn @container-view) container-view (apply list event-sym event-args))))))
 
@@ -53,28 +108,8 @@
   (make-ContainerModel))
 
 
-(defn cm-tail-node [^ContainerModel cm]
-  (ensure (. cm tail-node)))
-
-(defn cm-set-tail-node [^ContainerModel cm new-tail-node]
-  {:pre [(or (= ContainerModelNode (type new-tail-node))
-             (not new-tail-node))]}
-  (ref-set (. cm tail-node)
-           new-tail-node))
-
-
-(defn cm-head-node [^ContainerModel cm]
-  (ensure (. cm head-node)))
-
-(defn cm-set-head-node [^ContainerModel cm new-head-node]
-  {:pre [(or (= ContainerModelNode (type new-head-node))
-             (not new-head-node))]}
-  (ref-set (. cm head-node)
-           new-head-node))
-
-
 (declare cm-prepend cmn-after)
-(defn cm-append [^ContainerModel cm new-node]
+(defn cm-append [^ContainerModel cm ^ContainerModelNode new-node]
   "Add NEW-NODE to end of the contained nodes in CM.
 This mirrors the jQuery `append' function:
   http://api.jquery.com/append/"
@@ -88,7 +123,7 @@ This mirrors the jQuery `append' function:
 
 
 (declare cmn-before cmn-set-left-node cmn-set-right-node container-model set-container-model)
-(defn cm-prepend [^ContainerModel cm new-node]
+(defn cm-prepend [^ContainerModel cm ^ContainerModelNode new-node]
   "Add NEW-NODE to beginning of the contained nodes in CM.
 This mirrors the jQuery `prepend' function:
   http://api.jquery.com/prepend/"
@@ -100,8 +135,8 @@ This mirrors the jQuery `prepend' function:
     (do
       ;; These 3 lines are specific to us.
       ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
-      (assert (not (container-model new-node)))
-      (set-container-model new-node cm)
+      (assert (not (cmn-container-model new-node)))
+      (cmn-set-container-model new-node cm)
       (alter (. cm length) inc)
 
       (cm-set-head-node cm new-node) ;; list.firstNode := newNode

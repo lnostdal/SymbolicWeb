@@ -17,7 +17,7 @@
                 :type ::ComboBox
                 :view-from-node-fn (fn [container-view node]
                                      (dosync
-                                      (let [model (node-data node)]
+                                      (let [model (cmn-data node)]
                                         (make-HTMLElement "option" (:text @model)
                                                           :static-attributes {:value (:id @model)}))))
                 attributes)
@@ -28,7 +28,7 @@
                          (dosync
                           (loop [node (cm-head-node container-model)]
                             (when node
-                              (if (= new-value (:id @(node-data node)))
+                              (if (= new-value (:id @(cmn-data node)))
                                 (do (println "match found!") (println))
                                 (recur (cmn-right-node node)))))))
                        :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))

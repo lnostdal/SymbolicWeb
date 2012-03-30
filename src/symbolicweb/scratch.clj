@@ -6,8 +6,8 @@
    (let [common (with1 (make-ContainerModel)
                   (append-container-model it (make-ContainerModelNode (vm 4)))
                   (append-container-model it (make-ContainerModelNode (vm 5))))
-         odd-only (sync-ContainerModel common #(odd? @(node-data %2)))
-         even-only (sync-ContainerModel common #(even? @(node-data %2)))
+         odd-only (sync-ContainerModel common #(odd? @(cmn-data %2)))
+         even-only (sync-ContainerModel common #(even? @(cmn-data %2)))
          node-zero (make-ContainerModelNode (vm 0))]
 
      (append-container-model common node-zero)
@@ -26,26 +26,26 @@
      ;;
      ;; Ok,for the "outer" ContainerModel, I'll need
 
-     (vm-set (node-data node-zero) 7)
+     (vm-set (cmn-data node-zero) 7)
      (remove-container-model-node node-zero)
-     (append-container-model common (make-ContainerModelNode (node-data node-zero)))
+     (append-container-model common (make-ContainerModelNode (cmn-data node-zero)))
 
      (println "COMMON")
      (loop [node (head-node common)]
        (when node
-         (println @(node-data node))
+         (println @(cmn-data node))
          (recur (right-node node))))
 
      (println "\nODD-ONLY")
      (loop [node (head-node odd-only)]
        (when node
-         (println @(node-data node))
+         (println @(cmn-data node))
          (recur (right-node node))))
 
      (println "\nEVEN-ONLY")
      (loop [node (head-node even-only)]
        (when node
-         (println @(node-data node))
+         (println @(cmn-data node))
          (recur (right-node node)))))))
 
 

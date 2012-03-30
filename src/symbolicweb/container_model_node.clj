@@ -14,44 +14,11 @@
   (make-ContainerModelNode data))
 
 
-(defn cmn-left-node [^ContainerModelNode node]
-  (ensure (. node left)))
-
-(defn cmn-set-left-node [^ContainerModelNode node ^ContainerModelNode new-left-node]
-  {:pre [(or (= ContainerModelNode (type new-left-node))
-             (not new-left-node))]}
-  (ref-set (. node left)
-           new-left-node))
-
-
-(defn cmn-right-node [node]
-  (ensure (. node right)))
-
-(defn cmn-set-right-node [^ContainerModelNode node ^ContainerModelNode new-right-node]
-  {:pre [(or (= ContainerModelNode (type new-right-node))
-             (not new-right-node))]}
-  (ref-set (. node right)
-           new-right-node))
-
-
-(defn container-model [^ContainerModelNode node]
-  (ensure (. node container-model)))
-
-(defn set-container-model [^ContainerModelNode node ^ContainerModel new-container-model]
-  {:pre [(= ContainerModel (type new-container-model))]}
-  (ref-set (. node container-model) new-container-model))
-
-
-(defn node-data [^ContainerModelNode node]
-  {:pre [(= ContainerModelNode (type node))]}
-  (. node data))
-
-
 (defn cmn-remove [^ContainerModelNode node]
   "Pretty much does what you'd expect.
 This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
-  (let [cm (ensure (. node container-model))]
+  (let [cm (cmn-container-model node)]
     (alter (. cm length) dec)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
@@ -79,15 +46,11 @@ This mirrors the jQuery `remove' function:
   "Add NEW-NODE to right side of EXISTING-NODE.
 This mirrors the jQuery `after' function:
   http://api.jquery.com/after/"
-  {:pre [(and (= ContainerModelNode (type new-node))
-              (= ContainerModelNode (type existing-node)))]}
-  (let [container-model (ensure (. existing-node container-model))]
+  (let [cm (cmn-container-model existing-node)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
-    (assert (not (ensure (. new-node container-model))))
-    (ref-set (. new-node container-model) container-model)
-    (alter (. (ensure (. new-node container-model))
-              length)
-           inc)
+    (assert (not (cmn-container-model new-node)))
+    (cmn-set-container-model new-node cm)
+    (alter (. cm length) inc)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
@@ -103,28 +66,24 @@ This mirrors the jQuery `after' function:
     ;;  else
     ;;    node.next.prev := newNode
     (if (not (cmn-right-node existing-node))
-      (cm-set-tail-node container-model new-node)
+      (cm-set-tail-node cm new-node)
       (cmn-set-left-node (cmn-right-node existing-node) new-node))
 
     ;;  node.next := newNode
     (cmn-set-right-node existing-node new-node)
 
-    (notify-views container-model ['cmn-after existing-node new-node])))
+    (notify-views cm ['cmn-after existing-node new-node])))
 
 
 (defn cmn-before [^ContainerModelNode existing-node ^ContainerModelNode new-node]
   "Add NEW-NODE to left side of EXISTING-NODE.
 This mirrors the jQuery `before' function:
   http://api.jquery.com/before/"
-  {:pre [(and (= ContainerModelNode (type new-node))
-              (= ContainerModelNode (type existing-node)))]}
-  (let [container-model (ensure (. existing-node container-model))]
+  (let [cm (cmn-container-model existing-node)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
-    (assert (not (ensure (. new-node container-model))))
-    (ref-set (. new-node container-model) container-model)
-    (alter (. (ensure (. new-node container-model))
-              length)
-           inc)
+    (assert (not (cmn-container-model new-node)))
+    (cmn-set-container-model new-node cm)
+    (alter (. cm length) inc)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
@@ -140,10 +99,10 @@ This mirrors the jQuery `before' function:
     ;; else
     ;;   node.prev.next := newNode
     (if (not (cmn-left-node existing-node))
-      (cm-set-head-node container-model new-node)
+      (cm-set-head-node cm new-node)
       (cmn-set-right-node (cmn-left-node existing-node) new-node))
 
     ;; node.prev := newNode
     (cmn-set-left-node existing-node new-node)
 
-    (notify-views container-model ['cmn-before existing-node new-node])))
+    (notify-views cm ['cmn-before existing-node new-node])))

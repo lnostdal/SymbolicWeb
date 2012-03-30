@@ -19,7 +19,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 (defn node-of-view-in-context [container-model view]
   (loop [node (cm-head-node container-model)]
-    (let [widget (node-data node)]
+    (let [widget (cmn-data node)]
       (when-let [next-node (cmn-right-node node)]
         (recur next-node)))))
 
@@ -84,7 +84,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
          :view-from-node-fn
          (fn [container-view node]
-           (make-HTMLElement "li" (node-data node)))
+           (make-HTMLElement "li" (cmn-data node)))
 
          :view-of-node (ref {})
          attributes))
@@ -174,9 +174,9 @@ To state this differently; operations done vs CONTAINER-MODEL are forwarded to t
                         (fn [observer node]
                           ;; TODO: This is somewhat hacky indeed.
                           ;; We basically do this because of the call to ADD-ON-NON-VISIBLE-FN in VIEW-OF-NODE-IN-CONTEXT.
-                          (make-HTMLElement "%ContainerModelProxyNodeDummyView" (node-data node)
+                          (make-HTMLElement "%ContainerModelProxyNodeDummyView" (cmn-data node)
                                             :-proxied-node node
-                                            :-node (make-ContainerModelNode (node-data node))))
+                                            :-node (make-ContainerModelNode (cmn-data node))))
 
                         :handle-model-event-fn
                         (fn [observer operation-args]

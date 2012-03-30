@@ -34,7 +34,7 @@
           (cmn-remove node))
         (time
          (doseq [node new-order-nodes]
-           (cm-append container-model (cmn (node-data node)))))
+           (cm-append container-model (cmn (cmn-data node)))))
 
         (when callback (callback new-order-nodes))))
      (println "sortable: done!"))
