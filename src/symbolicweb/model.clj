@@ -48,7 +48,8 @@
   IValueModel
   (vm-set [vm new-value]
     (when *in-sw-db?*
-      (assert *pending-prepared-transaction?*
+      (assert (or *pending-prepared-transaction?*
+                  *in-db-cache-get?*)
               "ValueModel: Mutation of ValueModel within WITH-SW-DB not allowed while DB transaction is not held (HOLDING-TRANSACTION)."))
     (let [old-value (ensure value-ref)]
       (when-not (= old-value new-value)

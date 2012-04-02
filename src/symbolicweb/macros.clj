@@ -85,6 +85,7 @@
 
 (def ^:dynamic *in-sw-db?* false)
 (def ^:dynamic *pending-prepared-transaction?* false)
+(def ^:dynamic *in-db-cache-get?* false)
 
 
 (declare %with-sw-connection)

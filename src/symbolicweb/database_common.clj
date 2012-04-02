@@ -27,27 +27,25 @@
                        :password password}))))
 
 
-(let [java-jdbc-top-level-db-bnd clojure.java.jdbc.internal/*db*]
-  (defn %with-sw-connection [body-fn]
-    (io! "WITH-SW-CONNECTION: Cannot be used directly while within Clojure transaction (DOSYNC or SWSYNC).")
-    (assert (not *in-sw-db?*)
-            "WITH-SW-CONNECTION: Nesting of WITH-SW-CONNECTION forms not allowed.")
-    (assert (not *pending-prepared-transaction?*)
-            "WITH-SW-CONNECTION: This is not meant to be used within WITH-SW-DB's HOLDING-TRANSACTION callback. Use SWSYNC and SWDBOP instead?")
-    (assert (not (:connection clojure.java.jdbc.internal/*db*))
-            "WITH-SW-CONNECTION: Cannot be nested.")
-    (binding [clojure.java.jdbc.internal/*db* java-jdbc-top-level-db-bnd]
-      (try
-        (with-connection @@-pooled-db-spec-
-          (body-fn))
-        (catch java.sql.SQLException e
-          (if (= "40001" (. e getSQLState))
-            (do
-              (println "WITH-SW-CONNECTION: Serialization conflict; retrying!")
-              (%with-sw-connection body-fn))
-            (do
-              (print-sql-exception-chain e)
-              (throw e))))))))
+(defn %with-sw-connection [body-fn]
+  (io! "WITH-SW-CONNECTION: Cannot be used directly while within Clojure transaction (DOSYNC or SWSYNC).")
+  (assert (not *in-sw-db?*)
+          "WITH-SW-CONNECTION: Nesting of WITH-SW-CONNECTION forms not allowed.")
+  (assert (not *pending-prepared-transaction?*)
+          "WITH-SW-CONNECTION: This is not meant to be used within WITH-SW-DB's HOLDING-TRANSACTION callback. Use SWSYNC and SWDBOP instead?")
+  (assert (not (:connection clojure.java.jdbc.internal/*db*))
+          "WITH-SW-CONNECTION: Cannot be nested.")
+  (try
+    (with-connection @@-pooled-db-spec-
+      (body-fn))
+    (catch java.sql.SQLException e
+      (if (= "40001" (. e getSQLState))
+        (do
+          (println "WITH-SW-CONNECTION: Serialization conflict; retrying!")
+          (%with-sw-connection body-fn))
+        (do
+          (print-sql-exception-chain e)
+          (throw e))))))
 
 
 (defn with-sw-db [body-fn]
@@ -80,10 +78,10 @@ HOLDING-TRANSACTION are not allowed."
                                     (var-set holding-transaction-fn holding-transaction)))]
               (when (var-get holding-transaction-fn)
                 (.execute stmt (str "PREPARE TRANSACTION '" id-str "';")))
-              (.commit conn) (.setAutoCommit conn true) ;; Commit or semi-commit transaction.
+              (.commit conn) (.setAutoCommit conn true) ;; Commit or prepare commit; "hold" the transaction.
               (var-set commit-inner-transaction? true)
               (when-let [holding-transaction (var-get holding-transaction-fn)]
-                (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current DB connection while we do this..
+                (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current low-level DB connection while we do this..
                           *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
                   (holding-transaction (fn [] (throw (Exception. "%with-sw-db-abort"))))))
               (var-set commit-prepared-transaction? true)
@@ -220,7 +218,7 @@ Setup reactive SQL UPDATEs for VALUE-MODEL."
 Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE).
 This does not add the item to the cache."
   (if (not *in-sw-db?*)
-    (with-sw-connection (db-backend-get db-cache id obj))
+    (with-sw-db (fn [_] (db-backend-get db-cache id obj)))
     (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (. db-cache table-name))
                                   " WHERE id = ? LIMIT 1;") id]
       (when-let [res (first res)]
@@ -341,7 +339,9 @@ that only one object with id ID exists in the cache and the system at any point 
       cache-entry
       (if-let [cache-entry (locking db-cache (. (. db-cache cache-data) get id))] ;; Check cache again while within lock.
         cache-entry
-        (binding [*in-sw-db?* false] ;; We're OK with this stuff manipulating ValueModel data.
+        ;; We're OK with this stuff manipulating ValueModels within a WITH-SW-DB context;
+        ;; see the implementation of VM-SET in model.clj.
+        (binding [*in-db-cache-get?* true]
           (if-let [new-obj (db-backend-get db-cache id ((. db-cache constructor-fn) db-cache id))]
             ;; Check cache yet again while within lock; also possibly adding NEW-OBJ to it still within lock.
             (locking db-cache
