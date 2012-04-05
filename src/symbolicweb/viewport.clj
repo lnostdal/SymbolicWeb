@@ -9,7 +9,7 @@
                              :id viewport-id
                              :last-activity-time (atom (System/currentTimeMillis))
                              :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
-                             :response-str (atom "")
+                             :response-str (StringBuffer.)
                              :response-sched-fn (atom nil)
                              :response-agent (agent nil)
                              args))]
@@ -39,9 +39,8 @@
 (defn add-response-chunk-agent-fn [viewport viewport-m new-chunk]
   (with-errors-logged
     (locking viewport
-      (let [response-str (:response-str viewport-m)
-            response-sched-fn (:response-sched-fn viewport-m)]
-        (reset! response-str (str @response-str new-chunk \newline))
+      (let [response-sched-fn (:response-sched-fn viewport-m)]
+        (.append (:response-str viewport-m) new-chunk)
         (when @response-sched-fn
           (.run @response-sched-fn))))))
 
