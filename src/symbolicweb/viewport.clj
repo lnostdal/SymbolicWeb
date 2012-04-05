@@ -9,7 +9,7 @@
                              :id viewport-id
                              :last-activity-time (atom (System/currentTimeMillis))
                              :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
-                             :response-str (StringBuffer.)
+                             :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)
                              :response-agent (agent nil)
                              args))]

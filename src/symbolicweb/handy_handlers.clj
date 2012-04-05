@@ -22,7 +22,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (defn handle-out-channel-request [channel request application viewport]
   "Output (hanging AJAX; Comet) channel."
-  (letfn [(do-it [^java.lang.StringBuffer response-str]
+  (letfn [(do-it [^java.lang.StringBuilder response-str]
             (enqueue channel
                      {:status 200
                       :headers {"Content-Type" "text/javascript; charset=UTF-8"
