@@ -36,16 +36,17 @@
   (alter (:on-non-visible-fns @widget) conj fn))
 
 
-(defn add-response-chunk-agent-fn [viewport viewport-m new-chunk]
+(defn add-response-chunk-agent-fn [viewport viewport-m ^String new-chunk]
   (with-errors-logged
     (locking viewport
-      (let [response-sched-fn (:response-sched-fn viewport-m)]
-        (.append (:response-str viewport-m) new-chunk)
+      (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
+        (.append ^StringBuilder (:response-str viewport-m) new-chunk)
         (when @response-sched-fn
-          (.run @response-sched-fn))))))
+          (.run ^java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask
+                @response-sched-fn))))))
 
 
-(defn add-response-chunk [new-chunk widget]
+(defn add-response-chunk [^String new-chunk widget]
   (when-not *with-js?*
     (if (= ::Viewport (:type @widget))
       (let [viewport widget
