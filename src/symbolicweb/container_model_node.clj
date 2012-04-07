@@ -18,7 +18,7 @@
   "Pretty much does what you'd expect.
 This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
-  (let [cm (cmn-container-model node)]
+  (let [^ContainerModel cm (cmn-container-model node)]
     (alter (. cm length) dec)
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
@@ -46,7 +46,7 @@ This mirrors the jQuery `remove' function:
   "Add NEW-NODE to right side of EXISTING-NODE.
 This mirrors the jQuery `after' function:
   http://api.jquery.com/after/"
-  (let [cm (cmn-container-model existing-node)]
+  (let [^ContainerModel cm (cmn-container-model existing-node)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)
@@ -79,7 +79,7 @@ This mirrors the jQuery `after' function:
   "Add NEW-NODE to left side of EXISTING-NODE.
 This mirrors the jQuery `before' function:
   http://api.jquery.com/before/"
-  (let [cm (cmn-container-model existing-node)]
+  (let [^ContainerModel cm (cmn-container-model existing-node)]
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)

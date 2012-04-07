@@ -8,19 +8,23 @@
    (fn [& {:keys [new-order]}]
      (dosync
       (println "sortable: retry?")
-      (let [new-order-ids (json/decode new-order)
+      (let [^clojure.lang.PersistentVector
+            new-order-ids (json/decode new-order)
+
+            ^clojure.lang.PersistentVector
             new-order-nodes (with-local-vars [nodes []]
                               (doseq [widget-id new-order-ids]
                                 (var-set nodes (conj (var-get nodes) (:node-of-view @(get-widget widget-id (viewport-of widget))))))
                               (var-get nodes))
             container-model (:model @widget)
+
+            ^clojure.lang.PersistentVector
             existing-order-nodes (with-local-vars [nodes []]
                                    (loop [node (cm-head-node container-model)]
                                      (var-set nodes (conj (var-get nodes) node))
                                      (when-let [right-node (cmn-right-node node)]
                                        (recur right-node)))
                                    (var-get nodes))]
-
         ;; Do some simple checks to ensure the client doesn't have less (or different) nodes than the server as we start removing
         ;; EXISTING-ORDER-NODES on the server end the adding only a few of them back via NEW-ORDER-NODES.
         (assert (= (count new-order-nodes)
