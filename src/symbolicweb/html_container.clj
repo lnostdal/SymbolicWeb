@@ -34,7 +34,7 @@
 
 
 (derive ::HTMLTemplate ::HTMLContainer)
-(defn make-HTMLTemplate [html-resource content-fn & attributes]
+(defn make-HTMLTemplate [^org.jsoup.nodes.Document html-resource content-fn & attributes]
   "HTML-RESOURCE is the return-value of a call to HTML-RESOURCE from the Enlive library.
 CONTENT-FN is something like:
   (fn [html-template]
@@ -51,9 +51,9 @@ CONTENT-FN is something like:
            (let [transformation-data (content-fn template-widget)
                  html-resource (.clone html-resource)]
              (doseq [[selector content] (partition 2 transformation-data)]
-               (let [element (-> html-resource
-                                 (.select selector)
-                                 (.first))]
+               (let [^org.jsoup.nodes.Element element (-> html-resource
+                                                         (.select selector)
+                                                         (.first))]
                  (assert element (str "HTMLTemplate: No element found for selector: " selector))
                  (if (string? content)
                    ;; NOTE: I could do (.html content) here. That would actually parse the

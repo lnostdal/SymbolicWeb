@@ -290,7 +290,7 @@ Returns a string."
                          widget)))
 
 
-(defn widget-id-of [widget]
+(defn widget-id-of ^String [widget]
   (:id @widget))
 
 
