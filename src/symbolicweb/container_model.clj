@@ -45,16 +45,18 @@
   (cm-set-tail-node [cm new-tail-node])
 
   (cm-head-node [cm])
-  (cm-set-head-node [cm new-head-node]))
+  (cm-set-head-node [cm new-head-node])
+
+  (cm-set-count [cm new-count]))
 
 (deftype ContainerModel [^:unsynchronized-mutable head-node
                          ^:unsynchronized-mutable tail-node
-                         length
+                         ^:unsynchronized-mutable %count
                          ^:unsynchronized-mutable views-ref
                          ^:unsynchronized-mutable %notify-views-fn]
   clojure.lang.Counted
   (count [_]
-    (dosync (ensure length)))
+    (dosync (ensure %count)))
 
 
   IModel
@@ -90,7 +92,12 @@
     (ensure head-node))
 
   (cm-set-head-node [_ new-head-node]
-    (ref-set head-node new-head-node)))
+    (ref-set head-node new-head-node))
+
+  ;; The getter is `count' from `clojure.lang.Count'.
+  (cm-set-count [_ new-count]
+    (ref-set %count new-count)))
+
 
 
 
@@ -137,7 +144,7 @@ This mirrors the jQuery `prepend' function:
       ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
       (assert (not (cmn-container-model new-node)))
       (cmn-set-container-model new-node cm)
-      (alter (. cm length) inc)
+      (cm-set-count cm (inc (count cm)))
 
       (cm-set-head-node cm new-node) ;; list.firstNode := newNode
       (cm-set-tail-node cm new-node) ;; list.lastNode  := newNode

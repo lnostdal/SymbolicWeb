@@ -19,7 +19,7 @@
 This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
   (let [^ContainerModel cm (cmn-container-model node)]
-    (alter (. cm length) dec)
+    (cm-set-count cm (dec (count cm)))
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
     ;;
@@ -50,7 +50,7 @@ This mirrors the jQuery `after' function:
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)
-    (alter (. cm length) inc)
+    (cm-set-count cm (inc (count cm)))
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
@@ -83,7 +83,7 @@ This mirrors the jQuery `before' function:
     ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)
-    (alter (. cm length) inc)
+    (cm-set-count cm (inc (count cm)))
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
