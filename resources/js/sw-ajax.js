@@ -69,15 +69,7 @@ var swURL, swDURL;
      var res = [window.location.protocol, "//",
                 (function(){ if(dynamic_p) return(_sw_dynamic_subdomain); else return(""); })(),
                 window.location.host,
-                // TODO: Document this.
-                (function(){
-                   var str = "";
-                   for(var p = window.location.pathname.split("/"), i = 0; i < (p.length - 1); i++)
-                     if(p[i] != "")
-                       str += "/" + p[i];
-                   return str;
-                 })(),
-                "?_sw_viewport_id=", _sw_viewport_id,
+                "/sw?_sw_viewport_id=", _sw_viewport_id,
                 params.join("")
                ].join("");
      return(res);
