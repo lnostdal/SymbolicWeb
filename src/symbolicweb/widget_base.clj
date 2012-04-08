@@ -9,10 +9,10 @@
   (alter parent assoc :children (flatten children)))
 
 
-(defn render-event [widget event-type & {:keys [js-before callback-data js-after]
-                                         :or {js-before "return(true);"
-                                              callback-data ""
-                                              js-after ""}}]
+(defn render-event ^String [widget event-type & {:keys [js-before callback-data js-after]
+                                                 :or {js-before "return(true);"
+                                                      callback-data ""
+                                                      js-after ""}}]
   (let [widget @widget]
     (str "$('#" (:id widget) "').bind('" event-type "', "
          "function(event){"
@@ -36,7 +36,7 @@
     (render-aux-html-fn widget)))
 
 
-(defn render-html [widget]
+(defn render-html ^String [widget]
   "Return HTML structure which will be the basis for further initialization via RENDER-AUX-JS."
   (let [widget-m @widget
         widget-type (:type widget-m)]
@@ -52,7 +52,7 @@
      (throw (Exception. (str "Can't render: " widget-m))))))
 
 
-(defn sw [widget]
+(defn sw ^String [widget]
   "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
   (assert *in-html-container?*)
   (add-branch *in-html-container?* widget)
