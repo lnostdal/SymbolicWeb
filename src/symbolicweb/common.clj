@@ -174,8 +174,8 @@ APPLICATION and VIEWPORT are bound within BODY."
 
 
 (let [id-generator-value (atom 0)]
-  (defn generate-uid []
-    "Generates an unique ID; non-universal or pr. server instance based."
+  (defn generate-uid ^Long []
+    "Generates an unique ID; non-universal or only pr. server instance based."
     (swap! id-generator-value inc)))
 
 
