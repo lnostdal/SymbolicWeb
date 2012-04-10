@@ -11,7 +11,7 @@
      (str "$('#" (widget-id-of widget) "').html();"))
 
   ([widget new-html]
-     (add-response-chunk (str "$('#" (widget-id-of widget) "').html(" (url-encode-wrap (str new-html)) ");")
+     (add-response-chunk (str "$('#" (widget-id-of widget) "').html(" (url-encode-wrap (.toString new-html)) ");")
                          widget)))
 
 

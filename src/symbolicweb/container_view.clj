@@ -65,6 +65,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
          (fn [container-view operation-args]
            (handle-container-view-event container-view operation-args))
 
+         ;; TODO: I think I can get rid of this and use ADD-ON-VISIBLE instead.
          :connect-model-view-fn
          (fn [container-model container-view]
            (when (add-view container-model container-view)
@@ -77,10 +78,6 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                (when node
                  (jqAppend container-view (view-of-node-in-context container-view node))
                  (recur (cmn-right-node node))))))
-
-         :disconnect-model-view-fn
-         (fn [container-view]
-           (remove-view container-model container-view))
 
          :view-from-node-fn
          (fn [container-view node]

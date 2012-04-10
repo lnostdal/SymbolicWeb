@@ -73,6 +73,7 @@ CONTENT-FN is something like:
 It still maintains the same Model <-> View relationship (jqHTML) as a HTMLElement unless it is overridden."
   (apply make-HTMLElement "%make-TemplateElement" model
          :type ::TemplateElement
+         :render-html-fn (fn [w])
          attributes))
 
 (defn mk-te [model & attributes]
