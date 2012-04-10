@@ -15,10 +15,10 @@
 
   (cmn-data [node]))
 
-(deftype ContainerModelNode [^:unsynchronized-mutable %container-model
-                             ^:unsynchronized-mutable left
-                             ^:unsynchronized-mutable right
-                             ^:unsynchronized-mutable data] ;; Not a Ref, but read-only anyway.
+(deftype ContainerModelNode [%container-model
+                             left
+                             right
+                             data]
   IContainerModelNode
   (cmn-left-node [_]
     (ensure left))
@@ -49,11 +49,11 @@
 
   (cm-set-count [cm new-count]))
 
-(deftype ContainerModel [^:unsynchronized-mutable head-node
-                         ^:unsynchronized-mutable tail-node
-                         ^:unsynchronized-mutable %count
-                         ^:unsynchronized-mutable views-ref
-                         ^:unsynchronized-mutable %notify-views-fn]
+(deftype ContainerModel [head-node
+                         tail-node
+                         %count
+                         views-ref
+                         %notify-views-fn]
   clojure.lang.Counted
   (count [_]
     (dosync (ensure %count)))

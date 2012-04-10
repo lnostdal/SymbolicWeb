@@ -1,6 +1,6 @@
 (in-ns 'symbolicweb.core)
 
-(declare mk-view ref? observe)
+(declare mk-view ref? observe %vm-deref)
 
 
 (def ^:dynamic *observed-vms-ctx*)
@@ -20,26 +20,9 @@
   (%vm-ref [vm]))
 
 
-(defn %vm-deref [value-model value-ref]
-  (let [return-value (ensure value-ref)]
-    (when (and (thread-bound? #'*observed-vms-ctx*)
-               (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
-      (alter (:vms *observed-vms-ctx*) conj value-model)
-      (let [observed-vms-ctx *observed-vms-ctx*]
-        (observe value-model (:lifetime observed-vms-ctx) false
-                 (fn [& _]
-                   (when-not (get *observed-vms-active-body-fns* (:body-fn observed-vms-ctx))
-                     (binding [*observed-vms-ctx* observed-vms-ctx
-                               *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
-                                                                    (:body-fn observed-vms-ctx))]
-                       ((:body-fn observed-vms-ctx))))))))
-    return-value))
-
-
-
-(deftype ValueModel [^:unsynchronized-mutable value-ref
-                     ^:unsynchronized-mutable views-ref
-                     ^:unsynchronized-mutable %notify-views-fn]
+(deftype ValueModel [value-ref
+                     views-ref
+                     %notify-views-fn]
   clojure.lang.IDeref
   (deref [value-model]
     (%vm-deref value-model value-ref))
@@ -85,6 +68,22 @@
 
 (defmethod print-method ValueModel [^ValueModel value-model stream]
   (print-method (%vm-ref value-model) stream))
+
+
+(defn %vm-deref [^ValueModel value-model ^clojure.lang.Ref value-ref]
+  (let [return-value (ensure value-ref)]
+    (when (and (thread-bound? #'*observed-vms-ctx*)
+               (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
+      (alter (:vms *observed-vms-ctx*) conj value-model)
+      (let [observed-vms-ctx *observed-vms-ctx*]
+        (observe value-model (:lifetime observed-vms-ctx) false
+                 (fn [& _]
+                   (when-not (get *observed-vms-active-body-fns* (:body-fn observed-vms-ctx))
+                     (binding [*observed-vms-ctx* observed-vms-ctx
+                               *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
+                                                                    (:body-fn observed-vms-ctx))]
+                       ((:body-fn observed-vms-ctx))))))))
+    return-value))
 
 
 (defn vm [value]
