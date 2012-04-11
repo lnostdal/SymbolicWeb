@@ -55,7 +55,9 @@ HOLDING-TRANSACTION is called when the transaction is pending finalization, and 
 If either BODY-FN or HOLDING-TRANSACTION throws an exception, the transaction, in either pre-pending or pending state, is rolled
 back.
 Note that actually calling HOLDING-TRANSACTION is optional, and that further, direct i.e. non-Agent, DB operations within
-HOLDING-TRANSACTION are not allowed."
+HOLDING-TRANSACTION are not allowed.
+If HOLDING-TRANSACTION is called, its return value will be the return value of WITH-SW-DB.
+If HOLDING-TRANSACTION isn't called, the return value of BODY-FN will be the return value of WITH-SW-DB."
   (assert (fn? body-fn))
   (with-sw-connection
     ;; The BINDING here is sort of a hack to ensure that java.jdbc's UPDATE-VALUES etc. type functions doesn't create
@@ -65,27 +67,28 @@ HOLDING-TRANSACTION are not allowed."
       (let [id-str (str (generate-uid))
             conn (:connection clojure.java.jdbc.internal/*db*)
             stmt (.createStatement conn)]
-        (with-local-vars [holding-transaction-fn nil
+        (with-local-vars [result nil
+                          holding-transaction-fn nil
                           commit-inner-transaction? false
                           commit-prepared-transaction? false]
           (try
             (.setTransactionIsolation conn java.sql.Connection/TRANSACTION_SERIALIZABLE)
             (.setAutoCommit conn false) ;; Start transaction.
-            (let [result (body-fn (fn [holding-transaction]
-                                    (assert (not (var-get holding-transaction-fn))
-                                            "WITH-SW-DB: HOLDING-TRANSACTION callback should only be called once.")
-                                    (assert (fn? holding-transaction))
-                                    (var-set holding-transaction-fn holding-transaction)))]
-              (when (var-get holding-transaction-fn)
-                (.execute stmt (str "PREPARE TRANSACTION '" id-str "';")))
-              (.commit conn) (.setAutoCommit conn true) ;; Commit or prepare commit; "hold" the transaction.
-              (var-set commit-inner-transaction? true)
-              (when-let [holding-transaction (var-get holding-transaction-fn)]
-                (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current low-level DB connection while we do this..
-                          *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
-                  (holding-transaction (fn [] (throw (Exception. "%with-sw-db-abort"))))))
-              (var-set commit-prepared-transaction? true)
-              result)
+            (var-set result (body-fn (fn [holding-transaction]
+                                       (assert (not (var-get holding-transaction-fn))
+                                               "WITH-SW-DB: HOLDING-TRANSACTION callback should only be called once.")
+                                       (assert (fn? holding-transaction))
+                                       (var-set holding-transaction-fn holding-transaction))))
+            (when (var-get holding-transaction-fn)
+              (.execute stmt (str "PREPARE TRANSACTION '" id-str "';")))
+            (.commit conn) (.setAutoCommit conn true) ;; Commit or prepare commit; "hold" the transaction.
+            (var-set commit-inner-transaction? true)
+            (when-let [holding-transaction (var-get holding-transaction-fn)]
+              (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current low-level DB connection while we do this..
+                        *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
+                (var-set result (holding-transaction (fn [] (throw (Exception. "%with-sw-db-abort")))))))
+            (var-set commit-prepared-transaction? true)
+            (var-get result)
             (catch Exception e
               (if (= "%with-sw-db-abort" (.getMessage e))
                 (println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
