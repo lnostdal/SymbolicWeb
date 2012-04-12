@@ -57,7 +57,8 @@ back.
 Note that actually calling HOLDING-TRANSACTION is optional, and that further, direct i.e. non-Agent, DB operations within
 HOLDING-TRANSACTION are not allowed.
 If HOLDING-TRANSACTION is called, its return value will be the return value of WITH-SW-DB.
-If HOLDING-TRANSACTION isn't called, the return value of BODY-FN will be the return value of WITH-SW-DB."
+If HOLDING-TRANSACTION isn't called, the return value of BODY-FN will be the return value of WITH-SW-DB.
+If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW-DB."
   (assert (fn? body-fn))
   (with-sw-connection
     ;; The BINDING here is sort of a hack to ensure that java.jdbc's UPDATE-VALUES etc. type functions doesn't create
@@ -86,12 +87,16 @@ If HOLDING-TRANSACTION isn't called, the return value of BODY-FN will be the ret
             (when-let [holding-transaction (var-get holding-transaction-fn)]
               (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current low-level DB connection while we do this..
                         *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
-                (var-set result (holding-transaction (fn [] (throw (Exception. "%with-sw-db-abort")))))))
+                (var-set result (holding-transaction (fn [return-value]
+                                                       (var-set result return-value)
+                                                       (throw (Exception. "%with-sw-db-abort")))))))
             (var-set commit-prepared-transaction? true)
             (var-get result)
             (catch Exception e
               (if (= "%with-sw-db-abort" (.getMessage e))
-                (println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
+                (do
+                  (println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
+                  (var-get result))
                 (throw e)))
             (finally
              (if (var-get commit-inner-transaction?)
