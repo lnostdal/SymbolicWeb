@@ -59,6 +59,7 @@
   (:require symbolicweb.date-and-time)
   (:require symbolicweb.sortable))
 
+(set! *warn-on-reflection* true)
 
 
 (defn handler [request]
