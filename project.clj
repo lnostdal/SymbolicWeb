@@ -1,6 +1,6 @@
 (defproject symbolicweb "1.0.0-SNAPSHOT"
   :description "SymbolicWeb: WUI for Clojure"
-  :dependencies [[org.clojure/clojure "1.4.0-master-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure "1.5.0-master-SNAPSHOT"]
 
                  [org.clojure/math.numeric-tower "0.0.2-SNAPSHOT"] ;; ROUND etc.
 
