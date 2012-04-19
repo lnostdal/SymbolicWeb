@@ -49,6 +49,12 @@
           (throw e))))))
 
 
+(defn abort-transaction [return-value]
+  (throw (ex-info "WITH-SW-DB: ABORT-TRANSACTION"
+                  {:with-sw-db :abort-transaction
+                   :return-value return-value})))
+
+
 (defn with-sw-db [body-fn]
   "BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
 finalized after HOLDING-TRANSACTION has finished executing.
