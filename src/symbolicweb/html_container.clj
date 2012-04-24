@@ -1,7 +1,5 @@
 (in-ns 'symbolicweb.core)
 
-;; TODO: Use MVC here too? For now I just dodge it.
-
 
 (derive ::HTMLContainer ::HTMLElement)
 (defn %make-HTMLContainer [[html-element-type & attributes] content-fn]

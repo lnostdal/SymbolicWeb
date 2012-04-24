@@ -1,6 +1,6 @@
 # SymbolicWeb
 
-AJAX/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI) thing written in Clojure.
+AJAX long poll/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI) thing written in Clojure.
 
 SW was originally written in Common Lisp, and that version is still found at this location albeit unmaintained:
 
@@ -17,10 +17,6 @@ Very, very alpha.
 ## Usage
 
 *This is out of date; if you really want to try this just get in touch instead for now.*
-
-For PHP support if that's needed:
-
-    php-cgi -b 127.0.0.1:6666 &
 
 
 Lighttpd 1.5.x (from svn/git) is used (recommended) for the boring static content. To enable serving from port 80 we do:
@@ -65,8 +61,8 @@ I'm aiming at a 132 column width using 1920x1080 monitors:
 
 ### Style
 
-    -this-is-global-variables-
-    *this-is-global-dynamic-variables*
+    -this-is-a-global-variable-
+    *this-is-a-global-dynamic-variable*
 
 Naming of Container (container_model.clj and container_model_node.clj) related functions follow or match the naming
 found in jQuery. E.g., append, prepend, before and after:
