@@ -6,9 +6,14 @@
 
 (def -http-server-string- "SymbolicWeb (nostdal.org)")
 
-(def -comet-timeout- 9000) ;; Long poll with a 9 second timeout ("long poll every 9 seconds").
-(def -viewport-timeout- (+ -comet-timeout- 10000)) ;; 10 seconds since comet timeout and still no new request (long poll)?
-(def -application-timeout- (+ -viewport-timeout- 10000)) ;; 10 seconds since comet timeout and still no new request (long poll)?
+;; Long poll timeout every X / 1000 seconds.
+(def -comet-timeout- 25000)
+
+;; X / 1000 seconds since -COMET-TIMEOUT- and still no new request (long poll)?
+(def -viewport-timeout- (+ -comet-timeout- 10000))
+
+;; X / 1000 seconds since -VIEWPORT-TIMEOUT- and still no new request (long poll) from any Viewport in the session?
+(def -application-timeout- (+ -viewport-timeout- 10000))
 
 (def -request-counter-
   "Number of HTTP requests since server started."

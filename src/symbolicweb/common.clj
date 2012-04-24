@@ -395,9 +395,16 @@ This only blocks until Clojure transaction is done; it will not block waiting fo
   `(%swsync (fn [] ~@body)))
 
 (defmacro swop [& body]
-  "Wrapper for general IO operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
-  `(swap! *swsync-operations* conj (fn [] ~@body)))
+  "Wrapper for general I/O operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
+  `(do
+     (assert (thread-bound? #'*swsync-operations*)
+             "SWOP (general I/O operation) outside of SWSYNC context.")
+     (swap! *swsync-operations* conj (fn [] ~@body))))
 
 (defmacro swdbop [& body]
-  "Wrapper for DB type IO operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
-  `(swap! *swsync-db-operations* conj (fn [] ~@body)))
+  "Wrapper for DB type I/O operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)
+and all SWDBOPs runs within a single DB transaction."
+  `(do
+     (assert (thread-bound? #'*swsync-db-operations*)
+             "SWDBOP (database operation) outside of SWSYNC context.")
+     (swap! *swsync-db-operations* conj (fn [] ~@body))))

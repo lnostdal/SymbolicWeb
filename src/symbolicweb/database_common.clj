@@ -49,6 +49,12 @@
           (throw e))))))
 
 
+(defn abort-transaction [return-value]
+  (throw (ex-info "WITH-SW-DB: ABORT-TRANSACTION"
+                  {:with-sw-db :abort-transaction
+                   :return-value return-value})))
+
+
 (defn with-sw-db [body-fn]
   "BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
 finalized after HOLDING-TRANSACTION has finished executing.
@@ -89,15 +95,16 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
               (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current low-level DB connection while we do this..
                         *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
                 (var-set result (holding-transaction (fn [return-value]
-                                                       (var-set result return-value)
-                                                       (throw (Exception. "%with-sw-db-abort")))))))
+                                                       (throw (ex-info "WITH-SW-DB: ABORT-TRANSACTION"
+                                                                       {:with-sw-db :abort-transaction
+                                                                        :return-value return-value})))))))
             (var-set commit-prepared-transaction? true)
             (var-get result)
-            (catch Exception e
-              (if (= "%with-sw-db-abort" (.getMessage e))
+            (catch clojure.lang.ExceptionInfo e
+              (if (= :abort-transaction (:with-sw-db (ex-data e)))
                 (do
                   (println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
-                  (var-get result))
+                  (:return-value (ex-data e)))
                 (throw e)))
             (finally
              (if (var-get commit-inner-transaction?)
