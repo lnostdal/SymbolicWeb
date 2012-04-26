@@ -2,7 +2,8 @@
 
 
 (defn make-Application [& app-args]
-  "This will instantiate a new Application and also 'register' it as a part of the server via -APPLICATIONS-. On page load (or refresh), the order of things executed are:
+  "This will instantiate a new Application (browser session) and also 'register' it as a part of the server via -APPLICATIONS-.
+On page load (or refresh), the order of things executed are:
 
   :MAKE-VIEWPORT-FN
   :REST-HANDLER"

@@ -164,7 +164,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 (defn sync-ContainerModel [container-model filter-node-fn & attributes]
   "Returns a ContainerModel that is synced with CONTAINER-MODEL via an intermediate :FILTER-NODE-FN.
 To state this differently; operations done vs CONTAINER-MODEL are forwarded to the ContainerModel returned by this function."
-  (let [container-model-proxy (make-ContainerModel )
+  (let [container-model-proxy (make-ContainerModel)
         ;; OBSERVER will forward (after filtering) events from CONTAINER-MODEL to CONTAINER-MODEL-PROXY.
         observer (apply make-ContainerView "%ContainerModelProxyDummyView" container-model
                         :view-from-node-fn
