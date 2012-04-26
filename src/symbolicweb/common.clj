@@ -241,6 +241,41 @@ Returns a string."
     (swap! -applications- #(dissoc % (:id application)))))
 
 
+(defn http-js-response [body]
+  {:status 200
+   :headers {"Content-Type" "text/javascript; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body body})
+
+
+(defn http-html-response [body]
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body body})
+
+
+(defn http-text-response [body]
+  {:status 200
+   :headers {"Content-Type" "text/plain; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body body})
+
+
+(defn http-replace-response [location]
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body (str "<script> window.location.replace(" (url-encode-wrap location) "); </script>")})
+
+
+(defn http-redirect-response [location]
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body (str "<script> window.location = " (url-encode-wrap location) "; </script>")})
+
+
 (defn reload-page
   ([viewport rel-url]
      (add-response-chunk (str "window.location = " (url-encode-wrap rel-url) ";")
