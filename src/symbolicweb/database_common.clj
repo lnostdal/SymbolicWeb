@@ -336,7 +336,7 @@ UPDATE-CACHE? is given a FALSE value."
 (defn db-cache-put [db-cache ^Long id obj]
   "Store association between ID and OBJ in DB-CACHE.
 Fails (via assert) if an object with the same id already exists in DB-CACHE."
-  (let [id (Long. id)] ;; Because (. (int 261) equals 261) => false
+  (let [id (Long. id)] ;; Because (.equals (int 261) 261) => false
     (locking db-cache
       (let [cache-data (.cache-data db-cache)]
         (assert (not (.containsKey cache-data id)) "DB-CACHE-PUT: Ups. This shouldn't happen.")
@@ -350,7 +350,7 @@ Assuming DB-CACHE-GET is the only function used to fetch objects from the back-e
 that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
 :CONSTRUCTOR-FN from DB-CACHE."
   (io! "DB-CACHE-GET: This (I/O) cannot be done within DOSYNC or SWSYNC.")
-  (let [id (Long. id)] ;; Because (. (int 261) equals 261) => false
+  (let [id (Long. id)] ;; Because (.equals (int 261) 261) => false
     (if-let [cache-entry (.get (.cache-data db-cache) id)]
       cache-entry
       (if-let [cache-entry (locking db-cache (.get (.cache-data db-cache) id))] ;; Check cache again while within lock.

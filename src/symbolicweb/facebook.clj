@@ -110,6 +110,7 @@
                          (mapv url-encode (vals m)))))
 
 
+;; TODO: Merge the following two functions somehow?
 (defn app-publish-feed-url [profile-id]
   (str "https://graph.facebook.com/" profile-id "/feed"))
 
