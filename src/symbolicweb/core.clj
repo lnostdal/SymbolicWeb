@@ -57,7 +57,8 @@
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
   (:require symbolicweb.date-and-time)
-  (:require symbolicweb.sortable))
+  (:require symbolicweb.sortable)
+  (:require symbolicweb.util))
 
 (set! *warn-on-reflection* true)
 
