@@ -3,10 +3,7 @@
   (:require [clojure.string :as str])
   (:use [cheshire.core :as json])
   (:use [clojure.pprint :only (cl-format)])
-  (:use [symbolicweb.core :exclude (viewport-of
-                                    add-on-visible-fn
-                                    add-on-non-visible-fn)]))
-
+  (:use symbolicweb.core))
 
 
 ;;; Common stuff.
