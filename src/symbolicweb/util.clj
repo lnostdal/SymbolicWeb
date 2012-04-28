@@ -15,7 +15,6 @@
   (json/generate-string clojure-object))
 
 
-;; TODO: Macro for StringBuilder, append and toString combo seen here.
 (defn strb
   (^StringBuilder
    [^StringBuilder sb]
@@ -44,12 +43,10 @@
 
 
 (defn http-build-query [query-map & php-compatible-boolean-output?]
-  (let [result-string (StringBuilder.)]
+  ;; TODO: Consider getting rid of the & character at the very start.
+  (with-string-builder query
     (letfn [(add-url-entry [^String url-key ^String url-value]
-              (.append result-string "&")
-              (.append result-string (url-encode url-key))
-              (.append result-string "=")
-              (.append result-string (url-encode url-value)))
+              (strb query "&" (url-encode url-key) "=" (url-encode url-value)))
 
             (handle-url-vector [^String key-prefix elements]
               (loop [elements elements
@@ -73,14 +70,13 @@
                 (handle-url-map key-prefix value)
 
                 (boolean? value)
-                (if php-compatible-boolean-output?
-                  (handle-url-value key-prefix (if value 1 0))
-                  (handle-url-value key-prefix (if value "true" "false")))
+                (handle-url-value key-prefix
+                                  (if php-compatible-boolean-output?
+                                    (if value 1 0)
+                                    (if value "true" "false")))
 
                 true
                 (add-url-entry key-prefix (str value))))]
       (doseq [map-entry query-map]
         (handle-url-value (name (key map-entry))
-                          (val map-entry))))
-    ;; TODO: Consider (subs .. 1) here to get rid of the & character at the very start.
-    (.toString result-string)))
+                          (val map-entry))))))
