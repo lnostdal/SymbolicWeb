@@ -16,6 +16,33 @@
 
 
 ;; TODO: Macro for StringBuilder, append and toString combo seen here.
+(defn strb
+  (^StringBuilder
+   [^StringBuilder sb]
+   (.append sb ""))
+
+  (^StringBuilder
+   [^StringBuilder sb ^Object x]
+   (.append sb (if (nil? x) "" (.toString x))))
+
+   (^StringBuilder
+    [^StringBuilder sb x & ys]
+    ((fn [^StringBuilder sb more]
+       (if more
+         (recur (.append sb (str (first more)))
+                (next more))
+         sb))
+     (.append sb (str x))
+     ys)))
+
+
+(defmacro with-string-builder [name & body]
+  "For use with STRB."
+  `(let [~name (StringBuilder.)]
+     ~@body
+     (.toString ~name)))
+
+
 (defn http-build-query [query-map & php-compatible-boolean-output?]
   (let [result-string (StringBuilder.)]
     (letfn [(add-url-entry [^String url-key ^String url-value]
