@@ -7,6 +7,17 @@
 (set! *print-level* 10)
 
 
+(defn url-encode-component ^String [^String s]
+  ;; TODO: This is retarded and slow.
+  (.replace (java.net.URLEncoder/encode s "UTF-8")
+            "+"
+            "%20"))
+
+
+(defn url-decode-component ^String [^String s]
+  (java.net.URLDecoder/decode s "UTF-8"))
+
+
 (defn expected-response-type [request]
   (let [accept-header (get (:headers request) "accept")]
     (cond
@@ -135,8 +146,8 @@ APPLICATION and VIEWPORT are bound within BODY."
   obj)
 
 
-(defn url-encode-wrap ^String [^String text]
-  (str "decodeURIComponent('" (str/replace (url-encode text) "+" "%20") "')"))
+(defn url-encode-wrap ^String [^String s]
+  (str "decodeURIComponent('" (url-encode-component s) "')"))
 
 
 (defn agent? [x]

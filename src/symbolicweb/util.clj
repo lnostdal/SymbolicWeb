@@ -46,7 +46,7 @@
   ;; TODO: Consider getting rid of the & character at the very start.
   (with-string-builder query
     (letfn [(add-url-entry [^String url-key ^String url-value]
-              (strb query "&" (url-encode url-key) "=" (url-encode url-value)))
+              (strb query "&" (url-encode-component url-key) "=" (url-encode-component url-value)))
 
             (handle-url-vector [^String key-prefix elements]
               (loop [elements elements

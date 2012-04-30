@@ -17,7 +17,7 @@
     (str "$('#" (:id widget) "').bind('" event-type "', "
          "function(event){"
          "swMsg('" (:id widget) "', '" event-type "', function(){" js-before "}, '"
-         (reduce (fn [acc key_val] (str acc (url-encode (str (key key_val))) "=" (val key_val) "&"))
+         (reduce (fn [acc key_val] (str acc (url-encode-component (str (key key_val))) "=" (val key_val) "&"))
                  ""
                  callback-data)
          "', function(){" js-after "});"
