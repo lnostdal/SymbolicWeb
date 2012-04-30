@@ -18,6 +18,14 @@
   (java.net.URLDecoder/decode s "UTF-8"))
 
 
+(defn mime-encode-rfc-2047 [s]
+  (str "=?UTF-8?Q?"
+       (-> (url-encode-component s)
+           (str/replace "%20" "_")
+           (str/replace "%" "="))
+       "?="))
+
+
 (defn expected-response-type [request]
   (let [accept-header (get (:headers request) "accept")]
     (cond
