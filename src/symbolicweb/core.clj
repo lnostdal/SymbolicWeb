@@ -105,5 +105,8 @@
 (defn main
   ([] (main 8080))
   ([port]
-     (defonce stop-sw-server (start-http-server (wrap-ring-handler (wrap-cookies (wrap-params handler)))
-                                                {:port port}))))
+     (defonce stop-sw-server (aleph.http/start-http-server
+                              (aleph.http/wrap-ring-handler
+                               (ring.middleware.cookies/wrap-cookies
+                                (ring.middleware.params/wrap-params handler)))
+                              {:port port}))))

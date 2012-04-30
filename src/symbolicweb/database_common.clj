@@ -34,7 +34,7 @@
           "WITH-SW-CONNECTION: Nesting of WITH-SW-CONNECTION forms not allowed.")
   (assert (not *pending-prepared-transaction?*)
           "WITH-SW-CONNECTION: This is not meant to be used within WITH-SW-DB's HOLDING-TRANSACTION callback. Use SWSYNC and SWDBOP instead?")
-  (assert (not (:connection clojure.java.jdbc.internal/*db*))
+  (assert (not (find-connection))
           "WITH-SW-CONNECTION: Cannot be nested.")
   (try
     (with-connection @@-pooled-db-spec-
@@ -45,7 +45,7 @@
           (println "WITH-SW-CONNECTION: Serialization conflict; retrying!")
           (%with-sw-connection body-fn))
         (do
-          (print-sql-exception-chain e)
+          (clojure.java.jdbc/print-sql-exception-chain e)
           (throw e))))))
 
 
@@ -70,10 +70,10 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
   (with-sw-connection
     ;; The BINDING here is sort of a hack to ensure that java.jdbc's UPDATE-VALUES etc. type functions doesn't create
     ;; inner transactions which will commit even though we'd want them to roll back here in WITH-SW-DB.
-    (binding [clojure.java.jdbc.internal/*db* (update-in clojure.java.jdbc.internal/*db* [:level] inc)
+    (binding [clojure.java.jdbc/*db* (update-in @#'clojure.java.jdbc/*db* [:level] inc)
               *in-sw-db?* true]
       (let [id-str (str (generate-uid))
-            conn (:connection clojure.java.jdbc.internal/*db*)
+            conn (find-connection)
             stmt (.createStatement conn)]
         (with-local-vars [result nil
                           holding-transaction-fn nil
@@ -92,7 +92,7 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
             (.commit conn) (.setAutoCommit conn true) ;; Commit or prepare commit; "hold" the transaction.
             (var-set commit-inner-transaction? true)
             (when-let [holding-transaction (var-get holding-transaction-fn)]
-              (binding [clojure.java.jdbc.internal/*db* nil ;; Cancel out current low-level DB connection while we do this..
+              (binding [clojure.java.jdbc/*db* nil ;; Cancel out current low-level DB connection while we do this..
                         *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
                 (var-set result (holding-transaction (fn [return-value]
                                                        (throw (ex-info "WITH-SW-DB: ABORT-TRANSACTION"
@@ -117,7 +117,7 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
 
 
 (defn db-stmt [sql-str]
-  (let [stmt (.createStatement (:connection clojure.java.jdbc.internal/*db*))]
+  (let [stmt (.createStatement (find-connection))]
     (.execute stmt sql-str)
     (.close stmt)))
 
