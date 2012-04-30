@@ -4,19 +4,19 @@
 
                  [org.clojure/math.numeric-tower "0.0.2-SNAPSHOT"] ;; ROUND etc.
 
-                 [aleph "0.2.1-beta2"] ;; Deals with boring HTTP server stuff.
+                 [aleph "0.2.1-rc1"] ;; Deals with boring HTTP server stuff.
                  [overtone/at-at "0.2.1"] ;; Scheduling.
 
                  [org.apache.commons/collections "3.2.1"] ;; For soft hash cache.
 
                  [cheshire "4.0.1-SNAPSHOT"] ;; JSON.
 
-                 [hiccup "1.0.0-beta1"] ;; HTML generation.
-                 [org.jsoup/jsoup "1.6.1"] ;; HTML templating.
-                 [ring/ring-core "1.1.0-SNAPSHOT"] ;; HTTP protocol handling.
+                 [hiccup "1.0.0"] ;; HTML generation.
+                 [org.jsoup/jsoup "1.6.2"] ;; HTML templating.
+                 [ring/ring-core "1.1.0"] ;; HTTP protocol handling.
 
-                 [org.clojure/java.jdbc "0.1.4-SNAPSHOT"] ;; SQL/DB handling.
-                 [postgresql/postgresql "9.1-901.jdbc4"] ;; PostgreSQL JDBC driver.
+                 [org.clojure/java.jdbc "0.2.1-SNAPSHOT"] ;; SQL/DB handling.
+                 [postgresql/postgresql "9.1-902.jdbc4"] ;; PostgreSQL JDBC driver.
                  [c3p0/c3p0 "0.9.1.2"]] ;; DB connection pooling.
   :plugins [[swank-clojure "1.5.0-SNAPSHOT"]]
   :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.

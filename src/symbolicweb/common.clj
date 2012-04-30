@@ -7,6 +7,25 @@
 (set! *print-level* 10)
 
 
+(defn url-encode-component ^String [^String s]
+  ;; TODO: This is retarded and slow.
+  (.replace (java.net.URLEncoder/encode s "UTF-8")
+            "+"
+            "%20"))
+
+
+(defn url-decode-component ^String [^String s]
+  (java.net.URLDecoder/decode s "UTF-8"))
+
+
+(defn mime-encode-rfc-2047 [s]
+  (str "=?UTF-8?Q?"
+       (-> (url-encode-component s)
+           (str/replace "%20" "_")
+           (str/replace "%" "="))
+       "?="))
+
+
 (defn expected-response-type [request]
   (let [accept-header (get (:headers request) "accept")]
     (cond
@@ -28,31 +47,6 @@
 (defn application-of [widget]
   (when-let [viewport (viewport-of widget)]
     (:application @viewport)))
-
-
-#_(defn assoc-param ;; Stolen from Ring.
-  "Associate a key with a value. If the key already exists in the map, create a vector of values."
-  [map key val]
-  (assoc map key
-    (if-let [cur (map key)]
-      (if (vector? cur)
-        (conj cur val)
-        [cur val])
-      val)))
-
-
-(defn parse-params ;; Stolen from Ring.
-  "Parse parameters from a string into a map."
-  [^String param-string encoding]
-  (reduce
-   (fn [param-map encoded-param]
-     (if-let [[_ key val] (re-matches #"([^=]+)=(.*)" encoded-param)]
-       (assoc-param param-map
-                    (url-decode key encoding)
-                    (url-decode (or val "") encoding))
-        param-map))
-    {}
-    (str/split param-string #"&")))
 
 
 (defn alter-options [options fn & args]
@@ -135,8 +129,8 @@ APPLICATION and VIEWPORT are bound within BODY."
   obj)
 
 
-(defn url-encode-wrap ^String [^String text]
-  (str "decodeURIComponent('" (str/replace (url-encode text) "+" "%20") "')"))
+(defn url-encode-wrap ^String [^String s]
+  (str "decodeURIComponent('" (url-encode-component s) "')"))
 
 
 (defn agent? [x]
@@ -239,6 +233,41 @@ Returns a string."
 (defn remove-session [application]
   (let [application @application]
     (swap! -applications- #(dissoc % (:id application)))))
+
+
+(defn http-js-response [body]
+  {:status 200
+   :headers {"Content-Type" "text/javascript; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body body})
+
+
+(defn http-html-response [body]
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body body})
+
+
+(defn http-text-response [body]
+  {:status 200
+   :headers {"Content-Type" "text/plain; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body body})
+
+
+(defn http-replace-response [location]
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body (str "<script> window.location.replace(" (url-encode-wrap location) "); </script>")})
+
+
+(defn http-redirect-response [location]
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Server" -http-server-string-}
+   :body (str "<script> window.location = " (url-encode-wrap location) "; </script>")})
 
 
 (defn reload-page

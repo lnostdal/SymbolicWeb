@@ -23,7 +23,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 (defn handle-out-channel-request [channel request application viewport]
   "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [^StringBuilder response-str]
-            (enqueue channel
+            (lamina.core/enqueue channel
                      {:status 200
                       :headers {"Content-Type" "text/javascript; charset=UTF-8"
                                 "Server" -http-server-string-}
@@ -42,7 +42,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
               (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN.")
               (.run @response-sched-fn))
             (reset! response-sched-fn
-                    (at (+ (now) -comet-timeout-)
+                    (overtone.at-at/at (+ (overtone.at-at/now) -comet-timeout-)
                         #(locking viewport
                            (when @response-sched-fn
                              (reset! response-sched-fn nil)
@@ -79,8 +79,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 (defn default-ajax-handler [request application viewport]
   (if-let [sw-request-type-str (get (:query-params request) "_sw_request_type")]
     (case sw-request-type-str
-      "comet" ((wrap-aleph-handler (fn [channel request]
-                                     (handle-out-channel-request channel request application viewport)))
+      "comet" ((aleph.http/wrap-aleph-handler (fn [channel request]
+                                                (handle-out-channel-request channel request application viewport)))
                request)
       "ajax"  (handle-in-channel-request request application viewport)
       (throw (Exception. (str "SymbolicWeb: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))

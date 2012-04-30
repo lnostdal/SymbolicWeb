@@ -1,31 +1,36 @@
 (ns symbolicweb.core
-  (:use clojure.math.numeric-tower)
+  (:require [clojure.math.numeric-tower :refer (round)])
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])
-
-  (:use [clojure.pprint :only (cl-format)])
+  (:require [clojure.pprint :refer (cl-format)])
 
   (:import org.apache.commons.collections.map.ReferenceMap)
 
-  (:use hiccup.core)
-  (:use [hiccup.util :exclude (url-encode)])
-  (:use [hiccup.page])
+  (:require [hiccup.core :refer (html)])
+  (:require [hiccup.util :refer (escape-html)])
+  (:require [hiccup.page :refer (doctype xhtml-tag)])
 
   (:import [org.jsoup Jsoup])
 
   (:use [cheshire.core :as json]) ;; JSON.
 
-  (:use [clojure.java.jdbc :exclude (resultset-seq)])
+  (:require [clojure.java.jdbc :refer (with-connection
+                                       with-query-results
+                                       find-connection
+                                       update-values
+                                       as-quoted-identifier
+                                       insert-record
+                                       delete-rows)])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource)
 
-  (:use ring.util.codec)
-  (:use ring.middleware.params)
-  (:use ring.middleware.cookies)
+  (:require ring.util.codec)
+  (:require ring.middleware.params)
+  (:require ring.middleware.cookies)
 
   ;; Netty (EPOLL).
-  (:use lamina.core)
-  (:use aleph.http)
-  (:use overtone.at-at)
+  (:require lamina.core)
+  (:require aleph.http)
+  (:require overtone.at-at)
 
   (:require symbolicweb.macros)
   (:require symbolicweb.model)
@@ -57,7 +62,8 @@
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
   (:require symbolicweb.date-and-time)
-  (:require symbolicweb.sortable))
+  (:require symbolicweb.sortable)
+  (:require symbolicweb.util))
 
 (set! *warn-on-reflection* true)
 
@@ -99,5 +105,8 @@
 (defn main
   ([] (main 8080))
   ([port]
-     (defonce stop-sw-server (start-http-server (wrap-ring-handler (wrap-cookies (wrap-params handler)))
-                                                {:port port}))))
+     (defonce stop-sw-server (aleph.http/start-http-server
+                              (aleph.http/wrap-ring-handler
+                               (ring.middleware.cookies/wrap-cookies
+                                (ring.middleware.params/wrap-params handler)))
+                              {:port port}))))
