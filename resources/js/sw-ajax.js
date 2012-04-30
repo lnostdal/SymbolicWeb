@@ -175,12 +175,8 @@ var swComet  =
                },
                complete: callback});
      }
-
-     if($.browser.mozilla || $.browser.webkit)
-       // Stops "throbbing of doom".
-       return function(params){ setTimeout(function(){ doIt(params); }, 0); };
-     else
-       return doIt;
+     // Stops "throbbing of doom" and ensure we do not recurse until a stack overflow.
+     return function(params){ setTimeout(function(){ doIt(params); }, 0); };
    })();
 
 
