@@ -70,10 +70,10 @@
                 (handle-url-map key-prefix value)
 
                 (boolean? value)
-                (handle-url-value key-prefix
-                                  (if php-compatible-boolean-output?
-                                    (if value 1 0)
-                                    (if value "true" "false")))
+                (add-url-entry key-prefix
+                               (if php-compatible-boolean-output?
+                                 (if value "1" "0")
+                                 (if value "true" "false")))
 
                 true
                 (add-url-entry key-prefix (str value))))]
