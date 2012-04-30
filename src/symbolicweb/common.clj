@@ -41,31 +41,6 @@
     (:application @viewport)))
 
 
-#_(defn assoc-param ;; Stolen from Ring.
-  "Associate a key with a value. If the key already exists in the map, create a vector of values."
-  [map key val]
-  (assoc map key
-    (if-let [cur (map key)]
-      (if (vector? cur)
-        (conj cur val)
-        [cur val])
-      val)))
-
-
-(defn parse-params ;; Stolen from Ring.
-  "Parse parameters from a string into a map."
-  [^String param-string encoding]
-  (reduce
-   (fn [param-map encoded-param]
-     (if-let [[_ key val] (re-matches #"([^=]+)=(.*)" encoded-param)]
-       (assoc-param param-map
-                    (url-decode key encoding)
-                    (url-decode (or val "") encoding))
-        param-map))
-    {}
-    (str/split param-string #"&")))
-
-
 (defn alter-options [options fn & args]
   "> (alter-options (list :js-options {:close (with-js (alert \"closed!\"))}
                           :on-close (with-js (alert \"yep, really closed!\")))
