@@ -1,7 +1,6 @@
 (ns symbolicweb.facebook
   (:use [ring.util.codec :only (url-encode)])
   (:require [clojure.string :as str])
-  (:use [cheshire.core :as json])
   (:use [clojure.pprint :only (cl-format)])
   (:use symbolicweb.core))
 
@@ -26,7 +25,6 @@
 
 
 (defn mk-context [app-id app-secret]
-  ;; TODO: Remove these before commit; they should be a part of FoD's config.json file.
   (ref {:app-id app-id
         :app-secret app-secret
 
@@ -76,7 +74,7 @@
 (defn user-get-info [context]
   (let [http-response (http-get-request (str "https://graph.facebook.com/me?access_token="
                                              (url-encode (:user-access-token @context))))]
-  (json/decode (:body http-response) true)))
+    (json-parse (:body http-response))))
 
 
 
@@ -98,7 +96,7 @@
 (defn app-get-metadata [context]
   (let [url (str "https://graph.facebook.com/app?access_token=" (:app-access-token @context))
         http-response (http-get-request url)]
-    (json/decode (:body http-response) true)))
+    (json-parse (:body http-response))))
 
 
 (defn graph-build-arg-str [m]
@@ -111,15 +109,15 @@
 (defn app-publish-feed-url [profile-id]
   (str "https://graph.facebook.com/" profile-id "/feed"))
 
-(defn app-publish-feed-args [method-args]
-  (graph-build-arg-str method-args))
+(defn app-publish-feed-args [context method-args]
+  (graph-build-arg-str (assoc method-args
+                         :access_token (:app-access-token @context))))
 
 
 (defn app-do-publish-feed [context profile-id method-args]
   (let [http-response (http-post-request (app-publish-feed-url profile-id)
-                                         (app-publish-feed-args (merge method-args
-                                                                       {:access_token (:app-access-token @context)})))]
-    (json/decode (:body http-response) true)))
+                                         (app-publish-feed-args context method-args))]
+    (json-parse (:body http-response))))
 
 
 
