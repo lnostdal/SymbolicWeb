@@ -19,6 +19,7 @@ On page load (or refresh), the order of things executed are:
                            :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
                            :last-activity-time (atom (System/currentTimeMillis))
                            :viewports {}
+                           :session-data (ref {})
                            :make-viewport-fn (fn [request application]
                                                (throw (Exception. "make-Application: No :MAKE-VIEWPORT-FN given.")))
                            :request-handler #'default-request-handler
