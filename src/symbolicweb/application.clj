@@ -36,11 +36,11 @@ On page load (or refresh), the order of things executed are:
     application-ref))
 
 
-(defn find-application-constructor []
+(defn find-application-constructor [request]
   (loop [app-types @-application-types-]
     (when-first [app-type app-types]
       (let [app-type (val app-type)]
-        (if ((:fit-fn app-type))
+        (if ((:fit-fn app-type) request)
           (:application-constructor-fn app-type)
           (recur (next app-types)))))))
 
@@ -52,9 +52,9 @@ On page load (or refresh), the order of things executed are:
              ;; Session cookie sent, and Application found on server end.
              application
              ;; Session cookie sent, but Application not found on server end.
-             (make-Application :rest-handler clear-session-page-handler :session? false))
+             (make-Application :rest-handler #'clear-session-page-handler :session? false))
            ;; Session cookie not sent; the user is requesting a brand new session or Application.
-           (if-let [application-constructor (find-application-constructor)]
+           (if-let [application-constructor (find-application-constructor request)]
              (application-constructor)
              (make-Application :rest-handler not-found-page-handler :session? false)))
     (reset! (:cookies @it) (:cookies request))))
