@@ -37,6 +37,24 @@ On page load (or refresh), the order of things executed are:
     application-ref))
 
 
+(defn session-get [application key]
+  (dosync
+   (when-let [res (key @(:session-data @application))]
+     @res)))
+
+
+(defn session-set [application m]
+  (dosync
+   (doseq [map-entry m]
+     (if (contains? @(:session-data @application) (key map-entry))
+       ;; An entry with that key already exists; set its value.
+       (vm-set ((key map-entry) @(:session-data @application))
+               (val map-entry))
+       ;; An entry with that key doesn't exist; add the key and value (wrapped in a ValueModel).
+       (alter (:session-data @application)
+              assoc (key map-entry) (vm (val map-entry)))))))
+
+
 (defn find-application-constructor [request]
   (loop [app-types @-application-types-]
     (when-first [app-type app-types]
