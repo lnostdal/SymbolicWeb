@@ -361,14 +361,14 @@ Returns a string."
 
 (defn with-future* [timeout-ms body-fn]
   "Executes BODY-FN in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
-  (let [the-future (future (body-fn))]
+  (let [the-future (future (with-errors-logged (body-fn)))]
     (future
-      (let [result (deref the-future timeout-ms ::with-future-timeout-event)]
-        (if (not= result ::with-future-timeout-event)
-          result
-          (do
-            (future-cancel the-future)
-            ::with-future-timeout-event))))))
+      (with-errors-logged
+        (let [result (deref the-future timeout-ms ::with-future-timeout-event)]
+          (if (not= result ::with-future-timeout-event)
+            result
+            (future-cancel the-future)))))
+    nil))
 
 
 (defmacro with-future [timeout-ms & body]
