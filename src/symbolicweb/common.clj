@@ -359,6 +359,23 @@ Returns a string."
              vec))))
 
 
+(defn with-future* [timeout-ms body-fn]
+  "Executes BODY-FN in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
+  (let [the-future (future (body-fn))]
+    (future
+      (let [result (deref the-future timeout-ms ::with-future-timeout-event)]
+        (if (not= result ::with-future-timeout-event)
+          result
+          (do
+            (future-cancel the-future)
+            ::with-future-timeout-event))))))
+
+
+(defmacro with-future [timeout-ms & body]
+  "Executes BODY in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
+  `(with-future* ~timeout-ms (fn [] ~@body)))
+
+
 
 ;;; WITH-SW-IO
 ;;;;;;;;;;;;;;
