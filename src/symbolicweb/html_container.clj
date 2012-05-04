@@ -49,9 +49,7 @@ CONTENT-FN is something like:
            (let [transformation-data (content-fn template-widget)
                  html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
              (doseq [[selector content] (partition 2 transformation-data)]
-               (let [^org.jsoup.nodes.Element element (-> html-resource
-                                                          (.select selector)
-                                                          (.first))]
+               (let [^org.jsoup.nodes.Element element (.first (.select html-resource selector))]
                  (assert element (str "HTMLTemplate: No element found for selector: " selector))
                  (if (string? content)
                    ;; NOTE: I could do (.html content) here. That would actually parse the
