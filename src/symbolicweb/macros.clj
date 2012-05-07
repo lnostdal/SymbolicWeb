@@ -43,7 +43,7 @@
     (catch Throwable e ;; TODO: Throwable is "wrong", but it also actually works.
       (try
         ;; TODO: Send this stuff to a ValueModel which'll print to STDOUT and present it to the user and what not.
-        (clojure.stacktrace/print-stack-trace e 50)
+        (clojure.stacktrace/print-stack-trace e 100)
         (catch Throwable e
           (println "%WITH-ERRORS-LOGGED: Dodge überfail... :(")
           (Thread/sleep 1000)))))) ;; Make sure we aren't flooded in case some loop gets stuck.

@@ -189,7 +189,7 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
   "SW --> DB.
 Swaps - with _ for INPUT-KEY and passes INPUT-VALUE through as is."
   (when input-key
-    [(keyword (str/replace (name input-key) #"-" "_"))
+    [(keyword (str/replace (name input-key) \- \_))
      input-value]))
 
 (defn db-handle-input [db-cache object input-key input-value]
@@ -204,7 +204,7 @@ represented by INPUT-KEY, is not to be stored in the DB."
   "DB --> SW.
 Swaps _ with - for OUTPUT-KEY and passes OUTPUT-VALUE through as is."
   (when output-key
-    [(keyword (str/replace (name output-key) #"_" "-"))
+    [(keyword (str/replace (name output-key) \_ \-))
      output-value]))
 
 (defn db-handle-output [db-cache object ^clojure.lang.Keyword output-key output-value]

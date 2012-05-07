@@ -40,6 +40,7 @@ On page load (or refresh), the order of things executed are:
 (defn session-get [application key]
   (dosync
    (when-let [res (key @(:session-data @application))]
+     ;; Deref the ValueModel when found.
      @res)))
 
 
