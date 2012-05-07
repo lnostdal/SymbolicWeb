@@ -7,6 +7,9 @@
 
 ;;; Common stuff.
 
+(defonce -fb-agent- (mk-sw-agent))
+
+
 (defn http-get-request [url]
   (let [conn (aleph.http.client/http-request
               {:auto-transform true
@@ -147,13 +150,13 @@
         (assert (= csrf-check (:csrf-check @fb-context)))
         (let [access-token (user-get-access-token fb-context code response-uri)]
           (dosync (alter fb-context assoc :user-access-token access-token))
-          (with-sw-io [] (authorization-accepted-fn (user-get-info fb-context)))
+          (with-sw-io -fb-agent- (authorization-accepted-fn (user-get-info fb-context)))
           (http-html-response "<script type='text/javascript'> window.close(); </script>")))
 
       ;; Authorization declined?
       (get (:query-params request) "error")
       (do
-        (with-sw-io [] (authorization-declined-fn (:query-params request)))
+        (with-sw-io -fb-agent- (authorization-declined-fn (:query-params request)))
         (http-html-response "<script type='text/javascript'> window.close(); </script>")))))
 
 
