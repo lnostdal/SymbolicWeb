@@ -37,20 +37,19 @@
 ;;;   http://apidocs.mailchimp.com/sts/
 
 (defn send-email [context from-name from-email to-name-email-map subject text html & args]
-  (with-sw-io []
-    (let [params (apply assoc {:message {:from_name (mime-encode-rfc-2047 from-name)
-                                         :from_email from-email
-                                         :to_email (into [] (vals to-name-email-map))
-                                         :to_name (mapv mime-encode-rfc-2047 (keys to-name-email-map))
-                                         :subject subject
-                                         :text text
-                                         :html html}}
-                        :apikey (:api-key context)
-                        args)]
-      ;; TODO: I have no idea why Mail Chimp doesn't expect all the arguments to go in the body? This will surely break ref. URL
-      ;; length limits?
-      (http-post-request (str (:url context) "SendEmail?" (subs (http-build-query params) 1))
-                         ""))))
+  (let [params (apply assoc {:message {:from_name (mime-encode-rfc-2047 from-name)
+                                       :from_email from-email
+                                       :to_email (into [] (vals to-name-email-map))
+                                       :to_name (mapv mime-encode-rfc-2047 (keys to-name-email-map))
+                                       :subject subject
+                                       :text text
+                                       :html html}}
+                      :apikey (:api-key context)
+                      args)]
+    ;; TODO: I have no idea why Mail Chimp doesn't expect all the arguments to go in the body? This will surely break ref. URL
+    ;; length limits?
+    (http-post-request (str (:url context) "SendEmail?" (subs (http-build-query params) 1))
+                       "")))
 
 
 

@@ -389,15 +389,18 @@ Returns a string."
         (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
-(defonce -sw-io-agent- (agent 42 :error-handler #'-sw-io-agent-error-handler-))
+(defn mk-sw-agent []
+  (agent ::initial-state :error-handler #'-sw-io-agent-error-handler-))
 
-(defn %with-sw-io [options body-fn]
-  (send-off -sw-io-agent- (fn [old-res]
-                            (body-fn old-res))))
+(defonce -sw-io-agent- (mk-sw-agent)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
 
-(defmacro with-sw-io [options & body]
+(defn with-sw-io* [the-agent body-fn]
+  (send-off (if the-agent the-agent -sw-io-agent-)
+            (fn [_] (body-fn nil))))
+
+(defmacro with-sw-io [the-agent & body]
   "Runs BODY in an Agent."
-  `(%with-sw-io ~options (fn [_#] ~@body)))
+  `(with-sw-io* ~the-agent (fn [_#] ~@body)))
 
 
 
@@ -409,36 +412,37 @@ Returns a string."
 (def ^:dynamic *swsync-operations*)
 (def ^:dynamic *swsync-db-operations*)
 
-(defn %swsync [bodyfn]
+(defn swsync* [db-agent bodyfn]
   (io! "SWSYNC: Nesting of SWSYNC (or SWSYNC inside DOSYNC) contexts not allowed.")
   (when *in-sw-db?*
     (assert *pending-prepared-transaction?*
             "SWSYNC: SWSYNC is meant to be used within the WITH-SW-DB callback context HOLDING-TRANSACTION or outside of WITH-SW-DB context entirely."))
-  (dosync
-   (binding [*swsync-operations* (atom [])
-             *swsync-db-operations* (atom [])]
-     (let [return-value (bodyfn)]
-       (when-not (and (empty? @*swsync-operations*)
-                      (empty? @*swsync-db-operations*))
-         (let [swsync-operations *swsync-operations*
-               swsync-db-operations *swsync-db-operations*]
-           (with-sw-io [] ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
-             (when-not (empty? @swsync-db-operations)
-               (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
-                 (fn [_]
-                   (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
-                     (doseq [f @swsync-db-operations]
-                     (f))))))
-             (when-not (empty? @swsync-operations)
-               (doseq [f @swsync-operations]
-                 (f))))))
-       return-value))))
+  (let [db-agent (if db-agent db-agent -sw-io-agent-)]
+    (dosync
+     (binding [*swsync-operations* (atom [])
+               *swsync-db-operations* (atom [])]
+       (let [return-value (bodyfn)]
+         (when-not (and (empty? @*swsync-operations*)
+                        (empty? @*swsync-db-operations*))
+           (let [swsync-operations *swsync-operations*
+                 swsync-db-operations *swsync-db-operations*]
+             (with-sw-io db-agent ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
+               (when-not (empty? @swsync-db-operations)
+                 (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
+                   (fn [_]
+                     (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
+                       (doseq [f @swsync-db-operations]
+                         (f))))))
+               (when-not (empty? @swsync-operations)
+                 (doseq [f @swsync-operations]
+                   (f))))))
+         return-value)))))
 
-(defmacro swsync [& body]
+(defmacro swsync [db-agent & body]
   "A DOSYNC where database operations (SWDBOP) are gathered up and executed within a single DB transaction in an Agent
 after Clojure side transaction (DOSYNC) is done.
 This only blocks until Clojure transaction is done; it will not block waiting for the DB transaction to finish."
-  `(%swsync (fn [] ~@body)))
+  `(swsync* ~db-agent (fn [] ~@body)))
 
 (defmacro swop [& body]
   "Wrapper for general I/O operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
