@@ -37,6 +37,7 @@
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
   (:require symbolicweb.database-common)
+  (:require symbolicweb.database-dao)
 
   (:require symbolicweb.container-model)
   (:require symbolicweb.container-model-node)
