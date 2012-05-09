@@ -2,13 +2,16 @@
 
 
 (defrecord DBCache
-    [db-handle-input-fn
-     db-handle-output-fn
-     agent
+    [^clojure.lang.Fn db-handle-input-fn
+     ^clojure.lang.Fn db-handle-output-fn
+     ^clojure.lang.Agent agent
      ^String table-name
-     constructor-fn ;; Function called on cache miss to construct the initial skeleton for the data from the DB to fill up.
-     after-fn ;; Function called after CONSTRUCTOR-FN and after the DB data has been filled in for the object.
-     ^ReferenceMap cache-data]) ;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
+     ;; Function called on cache miss to construct the initial skeleton for the data from the DB to fill up.
+     ^clojure.lang.Fn constructor-fn
+     ;; Function called after CONSTRUCTOR-FN and after the DB data has been filled in for the object.
+     ^clojure.lang.Fn after-fn
+     ;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
+     ^ReferenceMap cache-data])
 
 
 (defn default-db-handle-input [db-cache object input-key input-value]
