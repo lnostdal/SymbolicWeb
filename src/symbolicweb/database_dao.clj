@@ -107,7 +107,7 @@ UPDATE-CACHE? is given a FALSE value."
              (db-cache-put db-cache (:id res) obj))
            (holding-transaction
             (fn [_]
-              (swsync
+              (dosync
                (let [obj-m (ensure obj)]
                  (doseq [key_val res]
                    (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
