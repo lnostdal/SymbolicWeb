@@ -16,6 +16,24 @@
      (let [[h m s] (seconds-to-hms seconds)]
        (format "%02d%c%02d%c%02d" h separator m separator s))))
 
+(defn seconds-to-readable-str [seconds & {:keys [day-suffix hour-suffix minute-suffix second-suffix]
+                                          :or {day-suffix " days "
+                                               hour-suffix " hours "
+                                               minute-suffix " minutes "
+                                               second-suffix " seconds"}}]
+  (let [[hours minutes seconds] (seconds-to-hms seconds)
+        days (quot hours 24)
+        hours (rem hours 24)]
+    (if (pos? days)
+      (format "%d%s%d%s%d%s"
+              days day-suffix
+              hours hour-suffix
+              minutes minute-suffix)
+      (format "%d%s%d%s%d%s"
+              hours hour-suffix
+              minutes minute-suffix
+              seconds second-suffix))))
+
 
 (defn hms-to-seconds [hours minutes seconds]
   "HOURS, MINUTES and SECONDS are integers. This returns a single integer value; seconds."
