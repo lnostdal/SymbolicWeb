@@ -441,7 +441,8 @@ Returns a string."
 (defmacro swsync [db-agent & body]
   "A DOSYNC where database operations (SWDBOP) are gathered up and executed within a single DB transaction in an Agent
 after Clojure side transaction (DOSYNC) is done.
-This only blocks until Clojure transaction is done; it will not block waiting for the DB transaction to finish."
+This only blocks until Clojure transaction is done; it will not block waiting for the DB transaction to finish; use AWAIT1
+with DB-AGENT as argument to do this."
   `(swsync* ~db-agent (fn [] ~@body)))
 
 (defmacro swop [& body]
