@@ -3,6 +3,10 @@
 (declare add-response-chunk ref?)
 
 
+
+
+
+
 (set! *print-length* 30)
 (set! *print-level* 10)
 
@@ -359,7 +363,7 @@ Returns a string."
              vec))))
 
 
-(defn with-future* [timeout-ms body-fn]
+#_(defn with-future* [timeout-ms body-fn]
   "Executes BODY-FN in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
   (let [the-future (future (with-errors-logged (body-fn)))]
     (future
@@ -371,7 +375,7 @@ Returns a string."
     nil))
 
 
-(defmacro with-future [timeout-ms & body]
+#_(defmacro with-future [timeout-ms & body]
   "Executes BODY in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
   `(with-future* ~timeout-ms (fn [] ~@body)))
 
