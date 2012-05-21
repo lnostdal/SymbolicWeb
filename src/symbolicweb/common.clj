@@ -341,13 +341,6 @@ Returns a string."
   "")
 
 
-(def ^:dynamic *with-js?* false)
-
-
-(defmacro with-js [& body]
-  `(binding [*with-js?* true]
-     ~@body))
-
 
 (defn remove-limited [vec item limit]
   (with-local-vars [lim limit]

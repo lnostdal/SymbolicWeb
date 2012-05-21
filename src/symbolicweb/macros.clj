@@ -2,32 +2,30 @@
 
 (def -db-timeout-ms- 5000)
 
-;; Macros and dynamic variables.
 
-(def ^:dynamic *with-sw?* false)
-(def ^:dynamic *with-sw-ctx-fn* (fn [f] (f)))
+;;; Macros and dynamic variables.
 
-(let [*out* *out*
-      *err* *err*]
-  (defn %with-sw [f ctx-fn]
-    (binding [*with-sw?* true ;; So components can check whether they run within the dynamic context of WITH-SW.
-              *print-length* 10
-              *print-level* 10
-              *out* *out*
-              *err* *err*]
-      (ctx-fn f))))
+;; database_common.clj
+(def ^:dynamic *in-sw-db?* false)
+(def ^:dynamic *pending-prepared-transaction?* false)
 
-(defmacro with-sw [[ctx-fn] & body]
-  "Sets up the needed context (dynamic variables) needed by various components in SymbolicWeb."
-  `(%with-sw
-     (fn [] ~@body)
-     ~(if ctx-fn
-        ctx-fn
-        *with-sw-ctx-fn*)))
+;; database_dao.clj
+(def ^:dynamic *in-db-cache-get?* false)
 
-
+;; html_container.clj
 (def ^:dynamic *in-html-container?* false)
-(def ^:dynamic *html-container-accu-children* [])
+(def ^:dynamic *with-js?* false)
+
+;; model.clj
+(def ^:dynamic *observed-vms-ctx* false)
+(def ^:dynamic *observed-vms-active-body-fns* #{})
+
+
+
+
+(defmacro with-js [& body]
+  `(binding [*with-js?* true]
+     ~@body))
 
 
 ;; Doesn't belong here, but can't find a way to bootstrap this crap proper.
@@ -83,9 +81,6 @@
                  "NIL"))))
 
 
-(def ^:dynamic *in-sw-db?* false)
-(def ^:dynamic *pending-prepared-transaction?* false)
-(def ^:dynamic *in-db-cache-get?* false)
 
 
 (declare %with-sw-connection)
