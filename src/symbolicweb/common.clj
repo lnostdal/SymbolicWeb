@@ -386,14 +386,31 @@ Returns a string."
         (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
-(defn mk-sw-agent []
-  (agent ::initial-state :error-handler #'-sw-io-agent-error-handler-))
+(defn mk-sw-agent [binding-blacklist]
+  {:agent (agent ::initial-state :error-handler #'-sw-io-agent-error-handler-)
+   :binding-blacklist (merge {#'clojure.java.jdbc/*db* @#'clojure.java.jdbc/*db*
 
-(defonce -sw-io-agent- (mk-sw-agent)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
+                              #'*in-sw-db?* *in-sw-db?*
+                              #'*pending-prepared-transaction?* *pending-prepared-transaction?*
+
+                              #'*in-db-cache-get?* *in-db-cache-get?*
+
+                              #'*in-html-container?* *in-html-container?*
+                              #'*with-js?* *with-js?*
+
+                              #'*observed-vms-ctx* false
+                              #'*observed-vms-active-body-fns* *observed-vms-active-body-fns*}
+                             binding-blacklist)})
+
+(defonce -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
 
 (defn with-sw-io* [the-agent body-fn]
-  (send-off (if the-agent the-agent -sw-io-agent-)
-            (fn [_] (body-fn nil))))
+  (let [the-agent (if the-agent the-agent -sw-io-agent-)]
+    (send-off (:agent the-agent)
+              (fn [_]
+                (with-bindings (merge (get-thread-bindings) (:binding-blacklist the-agent))
+                  (body-fn nil))))))
+
 
 (defmacro with-sw-io [the-agent & body]
   "Runs BODY in an Agent."

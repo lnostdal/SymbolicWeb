@@ -7,7 +7,7 @@
 
 ;;; Common stuff.
 
-(defonce -fb-agent- (mk-sw-agent))
+(defonce -fb-agent- (mk-sw-agent nil))
 
 
 (defn http-get-request [url]
