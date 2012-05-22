@@ -1,68 +1,5 @@
 (in-ns 'symbolicweb.core)
 
-(defn send
-  "Dispatch an action to an agent. Returns the agent immediately.
-  Subsequently, in a thread from a thread pool, the state of the agent
-  will be set to the value of:
-
-  (apply action-fn state-of-agent args)"
-  {:added "1.0"
-   :static true}
-  [^clojure.lang.Agent a f & args]
-  (.dispatch a (binding [*agent* a] f) args false))
-
-(defn send-off
-  "Dispatch a potentially blocking action to an agent. Returns the
-  agent immediately. Subsequently, in a separate thread, the state of
-  the agent will be set to the value of:
-
-  (apply action-fn state-of-agent args)"
-  {:added "1.0"
-   :static true}
-  [^clojure.lang.Agent a f & args]
-  (.dispatch a (binding [*agent* a] f) args true))
-
-
-(defn future-call
-  "Takes a function of no args and yields a future object that will
-  invoke the function in another thread, and will cache the result and
-  return it on all subsequent calls to deref/@. If the computation has
-  not yet finished, calls to deref/@ will block, unless the variant
-  of deref with timeout is used. See also - realized?."
-  {:added "1.1"
-   :static true}
-  [f]
-  (let [fut (.submit clojure.lang.Agent/soloExecutor ^Callable f)]
-    (reify
-     clojure.lang.IDeref
-     (deref [_] (.get fut))
-     clojure.lang.IBlockingDeref
-     (deref
-      [_ timeout-ms timeout-val]
-      (try (.get fut timeout-ms java.util.concurrent.TimeUnit/MILLISECONDS)
-           (catch java.util.concurrent.TimeoutException e
-             timeout-val)))
-     clojure.lang.IPending
-     (isRealized [_] (.isDone fut))
-     java.util.concurrent.Future
-      (get [_] (.get fut))
-      (get [_ timeout unit] (.get fut timeout unit))
-      (isCancelled [_] (.isCancelled fut))
-      (isDone [_] (.isDone fut))
-      (cancel [_ interrupt?] (.cancel fut interrupt?)))))
-
-
-(defmacro future
-  "Takes a body of expressions and yields a future object that will
-  invoke the body in another thread, and will cache the result and
-  return it on all subsequent calls to deref/@. If the computation has
-  not yet finished, calls to deref/@ will block, unless the variant of
-  deref with timeout is used. See also - realized?."
-  {:added "1.1"}
-  [& body] `(future-call (^{:once true} fn* [] ~@body)))
-
-
-
 (defn ref? [x]
   (= clojure.lang.Ref (type x)))
 
@@ -146,6 +83,8 @@
       (catch Throwable inner-exception
         (println "-GC-THREAD-ERROR-HANDLER-: Dodge überfail... :(")
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
+
+;;(defonce -gc-agent- (mk-sw-agent nil))
 
 (defonce -gc-thread-
   (with1 (agent 42 :error-handler #'-gc-thread-error-handler-)

@@ -1,5 +1,4 @@
 (ns symbolicweb.core
-  (:refer-clojure :exclude [send send-off future future-call])
   (:require [clojure.math.numeric-tower :refer (round)])
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])
