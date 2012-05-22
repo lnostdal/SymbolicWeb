@@ -80,6 +80,12 @@
     (json-parse (:body http-response))))
 
 
+(defn user-get-likes [context]
+  (let [http-response (http-get-request (str "https://graph.facebook.com/me/likes?access_token="
+                                             (url-encode (:user-access-token @context))))]
+    (json-parse (:body http-response))))
+
+
 
 ;;;; App Auth. See:
 ;;;;   https://developers.facebook.com/docs/authentication/applications/
