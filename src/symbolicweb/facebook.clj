@@ -35,7 +35,7 @@
         :app-access-token nil
 
         ;; https://developers.facebook.com/docs/authentication/permissions/
-        :permission-names ["publish_stream" "email"]
+        :permission-names ["publish_stream" "email" "user_birthday"]
 
         :csrf-check (generate-uuid)
 
