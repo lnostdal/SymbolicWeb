@@ -16,30 +16,43 @@
      (let [[h m s] (seconds-to-hms seconds)]
        (format "%02d%c%02d%c%02d" h separator m separator s))))
 
-(defn seconds-to-readable-str [seconds & {:keys [day-suffix hour-suffix minute-suffix second-suffix]
-                                          :or {day-suffix " days "
-                                               hour-suffix " hours "
-                                               minute-suffix " minutes "
-                                               second-suffix " seconds"}}]
-  (let [[hours minutes seconds] (seconds-to-hms seconds)
-        days (quot hours 24)
-        hours (rem hours 24)]
-    (if (pos? days)
-      (format "%d%s%d%s%d%s"
-              days day-suffix
-              hours hour-suffix
-              minutes minute-suffix)
-      (format "%d%s%d%s%d%s"
-              hours hour-suffix
-              minutes minute-suffix
-              seconds second-suffix))))
-
 
 (defn hms-to-seconds [hours minutes seconds]
   "HOURS, MINUTES and SECONDS are integers. This returns a single integer value; seconds."
   (+ (* hours 60 60)
      (* minutes 60)
      seconds))
+
+
+(defn seconds-to-readable-str [total-seconds & {:keys [day-format hour-format minute-format second-format]
+                                                :or {day-format #(if (= 1 %) (str % " day") (str % " days"))
+                                                     hour-format #(if (= 1 %) (str % " hour") (str % " hours"))
+                                                     minute-format #(if (= 1 %) (str % " minute") (str % " minutes"))
+                                                     second-format #(if (= 1 %) (str % " second") (str % " seconds"))}}]
+  (let [[hours minutes seconds] (seconds-to-hms total-seconds)
+        days (quot hours 24)
+        hours (rem hours 24)]
+
+    (cond
+      (>= total-seconds (hms-to-seconds 24 0 0))
+      (str
+       (day-format days) \space
+       (hour-format hours) \space
+       (minute-format minutes))
+
+      (>= total-seconds (hms-to-seconds 0 60 0))
+      (str
+       (hour-format hours) \space
+       (minute-format minutes) \space
+       (second-format seconds))
+
+      (>= total-seconds (hms-to-seconds 0 0 60))
+      (str
+       (minute-format minutes) \space
+       (second-format seconds))
+
+      :else
+      (second-format seconds))))
 
 
 (defn make-SmallIntInput [model & attributes]

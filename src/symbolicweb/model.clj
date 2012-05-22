@@ -3,8 +3,6 @@
 (declare mk-view ref? observe %vm-deref)
 
 
-(def ^:dynamic *observed-vms-ctx*)
-(def ^:dynamic *observed-vms-active-body-fns* #{})
 
 
 ;; TODO: Rename to ADD-OBSERVER, REMOVE-OBSERVER and GET-OBSERVERS?
@@ -72,7 +70,7 @@
 
 (defn %vm-deref [^ValueModel value-model ^clojure.lang.Ref value-ref]
   (let [return-value (ensure value-ref)]
-    (when (and (thread-bound? #'*observed-vms-ctx*)
+    (when (and *observed-vms-ctx*
                (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
       (alter (:vms *observed-vms-ctx*) conj value-model)
       (let [observed-vms-ctx *observed-vms-ctx*]

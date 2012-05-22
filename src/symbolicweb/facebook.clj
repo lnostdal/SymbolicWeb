@@ -7,7 +7,7 @@
 
 ;;; Common stuff.
 
-(defonce -fb-agent- (mk-sw-agent))
+(defonce -fb-agent- (mk-sw-agent nil))
 
 
 (defn http-get-request [url]
@@ -76,6 +76,12 @@
 
 (defn user-get-info [context]
   (let [http-response (http-get-request (str "https://graph.facebook.com/me?access_token="
+                                             (url-encode (:user-access-token @context))))]
+    (json-parse (:body http-response))))
+
+
+(defn user-get-likes [context]
+  (let [http-response (http-get-request (str "https://graph.facebook.com/me/likes?access_token="
                                              (url-encode (:user-access-token @context))))]
     (json-parse (:body http-response))))
 

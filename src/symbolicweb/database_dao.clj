@@ -103,16 +103,18 @@ UPDATE-CACHE? is given a FALSE value."
                                                  input-key input-value))))))
                   (var-get record-data)))
                res (insert-record (.table-name db-cache) record-data)] ;; SQL INSERT.
+           ;; NOTE: Object added to cache before fields (added below) are there yet? I guess this is ok since only the one
+           ;; currently adding the object will "know about it" yet.
            (when update-cache?
              (db-cache-put db-cache (:id res) obj))
            (holding-transaction
             (fn [_]
+              ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
               (dosync
                (let [obj-m (ensure obj)]
                  (doseq [key_val res]
                    (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
                      (when output-key
-                       ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
                        (if (= ::not-found (get obj-m output-key ::not-found))
                          (let [vm-output-value (vm output-value)]
                            (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; Add.
@@ -121,10 +123,11 @@ UPDATE-CACHE? is given a FALSE value."
                          (do
                            (vm-set (output-key obj-m) output-value) ;; Update.
                            (db-ensure-persistent-field db-cache obj (:id res)
-                                                       output-key (output-key obj-m))))))))
+                                                       output-key (output-key obj-m)))))))))
+              ;; Initialize object further; perhaps add external observers of the objects fields etc..
+              (dosync
                ((.after-fn db-cache) obj))
               obj)))))))
-
 
 
 (defn mk-db-cache [table-name constructor-fn after-fn db-handle-input-fn db-handle-output-fn]

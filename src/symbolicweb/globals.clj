@@ -1,6 +1,5 @@
 (in-ns 'symbolicweb.core)
 
-
 (defn ref? [x]
   (= clojure.lang.Ref (type x)))
 
@@ -84,6 +83,8 @@
       (catch Throwable inner-exception
         (println "-GC-THREAD-ERROR-HANDLER-: Dodge überfail... :(")
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
+
+;;(defonce -gc-agent- (mk-sw-agent nil))
 
 (defonce -gc-thread-
   (with1 (agent 42 :error-handler #'-gc-thread-error-handler-)
