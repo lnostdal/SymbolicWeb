@@ -8,6 +8,9 @@
 ;; database_common.clj
 (def ^:dynamic *in-sw-db?* false)
 (def ^:dynamic *pending-prepared-transaction?* false)
+(def ^:dynamic *swsync-operations*)
+(def ^:dynamic *swsync-db-operations*)
+
 
 ;; database_dao.clj
 (def ^:dynamic *in-db-cache-get?* false)

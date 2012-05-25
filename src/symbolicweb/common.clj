@@ -425,8 +425,6 @@ Returns a string."
 
 (declare with-sw-db) ;; It's actually a funtion now, so..
 
-(def ^:dynamic *swsync-operations*)
-(def ^:dynamic *swsync-db-operations*)
 
 (defn swsync* [db-agent bodyfn]
   (io! "SWSYNC: Nesting of SWSYNC (or SWSYNC inside DOSYNC) contexts not allowed.")
