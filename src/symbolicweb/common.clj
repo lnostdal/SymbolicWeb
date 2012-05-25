@@ -445,8 +445,10 @@ Returns a string."
                  (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
                    (fn [_]
                      (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
-                       (doseq [f @swsync-db-operations]
-                         (f))))))
+                       ;; This DEREFs all VMs within a single DOSYNC; i.e. we get a snapshot of all of them.
+                       (doseq [[key value table-name id] (dosync (mapv #(%) @swsync-db-operations))]
+                         (update-values table-name ["id = ?" id]
+                                        {(as-quoted-identifier \" key) value}))))))
                (when-not (empty? @swsync-operations)
                  (doseq [f @swsync-operations]
                    (f))))))
@@ -466,10 +468,7 @@ with DB-AGENT as argument to do this."
              "SWOP (general I/O operation) outside of SWSYNC context.")
      (swap! *swsync-operations* conj (fn [] ~@body))))
 
-(defmacro swdbop [& body]
-  "Wrapper for DB type I/O operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)
-and all SWDBOPs runs within a single DB transaction."
-  `(do
-     (assert (thread-bound? #'*swsync-db-operations*)
-             "SWDBOP (database operation) outside of SWSYNC context.")
-     (swap! *swsync-db-operations* conj (fn [] ~@body))))
+(defn swdbop [input-entry-fn]
+  (assert (thread-bound? #'*swsync-db-operations*)
+          "SWVMOP: (database operation) outside of SWSYNC context.")
+  (swap! *swsync-db-operations* conj input-entry-fn))
