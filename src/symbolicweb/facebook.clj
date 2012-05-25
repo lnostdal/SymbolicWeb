@@ -27,20 +27,22 @@
     @conn))
 
 
-(defn mk-context [app-id app-secret]
-  (ref {:app-id app-id
-        :app-secret app-secret
+(defn mk-context [app-id app-secret & args]
+  (ref (apply assoc
+              {:app-id app-id
+               :app-secret app-secret
 
-        :user-access-token nil
-        :app-access-token nil
+               :user-access-token nil
+               :app-access-token nil
 
-        ;; https://developers.facebook.com/docs/authentication/permissions/
-        :permission-names ["publish_stream" "email" "user_birthday"]
+               ;; https://developers.facebook.com/docs/authentication/permissions/
+               :permission-names ["publish_stream" "email" "user_birthday"]
 
-        :csrf-check (generate-uuid)
+               :csrf-check (generate-uuid)
 
-        :user-authenticate-display "popup" ;; page, popup or touch (mobile)
-        }))
+               :user-authenticate-display "popup" ;; page, popup or touch (mobile)
+               }
+              args)))
 
 
 
