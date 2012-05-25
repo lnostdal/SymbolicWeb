@@ -22,7 +22,7 @@
   (java.net.URLDecoder/decode s "UTF-8"))
 
 
-(defn mime-encode-rfc-2047 [s]
+(defn mime-encode-rfc-2047 ^String [^String s]
   (str "=?UTF-8?Q?"
        (-> (url-encode-component s)
            (str/replace "%20" "_")
