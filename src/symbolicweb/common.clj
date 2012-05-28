@@ -434,7 +434,7 @@ Returns a string."
   (let [db-agent (if db-agent db-agent -sw-io-agent-)]
     (dosync
      (binding [*swsync-operations* (atom [])
-               *swsync-db-operations* (atom [])]
+               *swsync-db-operations* (atom {})]
        (let [return-value (bodyfn)]
          (when-not (and (empty? @*swsync-operations*)
                         (empty? @*swsync-db-operations*))
@@ -446,7 +446,7 @@ Returns a string."
                    (fn [_]
                      (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
                        ;; This DEREFs all VMs within a single DOSYNC; i.e. we get a snapshot of all of them.
-                       (doseq [[key value table-name id] (dosync (mapv #(%) @swsync-db-operations))]
+                       (doseq [[key value table-name id] (dosync (mapv #(%) (vals @swsync-db-operations)))]
                          (update-values table-name ["id = ?" id]
                                         {(as-quoted-identifier \" key) value}))))))
                (when-not (empty? @swsync-operations)
@@ -468,7 +468,7 @@ with DB-AGENT as argument to do this."
              "SWOP (general I/O operation) outside of SWSYNC context.")
      (swap! *swsync-operations* conj (fn [] ~@body))))
 
-(defn swdbop [input-entry-fn]
+(defn swdbop [vm input-entry-fn]
   (assert (thread-bound? #'*swsync-db-operations*)
           "SWVMOP: (database operation) outside of SWSYNC context.")
-  (swap! *swsync-db-operations* conj input-entry-fn))
+  (swap! *swsync-db-operations* assoc vm input-entry-fn))

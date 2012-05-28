@@ -53,8 +53,8 @@ Setup reactive SQL UPDATEs for VALUE-MODEL."
              (when-not (= old-value new-value) ;; TODO: Needed?
                (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
                  (when input-key
-                   (swdbop #(let [[input-key input-value] (db-handle-input db-cache object key @value-model)]
-                              [input-key input-value (.table-name db-cache) id]))))))))
+                   (swdbop value-model #(let [[input-key input-value] (db-handle-input db-cache object key @value-model)]
+                                          [input-key input-value (.table-name db-cache) id]))))))))
 
 
 (defn db-backend-get [db-cache ^Long id ^clojure.lang.Ref obj]
