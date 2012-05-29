@@ -145,8 +145,10 @@
   (case (get (:query-params request) "do")
     "init"
     ;; FB: 1. Redirect the user to the OAuth Dialog
-    (let [location (user-authenticate-url fb-context response-uri)]
-      (http-replace-response location))
+    (do
+      (dosync (alter fb-context assoc :csrf-check (generate-uuid)))
+      (let [location (user-authenticate-url fb-context response-uri)]
+        (http-replace-response location)))
 
     ;; We'll end up here after the redirect above.
     ;; FB: 4. Exchange the code for a user access token
