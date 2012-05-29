@@ -43,7 +43,7 @@
         (.append ^StringBuilder (:response-str viewport-m) new-chunk)
         (when @response-sched-fn
           (.run ^java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask
-                @response-sched-fn))))))
+                (.job @response-sched-fn)))))))
 
 
 (defn add-response-chunk [^String new-chunk widget]

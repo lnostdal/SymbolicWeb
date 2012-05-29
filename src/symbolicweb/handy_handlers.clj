@@ -43,11 +43,12 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
               (.run @response-sched-fn))
             (reset! response-sched-fn
                     (overtone.at-at/at (+ (overtone.at-at/now) -comet-timeout-)
-                        #(locking viewport
-                           (when @response-sched-fn
-                             (reset! response-sched-fn nil)
-                             (do-it response-str))
-                           nil)))))))))
+                                       #(locking viewport
+                                          (when @response-sched-fn
+                                            (reset! response-sched-fn nil)
+                                            (do-it response-str))
+                                          nil)
+                                       -overtone-pool-))))))))
 
 
 (defn handle-in-channel-request [request application viewport]

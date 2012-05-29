@@ -37,6 +37,9 @@
   (atom {}))
 
 
+(defonce -overtone-pool- (overtone.at-at/mk-pool))
+
+
 
 ;; TODO: Hack; def (instead of just forward decl) since -GC-THREAD- is started right away.
 (defn ensure-non-visible [widget])
