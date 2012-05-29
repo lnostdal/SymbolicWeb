@@ -29,7 +29,8 @@
 
 (defn mk-context [app-id app-secret & args]
   (ref (apply assoc
-              {:app-id app-id
+              {}
+              :app-id app-id
                :app-secret app-secret
 
                :user-access-token nil
@@ -41,8 +42,7 @@
                :csrf-check (generate-uuid)
 
                :user-authenticate-display "popup" ;; page, popup or touch (mobile)
-               }
-              args)))
+               args)))
 
 
 
