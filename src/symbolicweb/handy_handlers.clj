@@ -40,7 +40,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           (if @response-sched-fn
             (do
               (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN.")
-              (.run @response-sched-fn))
+              (.run (.job @response-sched-fn)))
             (reset! response-sched-fn
                     (overtone.at-at/at (+ (overtone.at-at/now) -comet-timeout-)
                                        #(locking viewport
