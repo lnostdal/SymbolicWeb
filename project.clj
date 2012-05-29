@@ -12,7 +12,7 @@
                  [cheshire "4.0.1-SNAPSHOT"] ;; JSON.
 
                  [hiccup "1.0.0"] ;; HTML generation.
-                 [org.jsoup/jsoup "1.6.2"] ;; HTML templating.
+                 [org.jsoup/jsoup "1.6.4-SNAPSHOT"] ;; HTML templating.
                  [ring/ring-core "1.1.0"] ;; HTTP protocol handling.
 
                  [org.clojure/java.jdbc "0.2.2-SNAPSHOT"] ;; SQL/DB handling.
