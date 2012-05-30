@@ -2,11 +2,6 @@
 
 (declare add-response-chunk ref?)
 
-
-
-
-
-
 (set! *print-length* 30)
 (set! *print-level* 10)
 
