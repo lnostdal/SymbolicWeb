@@ -336,19 +336,17 @@ Returns a string."
   "")
 
 
-
-(defn remove-limited [vec item limit]
-  (with-local-vars [lim limit]
-    (doall ;; Clojure being lazy by-default for these kinds of things is retarded...
-     (mapcat (fn [elt]
-               (if (= elt item)
-                 (if (zero? (var-get lim))
-                   [elt]
-                   (do
-                     (var-set lim (- (var-get lim) 1))
-                     []))
-                 [elt]))
-             vec))))
+(defn pred-with-limit [pred limit]
+  "Returns a new predicate based on PRED which only \"lasts\" LIMIT number of times."
+  (let [limit (atom limit)] ;; TODO: Don't really need an Atom here, but OK.
+    (fn [elt]
+      (if-not (pred elt)
+        true
+        (if (zero? @limit)
+          true
+          (do
+            (reset! limit (dec @limit))
+            false))))))
 
 
 #_(defn with-future* [timeout-ms body-fn]
