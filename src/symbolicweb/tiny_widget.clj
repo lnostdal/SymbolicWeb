@@ -17,8 +17,8 @@
 
 
 (defprotocol Observer
-  (observe-start [observer observed] "Start observing something (OBSERVED).")
-  (observe-stop [observer observed] "Stop observing something (OBSERVED)."))
+  (observe-start [observer] "Start observing something.")
+  (observe-stop [observer] "Stop observing something."))
 
 
 
@@ -28,7 +28,7 @@
                         ;; Visibility.
                         ^clojure.lang.Ref on-visible-fns ;; []
                         ^clojure.lang.Ref children ;; []
-                        ^clojure.lang.Ref viewport ;; Ref -> Viewport
+                        ^clojure.lang.Ref viewport ;; Viewport
                         ;; Observer.
                         ^clojure.lang.Fn observed-event-handler
 
@@ -52,11 +52,11 @@
 
 
   Observer
-  (observe-start [widget model]
+  (observe-start [widget]
     (when (add-view model widget)
       (observed-event-handler widget model ::-initial-update- @model)))
 
-  (observe-stop [widget model]
+  (observe-stop [widget]
     (remove-view model widget)))
 
 
