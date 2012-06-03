@@ -10,10 +10,10 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
        existing-view
        (when-not find-only?
          (let [new-view ((:view-from-node-fn @container-view) container-view node)]
-           (alter (:view-of-node @container-view) assoc node new-view)
+           (alter (:view-of-node @container-view) assoc node new-view) ;; Node --> View
            (alter new-view assoc :node-of-view node) ;; View --> Node
            ;; TODO: This is too specific; "visibility" shouldn't be mentioned here.
-           (add-on-non-visible-fn new-view (fn [] (alter (:view-of-node @container-view) dissoc node)))
+           (add-on-non-visible-fn new-view (fn [] (alter (:view-of-node @container-view) dissoc node))) ;; Node -/-> View
             new-view)))))
 
 

@@ -26,12 +26,13 @@
     viewport))
 
 
-(defn add-on-visible-fn [widget fn]
+(declare add-on-visible-fn)
+#_(defn add-on-visible-fn [widget fn]
   "FN is code to execute when WIDGET is added to the client/DOM end."
   (alter (:on-visible-fns @widget) conj fn))
 
 
-(defn add-on-non-visible-fn [widget fn]
+#_(defn add-on-non-visible-fn [widget fn]
   "FN is code to execute when WIDGET is removed from the client/DOM end."
   (alter (:on-non-visible-fns @widget) conj fn))
 

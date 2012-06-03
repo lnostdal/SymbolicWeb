@@ -42,6 +42,7 @@
   (:require symbolicweb.container-model)
   (:require symbolicweb.container-model-node)
 
+  (:require symbolicweb.widget-base-class)
   (:require symbolicweb.jquery)
   (:require symbolicweb.container)
   (:require symbolicweb.viewport)

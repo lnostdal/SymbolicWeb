@@ -1,13 +1,12 @@
-(ns symbolicweb.tiny-widget
-  (:use [symbolicweb.core :exclude (viewport-of
-                                    add-on-visible-fn
-                                    add-on-non-visible-fn)]))
-
+(in-ns 'symbolicweb.core)
 
 
 (defprotocol Visibility
   (add-on-visible-fn [widget cb] "Add CB to run when Widget changes from non-visible (initial state) to visible.")
-  (on-visible [widget] "CBs to run when Widget changes from non-visible (initial state) to visible. ")
+  (on-visible [widget] "Returns CBs to run when Widget changes from non-visible (initial state) to visible. ")
+
+  (add-on-non-visible-fn [widget cb] "Add CB to run when Widget changes from visible to non-visible.")
+  (on-non-visible [widget] "Returns CBs to run when Widget changes from visible to non-visible. ")
 
   (add-visibility-child [widget child-widget])
   (remove-visibility-child [widget child-widget])
@@ -23,12 +22,16 @@
 
 
 (defrecord WidgetBase [^String id
+                       ^clojure.lang.Keyword type
                        ^symbolicweb.core.IModel model
                        ^clojure.lang.Fn render
+
                        ;; Visibility.
                        ^clojure.lang.Ref on-visible-fns ;; []
+                       ^clojure.lang.Ref on-non-visible-fns ;; []
                        ^clojure.lang.Ref children ;; []
                        ^clojure.lang.Ref viewport ;; Viewport
+
                        ;; Observer.
                        ^clojure.lang.Fn observed-event-handler
 
@@ -36,6 +39,10 @@
   Visibility
   (on-visible [widget]
     (doseq [f (ensure on-visible-fns)]
+      (f widget model)))
+
+  (on-non-visible [widget]
+    (doseq [f (ensure on-non-visible-fns)]
       (f widget model)))
 
   (add-visibility-child [_ child-widget]
@@ -61,33 +68,21 @@
 
 
 
-(defn make-WidgetBase ^WidgetBase [^symbolicweb.core.IModel model
+(defn make-WidgetBase ^WidgetBase [^clojure.lang.Keyword type
+                                   ^symbolicweb.core.IModel model
                                    ^clojure.lang.Fn render-fn
-                                   ^clojure.lang.Fn model-event-handler-fn]
-  (WidgetBase. (str "sw-" (generate-uid)) ;; ID
-               model
-               render-fn
-               (ref [observe-start]) ;; ON-VISIBLE-FNS
-               (ref []) ;; CHILDREN
-               (ref nil) ;; VIEWPORT
-               model-event-handler-fn
-               (ref {}))) ;; CALLBACKS
-
-
-(defn make-HTMLElement
-  (^WidgetBase
-   [^String html-element-type
-    ^symbolicweb.core.IModel model]
-   (make-HTMLElement html-element-type
+                                   ^clojure.lang.Fn model-event-handler-fn
+                                   & args]
+  (with (WidgetBase. (str "sw-" (generate-uid)) ;; ID
+                     type
                      model
-                     (fn [widget model old-value new-value]
-                       (println "jqHTML:" old-value "," new-value)
-                       (jqHTML widget (escape-html new-value)))))
-
-  (^WidgetBase
-   [^String html-element-type
-    ^symbolicweb.core.IModel model
-    ^clojure.lang.Fn model-event-handler]
-   (make-WidgetBase model
-                    #(str "<" html-element-type " id='" (.id %) "'></" html-element-type ">")
-                    model-event-handler)))
+                     render-fn
+                     (ref [observe-start]) ;; ON-VISIBLE-FNS
+                     (ref [observe-stop]) ;; ON-NON-VISIBLE-FNS
+                     (ref []) ;; CHILDREN
+                     (ref nil) ;; VIEWPORT
+                     model-event-handler-fn
+                     (ref {})) ;; CALLBACKS
+    (if (empty? args)
+      it
+      (apply assoc it args))))

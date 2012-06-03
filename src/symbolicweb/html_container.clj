@@ -32,7 +32,9 @@
 
 
 (derive ::HTMLTemplate ::HTMLContainer)
-(defn make-HTMLTemplate [^org.jsoup.nodes.Document html-resource content-fn & attributes]
+(defn make-HTMLTemplate [^org.jsoup.nodes.Document html-resource
+                         ^clojure.lang.Fn content-fn
+                         & attributes]
   "HTML-RESOURCE is the return-value of a call to HTML-RESOURCE from the Enlive library.
 CONTENT-FN is something like:
   (fn [html-template]

@@ -35,14 +35,7 @@
      true accept-header)))
 
 
-(defn viewport-vm-of [widget]
-  (:viewport @widget))
-
-
-(defn viewport-of [widget]
-  @(:viewport @widget))
-
-
+(declare viewport-of)
 (defn application-of [widget]
   (when-let [viewport (viewport-of widget)]
     (:application @viewport)))
@@ -319,7 +312,7 @@ Returns a string."
 
 
 (defn widget-id-of ^String [widget]
-  (:id @widget))
+  (.id widget))
 
 
 (defn sw-js-base-bootstrap [application viewport]

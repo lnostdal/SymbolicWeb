@@ -14,26 +14,14 @@
                                                       callback-data ""
                                                       js-after ""}}]
   (let [widget @widget]
-    (str "$('#" (:id widget) "').bind('" event-type "', "
+    (str "$('#" (.id widget) "').bind('" event-type "', "
          "function(event){"
-         "swMsg('" (:id widget) "', '" event-type "', function(){" js-before "}, '"
+         "swMsg('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
          (reduce (fn [acc key_val] (str acc (url-encode-component (str (key key_val))) "=" (val key_val) "&"))
                  ""
                  callback-data)
          "', function(){" js-after "});"
          "});")))
-
-
-(defn render-aux-js [widget]
-  "Return JS which will initialize WIDGET."
-  (when-let [render-aux-js-fn (:render-aux-js-fn @widget)]
-    (render-aux-js-fn widget)))
-
-
-(defn render-aux-html [widget]
-  "Return \"aux\" HTML for WIDGET."
-  (when-let [render-aux-html-fn (:render-aux-html-fn @widget)]
-    (render-aux-html-fn widget)))
 
 
 (defn render-html ^String [widget]
@@ -69,66 +57,20 @@ Returns WIDGET."
   widget)
 
 
-(defn make-ID
-  ([] (make-ID {}))
-  ([m] (assoc m :id (-> (StringBuilder. "sw-")
-                        (.append (.toString (generate-uid)))
-                        (.toString)))))
 
-
-(defn make-WidgetBase [& key_vals]
-  (ref (apply assoc (make-ID)
-              :type ::WidgetBase
-              :viewport (vm nil)
-              :on-visible-fns (ref [])
-              :on-non-visible-fns (ref [])
-              :children [] ;; Note that order etc. doesn't matter here; this is only used to track visibility on the client-end.
-              :callbacks (atom {}) ;; event-name -> [handler-fn callback-data]
-              :render-html-fn #(throw (Exception. (str "No :RENDER-HTML-FN defined for this widget (ID: " (:id %) ").")))
-              :parse-callback-data-handler #'default-parse-callback-data-handler
-              key_vals)))
-
-
-(derive ::Widget ::WidgetBase)
-(defn make-Widget [& key_vals]
-  (apply make-WidgetBase key_vals))
-
-
-(derive ::HTMLElement ::Widget)
-(defn make-HTMLElement [html-element-type model & attributes]
-  (apply make-Widget
-         :type ::HTMLElement
-         :html-element-type html-element-type
-         :model model
-         :escape-html? true
-         :output-parsing-fn #(identity %)
-         :handle-model-event-fn (fn [widget old-value new-value]
-                                  (jqHTML widget (if (:escape-html? @widget)
-                                                   (escape-html new-value)
-                                                   new-value)))
-         :trigger-initial-update? true
-         :connect-model-view-fn (fn [model widget]
-                                  (when (add-view model widget)
-                                    (when (:trigger-initial-update? @widget)
-                                      ((:handle-model-event-fn @widget) widget nil ((:output-parsing-fn @widget) @model)))))
-         :disconnect-model-view-fn (fn [widget]
-                                     (remove-view model widget))
-         :render-static-attributes-fn #(cl-format false "~{ ~A='~A'~}"
-                                                  (flatten (map (fn [e] [(name (key e)) (val e)])
-                                                                (:static-attributes @%))))
-         :render-html-fn (fn [w]
-                           (let [w-m @w]
-                             (str "<" (:html-element-type w-m) " id='" (:id w-m) "'" ((:render-static-attributes-fn w-m) w) ">"
-                                  (render-aux-html w)
-                                  "</" (:html-element-type w-m) ">"
-                                  (let [script (str (render-aux-js w))]
-                                    (when (seq script)
-                                      (str "<script type='text/javascript'>" script "</script>"))))))
-         attributes))
+(defn make-HTMLElement ^WidgetBase [^String html-element-type
+                                    ^symbolicweb.core.IModel model
+                                    ^clojure.lang.Fn model-event-handler
+                                    & args]
+  (apply make-WidgetBase
+         ::WidgetBase
+         model
+         #(str "<" html-element-type " id='" (.id %) "'></" html-element-type ">")
+         model-event-handler
+         args))
 
 
 ;; TODO: Button should actually be a container (HTMLContainer?).
-(derive ::Button ::HTMLElement)
 (defn make-Button [label-str & attributes]
   "Supply :MODEL as attribute if needed. This will override what's provided via LABEL-STR."
   (assert (string? label-str))
