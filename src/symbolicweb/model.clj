@@ -90,7 +90,7 @@
                (fn [^ValueModel value-model old-value new-value]
                  (when-not (= old-value new-value)
                    (doseq [view (get-views value-model)]
-                     ((. view symbolicweb.tiny-widget/observed-event-handler) view value-model old-value new-value))))))
+                     ((.observed-event-handler-fn view) view value-model old-value new-value))))))
 
 
 (defn vm-alter [^ValueModel value-model fn & args]

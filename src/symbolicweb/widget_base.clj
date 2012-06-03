@@ -58,71 +58,90 @@ Returns WIDGET."
 
 
 
-(defn make-HTMLElement ^WidgetBase [^String html-element-type
+(defn make-HTMLElement ^WidgetBase [^clojure.lang.Keyword type
                                     ^symbolicweb.core.IModel model
-                                    ^clojure.lang.Fn model-event-handler
+                                    ^clojure.lang.Fn render-fn
+                                    ^clojure.lang.Fn observed-event-handler-fn
                                     & args]
+  "HTML-ELEMENT-TYPE: \"p\"
+MODEL: (vm 42)
+MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
   (apply make-WidgetBase
-         ::WidgetBase
+         type
          model
-         #(str "<" html-element-type " id='" (.id %) "'></" html-element-type ">")
-         model-event-handler
+         #(render-fn %)
+         observed-event-handler-fn
          args))
 
 
 ;; TODO: Button should actually be a container (HTMLContainer?).
-(defn make-Button [label-str & attributes]
-  "Supply :MODEL as attribute if needed. This will override what's provided via LABEL-STR."
-  (assert (string? label-str))
-  (apply make-HTMLElement "button" (vm label-str)
-         :type ::Button
-         :escape-html? false ;; TODO: This is not safe wrt. XSS. Converting Button into a HTMLContainer will fix this though.
-         attributes))
+(derive ::Button ::HTMLElement)
+(defn make-Button [label-str & args]
+  "LABEL-STR: \"Some Label\" or (vm \"Some Label\")"
+  (apply make-HTMLElement
+         ::Button
+         (if (= (class label-str)
+                symbolicweb.core.ValueModel)
+           label-str
+           (vm label-str))
+         #(str "<button id='" (.id %) "'></button>")
+         ;; TODO: This (no escaping) is not safe wrt. XSS. Converting Button into a HTMLContainer will fix this though.
+         (fn [^WidgetBase widget model old-value new-value]
+           (jqHTML widget new-value))
+         args))
 
 
 (derive ::Link ::HTMLElement)
-(defn make-Link [model & attributes]
+(defn make-Link [model & args]
   "HTML Link (a href) element. MODEL represents the HREF attribute."
-  (apply make-HTMLElement "a" model
-         :type ::Link
-         :handle-model-event-fn (fn [widget old-value new-value]
-                                  (jqAttr widget "href" new-value))
-         attributes))
+  (apply make-HTMLElement
+         ::Link
+         model
+         #(str "<a id='" (.id %) "'></a>")
+         (fn [^WidgetBase widget model old-value new-value]
+           (jqAttr widget "href" new-value))
+         args))
 
 
-(defn make-View [model lifetime & attributes]
-  "Supply :HANDLE-MODEL-EVENT-FN and you'll have an observer ('callback') of MODEL that is not a Widget.
-The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
-MODEL)."
-  ;; TODO: HTMLElement is waay too specific for this; need some sort of common base type.
-  (with1 (apply make-HTMLElement "%make-View" model
-                :type ::Observer
-                :handle-model-event-fn (fn [view old-value new-value]
-                                         (assert false "make-View: No callback (:handle-model-event-fn) supplied."))
-                attributes)
-    (when lifetime
+
+;;; The following are not really widgets, but observers of Models, like widgets, none the less.
+
+(derive ::Observer ::WidgetBase)
+(defn make-View [model lifetime observed-event-handler-fn & args]
+  "OBSERVED-EVENT-HANDLER-FN: (fn [widget model old-value new-value])
+LIFETIME: Governs the lifetime of this connection (Model --> OBSERVED-EVENT-HANDLER-FN) and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
+  (assert (or (= WidgetBase (class lifetime))
+              (= nil lifetime)))
+  ;; TODO: HTMLElement is waay too specific for this; need some sort of common base type. Well, use WidgetBase directly then?
+  (with1 (apply make-HTMLElement
+                ::Observer
+                model
+                (fn [_] (assert false "Observers are not meant to be rendered!"))
+                observed-event-handler-fn
+                args)
+    #_(when lifetime
       ;; TODO: ADD-BRANCH might also call :CONNECT-MODEL-VIEW-FN if LIFETIME is or turns visible (:VIEWPORT),
       ;; but it won't have any effect if called more than once.
       (add-branch lifetime it))
-    ((:connect-model-view-fn @it) model it)))
+    #_((:connect-model-view-fn it) model it)))
 
 
-(derive ::Observer ::WidgetBase)
-(defn mk-view [model lifetime handle-model-event-fn & attributes]
-  "HANDLE-MODEL-EVENT-FN: Takes 3 arguments; VIEW OLD-VALUE NEW-VALUE.
-The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
-MODEL)."
-  (apply make-View model lifetime
-         :type ::Observer
-         :handle-model-event-fn handle-model-event-fn
-         attributes))
+(defn mk-view [model lifetime observed-event-handler-fn & args]
+  "OBSERVED-EVENT-HANDLER-FN: (fn [widget model old-value new-value])
+LIFETIME: Governs the lifetime of this connection (Model --> OBSERVED-EVENT-HANDLER-FN) and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL)."
+  (apply make-View model lifetime observed-event-handler-fn
+         args))
 
 
-(defn observe [model lifetime initial-sync? callback & attributes]
-  "CALLBACK takes two arguments; [OLD-VALUE NEW-VALUE].
-The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
-MODEL)."
-  (apply mk-view model lifetime (fn [_ old-value new-value] (callback old-value new-value))
-         :type ::Observer
-         :trigger-initial-update? initial-sync?
-         attributes))
+(defn observe [model lifetime initial-sync? callback & args]
+  "CALLBACK: (fn [old-value new-value])
+LIFETIME: Governs the lifetime of this connection (Model --> OBSERVED-EVENT-HANDLER-FN) and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL).
+INITIAL-SYNC?: If true CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on construction
+of this observer."
+  (apply mk-view model lifetime
+         (fn [_ _ old-value new-value]
+           (if (= old-value :symbolicweb.core/-initial-update-)
+             (when initial-sync?
+               (callback old-value new-value))
+             (callback old-value new-value)))
+         args))

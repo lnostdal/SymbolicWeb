@@ -24,7 +24,7 @@
 (defrecord WidgetBase [^String id
                        ^clojure.lang.Keyword type
                        ^symbolicweb.core.IModel model
-                       ^clojure.lang.Fn render
+                       ^clojure.lang.Fn render-fn
 
                        ;; Visibility.
                        ^clojure.lang.Ref on-visible-fns ;; []
@@ -33,7 +33,7 @@
                        ^clojure.lang.Ref viewport ;; Viewport
 
                        ;; Observer.
-                       ^clojure.lang.Fn observed-event-handler
+                       ^clojure.lang.Fn observed-event-handler-fn
 
                        ^clojure.lang.Ref callbacks] ;; {} ;; CB-NAME -> [HANDLER-FN CALLBACK-DATA]
   Visibility
@@ -61,7 +61,7 @@
   Observer
   (observe-start [widget]
     (when (add-view model widget)
-      (observed-event-handler widget model ::-initial-update- @model)))
+      (observed-event-handler-fn widget model ::-initial-update- @model)))
 
   (observe-stop [widget]
     (remove-view model widget)))
@@ -71,7 +71,7 @@
 (defn make-WidgetBase ^WidgetBase [^clojure.lang.Keyword type
                                    ^symbolicweb.core.IModel model
                                    ^clojure.lang.Fn render-fn
-                                   ^clojure.lang.Fn model-event-handler-fn
+                                   ^clojure.lang.Fn observed-event-handler-fn
                                    & args]
   (with (WidgetBase. (str "sw-" (generate-uid)) ;; ID
                      type
@@ -81,7 +81,7 @@
                      (ref [observe-stop]) ;; ON-NON-VISIBLE-FNS
                      (ref []) ;; CHILDREN
                      (ref nil) ;; VIEWPORT
-                     model-event-handler-fn
+                     observed-event-handler-fn
                      (ref {})) ;; CALLBACKS
     (if (empty? args)
       it
