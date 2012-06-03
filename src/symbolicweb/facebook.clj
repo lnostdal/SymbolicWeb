@@ -88,6 +88,11 @@
     (json-parse (:body http-response))))
 
 
+(defn user-get-profile-picture [user-id]
+  (let [http-response (http-get-request (str "https://graph.facebook.com/" user-id "/picture"))]
+    http-response))
+
+
 
 ;;;; App Auth. See:
 ;;;;   https://developers.facebook.com/docs/authentication/applications/
