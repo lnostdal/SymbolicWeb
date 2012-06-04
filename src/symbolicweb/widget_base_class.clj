@@ -88,6 +88,7 @@
       (apply assoc it args))))
 
 
+(declare add-branch)
 (derive ::Observer ::WidgetBase)
 (defn observe [model lifetime initial-sync? callback & args]
   "CALLBACK: (fn [old-value new-value])
