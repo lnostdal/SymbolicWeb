@@ -167,10 +167,9 @@ MODEL must be a ValueModel like created by e.g. (vm 60), where 60 is seconds."
                                                                        it))))))
              "s")
 
-      (make-View model it
-                 :handle-model-event-fn
-                 (fn [widget _ new-value]
-                   (let [[h m s] (seconds-to-hms new-value)]
-                     (vm-set hours h)
-                     (vm-set minutes m)
-                     (vm-set seconds s)))))))
+      (observe model it true
+               (fn [_ new-value]
+                 (let [[h m s] (seconds-to-hms new-value)]
+                   (vm-set hours h)
+                   (vm-set minutes m)
+                   (vm-set seconds s)))))))
