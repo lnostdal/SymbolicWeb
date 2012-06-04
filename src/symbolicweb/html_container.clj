@@ -2,31 +2,35 @@
 
 
 (derive ::HTMLContainer ::HTMLElement)
-(defn %make-HTMLContainer [[html-element-type & attributes] content-fn]
-  (apply make-HTMLElement html-element-type (vm nil)
-         :type ::HTMLContainer
-         :handle-model-event-fn (fn [widget old-value new-value])
-         :connect-model-view-fn (fn [model widget])
-         :disconnect-model-view-fn (fn [widget])
-         :render-aux-html-fn (fn [_] (content-fn))
-         attributes))
+(defn %make-HTMLContainer [[html-element-type & args] content-fn]
+  (apply make-HTMLElement
+         ::HTMLContainer
+         (vm ::not-used)
+         (fn [html-container]
+           (binding [*in-html-container?* html-container]
+             (str "<" html-element-type " id='" (.id html-container) "'>"
+                  (content-fn html-container)
+                  "</" html-element-type ">")))
+         (fn [_ _ _ _] (assert false "A HTMLContainers Model shouldn't be used (mutated)."))
+         args))
 
 
-(defmacro with-html-container [[html-element-type & attributes] & body]
-  `(%make-HTMLContainer (into [~html-element-type] ~attributes)
-                        (fn [] (html ~@body))))
+(defmacro with-html-container [[html-element-type & args] & body]
+  `(%make-HTMLContainer (into [~html-element-type] ~args)
+                        (fn [html-container#]
+                          (html ~@body))))
 
 
-(defmacro whc [[html-element-type & attributes] & body]
-  `(with-html-container ~(into [html-element-type] attributes)
+(defmacro whc [[html-element-type & args] & body]
+  `(with-html-container ~(into [html-element-type] args)
      ~@body))
 
 
 ;; TODO: This should support the same "syntax" as HTMLTemplate.
 (derive ::PostHTMLTemplate ::HTMLContainer)
-(defn make-PostHTMLTemplate [id content-fn & attributes]
+(defn make-PostHTMLTemplate [id content-fn & args]
   "This applies templating to an already existing HTML element, specified by ID, on the page."
-  (with1 (%make-HTMLContainer (into ["%PostHTMLTemplate"] (into attributes (list id :id)))
+  (with1 (%make-HTMLContainer (into ["%PostHTMLTemplate"] (into args (list id :id)))
                               content-fn)
     (render-html it)))
 
@@ -34,7 +38,7 @@
 (derive ::HTMLTemplate ::HTMLContainer)
 (defn make-HTMLTemplate [^org.jsoup.nodes.Document html-resource
                          ^clojure.lang.Fn content-fn
-                         & attributes]
+                         & args]
   "HTML-RESOURCE is the return-value of a call to HTML-RESOURCE from the Enlive library.
 CONTENT-FN is something like:
   (fn [html-template]
@@ -62,7 +66,7 @@ CONTENT-FN is something like:
                      (when-not (= content template-widget)
                        (add-branch *in-html-container?* content))))))
              (.html (.select html-resource "body"))))
-         attributes))
+         args))
 
 
 (derive ::TemplateElement ::HTMLElement)

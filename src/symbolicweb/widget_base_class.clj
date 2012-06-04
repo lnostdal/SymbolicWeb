@@ -86,3 +86,24 @@
     (if (empty? args)
       it
       (apply assoc it args))))
+
+
+(derive ::Observer ::WidgetBase)
+(defn observe [model lifetime initial-sync? callback & args]
+  "CALLBACK: (fn [old-value new-value])
+LIFETIME: Governs the lifetime of this connection (Model --> OBSERVED-EVENT-HANDLER-FN) and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL exists).
+INITIAL-SYNC?: If true CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on construction
+of this observer."
+  (with1 (apply make-WidgetBase
+                ::Observer
+                model
+                (fn [_] (assert false "Observers are not meant to be rendered!"))
+                (fn [_ _ old-value new-value]
+                  (if (= old-value :symbolicweb.core/-initial-update-)
+                    (when initial-sync?
+                      (callback old-value new-value))
+                    (callback old-value new-value)))
+                args)
+    (when lifetime
+      (add-branch lifetime it))
+    (observe-start it)))
