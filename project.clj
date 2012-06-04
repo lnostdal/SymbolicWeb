@@ -4,7 +4,7 @@
 
                  [org.clojure/math.numeric-tower "0.0.2-SNAPSHOT"] ;; ROUND etc.
 
-                 [aleph "0.2.1-rc3"] ;; Deals with boring HTTP server stuff.
+                 [aleph "0.2.1-rc4"] ;; Deals with boring HTTP server stuff.
                  [overtone/at-at "1.0.0"] ;; Scheduling.
 
                  [org.apache.commons/collections "3.2.1"] ;; For soft hash cache.
