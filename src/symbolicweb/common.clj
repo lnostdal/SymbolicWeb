@@ -35,6 +35,11 @@
      true accept-header)))
 
 
+(defn viewport? [o]
+  (and (ref? o)
+       (dosync (isa? (:type @o) ::Viewport))))
+
+
 (declare viewport-of)
 (defn application-of [widget]
   (when-let [viewport (viewport-of widget)]
@@ -105,15 +110,6 @@ APPLICATION and VIEWPORT are bound within BODY."
 
 (defn get-widget [id viewport]
   (get (:widgets @viewport) (str id)))
-
-
-(defn children-of [widget]
-  (:children @widget))
-
-
-(defn widget? [obj]
-  (when-not (string? obj)
-    (isa? (:type @obj) ::WidgetBase)))
 
 
 (defn ensure-model [obj]

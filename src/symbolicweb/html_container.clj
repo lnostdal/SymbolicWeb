@@ -11,7 +11,7 @@
              (str "<" html-element-type " id='" (.id html-container) "'>"
                   (content-fn html-container)
                   "</" html-element-type ">")))
-         (fn [_ _ _ _] (assert false "A HTMLContainer Model shouldn't be used (mutated)."))
+         (fn [_ _ _ _] #_(assert false "A HTMLContainer Model shouldn't be used (mutated)."))
          args))
 
 
@@ -63,7 +63,7 @@ CONTENT-FN is something like:
                      (when-not (= content template-widget)
                        (add-branch *in-html-container?* content))))))
              (.html (.select html-resource "body"))))
-         (fn [_ _ _ _] (assert false "A HTMLTemplate Model shouldn't be used (mutated)."))
+         (fn [_ _ _ _] #_(assert false "A HTMLTemplate Model shouldn't be used (mutated)."))
          args))
 
 
@@ -93,7 +93,7 @@ This might be used to setup events on some static content from a template."
          ::BlankTemplateElement
          (vm ::not-used)
          (fn [_])
-         (fn [_ _ _ _] (assert false "A BlankTemplateElement Model shouldn't be used (mutated)."))
+         (fn [_ _ _ _] #_(assert false "A BlankTemplateElement Model shouldn't be used (mutated)."))
          args))
 
 (defn mk-bte ^WidgetBase [& args]

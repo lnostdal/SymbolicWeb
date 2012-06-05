@@ -3,16 +3,18 @@
 
 (defprotocol Visibility
   (add-on-visible-fn [widget cb] "Add CB to run when Widget changes from non-visible (initial state) to visible.")
-  (on-visible [widget] "Returns CBs to run when Widget changes from non-visible (initial state) to visible. ")
+  (do-on-visible [widget] "Executes CBs; used when Widget changes from non-visible (initial state) to visible.")
 
   (add-on-non-visible-fn [widget cb] "Add CB to run when Widget changes from visible to non-visible.")
-  (on-non-visible [widget] "Returns CBs to run when Widget changes from visible to non-visible. ")
+  (do-on-non-visible [widget] "Executes CBs; used when Widget changes from visible to non-visible. ")
 
   (add-visibility-child [widget child-widget])
   (remove-visibility-child [widget child-widget])
   (visibility-children-of [widget])
 
-  (viewport-of [widget]))
+  (viewport-of [widget])
+  (children-of [widget])
+  (parent-of [widget]))
 
 
 (defprotocol Observer
@@ -30,18 +32,23 @@
                        ^clojure.lang.Ref on-visible-fns ;; []
                        ^clojure.lang.Ref on-non-visible-fns ;; []
                        ^clojure.lang.Ref children ;; []
-                       ^clojure.lang.Ref viewport ;; Viewport
+                       ^clojure.lang.Ref parent
+                       ^symbolicweb.core.IModel viewport ;; Viewport
 
                        ;; Observer.
                        ^clojure.lang.Fn observed-event-handler-fn
 
                        ^clojure.lang.Ref callbacks] ;; {} ;; CB-NAME -> [HANDLER-FN CALLBACK-DATA]
   Visibility
-  (on-visible [widget]
+  (add-on-visible-fn [widget cb]
+    (alter on-visible-fns conj cb))
+  (do-on-visible [widget]
     (doseq [f (ensure on-visible-fns)]
       (f widget model)))
 
-  (on-non-visible [widget]
+  (add-on-non-visible-fn [widget cb]
+    (alter on-non-visible-fns conj cb))
+  (do-on-non-visible [widget]
     (doseq [f (ensure on-non-visible-fns)]
       (f widget model)))
 
@@ -55,13 +62,17 @@
     (ensure children))
 
   (viewport-of [_]
-    (ensure viewport))
+    @viewport)
+
+  (parent-of [_]
+    (ensure parent))
 
 
   Observer
   (observe-start [widget]
     (when (add-view model widget)
-      (observed-event-handler-fn widget model ::-initial-update- @model)))
+      (when (isa? (class model) ValueModel)
+        (observed-event-handler-fn widget model ::-initial-update- @model))))
 
   (observe-stop [widget]
     (remove-view model widget)))
@@ -77,10 +88,11 @@
                      type
                      model
                      render-fn
-                     (ref [observe-start]) ;; ON-VISIBLE-FNS
-                     (ref [observe-stop]) ;; ON-NON-VISIBLE-FNS
+                     (ref [(fn [widget _] (observe-start widget))]) ;; ON-VISIBLE-FNS
+                     (ref [(fn [widget _] (observe-stop widget))]) ;; ON-NON-VISIBLE-FNS
                      (ref []) ;; CHILDREN
-                     (ref nil) ;; VIEWPORT
+                     (ref nil) ;; PARENT
+                     (vm nil) ;; VIEWPORT
                      observed-event-handler-fn
                      (ref {})) ;; CALLBACKS
     (if (empty? args)

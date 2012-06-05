@@ -14,11 +14,11 @@
                              :response-agent (agent nil)
                              args))]
     (dosync
-     (vm-set (:viewport @root-widget) viewport)
+     (vm-set (.viewport root-widget) viewport)
      (alter viewport assoc
             :application application
             :root-element root-widget
-            :widgets {(:id @root-widget) root-widget})
+            :widgets {(.id root-widget) root-widget})
      (add-branch viewport root-widget)
      (alter application update-in [:viewports] assoc viewport-id viewport))
     (when (:session? @application)
@@ -26,15 +26,6 @@
     viewport))
 
 
-(declare add-on-visible-fn)
-#_(defn add-on-visible-fn [widget fn]
-  "FN is code to execute when WIDGET is added to the client/DOM end."
-  (alter (:on-visible-fns @widget) conj fn))
-
-
-#_(defn add-on-non-visible-fn [widget fn]
-  "FN is code to execute when WIDGET is removed from the client/DOM end."
-  (alter (:on-non-visible-fns @widget) conj fn))
 
 
 (defn add-response-chunk-agent-fn [viewport viewport-m ^String new-chunk]
@@ -48,8 +39,9 @@
 
 
 (defn add-response-chunk [^String new-chunk widget]
+  "WIDGET: A WidgetBase or Viewport instance."
   (when-not *with-js?*
-    (if (= ::Viewport (:type @widget))
+    (if (viewport? widget)
       (let [viewport widget
             viewport-m @widget]
         (send (:response-agent viewport-m)
@@ -76,7 +68,7 @@
                             (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
         (if (viewport-of widget) ;; Visible?
           (do-it)
-          (add-on-visible-fn widget do-it)))))
+          (add-on-visible-fn widget (fn [_ _] (do-it)))))))
   new-chunk)
 
 
