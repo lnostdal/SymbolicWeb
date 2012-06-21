@@ -107,8 +107,7 @@
                    (ref #{})
                    (fn [^ContainerModel cm event-sym & event-args]
                      (doseq [container-view (get-views cm)]
-                       ((:handle-model-event-fn @container-view) container-view (apply list event-sym event-args))))))
-
+                       ((.observed-event-handler-fn container-view) container-view cm nil (apply list event-sym event-args))))))
 
 (defn cm []
   (make-ContainerModel))

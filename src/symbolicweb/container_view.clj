@@ -55,36 +55,42 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 (derive ::ContainerView ::HTMLElement)
-(defn make-ContainerView [html-element-type container-model & attributes]
-  (apply make-HTMLElement html-element-type container-model
-         :type ::ContainerView
-
-         :html-element-type html-element-type
-
-         :handle-model-event-fn
-         (fn [container-view operation-args]
-           (handle-container-view-event container-view operation-args))
-
-         ;; TODO: I think I can get rid of this and use ADD-ON-VISIBLE instead.
-         :connect-model-view-fn
-         (fn [container-model container-view]
-           (when (add-view container-model container-view)
-             ;; Clear out stuff; e.g. "dummy content" from templating.
-             ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
-             #_(add-response-chunk (with-js (jqEmpty container-view))
-                                   container-view)
-             ;; Add any already existing nodes to CONTAINER-VIEW.
-             (loop [node (cm-head-node container-model)]
-               (when node
-                 (jqAppend container-view (view-of-node-in-context container-view node))
-                 (recur (cmn-right-node node))))))
+(defn make-ContainerView ^WidgetBase [^String html-element-type
+                                      ^symbolicweb.core.IModel container-model
+                                      & args]
+  (apply make-HTMLElement
+         ::ContainerView
+         container-model
+         #(str "<div id='" (.id %) "'></div>")
+         (fn [^WidgetBase container-view
+              ^ContainerModel container-model
+              old-value new-value]
+           (if (not= old-value :symbolicweb.core/-initial-update-)
+             (handle-container-view-event container-view new-value)
+             (do
+               ;; Clear out stuff; e.g. "dummy content" from templating.
+               ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
+               #_(add-response-chunk (with-js (jqEmpty container-view))
+                                     container-view)
+               ;; Add any already existing nodes to CONTAINER-VIEW.
+               (loop [node (cm-head-node container-model)]
+                 (when node
+                   (jqAppend container-view (view-of-node-in-context container-view node))
+                   (recur (cmn-right-node node)))))))
 
          :view-from-node-fn
          (fn [container-view node]
            (make-HTMLElement "li" (cmn-data node)))
 
          :view-of-node (ref {})
-         attributes))
+
+         args))
+
+
+
+
+
+
 
 
 
