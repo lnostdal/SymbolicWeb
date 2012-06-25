@@ -56,8 +56,9 @@ Returns WIDGET."
                                     ^clojure.lang.Fn render-fn
                                     ^clojure.lang.Fn observed-event-handler-fn
                                     & args]
-  "HTML-ELEMENT-TYPE: \"p\"
+  "TYPE: ::Button
 MODEL: (vm 42)
+RENDER-FN: (fn [widget])
 MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
   (apply make-WidgetBase
          type
@@ -79,18 +80,20 @@ MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
            (vm label-str))
          #(str "<button id='" (.id %) "'></button>")
          ;; TODO: This (no escaping) is not safe wrt. XSS. Converting Button into a HTMLContainer will fix this though.
-         (fn [^WidgetBase widget model old-value new-value]
+         (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model
+              old-value new-value]
            (jqHTML widget new-value))
          args))
 
 
 (derive ::Link ::HTMLElement)
-(defn make-Link [model & args]
+(defn make-Link [^symbolicweb.core.IModel model & args]
   "HTML Link (a href) element. MODEL represents the HREF attribute."
   (apply make-HTMLElement
          ::Link
          model
          #(str "<a id='" (.id %) "'></a>")
-         (fn [^WidgetBase widget model old-value new-value]
+         (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model
+              old-value new-value]
            (jqAttr widget "href" new-value))
          args))

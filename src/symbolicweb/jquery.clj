@@ -33,7 +33,7 @@
 
 (defn jqAfter [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
-  (let [parent (:parent @widget)]
+  (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (.id widget) "').after(" (url-encode-wrap (render-html new-widget)) ");")
                                parent)
@@ -43,12 +43,12 @@
 
 (defn jqBefore [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
-  (let [parent (:parent @widget)]
+  (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (.id widget) "').before(" (url-encode-wrap (render-html new-widget)) ");")
                                parent)
       (when-not *with-js?*
-        (add-branch (:parent @widget) new-widget)))))
+        (add-branch parent new-widget)))))
 
 
 (defn jqReplaceWith [^WidgetBase widget ^WidgetBase new-widget]

@@ -6,18 +6,18 @@
 If FIND-ONLY? is true no new View will be constructed if an existing one was not found."
   ([container-view node] (view-of-node-in-context container-view node false))
   ([container-view node find-only?]
-     (if-let [existing-view (get @(:view-of-node @container-view) node)]
+     (if-let [existing-view (get (ensure (:view-of-node container-view)) node)]
        existing-view
        (when-not find-only?
-         (let [new-view ((:view-from-node-fn @container-view) container-view node)]
-           (alter (:view-of-node @container-view) assoc node new-view) ;; Node --> View
-           (alter new-view assoc :node-of-view node) ;; View --> Node
+         (let [new-view ((:view-from-node-fn container-view) container-view node)]
+           (alter (:view-of-node container-view) assoc node new-view) ;; Node --> View
+           ;;(alter new-view assoc :node-of-view node) ;; View --> Node
            ;; TODO: This is too specific; "visibility" shouldn't be mentioned here.
-           (add-on-non-visible-fn new-view (fn [] (alter (:view-of-node @container-view) dissoc node))) ;; Node -/-> View
-            new-view)))))
+           (add-on-non-visible-fn new-view (fn [] (alter (:view-of-node container-view) dissoc node))) ;; Node -/-> View
+           new-view)))))
 
 
-(defn node-of-view-in-context [container-model view]
+#_(defn node-of-view-in-context [container-model view]
   (loop [node (cm-head-node container-model)]
     (let [widget (cmn-data node)]
       (when-let [next-node (cmn-right-node node)]
@@ -66,7 +66,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
               ^ContainerModel container-model
               old-value new-value]
            (if (not= old-value :symbolicweb.core/-initial-update-)
-             (handle-container-view-event container-view new-value)
+               (handle-container-view-event container-view new-value)
              (do
                ;; Clear out stuff; e.g. "dummy content" from templating.
                ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
@@ -80,7 +80,11 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
          :view-from-node-fn
          (fn [container-view node]
-           (make-HTMLElement "li" (cmn-data node)))
+           (make-HTMLElement ::HTMLElement
+                             (cmn-data node)
+                             #(str "<li id='" (.id %) "'></li>")
+                             (fn [view model old-value new-value]
+                               (jqHTML new-value))))
 
          :view-of-node (ref {})
 

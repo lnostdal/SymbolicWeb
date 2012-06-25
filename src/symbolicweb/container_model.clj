@@ -127,7 +127,6 @@ This mirrors the jQuery `append' function:
     (cmn-after (cm-tail-node cm) new-node))) ;; insertAfter(list, list.lastNode, newNode)
 
 
-(declare cmn-before cmn-set-left-node cmn-set-right-node container-model set-container-model)
 (defn cm-prepend [^ContainerModel cm ^ContainerModelNode new-node]
   "Add NEW-NODE to beginning of the contained nodes in CM.
 This mirrors the jQuery `prepend' function:
