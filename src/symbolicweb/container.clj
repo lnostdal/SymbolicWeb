@@ -28,7 +28,8 @@ CHILD: A WidgetBase instance.
 Declares CHILD to be a part of PARENT.
 This is used to track visibility on the server-end. Use e.g. jqAppend to actually display the widget on the client
 end."
-  (assert (not (parent-of child)) "CHILD already has a parent assigned for it.")
+  (assert (not (parent-of child))
+          (str "CHILD already has a parent assigned for it: " (parent-of child)))
   ;; PARENT <-- CHILD.
   (ref-set (.parent child) parent)
   ;; PARENT --> CHILD.

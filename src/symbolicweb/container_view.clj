@@ -13,7 +13,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
            (alter (:view-of-node container-view) assoc node new-view) ;; Node --> View
            ;;(alter new-view assoc :node-of-view node) ;; View --> Node
            ;; TODO: This is too specific; "visibility" shouldn't be mentioned here.
-           (add-on-non-visible-fn new-view (fn [] (alter (:view-of-node container-view) dissoc node))) ;; Node -/-> View
+           (add-on-non-visible-fn new-view (fn [_ _] (alter (:view-of-node container-view) dissoc node))) ;; Node -/-> View
            new-view)))))
 
 
@@ -58,37 +58,39 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 (defn make-ContainerView ^WidgetBase [^String html-element-type
                                       ^symbolicweb.core.IModel container-model
                                       & args]
-  (apply make-HTMLElement
-         ::ContainerView
-         container-model
-         #(str "<div id='" (.id %) "'></div>")
-         (fn [^WidgetBase container-view
-              ^ContainerModel container-model
-              old-value new-value]
-           (if (not= old-value :symbolicweb.core/-initial-update-)
-               (handle-container-view-event container-view new-value)
-             (do
-               ;; Clear out stuff; e.g. "dummy content" from templating.
-               ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
-               #_(add-response-chunk (with-js (jqEmpty container-view))
-                                     container-view)
-               ;; Add any already existing nodes to CONTAINER-VIEW.
-               (loop [node (cm-head-node container-model)]
-                 (when node
-                   (jqAppend container-view (view-of-node-in-context container-view node))
-                   (recur (cmn-right-node node)))))))
+  (with1 (apply make-HTMLElement
+                ::ContainerView
+                container-model
+                #(str "<div id='" (.id %) "'></div>")
+                (fn [^WidgetBase container-view
+                     ^ContainerModel container-model
+                     old-value new-value]
+                  (handle-container-view-event container-view new-value))
 
-         :view-from-node-fn
-         (fn [container-view node]
-           (make-HTMLElement ::HTMLElement
-                             (cmn-data node)
-                             #(str "<li id='" (.id %) "'></li>")
-                             (fn [view model old-value new-value]
-                               (jqHTML new-value))))
 
-         :view-of-node (ref {})
+                :view-from-node-fn
+                (fn [container-view node]
+                  (make-HTMLElement ::HTMLElement
+                                    (cmn-data node)
+                                    #(str "<div id='" (.id %) "'></div>")
+                                    (fn [view model old-value new-value]
+                                      (jqHTML view new-value))))
 
-         args))
+                :view-of-node (ref {})
+
+                args)
+    (add-on-visible-fn it
+                       (fn [container-view container-model]
+                         ;; Clear out stuff; e.g. "dummy content" from templating.
+                         ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
+                         #_(add-response-chunk (with-js (jqEmpty container-view))
+                                               container-view)
+                         ;; Add any already existing nodes to CONTAINER-VIEW.
+                         (loop [node (cm-head-node container-model)]
+                           (when node
+                             (jqAppend container-view (view-of-node-in-context container-view node))
+                             (recur (cmn-right-node node))))))))
+
 
 
 
