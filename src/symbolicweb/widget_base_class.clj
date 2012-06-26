@@ -95,9 +95,7 @@
                      (vm nil) ;; VIEWPORT
                      observed-event-handler-fn
                      (ref {})) ;; CALLBACKS
-    (if (empty? args)
-      it
-      (apply assoc it args))))
+      (apply assoc it :escape-html? true args)))
 
 
 (declare add-branch)

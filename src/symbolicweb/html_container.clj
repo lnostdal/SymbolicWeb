@@ -79,7 +79,9 @@ its OBSERVED-EVENT-HANDLER-FN field; defaulting to jqHTML there."
          model
          (fn [_])
          (fn [^WidgetBase template-element model old-value new-value]
-           (jqHTML template-element (escape-html new-value)))
+           (jqHTML template-element (if (:escape-html? template-element)
+                                      (escape-html new-value)
+                                      new-value)))
          args))
 
 (defn mk-te [model & args]

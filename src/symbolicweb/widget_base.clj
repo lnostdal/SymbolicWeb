@@ -68,31 +68,41 @@ MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
          args))
 
 
+(derive ::GenericHTMLElement ::HTMLElement)
+(defn mk-he ^WidgetBase [^String html-element-type ^symbolicweb.core.IModel model & args]
+  (apply make-HTMLElement
+         ::GenericHTMLElement
+         model
+         #(str "<" html-element-type " id='" (.id %) "'></" html-element-type ">")
+         (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model
+              old-value new-value]
+           (jqHTML widget (if (:escape-html? widget)
+                            (escape-html new-value)
+                            new-value)))
+         args))
+
+
 ;; TODO: Button should actually be a container (HTMLContainer?).
 (derive ::Button ::HTMLElement)
 (defn make-Button [label-str & args]
   "LABEL-STR: \"Some Label\" or (vm \"Some Label\")"
-  (apply make-HTMLElement
-         ::Button
+  (apply mk-he "button"
          (if (= (class label-str)
                 symbolicweb.core.ValueModel)
            label-str
            (vm label-str))
-         #(str "<button id='" (.id %) "'></button>")
-         ;; TODO: This (no escaping) is not safe wrt. XSS. Converting Button into a HTMLContainer will fix this though.
-         (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model
-              old-value new-value]
-           (jqHTML widget new-value))
+         :escape-html? false
+         :type ::Button
          args))
 
 
 (derive ::Link ::HTMLElement)
 (defn make-Link [^symbolicweb.core.ValueModel model & args]
   "HTML Link (a href) element. MODEL represents the HREF attribute."
-  (apply make-HTMLElement
-         ::Link
+  (apply mk-he "a"
          model
-         #(str "<a id='" (.id %) "'></a>")
+         :type ::Link
+         :observed-event-handler-fn
          (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model
               old-value new-value]
            (jqAttr widget "href" new-value))
