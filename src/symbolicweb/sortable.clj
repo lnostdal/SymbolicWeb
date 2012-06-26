@@ -14,9 +14,9 @@
             ^clojure.lang.PersistentVector
             new-order-nodes (with-local-vars [nodes []]
                               (doseq [widget-id new-order-ids]
-                                (var-set nodes (conj (var-get nodes) (:node-of-view @(get-widget widget-id (viewport-of widget))))))
+                                (var-set nodes (conj (var-get nodes) (:node-of-view (get-widget widget-id (viewport-of widget))))))
                               (var-get nodes))
-            container-model (:model @widget)
+            container-model (.model widget)
 
             ^clojure.lang.PersistentVector
             existing-order-nodes (with-local-vars [nodes []]

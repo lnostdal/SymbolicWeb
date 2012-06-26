@@ -307,7 +307,8 @@ Returns a string."
                          widget)))
 
 
-(defn widget-id-of ^String [^WidgetBase widget]
+(defn widget-id-of ^String [widget]
+  (println "WIDGET-ID-OF: Deprecated.")
   (.id widget))
 
 
