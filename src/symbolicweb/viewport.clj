@@ -59,8 +59,8 @@
                       ;; has _not_ been called yet -- which is strange.
                       ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
                       ;;(dbg-prin1 [(:type @widget) (:id @widget)])
-                      (when (not= :dead (:parent @widget))
-                        (dbg-prin1 [(:type @widget) (:id @widget)]) ;; This one is interesting; uncomment when working on this.
+                      (when (not= :dead (parent-of widget))
+                        (dbg-prin1 [(:type widget) (.id widget)]) ;; This one is interesting; uncomment when working on this.
                         (remove-branch widget)
                         (def -lost-widget- widget)))
                     (send (:response-agent viewport-m)

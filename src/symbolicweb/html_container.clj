@@ -49,6 +49,7 @@ CONTENT-FN is something like:
          ::HTMLTemplate
          (vm ::not-used)
          (fn [^WidgetBase template-widget]
+
            (let [transformation-data (content-fn template-widget)
                  html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
              (doseq [[selector content] (partition 2 transformation-data)]
@@ -59,9 +60,10 @@ CONTENT-FN is something like:
                    ;; HTML and add it to our HTML-RESOURCE for the next iteration to pick up.
                    (.text element content)
                    (do
-                     (.attr element "id" (widget-id-of content))
+                     (.attr element "id" (.id content))
                      (when-not (= content template-widget)
-                       (add-branch *in-html-container?* content))))))
+                       (binding [*in-html-container?* template-widget]
+                         (add-branch template-widget content)))))))
              (.html (.select html-resource "body"))))
          (fn [_ _ _ _] #_(assert false "A HTMLTemplate Model shouldn't be used (mutated)."))
          args))

@@ -34,7 +34,8 @@ end."
   (ref-set (.parent child) parent)
   ;; PARENT --> CHILD.
   (when-not (viewport? parent) ;; A Viewport only has a single child; the :ROOT-ELEMENT, and it's already set. TODO: Cludge.
-    (alter (.children parent) conj child))
+    (add-visibility-child parent child))
+
   ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.
   (when (or (viewport? parent)
             (viewport-of parent))
@@ -48,7 +49,7 @@ end."
   ;; Remove WIDGET from children of parent of widget.
   (when-let [parent (parent-of widget)]
     (when-not (viewport? parent)
-      (ref-set (.children parent) (remove widget (visibility-children-of parent))))
+      (remove-visibility-child parent widget))
     (doseq [child (visibility-children-of widget)]
       (ensure-non-visible child))
     (do-on-non-visible widget)

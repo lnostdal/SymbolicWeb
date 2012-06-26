@@ -87,7 +87,7 @@ MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
 
 
 (derive ::Link ::HTMLElement)
-(defn make-Link [^symbolicweb.core.IModel model & args]
+(defn make-Link [^symbolicweb.core.ValueModel model & args]
   "HTML Link (a href) element. MODEL represents the HREF attribute."
   (apply make-HTMLElement
          ::Link

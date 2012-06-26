@@ -307,7 +307,7 @@ Returns a string."
                          widget)))
 
 
-(defn widget-id-of ^String [widget]
+(defn widget-id-of ^String [^WidgetBase widget]
   (.id widget))
 
 
