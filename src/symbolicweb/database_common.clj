@@ -140,12 +140,6 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
         (db-stmt (str "ROLLBACK PREPARED '" (:gid res) "';"))))))
 
 
-#_(swap! -db-cache-constructors- assoc "test"
-       #(mk-db-cache "test"
-                     (fn [db-cache id] (ref {}))
-                     (fn [obj] obj)
-                     #'default-db-handle-input
-                     #'default-db-handle-output))
 
 ;; To test out serialization conflict:
 (defn test-serialization [do-after]

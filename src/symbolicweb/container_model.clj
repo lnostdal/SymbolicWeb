@@ -107,8 +107,9 @@
                    (ref #{})
                    (fn [^ContainerModel cm event-sym & event-args]
                      (doseq [container-view (get-views cm)]
-                       ((:handle-model-event-fn @container-view) container-view (apply list event-sym event-args))))))
-
+                       ((.observed-event-handler-fn container-view) container-view cm
+                        nil
+                        (apply list event-sym event-args))))))
 
 (defn cm []
   (make-ContainerModel))
@@ -128,7 +129,7 @@ This mirrors the jQuery `append' function:
     (cmn-after (cm-tail-node cm) new-node))) ;; insertAfter(list, list.lastNode, newNode)
 
 
-(declare cmn-before cmn-set-left-node cmn-set-right-node container-model set-container-model)
+(declare cmn-before)
 (defn cm-prepend [^ContainerModel cm ^ContainerModelNode new-node]
   "Add NEW-NODE to beginning of the contained nodes in CM.
 This mirrors the jQuery `prepend' function:

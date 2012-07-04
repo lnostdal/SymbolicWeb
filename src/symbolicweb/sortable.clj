@@ -2,21 +2,21 @@
 
 
 (defn sortable [widget & callback]
-  (add-response-chunk (str "$('#" (:id @widget) "').sortable();") widget)
+  (add-response-chunk (str "$('#" (.id widget) "').sortable();") widget)
   (set-event-handler
    "sortupdate" widget
    (fn [& {:keys [new-order]}]
      (dosync
       (println "sortable: retry?")
       (let [^clojure.lang.PersistentVector
-            new-order-ids (json/decode new-order)
+            new-order-ids (json-parse new-order)
 
             ^clojure.lang.PersistentVector
             new-order-nodes (with-local-vars [nodes []]
                               (doseq [widget-id new-order-ids]
-                                (var-set nodes (conj (var-get nodes) (:node-of-view @(get-widget widget-id (viewport-of widget))))))
+                                (var-set nodes (conj (var-get nodes) (:node-of-view (get-widget widget-id (viewport-of widget))))))
                               (var-get nodes))
-            container-model (:model @widget)
+            container-model (.model widget)
 
             ^clojure.lang.PersistentVector
             existing-order-nodes (with-local-vars [nodes []]
@@ -42,4 +42,4 @@
 
         (when callback (callback new-order-nodes))))
      (println "sortable: done!"))
-   :callback-data {:new-order (str "' + encodeURIComponent(JSON.stringify($('#" (:id @widget) "').sortable('toArray'))) + '")}))
+   :callback-data {:new-order (str "' + encodeURIComponent(JSON.stringify($('#" (.id widget) "').sortable('toArray'))) + '")}))

@@ -88,11 +88,9 @@
   (ValueModel. (ref value)
                (ref #{})
                (fn [^ValueModel value-model old-value new-value]
-                 (doseq [view (get-views value-model)]
-                   (let [view-m @view
-                         new-value ((:output-parsing-fn view-m) new-value)]
-                     (when-not (= old-value new-value) ;; After translation via :OUTPUT-PARSING-FN.
-                       ((:handle-model-event-fn view-m) view old-value new-value)))))))
+                 (when-not (= old-value new-value)
+                   (doseq [view (get-views value-model)]
+                     ((.observed-event-handler-fn view) view value-model old-value new-value))))))
 
 
 (defn vm-alter [^ValueModel value-model fn & args]

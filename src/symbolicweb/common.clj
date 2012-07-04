@@ -35,14 +35,12 @@
      true accept-header)))
 
 
-(defn viewport-vm-of [widget]
-  (:viewport @widget))
+(defn viewport? [o]
+  (and (ref? o)
+       (dosync (isa? (:type @o) ::Viewport))))
 
 
-(defn viewport-of [widget]
-  @(:viewport @widget))
-
-
+(declare viewport-of)
 (defn application-of [widget]
   (when-let [viewport (viewport-of widget)]
     (:application @viewport)))
@@ -112,15 +110,6 @@ APPLICATION and VIEWPORT are bound within BODY."
 
 (defn get-widget [id viewport]
   (get (:widgets @viewport) (str id)))
-
-
-(defn children-of [widget]
-  (:children @widget))
-
-
-(defn widget? [obj]
-  (when-not (string? obj)
-    (isa? (:type @obj) ::WidgetBase)))
 
 
 (defn ensure-model [obj]
@@ -319,7 +308,8 @@ Returns a string."
 
 
 (defn widget-id-of ^String [widget]
-  (:id @widget))
+  (println "WIDGET-ID-OF: Deprecated.")
+  (.id widget))
 
 
 (defn sw-js-base-bootstrap [application viewport]

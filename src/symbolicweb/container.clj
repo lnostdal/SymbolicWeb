@@ -4,77 +4,71 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defn ensure-visible [child parent]
+(defn ensure-visible [^WidgetBase child parent]
   "Ensure CHILD and its children in turn is declared visible in context of PARENT.
 This will also call any FNs stored in :ON-VISIBLE-FNS for the children in question."
-  (let [child-m (ensure child)
-        parent-m (ensure parent)
-        viewport (let [parent-type (:type parent-m)]
-                   (cond
-                    (isa? parent-type ::Viewport) parent
-                    (isa? parent-type ::Widget) @(:viewport parent-m)))]
+  (let [viewport (if (viewport? parent)
+                   parent
+                   (viewport-of parent))]
     ;; Viewport --> Widget.
     (alter viewport update-in
-           [:widgets] assoc (:id child-m) child)
-    ;; Widget --> Viewport
-    (vm-set (:viewport child-m) viewport) ;; Widget will know which Viewport to send JS code to now.
-    ;; Model --> Widget.
-    ((:connect-model-view-fn child-m) (:model child-m) child)
-    (doseq [on-visible-fn @(:on-visible-fns child-m)]
-      (on-visible-fn))
+           [:widgets] assoc (.id child) child)
+    ;; Widget --> Viewport.
+    (vm-set (.viewport child) viewport) ;; Widget wil know which Viewport to send JS code to now.
+    ;; Model --> Widget
+    ;;(observe-start child) ;; NOTE: DO-ON-VISIBLE already calls this.
+    (do-on-visible child)
     ;; Recurse down to all children of CHILD and so on.
-    (doseq [child-of-child (:children child-m)]
+    (doseq [child-of-child (visibility-children-of child)]
       (ensure-visible child-of-child child))))
 
-(defn add-branch [parent child]
-  "Declare CHILD to be a part of PARENT.
+(defn add-branch [parent ^WidgetBase child]
+  "PARENT: A WidgetBase or Viewport instance.
+CHILD: A WidgetBase instance.
+Declares CHILD to be a part of PARENT.
 This is used to track visibility on the server-end. Use e.g. jqAppend to actually display the widget on the client
 end."
-  (let [parent-m (ensure parent)
-        child-m (ensure child)]
-    (assert (not (:parent child-m))) ;; Make sure CHILD doesn't have a parent already.
-    ;; Parent <-- Child.
-    (alter child assoc :parent parent)
-    (when-not (isa? (:type parent-m) ::Viewport) ;; Viewport only has a single child; the :ROOT-ELEMENT, and it's already set.
-      ;; Parent --> Child.
-      (alter parent update-in [:children] conj child))
-    ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.
-    (when (or (isa? (:type parent-m) ::Viewport) ;; A Viewport is always visible; :ROOT-ELEMENT.
-              @(:viewport parent-m)) ;; Is the widget visible (added to a Viewport)?
-      (ensure-visible child parent))))
+  (assert (not (parent-of child))
+          (str "CHILD already has a parent assigned for it: " (parent-of child)))
+  ;; PARENT <-- CHILD.
+  (ref-set (.parent child) parent)
+  ;; PARENT --> CHILD.
+  (when-not (viewport? parent) ;; A Viewport only has a single child; the :ROOT-ELEMENT, and it's already set. TODO: Cludge.
+    (add-visibility-child parent child))
+
+  ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.
+  (when (or (viewport? parent)
+            (viewport-of parent))
+    (ensure-visible child parent)))
 
 
-(defn ensure-non-visible [widget]
+(defn ensure-non-visible [^WidgetBase widget]
   "Remove WIDGET and its children from the DOM."
-  (let [widget-m @widget]
-    ;; Model -/-> Widget.
-    ((:disconnect-model-view-fn widget-m) widget)
-    ;; Remove WIDGET from children of parent of WIDGET.
-    (when (:parent widget-m)
-      (alter (:parent widget-m)
-             assoc :children (remove widget (:children (:parent widget-m))))
-      (doseq [child (:children widget-m)]
-        (ensure-non-visible child))
-      (doseq [on-non-visible-fn @(:on-non-visible-fns widget-m)]
-        (on-non-visible-fn))
-      ;; Viewport -/-> Widget.
-      (alter @(:viewport widget-m) update-in
-             [:widgets] dissoc (:id widget-m))
-      ;; Widget -/-> Viewport.
-      (alter widget assoc
-             :parent nil
-             :children [])
-      (vm-set (:viewport widget-m) nil))))
+  ;; Model -/-> Widget.
+  (observe-stop widget)
+  ;; Remove WIDGET from children of parent of widget.
+  (when-let [parent (parent-of widget)]
+    (when-not (viewport? parent)
+      (remove-visibility-child parent widget))
+    (doseq [child (visibility-children-of widget)]
+      (ensure-non-visible child))
+    (do-on-non-visible widget)
+    ;; Viewport -/-> Widget.
+    (alter (viewport-of widget) update-in
+           [:widgets] dissoc (.id widget))
+    ;; Widget -/-> Viewport.
+    (ref-set (.children widget) [])
+    (vm-set (.viewport widget) nil)))
 
-(defn remove-branch [branch-root-node]
+
+(defn remove-branch [^WidgetBase branch-root-node]
   "Remove BRANCH-ROOT-NODE and its children."
   (ensure-non-visible branch-root-node))
 
-(defn empty-branch [branch-root-node]
+(defn empty-branch [^WidgetBase branch-root-node]
   "Remove children from BRANCH-ROOT-NODE."
-  (doseq [child (:children @branch-root-node)]
-    (remove-branch child)))
-
+  (doseq [child (visibility-children-of branch-root-node)]
+    (ensure-non-visible child)))
 
 (defn clear-root [viewport]
   (jqEmpty (:root-element @viewport)))

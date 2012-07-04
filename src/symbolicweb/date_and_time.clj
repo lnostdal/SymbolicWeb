@@ -119,19 +119,17 @@ MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
                                                                             (. new-cal set year month day)
                                                                             new-cal)))))))
                           (add-response-chunk (str "$('#" (widget-id-of it) "').datepicker();") it))))))
-
-      (make-View model it
-                 :handle-model-event-fn
-                 (fn [widget _ new-calendar]
-                   (vm-set hours (. new-calendar get Calendar/HOUR_OF_DAY))
-                   (vm-set minutes (. new-calendar get Calendar/MINUTE))
-                   (vm-set seconds (. new-calendar get Calendar/SECOND))
-                   (when date?
-                     (vm-set date-str (str (+ 1 (. new-calendar get Calendar/MONTH)) ;; Yup, it counts from 0.
-                                           "/"
-                                           (. new-calendar get Calendar/DATE)
-                                           "/"
-                                           (. new-calendar get Calendar/YEAR)))))))))
+      (observe model it false
+               (fn [_ new-calendar]
+                 (vm-set hours (. new-calendar get Calendar/HOUR_OF_DAY))
+                 (vm-set minutes (. new-calendar get Calendar/MINUTE))
+                 (vm-set seconds (. new-calendar get Calendar/SECOND))
+                 (when date?
+                   (vm-set date-str (str (+ 1 (. new-calendar get Calendar/MONTH)) ;; Yup, it counts from 0.
+                                         "/"
+                                         (. new-calendar get Calendar/DATE)
+                                         "/"
+                                         (. new-calendar get Calendar/YEAR)))))))))
 
 
 (defn make-TimeInInput [model]
@@ -167,10 +165,9 @@ MODEL must be a ValueModel like created by e.g. (vm 60), where 60 is seconds."
                                                                        it))))))
              "s")
 
-      (make-View model it
-                 :handle-model-event-fn
-                 (fn [widget _ new-value]
-                   (let [[h m s] (seconds-to-hms new-value)]
-                     (vm-set hours h)
-                     (vm-set minutes m)
-                     (vm-set seconds s)))))))
+      (observe model it true
+               (fn [_ new-value]
+                 (let [[h m s] (seconds-to-hms new-value)]
+                   (vm-set hours h)
+                   (vm-set minutes m)
+                   (vm-set seconds s)))))))

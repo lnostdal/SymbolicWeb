@@ -42,6 +42,7 @@
   (:require symbolicweb.container-model)
   (:require symbolicweb.container-model-node)
 
+  (:require symbolicweb.widget-base-class)
   (:require symbolicweb.jquery)
   (:require symbolicweb.container)
   (:require symbolicweb.viewport)
@@ -63,8 +64,9 @@
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.application)
   (:require symbolicweb.date-and-time)
-  (:require symbolicweb.sortable)
-  (:require symbolicweb.util))
+  (:require symbolicweb.util)
+  (:require symbolicweb.sortable))
+
 
 (set! *warn-on-reflection* true)
 

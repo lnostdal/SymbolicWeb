@@ -1,6 +1,19 @@
 (in-ns 'symbolicweb.core)
 
 
+(defn issue-39 []
+  (try
+    (dosync
+     (let [model (cm)
+           view (make-ContainerView "div" model)]
+       (observe-start view)
+       (cm-append model (cmn (vm 1)))
+       (cm-append model (cmn (vm 2)))
+       (cm-append model (cmn (vm 3)))))
+    (catch Throwable e
+      (clojure.stacktrace/print-stack-trace e))))
+
+
 (defn synced-container-models-with-filtering []
   (dosync
    (let [common (with1 (make-ContainerModel)
