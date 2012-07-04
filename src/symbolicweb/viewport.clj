@@ -26,8 +26,6 @@
     viewport))
 
 
-
-
 (defn add-response-chunk-agent-fn [viewport viewport-m ^String new-chunk]
   (with-errors-logged
     (locking viewport
@@ -35,7 +33,7 @@
         (.append ^StringBuilder (:response-str viewport-m) new-chunk)
         (when @response-sched-fn
           (.run ^java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask
-                (.job @response-sched-fn)))))))
+                (.job ^overtone.at_at.ScheduledJob @response-sched-fn)))))))
 
 
 (defn add-response-chunk [^String new-chunk widget]
@@ -60,7 +58,7 @@
                       ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
                       ;;(dbg-prin1 [(:type @widget) (:id @widget)])
                       (when (not= :dead (parent-of widget))
-                        (dbg-prin1 [(:type widget) (.id widget)]) ;; This one is interesting; uncomment when working on this.
+                        (dbg-prin1 [(:type widget) (.id ^WidgetBase widget)]) ;; This one is interesting; uncomment when working on this.
                         (remove-branch widget)
                         (def -lost-widget- widget)))
                     (send (:response-agent viewport-m)
