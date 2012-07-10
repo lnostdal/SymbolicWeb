@@ -103,7 +103,7 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
             (catch clojure.lang.ExceptionInfo e
               (if (= :abort-transaction (:with-sw-db (ex-data e)))
                 (do
-                  (println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
+                  ;;(println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
                   (:return-value (ex-data e)))
                 (throw e)))
             (finally
