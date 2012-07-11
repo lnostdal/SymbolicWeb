@@ -7,7 +7,7 @@
 
 function swHandleError(jq_xhr, text_status, error_thrown){
   if(jq_xhr.status == 200){
-    $.sticky("<b>SymbolicWeb</b><p>Client side error.</p><p>Check <b>console.error</b> for details.</p><p>Developers have _not_ (TODO: fix) been notified of this event.</p>");
+    //$.sticky("<b>SymbolicWeb</b><p>Client side error.</p><p>Check <b>console.error</b> for details.</p><p>Developers have _not_ (TODO: fix) been notified of this event.</p>");
     console.error([error_thrown, jq_xhr.responseText, jq_xhr]);
   }
 }
@@ -260,7 +260,7 @@ if(typeof(opera) != "undefined"){
   history.navigationMode = "compatible";
 }
 
-// GC the server side Viewport object and all its Widgets (and their incomming connections from the Model/DB) on page unload.
+// Eager, instead of based on timeout -- GC of the server side Viewport object and all its Widgets (and their incomming connections from the Model/DB) on page unload.
 $(window).on("unload", function(){
   if(typeof(_sw_viewport_id) != "undefined")
     $.ajax({type: "GET",
@@ -281,10 +281,10 @@ function swBoot(url){
     type: "GET",
     url: url,
     dataType: "script",
-    success: function(){ 
+    success: function(){
       // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
       swComet("&do=refresh");
-      // ..and set up something that'll ensure the channel stays alive 
+      // ..and set up something that'll ensure the channel stays alive
       // when faced with JS dying after computer waking up from suspend etc..
       var sw_mouse_poll_ts = new Date().getTime();
       var sw_mouse_poll_interval_ms = 5000;
@@ -302,5 +302,3 @@ function swBoot(url){
     }
   });
 }
-
-

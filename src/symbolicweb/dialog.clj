@@ -13,11 +13,11 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
        (make-Dialog (mk-p (vm \"test\"))
                     :js-options {:modal :true :width 800 :height 600}
                     :on-close (with-js (alert \"Dialog was closed.\")))))"
-  (let [res (add-response-chunk (str "$('#" (:id @widget) "')"
+  (let [res (add-response-chunk (str "$('#" (.id widget) "')"
                                      ".dialog({"
                                      (map-to-js-options js-options)
                                      "close: function(event, ui){"
-                                     "  $('#" (:id @widget) "').remove();"
+                                     "  $('#" (.id widget) "').remove();"
                                      on-close
                                      "}});")
                                 widget)]
