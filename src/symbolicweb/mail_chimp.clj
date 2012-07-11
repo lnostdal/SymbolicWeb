@@ -8,20 +8,18 @@
 ;;; Common stuff.
 
 (defn- http-get-request [url]
-  (let [conn (aleph.http.client/http-request
-              {:auto-transform true
-               :method :get
-               :url url})]
-    @conn))
+  (aleph.http/sync-http-request
+   {:auto-transform true
+    :request-method :get
+    :url url}))
 
 
 (defn- http-post-request [url body]
-  (let [conn (aleph.http.client/http-request
-              {:auto-transform true
-               :method :post
-               :url url
-               :body body})]
-    @conn))
+  (aleph.http/sync-http-request
+   {:auto-transform true
+    :request-method :post
+    :url url
+    :body body}))
 
 
 (defn make-MailChimp [api-key]
@@ -50,6 +48,7 @@
     ;; length limits?
     (http-post-request (str (:url context) "SendEmail?" (subs (http-build-query params) 1))
                        "")))
+
 
 
 
