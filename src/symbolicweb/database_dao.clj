@@ -14,14 +14,14 @@
      ^ReferenceMap cache-data])
 
 
-(defn default-db-handle-input [db-cache object input-key input-value]
+(defn default-db-handle-input [^DBCache db-cache object input-key input-value]
   "SW --> DB.
 Swaps - with _ for INPUT-KEY and passes INPUT-VALUE through as is."
   (when input-key
     [(keyword (str/replace (name input-key) \- \_))
      input-value]))
 
-(defn db-handle-input [db-cache object input-key input-value]
+(defn db-handle-input [^DBCache db-cache object input-key input-value]
   "SW --> DB.
 Returns two values in form of a vector [TRANSLATED-INPUT-KEY TRANSLATED-INPUT-VALUE] or returns NIL if the field in question,
 represented by INPUT-KEY, is not to be stored in the DB."
