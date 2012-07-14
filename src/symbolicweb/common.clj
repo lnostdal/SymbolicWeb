@@ -270,10 +270,9 @@ Returns a string."
                          viewport)))
 
 
-
-
-(defn replace-page [rel-url]
-  (add-response-chunk (str "window.location.replace(" (url-encode-wrap rel-url) ");")))
+(defn replace-page [rel-url viewport]
+  (add-response-chunk (str "window.location.replace(" (url-encode-wrap rel-url) ");")
+                      viewport))
 
 
 (defn clear-session [application]
