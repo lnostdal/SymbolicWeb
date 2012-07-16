@@ -6,7 +6,8 @@
 If FIND-ONLY? is true no new View will be constructed if an existing one was not found."
   ([container-view node] (view-of-node-in-context container-view node false))
   ([container-view node find-only?]
-     (if-let [existing-view (get (ensure (:view-of-node container-view)) node)]
+     (if-let [existing-view (get (ensure (:view-of-node container-view))
+                                 node)]
        existing-view
        (when-not find-only?
          (let [new-view (assoc ((:view-from-node-fn container-view) container-view node)
@@ -79,25 +80,11 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                 :view-of-node (ref {})
 
                 args)
-    (add-on-visible-fn it
-                       (fn [container-view container-model]
-                         ;; Clear out stuff; e.g. "dummy content" from templating.
-                         ;; TODO: Not sure why I've commented this out, or why it was needed in the first place.
-                         #_(add-response-chunk (with-js (jqEmpty container-view))
-                                               container-view)
-                         ;; Add any already existing nodes to CONTAINER-VIEW.
-                         (loop [node (cm-head-node container-model)]
-                           (when node
-                             (jqAppend container-view (view-of-node-in-context container-view node))
-                             (recur (cmn-right-node node))))))))
-
-
-
-
-
-
-
-
+    ;; Add any already existing nodes to CONTAINER-VIEW.
+    (loop [node (cm-head-node container-model)]
+      (when node
+        (jqAppend it (view-of-node-in-context it node))
+        (recur (cmn-right-node node))))))
 
 
 
