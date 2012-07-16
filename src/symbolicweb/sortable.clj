@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn sortable [widget & callback]
+(defn sortable [^WidgetBase widget & callback]
   (add-response-chunk (str "$('#" (.id widget) "').sortable();") widget)
   (set-event-handler
    "sortupdate" widget

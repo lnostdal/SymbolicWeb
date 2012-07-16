@@ -61,7 +61,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
   (with1 (apply make-HTMLElement
                 ::ContainerView
                 container-model
-                #(str "<div id='" (.id %) "'></div>")
+                (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
                 (fn [^WidgetBase container-view
                      ^ContainerModel container-model
                      old-value new-value]
@@ -72,8 +72,8 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                 (fn [container-view node]
                   (make-HTMLElement ::HTMLElement
                                     (cmn-data node)
-                                    #(str "<div id='" (.id %) "'></div>")
-                                    (fn [view model old-value new-value]
+                                    (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
+                                    (fn [^WidgetBase view ^symbolicweb.core.IModel model old-value new-value]
                                       (jqHTML view new-value))))
 
                 :view-of-node (ref {})

@@ -63,7 +63,7 @@ MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
   (apply make-WidgetBase
          type
          model
-         #(render-fn %)
+         (fn [^WidgetBase widget] (render-fn widget))
          observed-event-handler-fn
          args))
 
@@ -73,9 +73,8 @@ MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
   (apply make-HTMLElement
          ::GenericHTMLElement
          model
-         #(str "<" html-element-type " id='" (.id %) "'></" html-element-type ">")
-         (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model
-              old-value new-value]
+         (fn [^WidgetBase widget] (str "<" html-element-type " id='" (.id widget) "'></" html-element-type ">"))
+         (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model old-value new-value]
            (jqHTML widget (if (:escape-html? widget)
                             (escape-html new-value)
                             new-value)))

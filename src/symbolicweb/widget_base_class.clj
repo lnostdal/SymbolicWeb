@@ -88,8 +88,8 @@
                      type
                      model
                      render-fn
-                     (ref [(fn [widget _] (observe-start widget))]) ;; ON-VISIBLE-FNS
-                     (ref [(fn [widget _] (observe-stop widget))]) ;; ON-NON-VISIBLE-FNS
+                     (ref [(fn [^WidgetBase widget _] (observe-start widget))]) ;; ON-VISIBLE-FNS
+                     (ref [(fn [^WidgetBase widget _] (observe-stop widget))]) ;; ON-NON-VISIBLE-FNS
                      (ref #{}) ;; CHILDREN
                      (ref nil) ;; PARENT
                      (vm nil) ;; VIEWPORT
