@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 (declare make-ContainerView make-ContainerModel add-branch)
-(defn make-Viewport [request application root-widget & args]
+(defn make-Viewport [request application ^WidgetBase root-widget & args]
   "This will instantiate a new Viewport and also 'register' it as a part of APPLICATION and the server via -VIEWPORTS-."
   (let [viewport-id (cl-format false "~36R" (generate-uid))
         viewport (ref (apply assoc {}
@@ -70,6 +70,7 @@
   new-chunk)
 
 
+;; TODO: This doesn't seem to be used any more? HANDLE-IN-CHANNEL-REQUEST calls callbacks directly instead.
 (defn handle-widget-event [widget event-name]
   (let [w @widget]
     (if-let [handler-fn (get (:callbacks w) event-name)]

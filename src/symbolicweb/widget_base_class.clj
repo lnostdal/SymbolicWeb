@@ -115,6 +115,10 @@ of this observer."
                       (callback old-value new-value))
                     (callback old-value new-value)))
                 args)
+    ;; Interesting; the change I commented out here seems to make SW-TITLE on big view not to render correctly for :admin users.
+    ;;(if lifetime
+    ;;  (add-branch lifetime it)
+    ;;  (observe-start it))
     (when lifetime
       (add-branch lifetime it))
     (observe-start it)))

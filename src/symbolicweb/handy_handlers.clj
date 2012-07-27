@@ -68,7 +68,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
          widget-id (get query-params "_sw_widget-id")
          callback-id (get query-params "_sw_callback-id")
          widget (get (:widgets @viewport) widget-id)
-         callback (get @(.callbacks widget) callback-id)
+         callback (get @(.callbacks ^WidgetBase widget) callback-id)
          [callback-fn callback-data] callback]
      (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
      {:status 200

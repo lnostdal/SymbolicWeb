@@ -14,13 +14,13 @@ This will also call any FNs stored in :ON-VISIBLE-FNS for the children in questi
     (alter viewport update-in
            [:widgets] assoc (.id child) child)
     ;; Widget --> Viewport.
-    (vm-set (.viewport child) viewport) ;; Widget wil know which Viewport to send JS code to now.
+    (vm-set (.viewport child) viewport) ;; Widget will know which Viewport to send JS code to now.
     ;; Model --> Widget
-    ;;(observe-start child) ;; NOTE: DO-ON-VISIBLE already calls this.
-    (do-on-visible child)
+    (do-on-visible child) ;; Calls OBSERVE-START; default WidgetBase constructor.
     ;; Recurse down to all children of CHILD and so on.
     (doseq [child-of-child (visibility-children-of child)]
       (ensure-visible child-of-child child))))
+
 
 (defn add-branch [parent ^WidgetBase child]
   "PARENT: A WidgetBase or Viewport instance.
@@ -28,14 +28,17 @@ CHILD: A WidgetBase instance.
 Declares CHILD to be a part of PARENT.
 This is used to track visibility on the server-end. Use e.g. jqAppend to actually display the widget on the client
 end."
-  (assert (not (parent-of child))
-          (str "CHILD already has a parent assigned for it: " (parent-of child)))
+  (when (parent-of child)
+    (println (str "ADD-BRANCH: CHILD already has a parent assigned for it: " (parent-of child)
+                  ", EXISTING-PARENT-ID: " (.id (parent-of child))
+                  ", EXISTING-PARENT-MODEL: " (:model (parent-of child))
+                  ", CHILD-ID: " (.id child)
+                  ", CHILD-MODEL: " @(:model child))))
   ;; PARENT <-- CHILD.
   (ref-set (.parent child) parent)
   ;; PARENT --> CHILD.
   (when-not (viewport? parent) ;; A Viewport only has a single child; the :ROOT-ELEMENT, and it's already set. TODO: Cludge.
     (add-visibility-child parent child))
-
   ;; When PARENT is visible, the CHILD and its children in turn should be declared visible too.
   (when (or (viewport? parent)
             (viewport-of parent))
@@ -44,15 +47,14 @@ end."
 
 (defn ensure-non-visible [^WidgetBase widget]
   "Remove WIDGET and its children from the DOM."
-  ;; Model -/-> Widget.
-  (observe-stop widget)
   ;; Remove WIDGET from children of parent of widget.
   (when-let [parent (parent-of widget)]
     (when-not (viewport? parent)
       (remove-visibility-child parent widget))
     (doseq [child (visibility-children-of widget)]
       (ensure-non-visible child))
-    (do-on-non-visible widget)
+    ;; Model -/-> Widget.
+    (do-on-non-visible widget) ;; Calls OBSERVE-STOP; default WidgetBase constructor.
     ;; Viewport -/-> Widget.
     (alter (viewport-of widget) update-in
            [:widgets] dissoc (.id widget))
