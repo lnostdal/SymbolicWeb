@@ -76,7 +76,11 @@ On page load (or refresh), the order of things executed are:
              (make-Application :rest-handler #'clear-session-page-handler :session? false))
            ;; Session cookie not sent; the user is requesting a brand new session or Application.
            (if-let [application-constructor (find-application-constructor request)]
-             (application-constructor)
+             (application-constructor :session?
+                                      (with (get (:query-params request) "_sw_session_p")
+                                        (if (nil? it)
+                                          true
+                                          (json-parse it))))
              (make-Application :rest-handler not-found-page-handler :session? false)))
     (reset! (:cookies @it) (:cookies request))))
 

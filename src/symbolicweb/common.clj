@@ -149,7 +149,7 @@ APPLICATION and VIEWPORT are bound within BODY."
                                  :fit-fn fit-fn
                                  :cookie-name "_sw_application_id"
                                  :cookie-path cookie-path
-                                 :application-constructor-fn (fn [] (application-constructor-fn app-type-data))
+                                 :application-constructor-fn application-constructor-fn
                                  :agent (agent name)
                                  args))
     (swap! -application-types- #(assoc % name @app-type-data))))
