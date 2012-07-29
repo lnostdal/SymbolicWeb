@@ -62,28 +62,13 @@ var swAddOnLoadFN, swDoOnLoadFNs;
 /// swURL ///
 /////////////
 
-var swURL, swDURL;
-
-(function (){
-   var fn = function(dynamic_p, params){
-     var res = [window.location.protocol, "//",
-                (function(){ if(dynamic_p) return(_sw_dynamic_subdomain); else return(""); })(),
-                window.location.host,
-                "/sw?_sw_viewport_id=", _sw_viewport_id,
-                params.join("")
-               ].join("");
-     return(res);
-   };
-
-   // Request; not vs. random sub-domain.
-   swURL = function(params){
-     return fn(false, params);
-   };
-
-   // Request (but jQuery will use <script> tag background loading); vs. random sub-domain.
-   swDURL = function(params){
-     return fn(true, params);
-   };})();
+function swURL(params){
+  return([window.location.protocol, "//",
+          window.location.host,
+          "/sw?_sw_viewport_id=", _sw_viewport_id,
+          params.join("")
+         ].join(""));
+}
 
 
 

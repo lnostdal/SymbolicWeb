@@ -314,11 +314,7 @@ Returns a string."
 (defn sw-js-base-bootstrap [application viewport]
   (str (set-default-session-cookie (:id @application))
        "_sw_viewport_id = '" (:id @viewport) "';" \newline
-       "_sw_comet_timeout_ts = " -comet-timeout- ";" \newline
-       (cl-format false "_sw_dynamic_subdomain = '~A';~%"
-                  (if-let [it (str "sw-" (generate-uid))]
-                    (str it ".")
-                    ""))))
+       "_sw_comet_timeout_ts = " -comet-timeout- ";" \newline))
 
 
 (defn sw-css-bootstrap []
