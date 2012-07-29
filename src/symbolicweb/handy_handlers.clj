@@ -54,27 +54,28 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 (defn handle-in-channel-request [request application viewport]
   "Input (AJAX) channel."
   (cond
-   (= "unload" (get (:query-params request) "do"))
-   (do
-     (gc-viewport viewport)
-     {:status 200
-      :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                "Server" -http-server-string-}
-      :body "" ;;"console.log('SymbolicWeb: Server got DOM unload notification.');"
-      })
+    ;; TODO: This stuff doesn't belong here.
+    (= "unload" (get (:query-params request) "do"))
+    (do
+      (gc-viewport viewport)
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                 "Server" -http-server-string-}
+       :body "" ;;"console.log('SymbolicWeb: Server got DOM unload notification.');"
+       })
 
-   true
-   (let [query-params (:query-params request)
-         widget-id (get query-params "_sw_widget-id")
-         callback-id (get query-params "_sw_callback-id")
-         widget (get (:widgets @viewport) widget-id)
-         callback (get @(.callbacks ^WidgetBase widget) callback-id)
-         [callback-fn callback-data] callback]
-     (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
-     {:status 200
-      :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                "Server" -http-server-string-}
-      :body ""})))
+    true
+    (let [query-params (:query-params request)
+          widget-id (get query-params "_sw_widget-id")
+          callback-id (get query-params "_sw_callback-id")
+          widget (get (:widgets @viewport) widget-id)
+          callback (get @(.callbacks ^WidgetBase widget) callback-id)
+          [callback-fn callback-data] callback]
+      (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                 "Server" -http-server-string-}
+       :body ""})))
 
 
 (defn default-ajax-handler [request application viewport]
