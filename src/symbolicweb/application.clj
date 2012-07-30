@@ -66,6 +66,7 @@ On page load (or refresh), the order of things executed are:
           (recur (next app-types)))))))
 
 
+(declare json-parse)
 (defn find-or-create-application-instance [request]
   (with1 (if-let [cookie-value (:value (get (:cookies request) "_sw_application_id"))]
            ;; Session cookie sent.
