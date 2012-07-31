@@ -146,8 +146,9 @@ var swComet  =
          _sw_comet_response = false;
          swComet("&do=ack");
        }
-       else
-         setTimeout("swComet('&do=timeout');", 1000);
+       else{
+         setTimeout("swComet('&do=timeout');", 250);
+       }
      }
 
      function doIt(params){
@@ -267,23 +268,27 @@ function swBoot(url){
     url: url,
     dataType: "script",
     success: function(){
-      // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
-      swComet("&do=refresh");
-      // ..and set up something that'll ensure the channel stays alive
-      // when faced with JS dying after computer waking up from suspend etc..
-      var sw_mouse_poll_ts = new Date().getTime();
-      var sw_mouse_poll_interval_ms = 5000;
-      var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
-      $(document).on("mousemove", function(e){
-        var ts = new Date().getTime();
-        if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
-          sw_mouse_poll_ts = ts;
-          if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
-            console.log("SymbolicWeb: Client connection JS-loop has died: rebooting...");
-            window.location.href = window.location.href;
+      if(document.cookie.indexOf("_sw_application_id") != -1){
+        // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
+        swComet("&do=refresh");
+        // ..and set up something that'll ensure the channel stays alive
+        // when faced with JS dying after computer waking up from suspend etc..
+        var sw_mouse_poll_ts = new Date().getTime();
+        var sw_mouse_poll_interval_ms = 5000;
+        var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
+        $(document).on("mousemove", function(e){
+          var ts = new Date().getTime();
+          if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
+            sw_mouse_poll_ts = ts;
+            if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
+              console.log("SymbolicWeb: Client connection JS-loop has died: rebooting...");
+              window.location.href = window.location.href;
+            }
           }
-        }
-      });
+        });
+      }
+      else
+        alert('Cookies must be enabled.');
     }
   });
 }
