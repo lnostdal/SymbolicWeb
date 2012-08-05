@@ -57,6 +57,12 @@ On page load (or refresh), the order of things executed are:
               assoc (key map-entry) (vm (val map-entry)))))))
 
 
+(defn session-del [application key]
+  (dosync
+   (alter (:session-data @application)
+          dissoc key)))
+
+
 (defn find-application-constructor [request]
   (loop [app-types @-application-types-]
     (when-first [app-type app-types]
