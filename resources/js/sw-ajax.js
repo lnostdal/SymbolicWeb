@@ -287,8 +287,9 @@ function swBoot(url){
           }
         });
       }
-      else
-        alert('Cookies must be enabled.');
+      else{
+        console.log("SymbolicWeb: Cookies must be enabled.");
+      }
     }
   });
 }
