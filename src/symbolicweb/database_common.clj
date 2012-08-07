@@ -11,7 +11,7 @@
                (.setMaxIdleTimeExcessConnections (* 30 60))
                ;; Expire connections after 3 hours of inactivity:
                (.setMaxIdleTime (* 3 60 60))
-               (.setMaxPoolSize 1))]
+               (.setMaxPoolSize 10))] ;; TODO: Configurable (from higher level; users of SW).
     (delay {:datasource cpds})))
 
 
