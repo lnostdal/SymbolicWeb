@@ -186,7 +186,6 @@
                   ^clojure.lang.Keyword object
                   ^String object-url]
   (let [url (str "https://graph.facebook.com/" fb-id "/" app-namespace ":" action)]
-    ;; TODO: App access token is magic value here.
     (with (http-post-request url (ring.util.codec/form-encode {:access_token app-access-token
                                                                object object-url}))
       (when-not (= 200 (:status it))
