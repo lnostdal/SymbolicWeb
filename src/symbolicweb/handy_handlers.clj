@@ -39,7 +39,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           (do-it response-str)
           (if @response-sched-fn
             (do
-              (println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN.")
+              ;;(println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN for request: " request)
               (.run (.job @response-sched-fn)))
             (reset! response-sched-fn
                     (overtone.at-at/at (+ (overtone.at-at/now) -comet-timeout-)

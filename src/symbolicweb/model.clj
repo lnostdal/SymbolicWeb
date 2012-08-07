@@ -106,7 +106,7 @@ See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
 
 (defn vm-sync
   "Returns a new ValueModel which is kept in sync with VALUE-MODEL via CALLBACK.
-CALLBACK takes a two arguments, [OLD-VALUE and NEW-VALUE], and the continious (as VALUE-MODEL changes) return value of CALLBACK
+CALLBACK takes a two arguments, [OLD-VALUE NEW-VALUE], and the continious (as VALUE-MODEL changes) return value of CALLBACK
 will always be the value of the returned ValueModel.
 The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
 VALUE-MODEL)."
