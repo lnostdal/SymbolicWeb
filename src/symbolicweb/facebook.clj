@@ -1,5 +1,4 @@
 (ns symbolicweb.facebook
-  (:use [ring.util.codec :only (url-encode)])
   (:require [clojure.string :as str])
   (:use [clojure.pprint :only (cl-format)])
   (:use symbolicweb.core))
@@ -26,68 +25,60 @@
     :body body}))
 
 
-(defn mk-context [app-id app-secret & args]
-  (ref (apply assoc
-              {}
-              :app-id app-id
-              :app-secret app-secret
-
-              :user-access-token nil
-              :app-access-token nil
-
-              ;; https://developers.facebook.com/docs/authentication/permissions/
-              :permission-names ["publish_stream" "email" "user_birthday"]
-
-              :csrf-check (generate-uuid)
-
-              :user-authenticate-display "popup" ;; page, popup or touch (mobile)
-              args)))
-
-
 
 ;;;; User Auth. See:
 ;;;;   https://developers.facebook.com/docs/authentication/server-side/
 
 ;;; 1. Redirect the user to the OAuth Dialog
 
-(defn user-authenticate-url [context redirect-uri]
+(defn user-authenticate-url ^String  [^String app-id
+                                      permission-names
+                                      ^String csrf-check
+                                      ^String user-authenticate-display
+                                      ^String redirect-uri]
   (str "https://www.facebook.com/dialog/oauth?"
-       "client_id=" (url-encode (:app-id @context))
-       "&redirect_uri=" (url-encode redirect-uri)
-       (when-let [permission-names (:permission-names @context)]
-         (str "&scope=" (url-encode (cl-format false "~{~A~^, ~}" permission-names))))
-       "&state=" (url-encode (:csrf-check @context))
-       "&display=" (url-encode (:user-authenticate-display @context))))
+       "client_id=" (url-encode-component app-id)
+       "&redirect_uri=" (url-encode-component redirect-uri)
+       (when-let [permission-names permission-names]
+         (str "&scope=" (url-encode-component (cl-format false "~{~A~^, ~}" permission-names))))
+       "&state=" (url-encode-component csrf-check)
+       "&display=" (url-encode-component user-authenticate-display)))
 
 
 ;;; 4. Exchange the code for a user access token
 
-(defn user-access-token-url [context code redirect-uri]
+(defn user-access-token-url ^String [^String app-id
+                                     ^String app-secret
+                                     ^String code
+                                     ^String redirect-uri]
   (str "https://graph.facebook.com/oauth/access_token?"
-       "client_id=" (url-encode (:app-id @context))
-       "&redirect_uri=" (url-encode redirect-uri)
-       "&client_secret=" (url-encode (:app-secret @context))
-       "&code=" (url-encode code)))
+       "client_id=" (url-encode-component app-id)
+       "&client_secret=" (url-encode-component app-secret)
+       "&redirect_uri=" (url-encode-component redirect-uri)
+       "&code=" (url-encode-component code)))
 
 
-(defn user-get-access-token [context code redirect-uri]
-  (second (str/split (:body (http-get-request (user-access-token-url context code redirect-uri)))
+(defn user-get-access-token ^String [^String app-id
+                                     ^String app-secret
+                                     ^String code
+                                     ^String redirect-uri]
+  (second (str/split (:body (http-get-request (user-access-token-url app-id app-secret code redirect-uri)))
                      #"=|&")))
 
 
-(defn user-get-info [context]
-  (let [http-response (http-get-request (str "https://graph.facebook.com/me?access_token="
-                                             (url-encode (:user-access-token @context))))]
+(defn user-get-info [^String user-access-token]
+  (let [http-response (http-get-request (str "https://graph.facebook.com/me"
+                                             "?access_token=" (url-encode-component user-access-token)))]
     (json-parse (:body http-response))))
 
 
-(defn user-get-likes [context]
+(defn user-get-likes [^String user-access-token]
   (let [http-response (http-get-request (str "https://graph.facebook.com/me/likes?access_token="
-                                             (url-encode (:user-access-token @context))))]
+                                             (url-encode-component user-access-token)))]
     (json-parse (:body http-response))))
 
 
-(defn user-get-profile-picture [user-id]
+(defn user-get-profile-picture ^String [^String user-id]
   (let [http-response (http-get-request (str "https://graph.facebook.com/" user-id "/picture"))]
     http-response))
 
@@ -97,41 +88,43 @@
 ;;;;   https://developers.facebook.com/docs/authentication/applications/
 
 
-(defn app-access-token-url [context]
+(defn app-access-token-url ^String [^String app-id ^String app-secret]
   (str "https://graph.facebook.com/oauth/access_token?"
-       "client_id="  (url-encode (:app-id @context))
-       "&client_secret=" (url-encode (:app-secret @context))
+       "client_id=" (url-encode-component app-id)
+       "&client_secret=" (url-encode-component app-secret)
        "&grant_type=client_credentials"))
 
 
-(defn app-get-access-token [context]
-  (second (str/split (:body (http-get-request (app-access-token-url context)))
+(defn app-get-access-token ^String [^String app-id ^String app-secret]
+  (second (str/split (:body (http-get-request (app-access-token-url app-id app-secret)))
                      #"=")))
 
-(defn app-get-metadata [context]
-  (let [url (str "https://graph.facebook.com/app?access_token=" (:app-access-token @context))
+(defn app-get-metadata ^String [^String app-access-token]
+  (let [url (str "https://graph.facebook.com/app?access_token=" app-access-token)
         http-response (http-get-request url)]
     (json-parse (:body http-response))))
 
 
-(defn graph-build-arg-str [m]
+(defn graph-build-arg-str ^String [m]
   (cl-format false "~{~A=~A~^&~}"
              (interleave (mapv name (keys m))
-                         (mapv url-encode (vals m)))))
+                         (mapv url-encode-component (vals m)))))
 
 
 ;; TODO: Merge the following two functions somehow?
-(defn app-publish-feed-url [profile-id]
+(defn app-publish-feed-url ^String [^String profile-id]
   (str "https://graph.facebook.com/" profile-id "/feed"))
 
-(defn app-publish-feed-args [context method-args]
+(defn app-publish-feed-args [^String app-access-token method-args]
   (graph-build-arg-str (assoc method-args
-                         :access_token (:app-access-token @context))))
+                         :access_token app-access-token)))
 
 
-(defn app-do-publish-feed [context profile-id method-args]
+(defn app-do-publish-feed [^String app-access-token
+                           ^String profile-id
+                           method-args]
   (let [http-response (http-post-request (app-publish-feed-url profile-id)
-                                         (app-publish-feed-args context method-args))]
+                                         (app-publish-feed-args app-access-token method-args))]
     (json-parse (:body http-response))))
 
 
@@ -140,8 +133,12 @@
 ;;;;;
 
 
-(defn http-oauth-handler [request application response-uri
-                          fb-context
+(defn http-oauth-handler [request application
+                          ^String response-uri
+                          ^String app-id
+                          ^String app-secret
+                          permission-names
+                          ^String user-authenticate-display
                           authorization-accepted-fn
                           authorization-declined-fn]
   "Example of use from JS:
@@ -149,9 +146,9 @@
   (case (get (:query-params request) "do")
     "init"
     ;; FB: 1. Redirect the user to the OAuth Dialog
-    (do
-      (dosync (alter fb-context assoc :csrf-check (generate-uuid)))
-      (let [location (user-authenticate-url fb-context response-uri)]
+    (let [csrf-check (generate-uuid)]
+      (session-set application {:facebook-csrf-check csrf-check})
+      (let [location (user-authenticate-url app-id permission-names csrf-check user-authenticate-display response-uri)]
         (http-replace-response location)))
 
     ;; We'll end up here after the redirect above.
@@ -161,14 +158,14 @@
       (get (:query-params request) "code")
       (let [code (get (:query-params request) "code")
             csrf-check (get (:query-params request) "state")]
-        ;;(assert (= csrf-check (:csrf-check @fb-context)))
-        (when-not (= csrf-check (:csrf-check @fb-context))
+        ;;(assert (= csrf-check (session-get application :facebook-csrf-check)))
+        (when-not (= csrf-check (session-get application :facebook-csrf-check))
           ;; TODO: Ignoring this for now; just logging it instead because I cannot reproduce it and I do not care anymore.
           (println (str "HTTP-OAUTH-HANDLER: CSRF-CHECK failed; got \"" csrf-check
-                        "\" while expected \"" (:csrf-check @fb-context) "\"")))
-        (let [access-token (user-get-access-token fb-context code response-uri)]
-          (dosync (alter fb-context assoc :user-access-token access-token))
-          (with-sw-io -fb-agent- (authorization-accepted-fn (user-get-info fb-context)))
+                        "\" while expected \"" (session-get application :facebook-csrf-check) "\"")))
+        (session-del application :facebook-csrf-check)
+        (let [access-token (user-get-access-token app-id app-secret code response-uri)]
+          (with-sw-io -fb-agent- (authorization-accepted-fn (user-get-info access-token) access-token))
           (http-html-response "<script type='text/javascript'> window.close(); </script>")))
 
       ;; Authorization declined?
@@ -178,8 +175,18 @@
         (http-html-response "<script type='text/javascript'> window.close(); </script>")))))
 
 
-(defn app-test-do-publish-feed []
-  (app-do-publish-feed (with (mk-context nil nil)
-                         (alter it assoc :app-access-token (app-get-access-token it)))
-                       "688375812"
-                       {:message "uhm, hi?"}))
+
+;;; Open Graph
+
+;; https://developers.facebook.com/docs/opengraph/actions/
+(defn og-publish [^String app-namespace
+                  ^String app-access-token
+                  ^String fb-id
+                  ^String action
+                  ^clojure.lang.Keyword object
+                  ^String object-url]
+  (let [url (str "https://graph.facebook.com/" fb-id "/" app-namespace ":" action)]
+    (with (http-post-request url (ring.util.codec/form-encode {:access_token app-access-token
+                                                               object object-url}))
+      (when-not (= 200 (:status it))
+        (println "symbolicweb.facebook/og-publish: " it)))))

@@ -231,12 +231,3 @@ html, body, #sw-root {
      :headers {"Content-Type" "text/javascript; charset=UTF-8"
                "Server" -http-server-string-}
      :body (fn-to-wrap)}))
-
-
-
-(defapp
-  [::EmptyPage
-   #(is-url? "/empty-page/sw")
-   "/empty-page/sw"]
-  (fn [app-type-data]
-    (make-Application)))

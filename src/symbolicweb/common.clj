@@ -142,17 +142,14 @@ APPLICATION and VIEWPORT are bound within BODY."
                   ", ")))))
 
 
-(defn defapp [[name fit-fn cookie-path & args] application-constructor-fn]
-  (let [app-type-data (atom nil)]
-    (reset! app-type-data (apply assoc {}
-                                 :name name
-                                 :fit-fn fit-fn
-                                 :cookie-name "_sw_application_id"
-                                 :cookie-path cookie-path
-                                 :application-constructor-fn application-constructor-fn
-                                 :agent (agent name)
-                                 args))
-    (swap! -application-types- #(assoc % name @app-type-data))))
+(defn defapp [[name fit-fn & args] application-constructor-fn]
+  (swap! -application-types-
+         #(assoc % name (apply hash-map
+                               :name name
+                               :fit-fn fit-fn
+                               :cookie-name "_sw_application_id"
+                               :application-constructor-fn application-constructor-fn
+                               args))))
 
 
 (let [id-generator-value (atom 0)]
@@ -323,7 +320,7 @@ Returns a string."
 
 (defn pred-with-limit [pred limit]
   "Returns a new predicate based on PRED which only \"lasts\" LIMIT number of times."
-  (let [limit (atom limit)] ;; TODO: Don't really need an Atom here, but OK.
+  (let [limit (atom limit)]
     (fn [elt]
       (if-not (pred elt)
         true
