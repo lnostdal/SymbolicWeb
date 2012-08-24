@@ -68,7 +68,7 @@
   )
 
 
-(defn sha [input-str]
+(defn sha ^String [^String input-str]
   (let [md (java.security.MessageDigest/getInstance "SHA-256")]
     (. md update (.getBytes input-str))
     (let [digest (.digest md)]
@@ -158,11 +158,11 @@ APPLICATION and VIEWPORT are bound within BODY."
     (swap! id-generator-value inc)))
 
 
-(defn generate-uuid []
+(defn generate-uuid ^String []
   "Generates an universal unique ID (UUID).
 Returns a string."
   ;; TODO: This is only pseudo random; we can do better.
-  (str (java.util.UUID/randomUUID)))
+  (.toString (java.util.UUID/randomUUID)))
 
 
 (defn time-since-last-activity [obj]
@@ -184,11 +184,11 @@ Returns a string."
           :href href}])
 
 
-(defn set-document-cookie [& {:keys [path domain? name value]
-                              :or {domain? true
-                                   path "\" + window.location.pathname + \""
-                                   name "name"
-                                   value "value"}}]
+(defn set-document-cookie ^String [& {:keys [path domain? name value]
+                                      :or {domain? true
+                                           path "\" + window.location.pathname + \""
+                                           name "name"
+                                           value "value"}}]
   (str "document.cookie = \""
        name "=" (if value value "") "; "
        (when domain?
@@ -204,12 +204,12 @@ Returns a string."
        "\";" \newline))
 
 
-(defn set-default-session-cookie [value]
+(defn set-default-session-cookie ^String [^String value]
   "If VALUE is NIL the cookie will be cleared."
   (set-document-cookie :name "_sw_application_id" :value value :path "/" :domain? false))
 
 
-(defn set-default-login-cookie [value]
+(defn set-default-login-cookie ^String  [^String value]
   (str (set-document-cookie :name "_sw_login_id" :value value :path "/" :domain? false)
        (when-not value
          (set-document-cookie :name "PHPSESSID" :value value :path "/" :domain? false))))
