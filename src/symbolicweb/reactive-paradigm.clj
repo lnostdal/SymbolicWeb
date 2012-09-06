@@ -9,10 +9,10 @@
 
 (defprotocol IObservable
   (add-observer [observable observer]
-    "Returns true if OBSERVER was added or false if OBSERVER had already been added before.")
+    "Returns OBSERVER if OBSERVER was added or false if OBSERVER had already been added before.")
 
   (remove-observer [observable observer]
-    "Returns true if OBSERVER was removed or false if OBSERVER was not found to be an observer of OBSERVABLE."))
+    "Returns OBSERVER if OBSERVER was removed or false if OBSERVER was not found to be an observer of OBSERVABLE."))
 
 
 
@@ -24,13 +24,13 @@
       false
       (do
         (alter observers conj observer)
-        true)))
+        observer)))
 
   (remove-observer [_ observer]
     (if (get (ensure observers) observer)
       (do
         (alter observers disj observer)
-        true)
+        observer)
       false)))
 
 

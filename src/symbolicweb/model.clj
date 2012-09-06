@@ -4,72 +4,38 @@
 
 
 
-
-;; TODO: Rename to ADD-OBSERVER, REMOVE-OBSERVER and GET-OBSERVERS?
-(defprotocol IModel
-  (add-view [model view])
-  (remove-view [model view])
-  (get-views [model])
-  (notify-views [model args]))
-
-
 (defprotocol IValueModel
-  (vm-set [vm new-value]) ;; Get is DEREF or @ (via clojure.lang.IDeref).
-  (%vm-ref [vm]))
+  (vm-set [vm new-value])) ;; Get is DEREF or @ (via clojure.lang.IDeref).
 
 
-(deftype ValueModel [value-ref
-                     views-ref
-                     %notify-views-fn]
+(deftype ValueModel [^clojure.lang.Ref value
+                     ^Observable observable]
   clojure.lang.IDeref
   (deref [value-model]
-    (%vm-deref value-model value-ref))
+    (%vm-deref value-model value))
 
 
   IValueModel
-  (vm-set [vm new-value]
+  (vm-set [value-model new-value]
     (when *in-sw-db?*
       (assert (or *pending-prepared-transaction?*
                   *in-db-cache-get?*)
               "ValueModel: Mutation of ValueModel within WITH-SW-DB not allowed while DB transaction is not held (HOLDING-TRANSACTION)."))
-    (let [old-value (ensure value-ref)]
+    (let [old-value (ensure value)]
       (when-not (= old-value new-value)
-        (ref-set value-ref new-value)
-        (notify-views vm [old-value new-value])))
-    new-value)
+        (ref-set value new-value)
+        (notify-observers observable old-value new-value)))
+    new-value))
 
-  (%vm-ref [_]
-    value-ref)
-
-
-  IModel
-  (add-view [_ view]
-    (if (get (ensure views-ref) view)
-      false
-      (do
-        (alter views-ref conj view)
-        true)))
-
-  (remove-view [_ view]
-    (if (get (ensure views-ref) view)
-      (do
-        (alter views-ref disj view)
-        true)
-      false))
-
-  (get-views [_]
-    (ensure views-ref))
-
-  (notify-views [vm args]
-    (apply %notify-views-fn vm args)))
 
 
 (defmethod print-method ValueModel [^ValueModel value-model stream]
-  (print-method (%vm-ref value-model) stream))
+  (print-method (.value value-model) stream))
 
 
-(defn %vm-deref [^ValueModel value-model ^clojure.lang.Ref value-ref]
-  (let [return-value (ensure value-ref)]
+
+(defn %vm-deref [^ValueModel value-model ^clojure.lang.Ref value]
+  (do1 (ensure value)
     (when (and *observed-vms-ctx*
                (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
       (alter (:vms *observed-vms-ctx*) conj value-model)
@@ -80,28 +46,46 @@
                      (binding [*observed-vms-ctx* observed-vms-ctx
                                *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
                                                                     (:body-fn observed-vms-ctx))]
-                       ((:body-fn observed-vms-ctx))))))))
-    return-value))
+                       ((:body-fn observed-vms-ctx))))))))))
+
 
 
 (defn vm [value]
   (ValueModel. (ref value)
-               (ref #{})
-               (fn [^ValueModel value-model old-value new-value]
-                 (when-not (= old-value new-value)
-                   (doseq [view (get-views value-model)]
-                     ((.observed-event-handler-fn view) view value-model old-value new-value))))))
+               (mk-Observable (fn [^Observable observable old-value new-value]
+                                (when-not (= old-value new-value) ;; TODO: = is a magic value.
+                                  (doseq [^clojure.lang.Fn observer-fn (ensure (.observers observable))]
+                                    (observer-fn observer-fn observable old-value new-value)))))))
+
+
+
+(defn vm-observe [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
+  "  LIFETIME: An instance of Lifetime or NIL/false (infinite lifetime).
+  INITIAL-SYNC?: If true, CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on
+construction of this observer.
+CALLBACK: (fn [observer-fn old-value new-value] ..)  where OBSERVER-FN can be sent to REMOVE-OBSERVER."
+  (with1 (add-observer (.observable value-model)
+                       (fn [observer-fn observable old-value new-value]
+                         (if (= old-value :symbolicweb.core/-initial-update-)
+                           (when initial-sync?
+                             (callback observer-fn old-value new-value))
+                           (callback observer-fn old-value new-value))))
+    (when lifetime
+      (add-lifetime-deactivation-fn lifetime #(remove-observer (.observable value-model) it)))))
+
 
 
 (defn vm-alter [^ValueModel value-model fn & args]
   (vm-set value-model (apply fn @value-model args)))
 
 
+
 (defn vm-copy [^ValueModel value-model]
-  "Creates a ValueModel. The initial value of it will be extracted from SOURCE-VM. Further changes (mutation of) to SOURCE-VM will
-not affect the ValueModel created and returned here.
+  "Creates a ValueModel. The initial value of it will be extracted from VALUE-MODEL. Further changes (mutation of) to
+VALUE-MODEL will not affect the ValueModel created and returned here.
 See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
   (vm @value-model))
+
 
 
 (defn vm-sync
@@ -117,6 +101,7 @@ VALUE-MODEL)."
        (observe value-model lifetime initial-sync?
                 #(vm-set mid (callback %1 %2)))
        mid)))
+
 
 
 (defn vm-syncs
@@ -136,6 +121,7 @@ VALUE-MODEL)."
                                              true))
                     (fn [_ _] (vm-set mid (callback))))))
        mid)))
+
 
 
 (defn %with-observed-vms [lifetime body-fn]
