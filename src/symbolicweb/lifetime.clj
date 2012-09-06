@@ -125,7 +125,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 #_(try
   (dosync
-   (let [root (mk-Lifetime)
+   (let [root (mk-LifetimeRoot)
          child-1 (mk-Lifetime)
          child-2 (mk-Lifetime)]
      (add-lifetime-activation-fn root (fn [root]
@@ -140,17 +140,17 @@ If LIFETIME is active it will be deactivated with all its children.")
                                              (println "CHILD-1 deactivated.")))
      (add-lifetime-deactivation-fn child-2 (fn [child-2]
                                              (println "CHILD-2 deactivated.")))
-     (add-lifetime-child root child-1)
+     (attach-lifetime root child-1)
      (println "---")
      (do-lifetime-activation root)
      (println "---")
-     (add-lifetime-child root child-2)
+     (attach-lifetime root child-2)
      (println "---")
-     (deactivate-lifetime child-1)
+     (detach-lifetime child-1)
      (println "---")
-     (do-lifetime-deactivation root)))
+     (detach-lifetime root)))
   (catch Throwable e
-    (dbg-prin1 e)))
+    (clojure.stacktrace/print-stack-trace e)))
 
 ;; ---
 ;; ROOT activated.
