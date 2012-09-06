@@ -57,6 +57,9 @@ If LIFETIME is active it will be deactivated with all its children.")
               (str lifetime " has already been detached from a Lifetime tree; it is stale.")))
     (ref-set parent ::stale-lifetime)
     (alter (.children (ensure parent)) disj lifetime)
+    ;; Mark children and children of children stale also.
+    (doseq [^Lifetime child-lifetime (ensure children)]
+      (detach-lifetime child-lifetime))
     (do-lifetime-deactivation lifetime)
     lifetime)
 
@@ -73,7 +76,7 @@ If LIFETIME is active it will be deactivated with all its children.")
   (do-lifetime-activation [lifetime]
     (when-not (ensure active?)
       (ref-set active? true)
-      ;; Iterate downwards in tree from LIFETIME; top-to-bottom; calling ON-LIFETIME-ACTIVATION-FNS as we go.
+      ;; Iterate downwards in tree (root at the top) from LIFETIME; top-to-bottom; calling ON-LIFETIME-ACTIVATION-FNS as we go.
       (doseq [^clojure.lang.Fn f (ensure on-lifetime-activation-fns)]
         (f lifetime))
       (doseq [^Lifetime child-lifetime (ensure children)]
@@ -83,11 +86,10 @@ If LIFETIME is active it will be deactivated with all its children.")
   (do-lifetime-deactivation [lifetime]
     (when (ensure active?)
       (ref-set active? false)
-      ;; Iterate upwards from leaves of LIFETIME tree; bottom-to-top; calling ON-LIFETIME-DEACTIVATION as we go.
+      ;; Iterate upwards from leaves of LIFETIME tree (root at the top); bottom-to-top; calling ON-LIFETIME-DEACTIVATION-FNS
+      ;; as we go.
       (doseq [^Lifetime child-lifetime (ensure children)]
-        ;;(do-lifetime-deactivation child-lifetime)
-        (detach-lifetime child-lifetime))
-
+        (do-lifetime-deactivation child-lifetime))
       (doseq [^clojure.lang.Fn f (ensure on-lifetime-deactivation-fns)]
         (f lifetime))
       lifetime)))
