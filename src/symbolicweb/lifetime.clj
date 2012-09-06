@@ -105,7 +105,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 (defn mk-Lifetime []
   (Lifetime. (ref false) ;; ACTIVE?
              (ref false) ;; PARENT
-             (ref #{})    ;; CHILDREN
+             (ref #{})   ;; CHILDREN
              (ref [])    ;; ON-LIFETIME-ACTIVATION-FNS
              (ref [])))  ;; ON-LIFETIME-DEACTIVATION-FNS
 
@@ -115,11 +115,6 @@ If LIFETIME is active it will be deactivated with all its children.")
     (ref-set (.parent it) ::lifetime-root)
     it))
 
-
-
-
-(def -root-lifetime-
-  (mk-Lifetime))
 
 
 
