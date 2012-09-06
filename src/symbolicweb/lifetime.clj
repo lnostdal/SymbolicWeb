@@ -6,8 +6,12 @@
 ;; Used to:
 ;;
 ;;   * Keep track of the lifetime (duration) of connections between Observables and Observers.
-;;   * Keep track of visibility in a UI context. E.g. when the user navigates away from a "page" the widgets all
+;;
+;;   * Keep track of visibility in a UI context. E.g. when the user navigates away from a "page", the widgets all
 ;;     monitoring some Model switch from visible to non visible. Cleanup etc. might be needed on both client and server end.
+;;
+;;   * ..do many other things.
+
 
 
 (defprotocol ILifetime
@@ -22,11 +26,14 @@
 
 
 (deftype Lifetime [^clojure.lang.Ref active? ;; Boolean
+                   ^clojure.lang.Ref parent ;; Lifetime
                    ^clojure.lang.Ref children ;; []
                    ^clojure.lang.Ref on-lifetime-activation-fns ;; []
                    ^clojure.lang.Ref on-lifetime-deactivation-fns] ;; []
   ILifetime
   (add-lifetime-child [parent-lifetime child-lifetime]
+    (assert (not (ensure (.parent child-lifetime))))
+    (ref-set (.parent child-lifetime) parent-lifetime)
     (alter children conj child-lifetime)
     (when (ensure (.active? parent-lifetime))
       (handle-lifetime-activation child-lifetime))
@@ -70,10 +77,11 @@
 
 
 (defn mk-Lifetime []
-  (Lifetime. (ref false)      ;; ACTIVE?
-             (ref [])   ;; CHILDREN
-             (ref [])   ;; ON-LIFETIME-ACTIVATION-FNS
-             (ref []))) ;; ON-LIFETIME-DEACTIVATION-FNS
+  (Lifetime. (ref false) ;; ACTIVE?
+             (ref false) ;; PARENT
+             (ref [])    ;; CHILDREN
+             (ref [])    ;; ON-LIFETIME-ACTIVATION-FNS
+             (ref [])))  ;; ON-LIFETIME-DEACTIVATION-FNS
 
 
 (defn activate-lifetime [^Lifetime lifetime]
