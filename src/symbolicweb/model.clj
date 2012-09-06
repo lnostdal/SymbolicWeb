@@ -55,7 +55,7 @@
                (mk-Observable (fn [^Observable observable old-value new-value]
                                 (when-not (= old-value new-value) ;; TODO: = is a magic value.
                                   (doseq [^clojure.lang.Fn observer-fn (ensure (.observers observable))]
-                                    (observer-fn observer-fn observable old-value new-value)))))))
+                                    (observer-fn new-value old-value observer-fn observable)))))))
 
 
 
@@ -63,13 +63,10 @@
   "  LIFETIME: An instance of Lifetime or NIL/false (infinite lifetime).
   INITIAL-SYNC?: If true, CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on
 construction of this observer.
-CALLBACK: (fn [observer-fn old-value new-value] ..)  where OBSERVER-FN can be sent to REMOVE-OBSERVER."
-  (with1 (add-observer (.observable value-model)
-                       (fn [observer-fn observable old-value new-value]
-                         (if (= old-value :symbolicweb.core/-initial-update-)
-                           (when initial-sync?
-                             (callback observer-fn old-value new-value))
-                           (callback observer-fn old-value new-value))))
+CALLBACK: (fn [new-value old-value observer-fn observable] ..)  where OBSERVER-FN can be sent to REMOVE-OBSERVER."
+  (with1 (add-observer (.observable value-model) callback)
+    (when initial-sync?
+      (callback @value-model :symbolicweb.core/-initial-update- it (.observable value-model)))
     (when lifetime
       (add-lifetime-deactivation-fn lifetime #(remove-observer (.observable value-model) it)))))
 
