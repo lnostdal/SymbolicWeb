@@ -50,11 +50,10 @@
 #_(try
   (dosync
    (let [x (vm 0)]
-     (add-observer (.observable x)
-                   (fn [observer-fn observable old-value new-value]
-                     (dbg-prin1 [old-value new-value])))
+     (vm-observe x nil false (fn [new-value old-value & _]
+                               (dbg-prin1 [new-value old-value])))
      (vm-set x 42)))
   (catch Throwable e
     (clojure.stacktrace/print-stack-trace e)))
-;; [old-value new-value] => [0 42]
+;; [new-value old-value] => [42 0]
 ;; 42
