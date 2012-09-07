@@ -63,12 +63,17 @@
   "  LIFETIME: An instance of Lifetime or NIL/false (infinite lifetime).
   INITIAL-SYNC?: If true, CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on
 construction of this observer.
-CALLBACK: (fn [new-value old-value observer-fn observable] ..)  where OBSERVER-FN can be sent to REMOVE-OBSERVER."
-  (with1 (add-observer (.observable value-model) callback)
-    (when initial-sync?
-      (callback @value-model :symbolicweb.core/-initial-update- it (.observable value-model)))
-    (when lifetime
-      (add-lifetime-deactivation-fn lifetime #(remove-observer (.observable value-model) it)))))
+  CALLBACK: (fn [new-value old-value observer-fn observable] ..)  where OBSERVER-FN can be sent to REMOVE-OBSERVER."
+  (letfn [(do-it []
+            (add-observer (.observable value-model) callback)
+            (when initial-sync?
+              (callback @value-model :symbolicweb.core/-initial-update- callback (.observable value-model))))]
+    (if lifetime
+      (let [our-lifetime (mk-Lifetime)]
+        (add-lifetime-activation-fn our-lifetime #(do-it))
+        (add-lifetime-deactivation-fn our-lifetime #(remove-observer (.observable value-model) callback))
+        (attach-lifetime lifetime our-lifetime))
+      (do-it))))
 
 
 
