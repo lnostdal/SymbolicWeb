@@ -12,7 +12,7 @@
 
                  [cheshire "4.0.3-SNAPSHOT"] ;; JSON.
 
-                 [hiccup "1.0.0"] ;; HTML generation.
+                 [hiccup "1.0.1"] ;; HTML generation.
                  [org.jsoup/jsoup "1.6.4-SNAPSHOT"] ;; HTML templating.
                  [ring/ring-core "1.1.0"] ;; HTTP protocol handling.
 
