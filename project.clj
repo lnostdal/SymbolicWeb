@@ -10,7 +10,7 @@
 
                  [commons-collections/commons-collections "3.2.1"] ;; For soft hash cache.
 
-                 [cheshire "4.0.2-SNAPSHOT"] ;; JSON.
+                 [cheshire "4.0.3-SNAPSHOT"] ;; JSON.
 
                  [hiccup "1.0.0"] ;; HTML generation.
                  [org.jsoup/jsoup "1.6.4-SNAPSHOT"] ;; HTML templating.
