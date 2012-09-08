@@ -8,7 +8,7 @@
 
                  [overtone/at-at "1.0.0"] ;; Scheduling.
 
-                 [org.apache.commons/collections "3.2.1"] ;; For soft hash cache.
+                 [commons-collections/commons-collections "3.2.1"] ;; For soft hash cache.
 
                  [cheshire "4.0.2-SNAPSHOT"] ;; JSON.
 
