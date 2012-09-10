@@ -18,8 +18,11 @@
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
                  [postgresql/postgresql "9.1-902.jdbc4"] ;; PostgreSQL JDBC driver.
-                 [c3p0/c3p0 "0.9.1.2"]] ;; DB connection pooling.
-  :plugins [[swank-clojure "1.5.0-SNAPSHOT"]]
+                 [c3p0/c3p0 "0.9.1.2"] ;; DB connection pooling.
+
+                 [org.clojure/tools.nrepl "0.2.0-SNAPSHOT"]]
+
+
   :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
              "-server" "-XX:+TieredCompilation"
              "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
