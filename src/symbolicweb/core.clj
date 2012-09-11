@@ -33,6 +33,8 @@
   (:require overtone.at-at)
 
   (:require symbolicweb.macros)
+  (:require symbolicweb.lifetime)
+  (:require symbolicweb.reactive-paradigm)
   (:require symbolicweb.model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)

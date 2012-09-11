@@ -40,13 +40,13 @@
                (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
       (alter (:vms *observed-vms-ctx*) conj value-model)
       (let [observed-vms-ctx *observed-vms-ctx*]
-        (observe value-model (:lifetime observed-vms-ctx) false
-                 (fn [& _]
-                   (when-not (get *observed-vms-active-body-fns* (:body-fn observed-vms-ctx))
-                     (binding [*observed-vms-ctx* observed-vms-ctx
-                               *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
-                                                                    (:body-fn observed-vms-ctx))]
-                       ((:body-fn observed-vms-ctx))))))))))
+        (vm-observe value-model (:lifetime observed-vms-ctx) false
+                    (fn [& _]
+                      (when-not (get *observed-vms-active-body-fns* (:body-fn observed-vms-ctx))
+                        (binding [*observed-vms-ctx* observed-vms-ctx
+                                  *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
+                                                                       (:body-fn observed-vms-ctx))]
+                          ((:body-fn observed-vms-ctx))))))))))
 
 
 
@@ -92,16 +92,16 @@ See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
 
 (defn vm-sync
   "Returns a new ValueModel which is kept in sync with VALUE-MODEL via CALLBACK.
-CALLBACK takes a two arguments, [OLD-VALUE NEW-VALUE], and the continious (as VALUE-MODEL changes) return value of CALLBACK
-will always be the value of the returned ValueModel.
-The lifetime of this connection is governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
-VALUE-MODEL)."
+  CALLBACK: Takes the same arguments as CALLBACK for VM-OBSERVE does, and the return value of CALLBACK will be the continious
+value of the returned ValueModel.
+  LIFETIME: The lifetime of this connection is governed by LIFETIME and can be an instance of Lifetime or NIL for 'infinite'
+lifetime (as long as VALUE-MODEL exists)."
   ([^ValueModel value-model lifetime callback]
      (vm-sync value-model lifetime callback true))
   ([^ValueModel value-model lifetime callback initial-sync?]
      (let [mid (vm nil)]
-       (observe value-model lifetime initial-sync?
-                #(vm-set mid (callback %1 %2)))
+       (vm-observe value-model lifetime initial-sync?
+                   #(vm-set mid (apply callback %&)))
        mid)))
 
 

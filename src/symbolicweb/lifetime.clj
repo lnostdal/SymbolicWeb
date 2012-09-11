@@ -36,7 +36,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
 (deftype Lifetime [^clojure.lang.Ref active? ;; Boolean
-                   ^clojure.lang.Ref parent ;; Lifetime
+                   ^clojure.lang.Ref parent ;; Lifetime, ::stale-lifetime or ::lifetime-root
                    ^clojure.lang.Ref children ;; #{}
                    ^clojure.lang.Ref on-lifetime-activation-fns ;; []
                    ^clojure.lang.Ref on-lifetime-deactivation-fns] ;; []

@@ -57,3 +57,47 @@
     (clojure.stacktrace/print-stack-trace e)))
 ;; [new-value old-value] => [42 0]
 ;; 42
+
+
+#_(dosync
+ (let [x (vm 0)
+       squared-x (with-observed-vms nil
+                   (* @x @x))] ;;(vm-sync x nil (fn [x & _] (* x x)))]
+   (dbg-prin1 [x squared-x])
+   (vm-set x 2)
+   (dbg-prin1 [x squared-x])))
+
+
+
+
+
+;;; Playing around with "functional" stuff here.
+;;
+;;
+;
+
+
+(def -symbolicweb-world- (agent {}))
+
+
+(defn sw-notify-observers [world ks k v old-value]
+  "Returns WORLD transformed."
+  ;; Look up observers in WORLD via [KS K]. An observer is a vector of FNs.
+  ;; TODO: Is it possible to serialize the FNs somehow? I guess the [KS K] lookup will lead to code doing the same thing
+  ;; for each SW server restart. ...or, there's: https://github.com/technomancy/serializable-fn
+  )
+
+
+(defn sw-update [world ks k v]
+  "Returns WORLD transformed."
+  (let [old-value (with (get-in world ks ::not-found)
+                    (if (= ::not-found it)
+                      ::initial-update
+                      (get it k ::initial-update)))]
+    (sw-notify-observers (update-in world ks
+                                    assoc k v)
+                         ks k v old-value)))
+
+
+(defn do-sw-update [ks k v]
+  (send -symbolicweb-world- sw-update ks k v))

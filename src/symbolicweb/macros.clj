@@ -25,6 +25,10 @@
 
 
 
+(defmacro do1 [x & body]
+  `(let [x# ~x]
+     ~@body
+     x#))
 
 (defmacro with-js [& body]
   `(binding [*with-js?* true]
