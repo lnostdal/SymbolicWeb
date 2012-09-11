@@ -5,7 +5,7 @@
 ;;
 ;; Used to:
 ;;
-;;   * Keep track of the lifetime (duration) of connections between Observables and Observers.
+;;   * Keep track of the lifetime (duration) of connections between Observables and their observers.
 ;;
 ;;   * Keep track of visibility in a UI context. E.g. when the user navigates away from a "page" the widgets all
 ;;     monitoring some Model switch from visible to non visible. Cleanup etc. might be needed on both client and server end.
@@ -101,8 +101,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
 
-
-(defn mk-Lifetime []
+(defn mk-Lifetime ^Lifetime []
   (Lifetime. (ref false) ;; ACTIVE?
              (ref false) ;; PARENT
              (ref #{})   ;; CHILDREN
@@ -110,7 +109,8 @@ If LIFETIME is active it will be deactivated with all its children.")
              (ref [])))  ;; ON-LIFETIME-DEACTIVATION-FNS
 
 
-(defn mk-LifetimeRoot []
+
+(defn mk-LifetimeRoot ^Lifetime []
   (with (mk-Lifetime)
     (ref-set (.parent it) ::lifetime-root)
     it))
