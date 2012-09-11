@@ -1,6 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
+;; TODO: Generalize this into something that tracks the "lifetime" of something via some third party context.
 (defprotocol Visibility
   (add-on-visible-fn [widget cb] "Add CB to run when Widget changes from non-visible (initial state) to visible.")
   (do-on-visible [widget] "Executes CBs; used when Widget changes from non-visible (initial state) to visible.")
@@ -17,12 +18,6 @@
   (parent-of [widget]))
 
 
-(defprotocol Observer
-  (observe-start [observer] "Start observing something.")
-  (observe-stop [observer] "Stop observing something."))
-
-
-
 (defrecord WidgetBase [^String id
                        ^clojure.lang.Keyword type
                        ^symbolicweb.core.IModel model
@@ -36,7 +31,7 @@
                        ^symbolicweb.core.IModel viewport ;; Viewport
 
                        ;; Observer.
-                       ^clojure.lang.Fn observed-event-handler-fn
+                       ^clojure.lang.Fn observer-event-handler-fn
 
                        ^clojure.lang.Ref callbacks] ;; {} ;; CB-NAME -> [HANDLER-FN CALLBACK-DATA]
   Visibility
@@ -69,20 +64,23 @@
 
 
   Observer
-  (observe-start [widget]
-    (when (add-view model widget)
+  (start-observing [widget]
+    (when (add-observer (.observable model) widget)
       (when (isa? (class model) ValueModel)
-        (observed-event-handler-fn widget model ::-initial-update- @model))))
+        (handle-observer-event widget model ::-initial-update- @model))))
 
-  (observe-stop [widget]
-    (remove-view model widget)))
+  (stop-observing [widget]
+    (remove-observer (.observable model) widget))
+
+  (handle-observer-event [widget model old-value new-value]
+    (observer-event-handler-fn widget model old-value new-value)))
 
 
 
 (defn make-WidgetBase ^WidgetBase [^clojure.lang.Keyword type
                                    ^symbolicweb.core.IModel model
                                    ^clojure.lang.Fn render-fn
-                                   ^clojure.lang.Fn observed-event-handler-fn
+                                   ^clojure.lang.Fn observer-event-handler-fn
                                    & args]
   (with (WidgetBase. (str "sw-" (generate-uid)) ;; ID
                      type
@@ -93,27 +91,30 @@
                      (ref #{}) ;; CHILDREN
                      (ref nil) ;; PARENT
                      (vm nil) ;; VIEWPORT
-                     observed-event-handler-fn
+                     observer-event-handler-fn
                      (ref {})) ;; CALLBACKS
-      (apply assoc it :escape-html? true args)))
+    (apply assoc it
+           :escape-html? true
+           args)))
 
 
 (declare add-branch)
 (derive ::Observer ::WidgetBase)
-(defn observe [model lifetime initial-sync? callback & args]
+;; TODO: ### Rename to VM-OBSERVE etc. ###
+(defn observe [observee lifetime initial-sync? callback & args]
   "CALLBACK: (fn [old-value new-value])
-LIFETIME: Governs the lifetime of this connection (Model --> OBSERVED-EVENT-HANDLER-FN) and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL exists).
+LIFETIME: Governs the lifetime of this connection (Model --> OBSERVER-EVENT-HANDLER-FN) and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL exists).
 INITIAL-SYNC?: If true CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on construction
 of this observer."
   (with1 (apply make-WidgetBase
                 ::Observer
-                model
+                observee
                 (fn [_] (assert false "Observers are not meant to be rendered!"))
-                (fn [_ _ old-value new-value]
+                (fn [observer observee old-value new-value]
                   (if (= old-value :symbolicweb.core/-initial-update-)
                     (when initial-sync?
-                      (callback old-value new-value))
-                    (callback old-value new-value)))
+                      (callback observer old-value new-value))
+                    (callback observer old-value new-value)))
                 args)
     ;; Interesting; the change I commented out here seems to make SW-TITLE on big view not to render correctly for :admin users.
     ;;(if lifetime

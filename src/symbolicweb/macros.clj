@@ -89,3 +89,10 @@
 (declare %with-sw-connection)
 (defmacro with-sw-connection [& body]
   `(%with-sw-connection (fn [] ~@body)))
+
+
+(defmacro do1 [x & body]
+  "As PROG1 from Common Lisp."
+  `(let [x# ~x]
+     ~@body
+     x#))
