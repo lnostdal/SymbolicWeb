@@ -100,7 +100,7 @@
 
 
 
-(defn make-ContainerModel []
+(defn make-ContainerModel ^ContainerModel []
   (ContainerModel. (ref nil)
                    (ref nil)
                    (ref 0)
@@ -111,7 +111,7 @@
                         nil
                         (apply list event-sym event-args))))))
 
-(defn cm []
+(defn cm ^ContainerModel []
   (make-ContainerModel))
 
 

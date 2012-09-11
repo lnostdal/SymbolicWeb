@@ -17,49 +17,51 @@
 (defn synced-container-models-with-filtering []
   (dosync
    (let [common (with1 (make-ContainerModel)
-                  (append-container-model it (make-ContainerModelNode (vm 4)))
-                  (append-container-model it (make-ContainerModelNode (vm 5))))
-         odd-only (sync-ContainerModel common #(odd? @(cmn-data %2)))
-         even-only (sync-ContainerModel common #(even? @(cmn-data %2)))
-         node-zero (make-ContainerModelNode (vm 0))]
+                  (cm-append it (cmn (vm 4)))
+                  (cm-append it (cmn (vm 5))))
+         odd-only (sync-ContainerModel common nil #(odd? @(cmn-data %2)))
+         even-only (sync-ContainerModel common nil #(even? @(cmn-data %2)))
+         node-zero (cmn (vm 0))]
 
-     (append-container-model common node-zero)
-     (append-container-model common (make-ContainerModelNode (vm 1)))
-     (append-container-model common (make-ContainerModelNode (vm 2)))
-     (append-container-model common (make-ContainerModelNode (vm 3)))
+     (cm-append common node-zero)
+     (cm-append common (cmn (vm 1)))
+     (cm-append common (cmn (vm 2)))
+     (cm-append common (cmn (vm 3)))
 
-     ;; TODO: Ok, this is where the tricky part is. Do I monitor all values then re-apply
-     ;; filtering on change via r-c-m-n and a-c-m (or similar; depending on ordering..)?
-     ;; Let's think about what a change of either value or even the filter itself might mean:
-     ;;
-     ;;   * It might mean the value must be added to a ContainerModel where it did not exist before.
-     ;;   * It might mean the value must be removed from a ContainerModel where it did exist before.
-     ;;
-     ;; Removing is quite trivial, and to add properly with regards to positioning we need the "outer" node.
-     ;;
-     ;; Ok,for the "outer" ContainerModel, I'll need
+     (vm-set (cmn-data node-zero) 7) ;; TODO: This should trigger the two following operations:
+     ;;(cmn-remove node-zero) ;; Remove from all.
+     ;;(cm-append common (cmn (cmn-data node-zero))) ;; Add back to observed ("synced with") ContainerModel.
 
-     (vm-set (cmn-data node-zero) 7)
-     (remove-container-model-node node-zero)
-     (append-container-model common (make-ContainerModelNode (cmn-data node-zero)))
+     ;; Hm, or a less brute force way?
+     ;;
+     ;; * Check the FILTER-FNs for the SyncedContainerModels the Node is already a part of and remove it from each now returning
+     ;;   false.
+     ;;
+     ;; * Check the FILTER-FNs for the SyncedContainerModels the Node is not already part of and add it to each now returning
+     ;;   true.
+     ;;
+     ;; I guess these things can happen in observers held in each SyncedContainerModel.
+
+
+     ;; Another scenario is the actual filter changing, but I think I might as well create a new sync-ContainerModel then.
 
      (println "COMMON")
-     (loop [node (head-node common)]
+     (loop [node (cm-head-node common)]
        (when node
          (println @(cmn-data node))
-         (recur (right-node node))))
+         (recur (cmn-right-node node))))
 
      (println "\nODD-ONLY")
-     (loop [node (head-node odd-only)]
+     (loop [node (cm-head-node odd-only)]
        (when node
          (println @(cmn-data node))
-         (recur (right-node node))))
+         (recur (cmn-right-node node))))
 
      (println "\nEVEN-ONLY")
-     (loop [node (head-node even-only)]
+     (loop [node (cm-head-node even-only)]
        (when node
          (println @(cmn-data node))
-         (recur (right-node node)))))))
+         (recur (cmn-right-node node)))))))
 
 
 

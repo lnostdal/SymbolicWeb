@@ -22,9 +22,8 @@
                   *in-db-cache-get?*)
               "ValueModel: Mutation of ValueModel within WITH-SW-DB not allowed while DB transaction is not held (HOLDING-TRANSACTION)."))
     (let [old-value (ensure value)]
-      (when-not (= old-value new-value)
-        (ref-set value new-value)
-        (notify-observers observable old-value new-value)))
+      (ref-set value new-value)
+      (notify-observers observable old-value new-value))
     new-value))
 
 
@@ -50,7 +49,7 @@
 
 
 
-(defn vm [value]
+(defn vm ^ValueModel [value]
   (ValueModel. (ref value)
                (mk-Observable (fn [^Observable observable old-value new-value]
                                 (when-not (= old-value new-value) ;; TODO: = is a magic value.
@@ -59,10 +58,9 @@
 
 
 
-(defn vm-observe [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
+(defn vm-observe ^ValueModel [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
   "  LIFETIME: An instance of Lifetime or NIL/false (infinite lifetime).
-  INITIAL-SYNC?: If true, CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on
-construction of this observer.
+  INITIAL-SYNC?: If true, CALLBACK will be called on construction of this observer.
   CALLBACK: (fn [new-value old-value observer-fn observable] ..)  where OBSERVER-FN can be sent to REMOVE-OBSERVER."
   (letfn [(do-it []
             (add-observer (.observable value-model) callback)
@@ -73,7 +71,8 @@ construction of this observer.
         (add-lifetime-activation-fn our-lifetime #(do-it))
         (add-lifetime-deactivation-fn our-lifetime #(remove-observer (.observable value-model) callback))
         (attach-lifetime lifetime our-lifetime))
-      (do-it))))
+      (do-it)))
+  value-model)
 
 
 
@@ -96,9 +95,9 @@ See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
 value of the returned ValueModel.
   LIFETIME: The lifetime of this connection is governed by LIFETIME and can be an instance of Lifetime or NIL for 'infinite'
 lifetime (as long as VALUE-MODEL exists)."
-  ([^ValueModel value-model lifetime callback]
+  (^ValueModel [^ValueModel value-model lifetime callback]
      (vm-sync value-model lifetime callback true))
-  ([^ValueModel value-model lifetime callback initial-sync?]
+  (^ValueModel [^ValueModel value-model lifetime callback ^Boolean initial-sync?]
      (let [mid (vm nil)]
        (vm-observe value-model lifetime initial-sync?
                    #(vm-set mid (apply callback %&)))
