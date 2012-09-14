@@ -39,7 +39,7 @@ This mirrors the jQuery `remove' function:
       (cm-set-tail-node cm (cmn-left-node node))
       (cmn-set-left-node (cmn-right-node node) (cmn-left-node node)))
 
-    (notify-views cm ['cmn-remove node])))
+    (notify-observers (.observable cm) cm 'cmn-remove node)))
 
 
 (defn cmn-after [^ContainerModelNode existing-node ^ContainerModelNode new-node]
@@ -72,7 +72,7 @@ This mirrors the jQuery `after' function:
     ;;  node.next := newNode
     (cmn-set-right-node existing-node new-node)
 
-    (notify-views cm ['cmn-after existing-node new-node])))
+    (notify-observers (.observable cm) cm 'cmn-after existing-node new-node)))
 
 
 (defn cmn-before [^ContainerModelNode existing-node ^ContainerModelNode new-node]
@@ -105,4 +105,4 @@ This mirrors the jQuery `before' function:
     ;; node.prev := newNode
     (cmn-set-left-node existing-node new-node)
 
-    (notify-views cm ['cmn-before existing-node new-node])))
+    (notify-observers (.observable cm) cm 'cmn-before existing-node new-node)))

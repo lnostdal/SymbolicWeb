@@ -16,8 +16,8 @@
   (cmn-data [node]))
 
 (deftype ContainerModelNode [%container-model
-                             left
-                             right
+                             ^clojure.lang.Ref left
+                             ^clojure.lang.Ref right
                              data]
   IContainerModelNode
   (cmn-left-node [_]
@@ -49,36 +49,13 @@
 
   (cm-set-count [cm new-count]))
 
-(deftype ContainerModel [head-node
-                         tail-node
-                         %count
-                         views-ref
-                         %notify-views-fn]
+(deftype ContainerModel [^clojure.lang.Ref head-node
+                         ^clojure.lang.Ref tail-node
+                         ^clojure.lang.Ref %count
+                         ^Observable observable]
   clojure.lang.Counted
   (count [_]
     (dosync (ensure %count)))
-
-
-  IModel
-  (add-view [_ view]
-    (if (get (ensure views-ref) view)
-      false
-      (do
-        (alter views-ref conj view)
-        true)))
-
-  (remove-view [_ view]
-    (if (get (ensure views-ref) view)
-      (do
-        (alter views-ref disj view)
-        true)
-      false))
-
-  (get-views [_]
-    (ensure views-ref))
-
-  (notify-views [cm args]
-    (apply %notify-views-fn cm args))
 
 
   IContainerModel
@@ -101,15 +78,13 @@
 
 
 (defn make-ContainerModel ^ContainerModel []
-  (ContainerModel. (ref nil)
-                   (ref nil)
-                   (ref 0)
-                   (ref #{})
-                   (fn [^ContainerModel cm event-sym & event-args]
-                     (doseq [container-view (get-views cm)]
-                       ((.observed-event-handler-fn container-view) container-view cm
-                        nil
-                        (apply list event-sym event-args))))))
+  (ContainerModel. (ref nil) ;; HEAD-NODE
+                   (ref nil) ;; TAIL-NODE
+                   (ref 0)   ;; %count
+                   ;; OBSERVABLE
+                   (mk-Observable (fn [^Observable observable ^ContainerModel container-model event-sym & event-args]
+                                    (doseq [^clojure.lang.Fn observer-fn (ensure (.observers observable))]
+                                      (observer-fn container-model event-sym event-args))))))
 
 (defn cm ^ContainerModel []
   (make-ContainerModel))
@@ -151,7 +126,7 @@ This mirrors the jQuery `prepend' function:
       (cmn-set-left-node new-node nil) ;; newNode.prev := null
       (cmn-set-right-node new-node nil) ;; newNode.next := null
 
-      (notify-views cm ['cm-prepend cm new-node]))
+      (notify-observers (.observable cm) cm 'cm-prepend cm new-node))
     ;; else
     (cmn-before (cm-head-node cm) new-node))) ;; insertBefore(list, list.firstNode, newNode)
 

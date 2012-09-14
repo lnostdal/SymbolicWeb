@@ -69,7 +69,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 (derive ::ContainerView ::HTMLElement)
-(defn make-ContainerView ^WidgetBase [^symbolicweb.core.IModel container-model & args]
+(defn make-ContainerView ^WidgetBase [^ContainerModel container-model & args]
   (with1 (apply make-HTMLElement
                 ::ContainerView
                 container-model
@@ -191,7 +191,7 @@ NIL for 'infinite' lifetime (as long as CONTAINER-MODEL exists)."
                           (make-HTMLElement ::ContainerModelNodeProxiedView
                                             (cmn-data node)
                                             (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
-                                            (fn [^WidgetBase view ^symbolicweb.core.IModel model old-value new-value]
+                                            (fn [^WidgetBase view ^ValueModel model old-value new-value]
                                               (dbg-prin1 new-value))
                                             :-proxied-node node
                                             :-node (make-ContainerModelNode (cmn-data node))))
