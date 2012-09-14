@@ -1,14 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn set-parent! [child new-parent]
-  (alter child assoc :parent new-parent))
-
-
-(defn set-children! [parent & children]
-  (alter parent assoc :children (flatten children)))
-
-
 (defn render-event ^String [^WidgetBase widget
                             ^String event-type
                             & {:keys [js-before callback-data js-after]
