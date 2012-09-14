@@ -80,3 +80,7 @@ Distributed under the GNU Affero General Public License (for now):
 
 * http://en.wikipedia.org/wiki/Affero_General_Public_License
 * http://www.gnu.org/licenses/agpl.html
+
+Some sort of CLA is implied:
+
+* http://en.wikipedia.org/wiki/Contributor_License_Agreement
