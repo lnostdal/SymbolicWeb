@@ -44,29 +44,32 @@ Returns WIDGET."
 
 
 (defn make-HTMLElement ^WidgetBase [^clojure.lang.Keyword type
-                                    ^symbolicweb.core.IModel model
+                                    ^ValueModel value-model
                                     ^clojure.lang.Fn render-fn
-                                    ^clojure.lang.Fn observed-event-handler-fn
+                                    ^clojure.lang.Fn observer-cb
                                     & args]
-  "TYPE: ::Button
-MODEL: (vm 42)
-RENDER-FN: (fn [widget])
-MODEL-EVENT-HANDLER: (fn [widget model old-value new-value])"
-  (apply make-WidgetBase
-         type
-         model
-         (fn [^WidgetBase widget] (render-fn widget))
-         observed-event-handler-fn
-         args))
+  "TYPE: ::P   (i.e. the P HTML element)
+VALUE-MODEL: (vm 42)
+RENDER-FN: (fn [widget] ..)
+OBSERVER-CB: (fn [widget value-model old-value new-value] ..)"
+  (with (apply make-WidgetBase
+               type
+               render-fn
+               args)
+    (vm-observe value-model (.lifetime it) true
+                (fn [new-value old-value observer-fn observable]
+                  (observer-cb it value-model old-value new-value)))
+    it))
+
 
 
 (derive ::GenericHTMLElement ::HTMLElement)
-(defn mk-he ^WidgetBase [^String html-element-type ^symbolicweb.core.IModel model & args]
+(defn mk-he ^WidgetBase [^String html-element-type ^ValueModel value-model & args]
   (apply make-HTMLElement
          ::GenericHTMLElement
-         model
+         value-model
          (fn [^WidgetBase widget] (str "<" html-element-type " id='" (.id widget) "'></" html-element-type ">"))
-         (fn [^WidgetBase widget ^symbolicweb.core.ValueModel model old-value new-value]
+         (fn [^WidgetBase widget ^ValueModel model old-value new-value]
            (jqHTML widget (if (:escape-html? widget)
                             (escape-html new-value)
                             new-value)))

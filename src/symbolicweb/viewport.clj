@@ -1,9 +1,10 @@
 (in-ns 'symbolicweb.core)
 
-(declare make-ContainerView make-ContainerModel add-branch)
+
+(declare make-ContainerView make-ContainerModel)
 (defn make-Viewport [request application ^WidgetBase root-widget & args]
   "This will instantiate a new Viewport and also 'register' it as a part of APPLICATION and the server via -VIEWPORTS-."
-  (let [viewport-id (cl-format false "~36R" (generate-uid))
+  (let [viewport-id (str "sw-" (generate-uid))
         viewport (ref (apply assoc {}
                              :type ::Viewport
                              :id viewport-id
@@ -12,18 +13,20 @@
                              :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)
                              :response-agent (agent nil)
+                             :application application
+                             :root-element root-widget
+                             :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
                              args))]
+
     (dosync
-     (vm-set (.viewport root-widget) viewport)
-     (alter viewport assoc
-            :application application
-            :root-element root-widget
-            :widgets {(.id root-widget) root-widget})
-     (add-branch viewport root-widget)
+     (ref-set (.active? (.lifetime root-widget)) true)
+     ;; Widget --> Viewport.
+     (ref-set (.viewport root-widget) viewport)
      (alter application update-in [:viewports] assoc viewport-id viewport))
     (when (:session? @application)
       (swap! -viewports- #(assoc % viewport-id viewport)))
     viewport))
+
 
 
 (defn add-response-chunk-agent-fn [viewport viewport-m ^String new-chunk]
@@ -36,7 +39,8 @@
                 (.job ^overtone.at_at.ScheduledJob @response-sched-fn)))))))
 
 
-(defn add-response-chunk [^String new-chunk widget]
+
+(defn add-response-chunk ^String [^String new-chunk widget]
   "WIDGET: A WidgetBase or Viewport instance."
   (when-not *with-js?*
     (if (viewport? widget)
@@ -59,14 +63,14 @@
                       ;;(dbg-prin1 [(:type @widget) (:id @widget)])
                       (when (not= :dead (parent-of widget))
                         (dbg-prin1 [(:type widget) (.id ^WidgetBase widget)]) ;; This one is interesting; uncomment when working on this.
-                        (remove-branch widget)
+                        (detach-branch widget)
                         (def -lost-widget- widget)))
                     (send (:response-agent viewport-m)
                           (fn [_]
                             (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
         (if (viewport-of widget) ;; Visible?
           (do-it)
-          (add-on-visible-fn widget (fn [_ _] (do-it)))))))
+          (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it)))))))
   new-chunk)
 
 

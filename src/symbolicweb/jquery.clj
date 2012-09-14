@@ -1,9 +1,5 @@
 (in-ns 'symbolicweb.core)
 
-(declare render-html)
-(declare add-branch)
-(declare empty-branch)
-(declare remove-branch)
 
 
 (defn jqHTML
@@ -15,58 +11,66 @@
                          widget)))
 
 
-(defn jqAppend [^WidgetBase parent ^WidgetBase new-widget]
+
+(defn jqAppend ^String [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
   (with1 (add-response-chunk (str "$('#" (.id parent) "').append(" (url-encode-wrap (render-html new-widget)) ");" \newline)
                              parent)
     (when-not *with-js?*
-      (add-branch parent new-widget))))
+      (attach-branch parent new-widget))))
 
 
-(defn jqPrepend [^WidgetBase parent ^WidgetBase new-widget]
+
+(defn jqPrepend ^String [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
   (with1 (add-response-chunk (str "$('#" (.id parent) "').prepend(" (url-encode-wrap (render-html new-widget)) ");" \newline)
                              parent)
     (when-not *with-js?*
-      (add-branch parent new-widget))))
+      (attach-branch parent new-widget))))
 
 
-(defn jqAfter [^WidgetBase widget ^WidgetBase new-widget]
+
+(defn jqAfter ^String [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
   (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (.id widget) "').after(" (url-encode-wrap (render-html new-widget)) ");" \newline)
                                parent)
       (when-not *with-js?*
-        (add-branch parent new-widget)))))
+        (attach-branch parent new-widget)))))
 
 
-(defn jqBefore [^WidgetBase widget ^WidgetBase new-widget]
+
+(defn jqBefore ^String [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
   (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
     (with1 (add-response-chunk (str "$('#" (.id widget) "').before(" (url-encode-wrap (render-html new-widget)) ");" \newline)
                                parent)
       (when-not *with-js?*
-        (add-branch parent new-widget)))))
+        (attach-branch parent new-widget)))))
 
 
-(defn jqReplaceWith [^WidgetBase widget ^WidgetBase new-widget]
-  (when-not *with-js?* (remove-branch widget))
+
+(defn jqReplaceWith ^String [^WidgetBase widget ^WidgetBase new-widget]
+  (when-not *with-js?* (detach-branch widget))
   (with1 (add-response-chunk (str "$('#" (.id widget) "').replaceWith(" (url-encode-wrap (render-html new-widget) ");" \newline)
                                   widget))
     (when-not *with-js?*
-      (add-branch widget new-widget))))
+      (attach-branch widget new-widget))))
 
 
-(defn jqAddClass [^WidgetBase widget ^String class-name]
+
+(defn jqAddClass ^String [^WidgetBase widget ^String class-name]
   (add-response-chunk (str "$('#" (.id widget) "').addClass(" (url-encode-wrap class-name) ");" \newline)
                       widget))
 
 
-(defn jqRemoveClass [^WidgetBase widget ^String class-name]
+
+(defn jqRemoveClass ^String [^WidgetBase widget ^String class-name]
   (add-response-chunk (str "$('#" (.id widget) "').removeClass(" (url-encode-wrap class-name) ");" \newline)
                       widget))
+
 
 
 (defn jqEmpty [^WidgetBase widget]
@@ -76,11 +80,13 @@
       (empty-branch widget))))
 
 
+
 (defn jqRemove [^WidgetBase widget]
   (with1 (add-response-chunk (str "$('#" (.id widget) "').remove();" \newline)
                              widget)
     (when-not *with-js?*
-      (remove-branch widget))))
+      (detach-branch widget))))
+
 
 
 (defn jqCSS
@@ -90,6 +96,8 @@
      (add-response-chunk (str "$('#" (.id widget) "').css('" property-name "', '" value "');" \newline)
                          widget)))
 
+
+
 (defn jqAttr
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').attr('" attribute-name "');" \newline))
@@ -98,12 +106,14 @@
                          widget)))
 
 
+
 (defn jqProp
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').prop('" attribute-name "');" \newline))
   ([widget attribute-name value]
      (add-response-chunk (str "$('#" (.id widget) "').prop('" attribute-name "', " value ");" \newline)
                          widget)))
+
 
 
 (defn jqVal

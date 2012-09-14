@@ -46,12 +46,11 @@
 
   (:require symbolicweb.widget-base-class)
   (:require symbolicweb.jquery)
-  (:require symbolicweb.container)
+  (:require symbolicweb.widget-base)
   (:require symbolicweb.viewport)
 
   (:require symbolicweb.user)
 
-  (:require symbolicweb.widget-base)
   (:require symbolicweb.text-input)
   (:require symbolicweb.html-elements)
   (:require symbolicweb.container-view)

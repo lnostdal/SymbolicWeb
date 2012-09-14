@@ -1,125 +1,79 @@
 (in-ns 'symbolicweb.core)
 
 
-;; TODO: Generalize this into something that tracks the "lifetime" of something via some third party context.
-(defprotocol Visibility
-  (add-on-visible-fn [widget cb] "Add CB to run when Widget changes from non-visible (initial state) to visible.")
-  (do-on-visible [widget] "Executes CBs; used when Widget changes from non-visible (initial state) to visible.")
+(defprotocol IWidgetBase
+  (viewport-of [widget-base])
+  (parent-of [widget-base])
 
-  (add-on-non-visible-fn [widget cb] "Add CB to run when Widget changes from visible to non-visible.")
-  (do-on-non-visible [widget] "Executes CBs; used when Widget changes from visible to non-visible. ")
-
-  (add-visibility-child [widget child-widget])
-  (remove-visibility-child [widget child-widget])
-  (visibility-children-of [widget])
-
-  (viewport-of [widget])
-  (children-of [widget])
-  (parent-of [widget]))
+  (attach-branch [widget-base child-widget-base])
+  (detach-branch [widget-base])
+  (empty-branch [widget-base]))
 
 
 (defrecord WidgetBase [^String id
                        ^clojure.lang.Keyword type
-                       ^symbolicweb.core.IModel model
+                       ^Lifetime lifetime
                        ^clojure.lang.Fn render-fn
+                       ^clojure.lang.Ref parent ;; WidgetBase
+                       ^clojure.lang.Ref viewport ;; Viewport
+                       ^clojure.lang.Ref callbacks] ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
 
-                       ;; Visibility.
-                       ^clojure.lang.Ref on-visible-fns ;; []
-                       ^clojure.lang.Ref on-non-visible-fns ;; []
-                       ^clojure.lang.Ref children ;; []
-                       ^clojure.lang.Ref parent
-                       ^symbolicweb.core.IModel viewport ;; Viewport
-
-                       ;; Observer.
-                       ^clojure.lang.Fn observer-event-handler-fn
-
-                       ^clojure.lang.Ref callbacks] ;; {} ;; CB-NAME -> [HANDLER-FN CALLBACK-DATA]
-  Visibility
-  (add-on-visible-fn [widget cb]
-    (alter on-visible-fns conj cb))
-  (do-on-visible [widget]
-    (doseq [f (ensure on-visible-fns)]
-      (f widget model)))
-
-  (add-on-non-visible-fn [widget cb]
-    (alter on-non-visible-fns conj cb))
-  (do-on-non-visible [widget]
-    (doseq [f (ensure on-non-visible-fns)]
-      (f widget model)))
-
-  (add-visibility-child [_ child-widget]
-    (alter children conj child-widget))
-
-  (remove-visibility-child [_ child-widget]
-    (alter children disj child-widget))
-
-  (visibility-children-of [_]
-    (ensure children))
-
+  IWidgetBase
   (viewport-of [_]
-    @viewport)
+    (ensure viewport))
 
   (parent-of [_]
     (ensure parent))
 
 
-  Observer
-  (start-observing [widget]
-    (when (add-observer (.observable model) widget)
-      (when (isa? (class model) ValueModel)
-        (handle-observer-event widget model ::-initial-update- @model))))
+  (attach-branch [parent child]
+    (assert (not (parent-of child))
+            (str "ATTACH-BRANCH: CHILD already has a parent assigned for it: " (parent-of child)
+                 ", EXISTING-PARENT-ID: " (.id (parent-of child))
+                 ", CHILD-ID: " (.id child)))
+    ;; CHILD -> PARENT.
+    (ref-set (.parent child) parent)
+    (attach-lifetime (.lifetime parent) (.lifetime child)))
 
-  (stop-observing [widget]
-    (remove-observer (.observable model) widget))
 
-  (handle-observer-event [widget model old-value new-value]
-    (observer-event-handler-fn widget model old-value new-value)))
+  (detach-branch [widget]
+    (detach-lifetime (.lifetime widget)))
+
+
+  (empty-branch [widget]
+    (doseq [^Lifetime child-lifetime (.children (.lifetime widget))]
+      (detach-lifetime child-lifetime))))
 
 
 
 (defn make-WidgetBase ^WidgetBase [^clojure.lang.Keyword type
-                                   ^symbolicweb.core.IModel model
                                    ^clojure.lang.Fn render-fn
-                                   ^clojure.lang.Fn observer-event-handler-fn
                                    & args]
   (with (WidgetBase. (str "sw-" (generate-uid)) ;; ID
                      type
-                     model
+                     (mk-Lifetime)
                      render-fn
-                     (ref [(fn [^WidgetBase widget _] (observe-start widget))]) ;; ON-VISIBLE-FNS
-                     (ref [(fn [^WidgetBase widget _] (observe-stop widget))]) ;; ON-NON-VISIBLE-FNS
-                     (ref #{}) ;; CHILDREN
                      (ref nil) ;; PARENT
-                     (vm nil) ;; VIEWPORT
-                     observer-event-handler-fn
+                     (ref nil) ;; VIEWPORT
                      (ref {})) ;; CALLBACKS
+    (add-lifetime-activation-fn (.lifetime it)
+                                (fn [^Lifetime lifetime]
+                                  (let [parent-viewport (viewport-of (parent-of it))]
+                                    ;; Viewport --> Widget (DOM events).
+                                    (alter parent-viewport update-in [:widgets]
+                                           assoc (.id it) it)
+                                    ;; Widget --> Viewport.
+                                    (vm-set (.viewport it) parent-viewport))))
+    (add-lifetime-deactivation-fn (.lifetime it)
+                                  (fn [^Lifetime lifetime]
+                                    (let [viewport (viewport-of it)]
+                                      ;; Viewport -/-> Widget (DOM events).
+                                      (alter viewport update-in [:widgets]
+                                             dissoc (.id it) it)
+                                      ;; Widget -/-> Viewport.
+                                      (vm-set (.viewport it) nil))))
     (apply assoc it
            :escape-html? true
            args)))
 
 
-(declare add-branch)
-(derive ::Observer ::WidgetBase)
-;; TODO: ### Rename to VM-OBSERVE etc. ###
-(defn observe [observee lifetime initial-sync? callback & args]
-  "CALLBACK: (fn [old-value new-value])
-LIFETIME: Governs the lifetime of this connection (Model --> OBSERVER-EVENT-HANDLER-FN) and can be a View/Widget or NIL for 'infinite' lifetime (as long as MODEL exists).
-INITIAL-SYNC?: If true CALLBACK will be called even though OLD-VALUE is = :symbolicweb.core/-initial-update-. I.e., on construction
-of this observer."
-  (with1 (apply make-WidgetBase
-                ::Observer
-                observee
-                (fn [_] (assert false "Observers are not meant to be rendered!"))
-                (fn [observer observee old-value new-value]
-                  (if (= old-value :symbolicweb.core/-initial-update-)
-                    (when initial-sync?
-                      (callback observer old-value new-value))
-                    (callback observer old-value new-value)))
-                args)
-    ;; Interesting; the change I commented out here seems to make SW-TITLE on big view not to render correctly for :admin users.
-    ;;(if lifetime
-    ;;  (add-branch lifetime it)
-    ;;  (observe-start it))
-    (when lifetime
-      (add-branch lifetime it))
-    (observe-start it)))
