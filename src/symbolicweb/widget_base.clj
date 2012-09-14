@@ -29,10 +29,10 @@
   (render-html widget))
 
 
-(defn set-event-handler [^String event-type
-                         ^WidgetBase widget
-                         ^clojure.lang.Fn callback-fn
-                         & {:keys [callback-data]}]
+(defn set-event-handler ^WidgetBase [^String event-type
+                                     ^WidgetBase widget
+                                     ^clojure.lang.Fn callback-fn
+                                     & {:keys [callback-data]}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
   ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
