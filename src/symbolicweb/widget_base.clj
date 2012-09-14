@@ -1,46 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn render-event ^String [^WidgetBase widget
-                            ^String event-type
-                            & {:keys [js-before callback-data js-after]
-                               :or {js-before "return(true);"
-                                    callback-data ""
-                                    js-after ""}}]
-  (str "$('#" (.id widget) "').bind('" event-type "', "
-       "function(event){"
-       "swMsg('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
-       (reduce (fn [acc key_val] (str acc (url-encode-component (str (key key_val))) "=" (val key_val) "&"))
-               ""
-               callback-data)
-       "', function(){" js-after "});"
-       "});"))
-
-
-(defn render-html ^String [^WidgetBase widget]
-  "Return HTML structure which will be the basis for further initialization."
-  ((.render-fn widget) widget))
-
-
-(defn sw ^String [^WidgetBase widget]
-  "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
-  (assert *in-html-container?*)
-  (add-branch *in-html-container?* widget)
-  (render-html widget))
-
-
-(defn set-event-handler ^WidgetBase [^String event-type
-                                     ^WidgetBase widget
-                                     ^clojure.lang.Fn callback-fn
-                                     & {:keys [callback-data]}]
-  "Set an event handler for WIDGET.
-Returns WIDGET."
-  ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
-  (alter (.callbacks widget) assoc event-type [callback-fn callback-data])
-  (add-response-chunk (render-event widget event-type :callback-data callback-data)
-                      widget)
-  widget)
-
 
 
 (defn make-HTMLElement ^WidgetBase [^clojure.lang.Keyword type
