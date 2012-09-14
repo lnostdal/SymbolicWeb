@@ -72,12 +72,3 @@
           (do-it)
           (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it)))))))
   new-chunk)
-
-
-;; TODO: This doesn't seem to be used any more? HANDLE-IN-CHANNEL-REQUEST calls callbacks directly instead.
-(defn handle-widget-event [widget event-name]
-  (let [w @widget]
-    (if-let [handler-fn (get (:callbacks w) event-name)]
-      (handler-fn w)
-      (println (str "HANDLE-WIDGET-EVENT: No HANDLER-FN found for event '" event-name "' for Widget '" (:id w) "'"
-                    " in Viewport '" (:id (viewport-of widget)) "'.")))))
