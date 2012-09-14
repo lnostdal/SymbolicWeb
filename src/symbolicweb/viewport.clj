@@ -1,7 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-(declare make-ContainerView make-ContainerModel)
 (defn make-Viewport [request application ^WidgetBase root-widget & args]
   "This will instantiate a new Viewport and also 'register' it as a part of APPLICATION and the server via -VIEWPORTS-."
   (let [viewport-id (str "sw-" (generate-uid))
