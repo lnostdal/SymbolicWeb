@@ -33,6 +33,25 @@
 
 
 
+(defn vm-observe ^ValueModel [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
+  "  LIFETIME: An instance of Lifetime or NIL/false (infinite lifetime).
+  INITIAL-SYNC?: If true, CALLBACK will be called when LIFETIME is activated (i.e., no change in VALUE-MODEL is needed). If
+LIFETIME is NIL, CALLBACK will be called instantly.
+  CALLBACK: (fn [new-value old-value observer-fn observable] ..) where OBSERVER-FN can be sent to REMOVE-OBSERVER."
+  (letfn [(do-it []
+            (add-observer (.observable value-model) callback)
+            (when initial-sync?
+              (callback @value-model ::-initial-sync- callback (.observable value-model))))]
+    (if lifetime
+      (let [our-lifetime (mk-Lifetime)]
+        (add-lifetime-activation-fn our-lifetime (fn [_] (do-it)))
+        (add-lifetime-deactivation-fn our-lifetime (fn [_] (remove-observer (.observable value-model) callback)))
+        (attach-lifetime lifetime our-lifetime))
+      (do-it)))
+  value-model)
+
+
+
 (defn %vm-deref [^ValueModel value-model ^clojure.lang.Ref value]
   (do1 (ensure value)
     (when (and *observed-vms-ctx*
@@ -55,24 +74,6 @@
                                 (when-not (= old-value new-value) ;; TODO: = is a magic value.
                                   (doseq [^clojure.lang.Fn observer-fn (ensure (.observers observable))]
                                     (observer-fn new-value old-value observer-fn observable)))))))
-
-
-
-(defn vm-observe ^ValueModel [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
-  "  LIFETIME: An instance of Lifetime or NIL/false (infinite lifetime).
-  INITIAL-SYNC?: If true, CALLBACK will be called on construction of this observer.
-  CALLBACK: (fn [new-value old-value observer-fn observable] ..)  where OBSERVER-FN can be sent to REMOVE-OBSERVER."
-  (letfn [(do-it []
-            (add-observer (.observable value-model) callback)
-            (when initial-sync?
-              (callback @value-model :symbolicweb.core/-initial-update- callback (.observable value-model))))]
-    (if lifetime
-      (let [our-lifetime (mk-Lifetime)]
-        (add-lifetime-activation-fn our-lifetime #(do-it))
-        (add-lifetime-deactivation-fn our-lifetime #(remove-observer (.observable value-model) callback))
-        (attach-lifetime lifetime our-lifetime))
-      (do-it)))
-  value-model)
 
 
 
