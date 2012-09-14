@@ -25,10 +25,12 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
   (add-lifetime-activation-fn [lifetime fn]
-    "Adds a callback to run when LIFETIME is activated.")
+    "Adds a callback to run when LIFETIME is activated.
+  FN: (fn [lifetime] ..)")
 
   (add-lifetime-deactivation-fn [lifetime fn]
-    "Adds a callback to run when LIFETIME is deactivated.")
+    "Adds a callback to run when LIFETIME is deactivated.
+  FN: (fn [lifetime] ..)")
 
   (do-lifetime-activation [lifetime])
   (do-lifetime-deactivation [lifetime]))
