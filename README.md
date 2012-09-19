@@ -61,8 +61,17 @@ I'm aiming at a 132 column width using 1920x1080 monitors:
 
 ### Style
 
-    -this-is-a-global-variable-
-    *this-is-a-global-dynamic-variable*
+* ThisIsAType   (deftype, defrecord, defprotocol, etc..)
+* -this-is-a-global-variable-
+* *this-is-a-global-dynamic-variable*
+* Fns that might be handy to denote using the #() macro should have a particular ordering with regards to their parameter lists:
+
+    (fn [least-commonly-used-parameter most-commonly-used-parameter] ..)
+
+
+  This because e.g. (#(vector %2 %2) "sometimes used" "always used") will always work,
+  while (#(vector %1 %1) "always used" "sometimes used") might fail.
+
 
 Naming of Container (container_model.clj and container_model_node.clj) related functions follow or match the naming
 found in jQuery. E.g., append, prepend, before and after:
