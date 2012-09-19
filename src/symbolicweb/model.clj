@@ -33,22 +33,21 @@
 
 
 
-(defn vm-observe ^ValueModel [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
-  "  LIFETIME: An instance of Lifetime or NIL/false (infinite lifetime).
+(defn vm-observe [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
+  "  LIFETIME: An instance of Lifetime, or NIL/FALSE which denotes an infinite lifetime.
   INITIAL-SYNC?: If true, CALLBACK will be called when LIFETIME is activated (i.e., no change in VALUE-MODEL is needed). If
-LIFETIME is NIL, CALLBACK will be called instantly.
-  CALLBACK: (fn [new-value old-value observer-fn observable] ..) where OBSERVER-FN can be sent to REMOVE-OBSERVER."
-  (letfn [(do-it []
-            (add-observer (.observable value-model) callback)
-            (when initial-sync?
-              (callback @value-model ::-initial-sync- callback (.observable value-model))))]
-    (if lifetime
-      (let [our-lifetime (mk-Lifetime)]
-        (add-lifetime-activation-fn our-lifetime (fn [_] (do-it)))
-        (add-lifetime-deactivation-fn our-lifetime (fn [_] (remove-observer (.observable value-model) callback)))
-        (attach-lifetime lifetime our-lifetime))
-      (do-it)))
-  value-model)
+  LIFETIME is NIL, CALLBACK will be called instantly.
+  CALLBACK: (fn [new-value old-value observer-fn observable] ..) where OBSERVER-FN can be sent to REMOVE-OBSERVER.
+
+Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise."
+  (let [observe-res (observe (.observable value-model) lifetime callback)]
+    (when initial-sync?
+      (letfn [(do-it []
+                (callback @value-model ::-initial-sync- callback (.observable value-model)))]
+        (if observe-res
+          (add-lifetime-activation-fn observe-res (fn [_] (do-it)))
+          (do-it))))
+    observe-res))
 
 
 

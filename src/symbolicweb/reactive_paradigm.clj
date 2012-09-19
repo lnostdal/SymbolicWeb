@@ -46,6 +46,24 @@
 
 
 
+(defn observe [^Observable observable lifetime ^clojure.lang.Fn callback]
+  "  LIFETIME: An instance of Lifetime, or NIL/FALSE which denotes an infinite lifetime.
+  CALLBACK: (fn [observable & args] ..)
+
+Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise."
+  (letfn [(do-it []
+            (add-observer observable callback))]
+    (if lifetime
+      (let [our-lifetime (mk-Lifetime)]
+        (add-lifetime-activation-fn our-lifetime (fn [_] (do-it)))
+        (add-lifetime-deactivation-fn our-lifetime (fn [_] (remove-observer observable callback)))
+        (attach-lifetime lifetime our-lifetime)
+        our-lifetime)
+      (do
+        (do-it)
+        false))))
+
+
 
 #_(try
   (dosync
