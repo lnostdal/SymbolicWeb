@@ -10,6 +10,7 @@
   (empty-branch [widget-base]))
 
 
+
 (defrecord WidgetBase [^String id
                        ^clojure.lang.Keyword type
                        ^Lifetime lifetime
@@ -78,7 +79,10 @@
 
 
 
-(defn render-event ^String [^WidgetBase widget
+
+
+
+(defn ^String render-event [^WidgetBase widget
                             ^String event-type
                             & {:keys [js-before callback-data js-after]
                                :or {js-before "return(true);"

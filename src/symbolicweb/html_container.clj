@@ -22,6 +22,7 @@
      ~@body))
 
 
+
 ;; TODO: This should support the same "syntax" as HTMLTemplate.
 (derive ::PostHTMLTemplate ::HTMLContainer)
 (defn make-PostHTMLTemplate ^WidgetBase [^String id ^clojure.lang.Fn content-fn & args]
@@ -29,6 +30,7 @@
   (with1 (%make-HTMLContainer (into ["%PostHTMLTemplate"] (into args (list id :id)))
                               content-fn)
     (render-html it)))
+
 
 
 (derive ::HTMLTemplate ::HTMLContainer)
@@ -89,5 +91,7 @@ This might be used to setup a target for DOM events on some static content from 
          args))
 
 (defn mk-bte ^WidgetBase [& args]
+
+
   "Short for make-BlankTemplateElement."
   (apply make-BlankTemplateElement args))

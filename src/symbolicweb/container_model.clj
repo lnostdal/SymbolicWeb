@@ -15,6 +15,8 @@
 
   (cmn-data [node]))
 
+
+
 (deftype ContainerModelNode [%container-model
                              ^clojure.lang.Ref left
                              ^clojure.lang.Ref right
@@ -39,6 +41,7 @@
     data))
 
 
+
 ;; Doubly linked list.
 (defprotocol IContainerModel
   (cm-tail-node [cm])
@@ -48,6 +51,8 @@
   (cm-set-head-node [cm new-head-node])
 
   (cm-set-count [cm new-count]))
+
+
 
 (deftype ContainerModel [^clojure.lang.Ref head-node
                          ^clojure.lang.Ref tail-node
@@ -90,6 +95,7 @@
   (make-ContainerModel))
 
 
+
 (declare cm-prepend cmn-after)
 (defn cm-append [^ContainerModel cm ^ContainerModelNode new-node]
   "Add NEW-NODE to end of the contained nodes in CM.
@@ -102,6 +108,7 @@ This mirrors the jQuery `append' function:
     (cm-prepend cm new-node) ;; insertBeginning(list, newNode)
   ;; else
     (cmn-after (cm-tail-node cm) new-node))) ;; insertAfter(list, list.lastNode, newNode)
+
 
 
 (declare cmn-before)
@@ -129,6 +136,7 @@ This mirrors the jQuery `prepend' function:
       (notify-observers (.observable cm) cm 'cm-prepend cm new-node))
     ;; else
     (cmn-before (cm-head-node cm) new-node))) ;; insertBefore(list, list.firstNode, newNode)
+
 
 
 (declare cmn-remove)

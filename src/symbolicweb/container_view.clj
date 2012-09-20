@@ -19,6 +19,7 @@ If FIND-ONLY? is true no new Observer will be constructed if an existing one is 
            new-observer)))))
 
 
+
 (defn view-of-node-in-context
   "Find or create (if not found) new View of NODE in context of CONTAINER-VIEW.
 If FIND-ONLY? is true no new View will be constructed if an existing one was not found."
@@ -96,6 +97,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 
+
 ;;; sync-ContainerModel stuff follows
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -119,6 +121,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                                         (when r-node (cmn-right-node r-node))))))))]
        node-pos
        [nil :empty-synced-container-model])))
+
 
 
 (defn handle-container-observer-event [^ContainerModel synced-container-model ^WidgetBase observer event-args]
@@ -170,6 +173,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
         (when-let [^ContainerModelNode rel-existing-node (first (node-of-node-in-context observer node true))]
           (cmn-remove rel-existing-node)
           (alter (:view-of-node observer) dissoc rel-existing-node))))))
+
 
 
 (defn sync-ContainerModel [^ContainerModel container-model lifetime filter-node-fn & args]
