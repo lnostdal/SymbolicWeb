@@ -16,14 +16,13 @@
                              :root-element root-widget
                              :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
                              args))]
-
-    (dosync
-     (ref-set (.active? (.lifetime root-widget)) true)
-     ;; Widget --> Viewport.
-     (ref-set (.viewport root-widget) viewport)
-     (alter application update-in [:viewports] assoc viewport-id viewport))
     (when (:session? @application)
       (swap! -viewports- #(assoc % viewport-id viewport)))
+    (dosync
+     ;; Widget --> Viewport.
+     (ref-set (.viewport root-widget) viewport)
+     (alter application update-in [:viewports] assoc viewport-id viewport)
+     (do-lifetime-activation (.lifetime root-widget)))
     viewport))
 
 
