@@ -50,13 +50,13 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
 (defn db-ensure-persistent-field [^DBCache db-cache object ^Long id ^clojure.lang.Keyword key ^ValueModel value-model]
   "SQL `UPDATE ...'.
 Setup reactive SQL UPDATEs for VALUE-MODEL."
-  (observe value-model nil false
-           (fn [old-value new-value]
-             (when-not (= old-value new-value) ;; TODO: Needed?
-               (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
-                 (when input-key
-                   (swdbop value-model #(let [[input-key input-value] (db-handle-input db-cache object key @value-model)]
-                                          [input-key input-value (.table-name db-cache) id]))))))))
+  (vm-observe value-model nil false
+              (fn [lifetime old-value new-value]
+                (when-not (= old-value new-value) ;; TODO: Needed?
+                  (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
+                    (when input-key
+                      (swdbop value-model #(let [[input-key input-value] (db-handle-input db-cache object key @value-model)]
+                                             [input-key input-value (.table-name db-cache) id]))))))))
 
 
 (defn db-backend-get [^DBCache db-cache ^Long id ^clojure.lang.Ref obj]
