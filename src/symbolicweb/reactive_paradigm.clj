@@ -67,10 +67,13 @@ as the first argument to CALLBACK."
 
 
 
+
+
+
 #_(try
   (dosync
    (let [x (vm 0)]
-     (vm-observe x nil false (fn [new-value old-value & _]
+     (vm-observe x nil false (fn [lifetime old-value new-value]
                                (dbg-prin1 [new-value old-value])))
      (vm-set x 42)))
   (catch Throwable e
@@ -97,10 +100,10 @@ as the first argument to CALLBACK."
 ;
 
 
-(def -symbolicweb-world- (agent {}))
+;;(def -symbolicweb-world- (agent {}))
 
 
-(defn sw-notify-observers [world ks k v old-value]
+#_(defn sw-notify-observers [world ks k v old-value]
   "Returns WORLD transformed."
   ;; Look up observers in WORLD via [KS K]. An observer is a vector of FNs.
   ;; TODO: Is it possible to serialize the FNs somehow? I guess the [KS K] lookup will lead to code doing the same thing
@@ -108,7 +111,7 @@ as the first argument to CALLBACK."
   )
 
 
-(defn sw-update [world ks k v]
+#_(defn sw-update [world ks k v]
   "Returns WORLD transformed."
   (let [old-value (with (get-in world ks ::not-found)
                     (if (= ::not-found it)
@@ -119,5 +122,5 @@ as the first argument to CALLBACK."
                          ks k v old-value)))
 
 
-(defn do-sw-update [ks k v]
+#_(defn do-sw-update [ks k v]
   (send -symbolicweb-world- sw-update ks k v))

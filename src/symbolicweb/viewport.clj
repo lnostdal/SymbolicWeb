@@ -51,6 +51,7 @@
                       viewport-m @viewport]
                   ;; TODO: M-m-m-mega hack. Why isn't REMOVE-VIEW called vs. TemplateElements and it seems some other widgets
                   ;; held in HTMLContainers in some cases?
+                  ;; UPDATE 10/15/2012: This doesn't seem to happen any more, but I'm leaving it here a while longer.
                   ;; Are children not added to HTMLTemplate?
                   (if (< (* -viewport-timeout- 3) ;; NOTE: Times 3!
                          (- (System/currentTimeMillis) @(:last-activity-time viewport-m)))
@@ -60,7 +61,8 @@
                       ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
                       ;;(dbg-prin1 [(:type @widget) (:id @widget)])
                       (when (not= :dead (parent-of widget))
-                        (dbg-prin1 [(:type widget) (.id ^WidgetBase widget)]) ;; This one is interesting; uncomment when working on this.
+                        ;; This one is interesting; uncomment when working on this.
+                        (dbg-prin1 [(:type widget) (.id ^WidgetBase widget)])
                         (detach-branch widget)
                         (def -lost-widget- widget)))
                     (send (:response-agent viewport-m)

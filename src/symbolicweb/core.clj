@@ -100,7 +100,7 @@
             [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": Top Level Server Exception (HTTP 500)"]
             [:pre
              \newline
-             (with-out-str (clojure.stacktrace/print-stack-trace e 1000)) ;; TODO: Magic value.
+             (with-out-str (clojure.stacktrace/print-stack-trace e 1000))
              \newline]
             [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))
 
