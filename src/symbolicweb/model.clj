@@ -77,12 +77,12 @@ as the first argument to CALLBACK."
 
 
 
-(defn vm-alter [^ValueModel value-model fn & args]
+(defn vm-alter [^ValueModel value-model ^clojure.lang.Fn fn & args]
   (vm-set value-model (apply fn @value-model args)))
 
 
 
-(defn vm-copy [^ValueModel value-model]
+(defn ^ValueModel vm-copy [^ValueModel value-model]
   "Creates a ValueModel. The initial value of it will be extracted from VALUE-MODEL. Further changes (mutation of) to
 VALUE-MODEL will not affect the ValueModel created and returned here.
 See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
@@ -90,43 +90,43 @@ See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
 
 
 
-(defn vm-sync
+(defn ^ValueModel vm-sync
   "Returns a new ValueModel which is kept in sync with VALUE-MODEL via CALLBACK.
   CALLBACK: Takes the same arguments as CALLBACK for VM-OBSERVE does, and the return value of CALLBACK will be the continious
 value of the returned ValueModel.
   LIFETIME: The lifetime of this connection is governed by LIFETIME and can be an instance of Lifetime or NIL for 'infinite'
 lifetime (as long as VALUE-MODEL exists)."
-  (^ValueModel [^ValueModel value-model lifetime callback]
+  ([^ValueModel value-model lifetime ^clojure.lang.Fn callback]
      (vm-sync value-model lifetime callback true))
-  (^ValueModel [^ValueModel value-model lifetime callback ^Boolean initial-sync?]
-     (let [mid (vm nil)]
+
+  ([^ValueModel value-model lifetime ^clojure.lang.Fn callback ^Boolean initial-sync?]
+     (let [^ValueModel mid (vm nil)]
        (vm-observe value-model lifetime initial-sync?
                    #(vm-set mid (apply callback %&)))
        mid)))
 
 
 
-(defn vm-syncs
-  "CALLBACK takes no arguments.
-The lifetime of these connections are governed by LIFETIME and can be a View/Widget or NIL for 'infinite' lifetime (as long as
-VALUE-MODEL)."
-  ([value-models lifetime callback]
+(defn ^ValueModel vm-syncs
+  "CALLBACK takes no arguments."
+  ([value-models lifetime ^clojure.lang.Fn callback]
      (vm-syncs value-models lifetime callback true))
-  ([value-models lifetime callback initial-sync?]
-     (let [mid (vm nil)]
+
+  ([value-models lifetime ^clojure.lang.Fn callback ^Boolean initial-sync?]
+     (let [^ValueModel mid (vm nil)]
        (with-local-vars [already-synced? false] ;; We only want to trigger an initial sync once.
-         (doseq [value-model value-models]
+         (doseq [^ValueModel value-model value-models]
            (check-type value-model ValueModel)
-           (observe value-model lifetime (when initial-sync?
-                                           (when-not (var-get already-synced?)
-                                             (var-set already-synced? true)
-                                             true))
-                    (fn [_ _] (vm-set mid (callback))))))
+           (vm-observe value-model lifetime (when initial-sync?
+                                              (when-not (var-get already-synced?)
+                                                (var-set already-synced? true)
+                                                true))
+                    (fn [_ &] (vm-set mid (callback))))))
        mid)))
 
 
 
-(defn %with-observed-vms [lifetime body-fn]
+(defn %with-observed-vms [lifetime ^clojure.lang.Fn body-fn]
   (binding [*observed-vms-ctx* {:vms (ref #{})
                                 :lifetime lifetime
                                 :body-fn body-fn}
