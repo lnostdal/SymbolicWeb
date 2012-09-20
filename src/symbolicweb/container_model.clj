@@ -87,9 +87,11 @@
                    (ref nil) ;; TAIL-NODE
                    (ref 0)   ;; %count
                    ;; OBSERVABLE
-                   (mk-Observable (fn [^Observable observable ^ContainerModel container-model event-sym & event-args]
+                   (mk-Observable (fn [^Observable observable & event-args]
                                     (doseq [^clojure.lang.Fn observer-fn (ensure (.observers observable))]
-                                      (observer-fn container-model event-sym event-args))))))
+                                      (observer-fn event-args))))))
+
+
 
 (defn cm ^ContainerModel []
   (make-ContainerModel))
@@ -133,7 +135,7 @@ This mirrors the jQuery `prepend' function:
       (cmn-set-left-node new-node nil) ;; newNode.prev := null
       (cmn-set-right-node new-node nil) ;; newNode.next := null
 
-      (notify-observers (.observable cm) cm 'cm-prepend cm new-node))
+      (notify-observers (.observable cm) 'cm-prepend new-node))
     ;; else
     (cmn-before (cm-head-node cm) new-node))) ;; insertBefore(list, list.firstNode, newNode)
 

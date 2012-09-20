@@ -38,13 +38,13 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
            new-view)))))
 
 
-(defn handle-container-view-event [^WidgetBase container-view event-args]
+
+(defn handle-container-view-event [^WidgetBase container-view ^ContainerModel container-model event-args]
   "Forward Container related operations/events to the View end."
   (let [[event-sym & event-args] event-args]
     (case event-sym
       cm-prepend
-      (let [^ContainerModel container-model (nth event-args 0)
-            ^ContainerModelNode new-node (nth event-args 1)]
+      (let [^ContainerModelNode new-node (nth event-args 0)]
         (jqPrepend container-view
           (view-of-node-in-context container-view new-node)))
 
@@ -69,26 +69,23 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
           (println "ContainerView: Tried to remove Node, but no existing View of that Node was found."))))))
 
 
-(derive ::ContainerView ::HTMLElement)
+
+(derive ::ContainerView ::WidgetBase)
 (defn make-ContainerView ^WidgetBase [^ContainerModel container-model & args]
-  (with1 (apply make-HTMLElement
-                ::ContainerView
-                container-model
+  (with1 (make-WidgetBase
+          (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
 
-                ;; RENDER-FN
-                (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
+          ;;:view-from-node-fn
+          ;;(fn [^WidgetBase container-view ^ContainerModelNode node]
+          ;;  (mk-he "div" (cmn-data node)))
 
-                ;; OBSERVED-EVENT-HANDLER-FN
-                (fn [^WidgetBase container-view ^ContainerModel container-model old-value new-value]
-                  (handle-container-view-event container-view new-value))
+          (merge {:view-of-node (ref {})}
+                 (apply hash-map args)))
 
-                :view-from-node-fn
-                (fn [^WidgetBase container-view ^ContainerModelNode node]
-                  (mk-he "div" (cmn-data node)))
+    (observe (.observable container-model) (.lifetime it)
+             (fn [^Lifetime inner-lifetime event-args]
+               (handle-container-view-event it container-model event-args)))
 
-                :view-of-node (ref {})
-
-                args)
     ;; Add any already existing nodes to CONTAINER-VIEW.
     (loop [node (cm-head-node container-model)]
       (when node
