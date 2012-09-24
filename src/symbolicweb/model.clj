@@ -114,14 +114,14 @@ lifetime (as long as VALUE-MODEL exists)."
 
   ([value-models lifetime ^clojure.lang.Fn callback ^Boolean initial-sync?]
      (let [^ValueModel mid (vm nil)]
-       (with-local-vars [already-synced? false] ;; We only want to trigger an initial sync once.
+       (with-local-vars [already-synced? false] ;; We only want to trigger an initial sync once if at all.
          (doseq [^ValueModel value-model value-models]
-           (check-type value-model ValueModel)
-           (vm-observe value-model lifetime (when initial-sync?
-                                              (when-not (var-get already-synced?)
+           (vm-observe value-model lifetime (if (and initial-sync? (not (var-get already-synced?)))
+                                              (do
                                                 (var-set already-synced? true)
-                                                true))
-                    (fn [_ &] (vm-set mid (callback))))))
+                                                true)
+                                              false)
+                       (fn [_ &] (vm-set mid (callback))))))
        mid)))
 
 
