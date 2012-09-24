@@ -62,6 +62,8 @@ I'm aiming at a 132 column width using 1920x1080 monitors:
 ### Style
 
 * ThisIsAType   (deftype, defrecord, defprotocol, etc..)
+* this-is-a-variable
+* this-is-a-function
 * -this-is-a-global-variable-
 * *this-is-a-global-dynamic-variable*
 * Fns that might be handy to denote using the #() macro should have a particular ordering with regards to their parameter lists:

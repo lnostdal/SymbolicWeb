@@ -1,11 +1,12 @@
 (in-ns 'symbolicweb.core)
 
-(declare mk-view ref? observe %vm-deref)
+(declare ref? observe %vm-deref)
 
 
 
 (defprotocol IValueModel
   (vm-set [vm new-value])) ;; Get is DEREF or @ (via clojure.lang.IDeref).
+
 
 
 (deftype ValueModel [^clojure.lang.Ref value
@@ -133,5 +134,7 @@ lifetime (as long as VALUE-MODEL exists)."
             *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns* body-fn)]
     (body-fn)))
 
+
+;; TODO: RETURN-VM ..?
 (defmacro with-observed-vms [lifetime & body]
   `(%with-observed-vms ~lifetime (fn [] ~@body)))

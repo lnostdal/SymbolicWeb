@@ -20,6 +20,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (var-get handled?)))
 
 
+
 (defn handle-out-channel-request [channel request application viewport]
   "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [^StringBuilder response-str]
@@ -51,6 +52,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                                        -overtone-pool-))))))))
 
 
+
 (defn handle-in-channel-request [request application viewport]
   "Input (AJAX) channel."
   (cond
@@ -78,6 +80,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        :body ""})))
 
 
+
 (defn default-ajax-handler [request application viewport]
   (if-let [sw-request-type-str (get (:query-params request) "_sw_request_type")]
     (case sw-request-type-str
@@ -87,6 +90,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       "ajax"  (handle-in-channel-request request application viewport)
       (throw (Exception. (str "SymbolicWeb: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))
     ((:aux-handler @application) request application viewport)))
+
 
 
 (declare clear-session-page-handler)
@@ -116,6 +120,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        (with1 ((:rest-handler @application) request application viewport)
          (when viewport
            (add-response-chunk "swDoOnLoadFNs();" (:root-element @viewport))))))))
+
 
 
 (defn clear-session-page-handler [request application viewport]
@@ -156,6 +161,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        :body "This session has timed out."}
 
       (println "CLEAR-SESSION-PAGE-HANDLER: Unknown HTTP ACCEPT header value:" accept-header))))
+
 
 
 (defn default-rest-handler [request application viewport]
@@ -206,6 +212,7 @@ html, body, #sw-root {
       (render-html (:root-element @viewport) (:root-element @viewport))]))})
 
 
+
 (defn not-found-page-handler []
   {:status 404
    :headers {"Content-Type" "text/html; charset=UTF-8"
@@ -222,6 +229,7 @@ html, body, #sw-root {
      [:body
       [:h1 "HTTP 404: Not Found"]
       [:p "Going " [:a {:href "javascript:history.go(-1);"} "back"] " might help."]]))})
+
 
 
 (defn simple-aux-handler [fn-to-wrap]

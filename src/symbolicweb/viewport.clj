@@ -66,7 +66,7 @@
                       ;;(dbg-prin1 [(:type @widget) (:id @widget)])
                       (when (not= :dead (parent-of widget))
                         ;; This one is interesting; uncomment when working on this.
-                        (dbg-prin1 [(:type widget) (.id ^WidgetBase widget)])
+                        (println "ADD-RESPONSE-CHUNK: Found stale widget:" (.id widget))
                         (detach-branch widget)
                         (def -lost-widget- widget)))
                     (send (:response-agent viewport-m)

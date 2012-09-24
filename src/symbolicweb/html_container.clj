@@ -70,6 +70,7 @@
   (apply make-TemplateElement value-model widget-base-args))
 
 
+
 (defn ^WidgetBase make-BlankTemplateElement[& widget-base-args]
   "A TemplateElement which doesn't have a Model.
 This might be used to setup a target for DOM events on some static content from a template."
