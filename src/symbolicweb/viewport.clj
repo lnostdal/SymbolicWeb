@@ -1,6 +1,10 @@
 (in-ns 'symbolicweb.core)
 
 
+;;; Represents a browser window or tab within a single browser session
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (defn make-Viewport [request application ^WidgetBase root-widget & args]
   "This will instantiate a new Viewport and also 'register' it as a part of APPLICATION and the server via -VIEWPORTS-."
   (let [viewport-id (str "sw-" (generate-uid))
@@ -19,9 +23,9 @@
     (when (:session? @application)
       (swap! -viewports- #(assoc % viewport-id viewport)))
     (dosync
-     ;; Widget --> Viewport.
-     (ref-set (.viewport root-widget) viewport)
      (alter application update-in [:viewports] assoc viewport-id viewport)
+     ;; Widget --> Viewport.
+     (vm-set (.viewport root-widget) viewport)
      (do-lifetime-activation (.lifetime root-widget)))
     viewport))
 

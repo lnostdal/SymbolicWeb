@@ -15,12 +15,12 @@
                        ^Lifetime lifetime
                        ^clojure.lang.Fn render-fn
                        ^clojure.lang.Ref parent ;; WidgetBase
-                       ^clojure.lang.Ref viewport ;; Viewport
+                       ^ValueModel viewport ;; Viewport
                        ^clojure.lang.Ref callbacks] ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
-
   IWidgetBase
   (viewport-of [_]
-    (ensure viewport))
+    @viewport)
+
 
   (parent-of [_]
     (ensure parent))
@@ -65,7 +65,7 @@
                                          (alter parent-viewport update-in [:widgets]
                                                 assoc (.id it) it)
                                          ;; Widget --> Viewport.
-                                         (ref-set (.viewport it) parent-viewport))))
+                                         (vm-set (.viewport it) parent-viewport))))
          (add-lifetime-deactivation-fn (.lifetime it)
                                        (fn [^Lifetime lifetime]
                                          (let [viewport (viewport-of it)]
@@ -73,7 +73,7 @@
                                            (alter viewport update-in [:widgets]
                                                   dissoc (.id it) it)
                                            ;; Widget -/-> Viewport.
-                                           (ref-set (.viewport it) nil)))))
+                                           (vm-set (.viewport it) nil))))))))
        (apply assoc it
               (mapcat (fn [e] [(key e) (val e)])
                       (merge {:escape-html? true} args))))))
