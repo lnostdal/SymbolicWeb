@@ -51,12 +51,16 @@
      (make-WidgetBase render-fn {}))
 
   ([^clojure.lang.Fn render-fn args]
-     (with (WidgetBase. (str "sw-" (generate-uid)) ;; ID
-                        (mk-Lifetime)
-                        render-fn
-                        (ref nil) ;; PARENT
-                        (ref nil) ;; VIEWPORT
-                        (ref {})) ;; CALLBACKS
+     (with1 (map->WidgetBase (merge {:id (str "sw-" (generate-uid))
+                                     :lifetime (if (:root-widget? args)
+                                                 (mk-LifetimeRoot)
+                                                 (mk-Lifetime))
+                                     :render-fn render-fn
+                                     :parent (ref nil)
+                                     :viewport (vm nil)
+                                     :callbacks (ref {})
+                                     :escape-html? true}
+                                    args))
        (when-not (:root-widget? args)
          (add-lifetime-activation-fn (.lifetime it)
                                      (fn [^Lifetime lifetime]
@@ -74,9 +78,6 @@
                                                   dissoc (.id it) it)
                                            ;; Widget -/-> Viewport.
                                            (vm-set (.viewport it) nil))))))))
-       (apply assoc it
-              (mapcat (fn [e] [(key e) (val e)])
-                      (merge {:escape-html? true} args))))))
 
 
 
