@@ -24,98 +24,125 @@ If the parent is active, the CHILD and its children in turn will be made active 
 If LIFETIME is active it will be deactivated with all its children.")
 
 
-  (add-lifetime-activation-fn [lifetime fn]
+  (add-lifetime-activation-fn [lifetime f]
     "Adds a callback to run when LIFETIME is activated.
-  FN: (fn [lifetime] ..)")
+  F: (fn [lifetime] ..)")
 
-  (add-lifetime-deactivation-fn [lifetime fn]
+  (add-lifetime-deactivation-fn [lifetime f]
     "Adds a callback to run when LIFETIME is deactivated.
-  FN: (fn [lifetime] ..)")
+  F: (fn [lifetime] ..)")
 
   (do-lifetime-activation [lifetime])
-  (do-lifetime-deactivation [lifetime]))
+  (do-lifetime-deactivation [lifetime])
+
+  (lifetime-state-of [lifetime])
+  (lifetime-parent-of [lifetime])
+  (lifetime-children-of [lifetime]))
 
 
 
-(deftype Lifetime [^clojure.lang.Ref active? ;; Boolean
-                   ^clojure.lang.Ref parent ;; Lifetime, ::stale-lifetime or ::lifetime-root
-                   ^clojure.lang.Ref children ;; #{}
+(deftype Lifetime [^clojure.lang.Ref state ;; :initial, :member-of-tree, :activated, :deactivated
+                   ^clojure.lang.Ref parent ;; nil, Lifetime or :lifetime-root
+                   ^clojure.lang.Ref children ;; []
                    ^clojure.lang.Ref on-lifetime-activation-fns ;; []
                    ^clojure.lang.Ref on-lifetime-deactivation-fns] ;; []
 
   ILifetime
-  (attach-lifetime [parent-lifetime child-lifetime]
-    (assert (not (ensure (.parent child-lifetime)))
-            (str child-lifetime " already has a parent: " (ensure (.parent child-lifetime))))
-    (ref-set (.parent child-lifetime) parent-lifetime)
-    (alter children conj child-lifetime)
-    (when (ensure (.active? parent-lifetime))
-      (do-lifetime-activation child-lifetime))
-    parent-lifetime)
+  (lifetime-state-of [_] (ensure state))
+  (lifetime-parent-of [_] (ensure parent))
+  (lifetime-children-of [_] (ensure children))
+
+
+  (attach-lifetime [parent child]
+    (case (lifetime-state-of parent)
+      (:initial :member-of-tree :activated)
+      (do
+        (assert (= :initial (lifetime-state-of child))
+                (str child " in invalid state: " (lifetime-state-of child)))
+        (ref-set (.state child) :member-of-tree)
+        (ref-set (.parent child) parent)
+        (alter children conj child)
+        (when (= :activated (lifetime-state-of parent))
+          (do-lifetime-activation child))))
+    parent)
+
 
 
   (detach-lifetime [lifetime]
-    (with (ensure parent)
-      (assert it (str lifetime " isn't part of a Lifetime tree; it has no parent."))
-      (assert (not= it ::stale-lifetime)
-              (str lifetime " has already been detached from a Lifetime tree; it is stale."))
-      (when-not (= it ::lifetime-root)
-        (alter (.children it) disj lifetime)))
-    (ref-set parent ::stale-lifetime)
-    ;; Mark children and children of children stale also.
-    (doseq [^Lifetime child-lifetime (ensure children)]
-      (detach-lifetime child-lifetime))
-    (do-lifetime-deactivation lifetime)
+    (case (lifetime-state-of lifetime)
+      (:member-of-tree :activated)
+      (do
+        (when (= :activated (lifetime-state-of lifetime))
+          (do-lifetime-deactivation lifetime))
+        (when-not (= :lifetime-root (lifetime-parent-of lifetime))
+          (alter (.children (lifetime-parent-of lifetime)) (partial filterv #(not= % lifetime))))))
     lifetime)
 
 
-  (add-lifetime-activation-fn [lifetime fn]
-    (alter on-lifetime-activation-fns conj fn)
+
+  (add-lifetime-activation-fn [lifetime f]
+    (case (lifetime-state-of lifetime)
+      (:initial :member-of-tree)
+      (alter on-lifetime-activation-fns conj f)
+
+      :activated
+      (f lifetime))
     lifetime)
 
 
-  (add-lifetime-deactivation-fn [lifetime fn]
-    (alter on-lifetime-deactivation-fns conj fn)
+
+  (add-lifetime-deactivation-fn [lifetime f]
+    (case (lifetime-state-of lifetime)
+      (:initial :member-of-tree :activated)
+      (alter on-lifetime-deactivation-fns conj f)
+
+      :deactivated
+      (f lifetime))
     lifetime)
+
 
 
   (do-lifetime-activation [lifetime]
-    (when-not (ensure active?)
-      (ref-set active? true)
-      ;; Iterate downwards in tree (root at the top) from LIFETIME; top-to-bottom; calling ON-LIFETIME-ACTIVATION-FNS as we go.
-      (doseq [^clojure.lang.Fn f (ensure on-lifetime-activation-fns)]
-        (f lifetime))
-      (doseq [^Lifetime child-lifetime (ensure children)]
-        (do-lifetime-activation child-lifetime))
-      lifetime))
+    (case (lifetime-state-of lifetime)
+      :member-of-tree
+      (do
+        (ref-set state :activated)
+        ;; Root and down to leaves (bottom).
+        (doseq [^clojure.lang.Fn f (ensure on-lifetime-activation-fns)]
+          (f lifetime))
+        (doseq [^Lifetime child (lifetime-children-of lifetime)]
+          (do-lifetime-activation child))))
+    lifetime)
+
 
 
   (do-lifetime-deactivation [lifetime]
-    (when (ensure active?)
-      (ref-set active? false)
-      ;; Iterate upwards from leaves of LIFETIME tree (root at the top); bottom-to-top; calling ON-LIFETIME-DEACTIVATION-FNS
-      ;; as we go.
-      (doseq [^Lifetime child-lifetime (ensure children)]
-        (do-lifetime-deactivation child-lifetime))
-      (doseq [^clojure.lang.Fn f (ensure on-lifetime-deactivation-fns)]
-        (f lifetime))
-      lifetime)))
+    (case (lifetime-state-of lifetime)
+      :activated
+      (do
+        (ref-set state :deactivated)
+        ;; Leaves and up to root (top).
+        (doseq [^Lifetime child-lifetime (lifetime-children-of lifetime)]
+          (do-lifetime-deactivation child-lifetime))
+        (doseq [^clojure.lang.Fn f (ensure on-lifetime-deactivation-fns)]
+          (f lifetime))))
+    lifetime))
 
 
 
 (defn mk-Lifetime ^Lifetime []
-  (Lifetime. (ref false) ;; ACTIVE?
-             (ref false) ;; PARENT
-             (ref #{})   ;; CHILDREN
-             (ref [])    ;; ON-LIFETIME-ACTIVATION-FNS
-             (ref [])))  ;; ON-LIFETIME-DEACTIVATION-FNS
+  (Lifetime. (ref :initial) ;; STATE
+             (ref nil)      ;; PARENT
+             (ref [])       ;; CHILDREN
+             (ref [])       ;; ON-LIFETIME-ACTIVATION-FNS
+             (ref [])))     ;; ON-LIFETIME-DEACTIVATION-FNS
 
 
 
 (defn mk-LifetimeRoot ^Lifetime []
   (with (mk-Lifetime)
-    (ref-set (.parent it) ::lifetime-root)
-    (ref-set (.active? it) true)
+    (ref-set (.parent it) :lifetime-root)
+    (ref-set (.state it) :member-of-tree)
     it))
 
 
