@@ -47,7 +47,9 @@
 
 
 (defn observe [^Observable observable lifetime ^clojure.lang.Fn callback]
-  "  LIFETIME: An instance of Lifetime, or FALSE which denotes an infinite lifetime.
+  "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and last until it is
+deactivated. If given FALSE, observation will start at once and last forever; as long as OBSERVABLE exists.
+
   CALLBACK: (fn [inner-lifetime & args] ..), where INNER-LIFETIME may be an instance of Lifetime or FALSE.
 
 Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed

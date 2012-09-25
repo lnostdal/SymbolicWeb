@@ -35,9 +35,11 @@
 
 
 (defn vm-observe [^ValueModel value-model lifetime ^Boolean initial-sync? ^clojure.lang.Fn callback]
-  "  LIFETIME: An instance of Lifetime, or NIL/FALSE which denotes an infinite lifetime.
-  INITIAL-SYNC?: If true, CALLBACK will be called when LIFETIME is activated (i.e., no change in VALUE-MODEL is needed). If
-  LIFETIME is NIL, CALLBACK will be called instantly.
+  "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and last until it is
+deactivated. If given FALSE, observation will start at once and last forever; as long as VALUE-MODEL exists.
+
+  INITIAL-SYNC?: If TRUE, CALLBACK will be triggered once as soon as observation starts.
+
   CALLBACK: (fn [inner-lifetime old-value new-value] ..)
 
 Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
@@ -61,6 +63,7 @@ as the first argument to CALLBACK."
       (let [observed-vms-ctx *observed-vms-ctx*]
         (vm-observe value-model (:lifetime observed-vms-ctx) false
                     (fn [& _]
+                      ;; Avoid infinite recursion; body-fn triggering a change that leads back to the same body-fn.
                       (when-not (get *observed-vms-active-body-fns* (:body-fn observed-vms-ctx))
                         (binding [*observed-vms-ctx* observed-vms-ctx
                                   *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
