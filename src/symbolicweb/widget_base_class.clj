@@ -98,20 +98,21 @@
 
 
 
-(defn render-html ^String [^WidgetBase widget]
+(defn ^String render-html [^WidgetBase widget]
   "Return HTML structure which will be the basis for further initialization."
   ((.render-fn widget) widget))
 
 
 
-(defn sw ^String [^WidgetBase widget]
+(defn ^String sw [^WidgetBase widget]
   "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
+  ;;(println "SW:" (.id widget))
   (attach-branch *in-html-container?* widget)
   (render-html widget))
 
 
 
-(defn set-event-handler ^WidgetBase [^String event-type
+(defn ^WidgetBase set-event-handler [^String event-type
                                      ^WidgetBase widget
                                      ^clojure.lang.Fn callback-fn
                                      & {:keys [callback-data]}]
