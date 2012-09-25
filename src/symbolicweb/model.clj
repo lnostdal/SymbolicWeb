@@ -61,7 +61,7 @@ as the first argument to CALLBACK."
                (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
       (alter (:vms *observed-vms-ctx*) conj value-model)
       (let [observed-vms-ctx *observed-vms-ctx*]
-        (vm-observe value-model (:lifetime observed-vms-ctx) false
+        (vm-observe value-model (:lifetime observed-vms-ctx) true
                     (fn [& _]
                       ;; Avoid infinite recursion; body-fn triggering a change that leads back to the same body-fn.
                       (when-not (get *observed-vms-active-body-fns* (:body-fn observed-vms-ctx))
