@@ -74,5 +74,6 @@
                             (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
         (if (viewport-of widget) ;; Visible?
           (do-it)
-          (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it)))))))
+          (when-not (= :deactivated (lifetime-state-of (.lifetime widget)))
+            (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it))))))))
   new-chunk)
