@@ -47,7 +47,7 @@ as the first argument to CALLBACK."
   (let [observe-res (observe (.observable value-model) lifetime callback)]
     (when initial-sync?
       (letfn [(initial-sync []
-                (callback observe-res ::-initial-sync @value-model))]
+                (callback observe-res ::initial-update @value-model))]
         (if observe-res
           (add-lifetime-activation-fn observe-res (fn [_] (initial-sync)))
           (initial-sync))))
