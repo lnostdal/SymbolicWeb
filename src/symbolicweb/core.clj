@@ -48,6 +48,7 @@
   (:require symbolicweb.jquery)
   (:require symbolicweb.widget-base)
   (:require symbolicweb.viewport)
+  (:require symbolicweb.util)
 
   (:require symbolicweb.user)
 
@@ -61,12 +62,13 @@
   (:require symbolicweb.combo-box)
   (:require symbolicweb.tooltip)
   (:require symbolicweb.sticky)
-
-  (:require symbolicweb.handy-handlers)
-  (:require symbolicweb.application)
+  (:require symbolicweb.sortable)
   (:require symbolicweb.date-and-time)
-  (:require symbolicweb.util)
-  (:require symbolicweb.sortable))
+
+  (:require symbolicweb.garbage-collection)
+  (:require symbolicweb.handy-handlers)
+  (:require symbolicweb.application))
+
 
 
 (set! *warn-on-reflection* true)
