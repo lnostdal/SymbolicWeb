@@ -125,7 +125,7 @@ lifetime (as long as VALUE-MODEL exists)."
                                                 (var-set already-synced? true)
                                                 true)
                                               false)
-                       (fn [_ &] (vm-set mid (callback))))))
+                       (fn [& _] (vm-set mid (callback))))))
        mid)))
 
 
