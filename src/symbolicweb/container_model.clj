@@ -82,7 +82,7 @@
 
 
 
-(defn make-ContainerModel ^ContainerModel []
+(defn ^ContainerModel make-ContainerModel []
   (ContainerModel. (ref nil) ;; HEAD-NODE
                    (ref nil) ;; TAIL-NODE
                    (ref 0)   ;; %count
@@ -93,7 +93,7 @@
 
 
 
-(defn cm ^ContainerModel []
+(defn ^ContainerModel cm []
   (make-ContainerModel))
 
 

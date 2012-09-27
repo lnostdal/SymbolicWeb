@@ -70,23 +70,20 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 
-(derive ::ContainerView ::WidgetBase)
-(defn make-ContainerView ^WidgetBase [^ContainerModel container-model & args]
-  (with1 (make-WidgetBase
-          (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
-
-          ;;:view-from-node-fn
-          ;;(fn [^WidgetBase container-view ^ContainerModelNode node]
-          ;;  (mk-he "div" (cmn-data node)))
-
-          (merge {:view-of-node (ref {})}
-                 (apply hash-map args)))
+(defn ^WidgetBase make-ContainerView [^ContainerModel container-model ^clojure.lang.Fn view-from-node-fn & args]
+  "  VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-nodel] ..)"
+  (with1 (make-WidgetBase (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
+                          (merge {:view-of-node (ref {})
+                                  :view-from-node-fn view-from-node-fn}
+                                 (apply hash-map args)))
 
     (observe (.observable container-model) (.lifetime it)
              (fn [^Lifetime inner-lifetime event-args]
                (handle-container-view-event it container-model event-args)))
 
     ;; Add any already existing nodes to CONTAINER-VIEW.
+    ;; TODO: Is this really needed with the Lifetime tracking facility we have now? I guess it sort of leads to the same in effect,
+    ;; but doing it at this end (Model) instead of at the View end seems more correct.
     (loop [node (cm-head-node container-model)]
       (when node
         (jqAppend it (view-of-node-in-context it node))
