@@ -53,6 +53,7 @@ If LIFETIME is active it will be deactivated with all its children.")
   (lifetime-children-of [_] (ensure children))
 
 
+
   (attach-lifetime [parent child]
     (case (lifetime-state-of parent)
       (:initial :member-of-tree :activated)
@@ -75,7 +76,9 @@ If LIFETIME is active it will be deactivated with all its children.")
         (when (= :activated (lifetime-state-of lifetime))
           (do-lifetime-deactivation lifetime))
         (when-not (= :lifetime-root (lifetime-parent-of lifetime))
-          (alter (.children (lifetime-parent-of lifetime)) (partial filterv #(not= % lifetime))))))
+          (alter (.children (lifetime-parent-of lifetime)) (partial filterv #(not= % lifetime)))))
+
+      nil)
     lifetime)
 
 
@@ -117,15 +120,17 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
   (do-lifetime-deactivation [lifetime]
+    ;; Leaves and up to root (top).
+    (doseq [^Lifetime child-lifetime (lifetime-children-of lifetime)]
+      (do-lifetime-deactivation child-lifetime))
     (case (lifetime-state-of lifetime)
       :activated
       (do
         (ref-set state :deactivated)
-        ;; Leaves and up to root (top).
-        (doseq [^Lifetime child-lifetime (lifetime-children-of lifetime)]
-          (do-lifetime-deactivation child-lifetime))
         (doseq [^clojure.lang.Fn f (ensure on-lifetime-deactivation-fns)]
-          (f lifetime))))
+          (f lifetime)))
+
+      nil)
     lifetime))
 
 
