@@ -11,17 +11,24 @@
 
 (deftype ValueModel [^clojure.lang.Ref value
                      ^Observable observable]
+
+  ;; Getter.
   clojure.lang.IDeref
   (deref [value-model]
     (%vm-deref value-model value))
 
 
+  ;; Setter.
   IValueModel
   (vm-set [value-model new-value]
+
+    ;; TODO: Try to move this block later; it belongs to stuff in
+    ;; database_common.clj and only makes this code harder to reason about.
     (when *in-sw-db?*
       (assert (or *pending-prepared-transaction?*
                   *in-db-cache-get?*)
               "ValueModel: Mutation of ValueModel within WITH-SW-DB not allowed while DB transaction is not held (HOLDING-TRANSACTION)."))
+
     (let [old-value (ensure value)]
       (ref-set value new-value)
       (notify-observers observable old-value new-value))

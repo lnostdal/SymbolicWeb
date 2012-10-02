@@ -41,7 +41,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
 
-(deftype Lifetime [^clojure.lang.Ref state ;; :initial, :member-of-tree, :activated, :deactivated
+(deftype Lifetime [^clojure.lang.Ref state ;; :initial --> :member-of-tree --> :activated --> :deactivated
                    ^clojure.lang.Ref parent ;; nil, Lifetime or :lifetime-root
                    ^clojure.lang.Ref children ;; []
                    ^clojure.lang.Ref on-lifetime-activation-fns ;; []

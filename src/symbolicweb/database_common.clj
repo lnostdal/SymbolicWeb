@@ -1,6 +1,9 @@
 (in-ns 'symbolicweb.core)
 
 
+;;; http://en.wikipedia.org/wiki/Two-phase_commit_protocol
+
+
 (defn mk-db-pool [spec]
   (let [cpds (doto (ComboPooledDataSource.)
                (.setDriverClass (:classname spec))

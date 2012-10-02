@@ -52,14 +52,13 @@ browser, try:
 
 
 
-## Other things
-
-I'm aiming at a 132 column width using 1920x1080 monitors:
-  http://ask.slashdot.org/story/07/07/07/1931246/Are-80-Columns-Enough
-
-
 
 ### Style
+
+130 column width using a 1920 or 1600 pixel wide screen should give room for two columns while still being readable:
+
+|---------------------------------------------------------------------------------------------------------------------------------|
+
 
 * ThisIsAType   (deftype, defrecord, defprotocol, etc..)
 * this-is-a-variable
