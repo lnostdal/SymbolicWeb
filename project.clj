@@ -22,6 +22,9 @@
 
                  [org.clojure/tools.nrepl "0.2.0-SNAPSHOT"]]
 
+  :plugins [[swank-clojure "1.5.0-SNAPSHOT"]
+            [lein-swank "1.4.4"]]
+
   :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
              "-server" "-XX:+TieredCompilation"
              "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
