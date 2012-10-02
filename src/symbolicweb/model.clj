@@ -79,7 +79,7 @@ as the first argument to CALLBACK."
 
 
 
-(defn vm ^ValueModel [value]
+(defn ^ValueModel vm [value]
   (ValueModel. (ref value)
                (mk-Observable (fn [^Observable observable old-value new-value]
                                 (when-not (= old-value new-value) ;; TODO: = is a magic value.

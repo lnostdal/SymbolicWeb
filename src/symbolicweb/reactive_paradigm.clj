@@ -35,7 +35,7 @@
 
 
 
-(defn mk-Observable ^Observable [^clojure.lang.Fn notify-observers-fn]
+(defn ^Observable mk-Observable [^clojure.lang.Fn notify-observers-fn]
   (Observable. (ref #{}) ;; OBSERVERS
                notify-observers-fn))
 

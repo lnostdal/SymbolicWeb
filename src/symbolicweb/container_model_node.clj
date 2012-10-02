@@ -5,12 +5,12 @@
 ;; (deftype ContainerModelNode [container-model left right data])
 
 
-(defn make-ContainerModelNode [data]
+(defn ^ContainerModelNode make-ContainerModelNode [data]
   "Doubly linked list node."
   (ContainerModelNode. (ref nil) (ref nil) (ref nil) data))
 
 
-(defn cmn [data]
+(defn ^ContainerModelNode cmn [data]
   (make-ContainerModelNode data))
 
 

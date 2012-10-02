@@ -5,8 +5,9 @@
   "Find or create new Observer of NODE in context of CONTEXT.
 CONTEXT is an Observer of the ContainerModel NODE is a member of.
 If FIND-ONLY? is true no new Observer will be constructed if an existing one is not found."
-  ([^WidgetBase  context ^ContainerModelNode node]
+  ([^WidgetBase context ^ContainerModelNode node]
      (observer-of-node-in-context context node false))
+
   ([^WidgetBase context ^ContainerModelNode node ^Boolean find-only?]
      (if-let [existing-observer (get (ensure (:observer-of-node context))
                                      node)]
