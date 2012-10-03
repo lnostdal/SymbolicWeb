@@ -1,7 +1,93 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn issue-39 []
+;; * Operations can happen either directly (explicitly) when done in context of the "outer" (observed) ContainerModel,
+;;   or they can happen "implicitly" when the CMN VSs change.
+;;
+;; * Check the FILTER-FNs for the FilteredContainerModels the Node is already a part of and remove it from each now returning
+;;   false.
+;;
+;; * Check the FILTER-FNs for the FilteredContainerModels the Node is not already part of and add it to each now returning
+;;   true. ...forgot this. Hm.
+;;
+;; I guess these things can happen in observers held in each FilteredContainerModel.
+
+
+;; Another scenario is the actual filter changing, but I think I might as well create a new FilteredContainerModel then(?).
+
+
+(defn filtered-container-model-test []
+  (dosync
+   (let [common (with1 (mk-ContainerModel)
+                  (let [lifetime-root (mk-LifetimeRoot)]
+                    (do-lifetime-activation lifetime-root)
+                    (attach-lifetime lifetime-root (.lifetime it)))
+                  #_(cm-append it (cmn (vm 4)))
+                  #_(cm-append it (cmn (vm 5))))
+         odd-only (mk-FilteredContainerModel common #(odd? @(cmn-data %2)))
+         even-only (mk-FilteredContainerModel common #(even? @(cmn-data %2)))
+         larger-than-5 (mk-FilteredContainerModel common #(> @(cmn-data %2) 5))
+         less-than-5 (mk-FilteredContainerModel common #(< @(cmn-data %2) 5))
+         node-zero (cmn (vm 0))]
+     ;; Yes, I know this code sucks.
+     (letfn [(print-state []
+               (println "COMMON")
+               (loop [node (cm-head-node common)]
+                 (when node
+                   (println @(cmn-data node))
+                   (recur (cmn-right-node node))))
+
+               (println "\nODD-ONLY")
+               (loop [node (cm-head-node odd-only)]
+                 (when node
+                   (println @(cmn-data node))
+                   (recur (cmn-right-node node))))
+
+               (println "\nEVEN-ONLY")
+               (loop [node (cm-head-node even-only)]
+                 (when node
+                   (println @(cmn-data node))
+                   (recur (cmn-right-node node))))
+
+               (println "\nLARGER-THAN-5")
+               (loop [node (cm-head-node larger-than-5)]
+                 (when node
+                   (println @(cmn-data node))
+                   (recur (cmn-right-node node))))
+
+               (println "\nLESS-THAN-5")
+               (loop [node (cm-head-node less-than-5)]
+                 (when node
+                   (println @(cmn-data node))
+                   (recur (cmn-right-node node))))
+               (println "----------\n"))]
+
+
+       (cm-append common (cmn (vm 1)))
+       (cm-append common (cmn (vm 2)))
+       (cm-append common node-zero)
+       (cm-append common (cmn (vm 3)))
+
+       (print-state)
+
+       (loop []
+         (let [n (rand-int 10)]
+           (println "Setting NODE-ZERO to" n)
+           (vm-set (cmn-data node-zero) n)
+           (print-state))
+         (Thread/sleep 5000) ;; yeah, milliseconds; not seconds..
+         (recur))))))
+
+
+
+
+
+
+
+
+
+
+#_(defn issue-39 []
   (try
     (dosync
      (let [model (cm)
@@ -12,63 +98,6 @@
        (cm-append model (cmn (vm 3)))))
     (catch Throwable e
       (clojure.stacktrace/print-stack-trace e))))
-
-
-(defn synced-container-models-with-filtering []
-  (dosync
-   (let [common (with1 (make-ContainerModel)
-                  (cm-append it (cmn (vm 4)))
-                  (cm-append it (cmn (vm 5))))
-         odd-only (sync-ContainerModel common nil #(odd? @(cmn-data %2)))
-         even-only (sync-ContainerModel common nil #(even? @(cmn-data %2)))
-         node-zero (cmn (vm 0))]
-
-     (cm-append common node-zero)
-     (cm-append common (cmn (vm 1)))
-     (cm-append common (cmn (vm 2)))
-     (cm-append common (cmn (vm 3)))
-
-     (vm-set (cmn-data node-zero) 7) ;; TODO: This should trigger the two following operations:
-     ;;(cmn-remove node-zero) ;; Remove from all.
-     ;;(cm-append common (cmn (cmn-data node-zero))) ;; Add back to observed ("synced with") ContainerModel.
-
-     ;; Hm, or a less brute force way?
-     ;;
-     ;; * Check the FILTER-FNs for the SyncedContainerModels the Node is already a part of and remove it from each now returning
-     ;;   false.
-     ;;
-     ;; * Check the FILTER-FNs for the SyncedContainerModels the Node is not already part of and add it to each now returning
-     ;;   true.
-     ;;
-     ;; I guess these things can happen in observers held in each SyncedContainerModel.
-
-
-     ;; Another scenario is the actual filter changing, but I think I might as well create a new sync-ContainerModel then.
-
-     (println "COMMON")
-     (loop [node (cm-head-node common)]
-       (when node
-         (println @(cmn-data node))
-         (recur (cmn-right-node node))))
-
-     (println "\nODD-ONLY")
-     (loop [node (cm-head-node odd-only)]
-       (when node
-         (println @(cmn-data node))
-         (recur (cmn-right-node node))))
-
-     (println "\nEVEN-ONLY")
-     (loop [node (cm-head-node even-only)]
-       (when node
-         (println @(cmn-data node))
-         (recur (cmn-right-node node)))))))
-
-
-
-
-
-
-
 
 
 
