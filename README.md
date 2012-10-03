@@ -61,6 +61,7 @@ browser, try:
 
 
 * ThisIsAType   (deftype, defrecord, defprotocol, etc..)
+* mk-SomeType   (a "helper constructor" for some type)
 * this-is-a-variable
 * this-is-a-function
 * -this-is-a-global-variable-
