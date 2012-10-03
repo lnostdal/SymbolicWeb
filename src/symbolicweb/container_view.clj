@@ -1,41 +1,21 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn observer-of-node-in-context
-  "Find or create new Observer of NODE in context of CONTEXT.
-CONTEXT is an Observer of the ContainerModel NODE is a member of.
-If FIND-ONLY? is true no new Observer will be constructed if an existing one is not found."
-  ([^WidgetBase context ^ContainerModelNode node]
-     (observer-of-node-in-context context node false))
-
-  ([^WidgetBase context ^ContainerModelNode node ^Boolean find-only?]
-     (if-let [existing-observer (get (ensure (:observer-of-node context))
-                                     node)]
-       existing-observer
-       (when-not find-only?
-         (let [new-observer (assoc ((:observer-from-node-fn context) context node)
-                              :node-of-observer node)] ;; Observer --> Node (used by e.g. Sortable)
-           ;; The following connection is removed when NODE is removed from the observed ContainerModel.
-           (alter (:observer-of-node context) assoc node new-observer) ;; Node --> Observer (via CONTEXT)
-           new-observer)))))
-
-
 
 (defn view-of-node-in-context
   "Find or create (if not found) new View of NODE in context of CONTAINER-VIEW.
 If FIND-ONLY? is true no new View will be constructed if an existing one was not found."
   ([^WidgetBase container-view ^ContainerModelNode node]
      (view-of-node-in-context container-view node false))
+
   ([^WidgetBase container-view ^ContainerModelNode node ^Boolean find-only?]
      (if-let [existing-view (get (ensure (:view-of-node container-view))
                                  node)]
        existing-view
        (when-not find-only?
          (let [new-view (assoc ((:view-from-node-fn container-view) container-view node)
-                          :node-of-view node)] ;; View --> Node (used by e.g. Sortable)
-           (alter (:view-of-node container-view) assoc node new-view) ;; Node --> View (via context)
-           ;; TODO: This is too specific; "visibility" shouldn't be mentioned here.
-           ;;(add-on-non-visible-fn new-view (fn [_ _] (alter (:view-of-node container-view) dissoc node))) ;; Node -/-> View
+                          :node-of-view node)] ;; View --> Node  (used by e.g. Sortable)
+           (alter (:view-of-node container-view) assoc node new-view) ;; Node --> View  (via context; CONTAINER-VIEW)
            new-view)))))
 
 
@@ -44,6 +24,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
   "Forward Container related operations/events to the View end."
   (let [[event-sym & event-args] event-args]
     (case event-sym
+
       cm-prepend
       (let [^ContainerModelNode new-node (nth event-args 0)]
         (jqPrepend container-view
