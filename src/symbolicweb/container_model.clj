@@ -18,6 +18,7 @@
 
 
 (deftype ContainerModelNode [%container-model
+                             ^Lifetime lifetime
                              ^clojure.lang.Ref left
                              ^clojure.lang.Ref right
                              data]
@@ -54,7 +55,8 @@
 
 
 
-(deftype ContainerModel [^clojure.lang.Ref head-node
+(deftype ContainerModel [^Lifetime lifetime
+                         ^clojure.lang.Ref head-node
                          ^clojure.lang.Ref tail-node
                          ^clojure.lang.Ref %count
                          ^Observable observable]
@@ -82,10 +84,11 @@
 
 
 
-(defn ^ContainerModel make-ContainerModel []
-  (ContainerModel. (ref nil) ;; HEAD-NODE
-                   (ref nil) ;; TAIL-NODE
-                   (ref 0)   ;; %count
+(defn ^ContainerModel mk-ContainerModel []
+  (ContainerModel. (mk-Lifetime) ;; LIFETIME
+                   (ref nil)     ;; HEAD-NODE
+                   (ref nil)     ;; TAIL-NODE
+                   (ref 0)       ;; %COUNT
                    ;; OBSERVABLE
                    (mk-Observable (fn [^Observable observable & event-args]
                                     (doseq [^clojure.lang.Fn observer-fn (ensure (.observers observable))]
@@ -94,7 +97,7 @@
 
 
 (defn ^ContainerModel cm []
-  (make-ContainerModel))
+  (mk-ContainerModel))
 
 
 
@@ -124,11 +127,10 @@ This mirrors the jQuery `prepend' function:
   ;;   if list.firstNode == null
   (if (not (cm-head-node cm))
     (do
-      ;; These 3 lines are specific to us.
-      ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
       (assert (not (cmn-container-model new-node)))
       (cmn-set-container-model new-node cm)
       (cm-set-count cm (inc (count cm)))
+      (attach-lifetime (.lifetime cm) (.lifetime new-node))
 
       (cm-set-head-node cm new-node) ;; list.firstNode := newNode
       (cm-set-tail-node cm new-node) ;; list.lastNode  := newNode

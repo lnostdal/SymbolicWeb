@@ -2,12 +2,15 @@
 
 
 ;; NOTE: ContainerModelNode class (deftype) moved to container_model.clj since forward declaring this doesn't seem to work.
-;; (deftype ContainerModelNode [container-model left right data])
 
 
 (defn ^ContainerModelNode make-ContainerModelNode [data]
   "Doubly linked list node."
-  (ContainerModelNode. (ref nil) (ref nil) (ref nil) data))
+  (ContainerModelNode. (ref nil)     ;; %CONTAINER-MODEL
+                       (mk-Lifetime) ;; LIFETIME
+                       (ref nil)     ;; LEFT
+                       (ref nil)     ;; RIGHT
+                       data))        ;; DATA
 
 
 (defn ^ContainerModelNode cmn [data]
@@ -20,6 +23,7 @@ This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
   (let [^ContainerModel cm (cmn-container-model node)]
     (cm-set-count cm (dec (count cm)))
+    (detach-lifetime (.lifetime node))
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Removing_a_node
     ;;
@@ -47,10 +51,10 @@ This mirrors the jQuery `remove' function:
 This mirrors the jQuery `after' function:
   http://api.jquery.com/after/"
   (let [^ContainerModel cm (cmn-container-model existing-node)]
-    ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)
     (cm-set-count cm (inc (count cm)))
+    (attach-lifetime (.lifetime cm) (.lifetime new-node))
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
@@ -80,10 +84,10 @@ This mirrors the jQuery `after' function:
 This mirrors the jQuery `before' function:
   http://api.jquery.com/before/"
   (let [^ContainerModel cm (cmn-container-model existing-node)]
-    ;; Make sure NEW-NODE isn't used anywhere else before associating a ContainerModel with it.
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)
     (cm-set-count cm (inc (count cm)))
+    (attach-lifetime (.lifetime cm) (.lifetime new-node))
 
     ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
     ;;
