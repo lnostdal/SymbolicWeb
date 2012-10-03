@@ -55,6 +55,7 @@
   (:require symbolicweb.text-input)
   (:require symbolicweb.html-elements)
   (:require symbolicweb.container-view)
+  (:require symbolicweb.container-model-filtered)
   (:require symbolicweb.html-container)
   (:require symbolicweb.checkbox)
   (:require symbolicweb.img)
