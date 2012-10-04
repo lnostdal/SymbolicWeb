@@ -107,9 +107,17 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
 
 (defn ^ContainerModel mk-FilteredContainerModel [^ContainerModel container-model ^clojure.lang.Fn filter-node-fn]
   "Returns a ContainerModel that is synced with CONTAINER-MODEL via FILTER-NODE-FN."
-  ;; TODO: Handle already existing nodes in CONTAINER-MODEL.
   (let [^ContainerModel filtered-container-model (cm)
         context (ref {})] ;; Mapping between CMNs in CONTAINER-MODEL and CMNs in FILTERED-CONTAINER-MODEL.
+
+    ;; Make FILTERED-CONTAINER-MODEL aware of existing CMNs in CONTAINER-MODEL.
+    (loop [^ContainerModelNode outer-node (cm-tail-node container-model)]
+      (when outer-node
+        (handle-filtered-container-event filtered-container-model
+                                         context
+                                         filter-node-fn
+                                         ['cm-prepend outer-node])
+        (recur (cmn-left-node outer-node))))
 
     (observe (.observable container-model) (.lifetime filtered-container-model)
              (fn [_ event-args]
