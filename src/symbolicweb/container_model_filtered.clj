@@ -51,8 +51,9 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
                     (cm-prepend filtered-container-model inner-new-node)))
 
                 cmn-before
-                (let [^ContainerModelNode existing-node (nth event-args 0)
-                      [^ContainerModelNode inner-closest-existing-node rel-pos] (node-of-node-in-context context existing-node)]
+                (let [^ContainerModelNode outer-existing-node (nth event-args 0)
+                      [^ContainerModelNode inner-closest-existing-node rel-pos] (node-of-node-in-context context
+                                                                                                         outer-existing-node)]
                   (case rel-pos
                     (:direct :right)
                     (cmn-before inner-closest-existing-node inner-new-node)
