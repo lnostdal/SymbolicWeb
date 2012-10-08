@@ -75,10 +75,11 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
                             (alter context assoc outer-new-node inner-new-node)
                             (detach-lifetime inner-lifetime) ;; Stop observing with regards to adding.
                             (vm-observe (cmn-data inner-new-node) (.lifetime inner-new-node) false
-                                        (fn [_ _ _]
+                                        (fn [inner-lifetime _ _]
                                           (when-not (filter-node-fn filtered-container-model inner-new-node)
+                                            (cmn-remove inner-new-node)
                                             (alter context dissoc outer-new-node)
-                                            (cmn-remove inner-new-node) ;; This stops observing with regards to removing.
+                                            (detach-lifetime inner-lifetime)
                                             ;; Start all over again.
                                             (handle-filtered-container-event filtered-container-model
                                                                              context
