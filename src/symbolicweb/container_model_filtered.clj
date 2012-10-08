@@ -28,6 +28,7 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
 (defn handle-filtered-container-event [^ContainerModel filtered-container-model
                                        ^clojure.lang.Ref context
                                        ^clojure.lang.Fn filter-node-fn
+                                       ^clojure.lang.Fn extract-vm-from-node-fn
                                        event-args]
 
   (letfn [(add-node [^ContainerModelNode inner-new-node]
@@ -66,15 +67,13 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
 
 
           (setup-observer-for-seen-node [^ContainerModelNode inner-new-node ^ContainerModelNode outer-new-node]
-            (vm-observe (cmn-data inner-new-node) (.lifetime outer-new-node) true
+            (vm-observe (extract-vm-from-node-fn inner-new-node) (.lifetime outer-new-node) true
                         (fn [^Lifetime inner-lifetime _ _]
                           (when (filter-node-fn filtered-container-model inner-new-node)
-                            ;; TODO: Ok, this sems to work, but think some more about why the call to alter here needs to happen
-                            ;; after the call to add-node.. getting tired here; most likely.
                             (add-node inner-new-node)
                             (alter context assoc outer-new-node inner-new-node)
-                            (detach-lifetime inner-lifetime) ;; Stop observing with regards to adding.
-                            (vm-observe (cmn-data inner-new-node) (.lifetime inner-new-node) false
+                            (detach-lifetime inner-lifetime)
+                            (vm-observe (extract-vm-from-node-fn inner-new-node) (.lifetime inner-new-node) false
                                         (fn [inner-lifetime _ _]
                                           (when-not (filter-node-fn filtered-container-model inner-new-node)
                                             (cmn-remove inner-new-node)
@@ -84,6 +83,7 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
                                             (handle-filtered-container-event filtered-container-model
                                                                              context
                                                                              filter-node-fn
+                                                                             extract-vm-from-node-fn
                                                                              event-args))))))))]
     (let [[event-sym & event-args] event-args]
       (case event-sym
@@ -107,27 +107,39 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
 
 
 
-(defn ^ContainerModel mk-FilteredContainerModel [^ContainerModel container-model ^clojure.lang.Fn filter-node-fn]
+(defn ^ContainerModel mk-FilteredContainerModel
   "Returns a ContainerModel that is synced with CONTAINER-MODEL via FILTER-NODE-FN."
-  (let [^ContainerModel filtered-container-model (cm)
-        context (ref {})] ;; Mapping between CMNs in CONTAINER-MODEL and CMNs in FILTERED-CONTAINER-MODEL.
+  ([^ContainerModel container-model
+    ^clojure.lang.Fn filter-node-fn]
+     (mk-FilteredContainerModel container-model filter-node-fn
+                                #(cmn-data %)))
 
-    ;; Make FILTERED-CONTAINER-MODEL aware of existing CMNs in CONTAINER-MODEL.
-    (loop [^ContainerModelNode outer-node (cm-tail-node container-model)]
-      (when outer-node
-        (handle-filtered-container-event filtered-container-model
-                                         context
-                                         filter-node-fn
-                                         ['cm-prepend outer-node])
-        (recur (cmn-left-node outer-node))))
 
-    (observe (.observable container-model) (.lifetime filtered-container-model)
-             (fn [_ event-args]
-               (handle-filtered-container-event filtered-container-model
-                                                context
-                                                filter-node-fn
-                                                event-args)))
+  ([^ContainerModel container-model
+    ^clojure.lang.Fn filter-node-fn
+    ^clojure.lang.Fn extract-vm-from-node-fn] ;; TODO: Default value; identity.
 
-    (attach-lifetime (.lifetime container-model) (.lifetime filtered-container-model))
+     (let [^ContainerModel filtered-container-model (cm)
+           context (ref {})] ;; Mapping between CMNs in CONTAINER-MODEL and CMNs in FILTERED-CONTAINER-MODEL.
 
-    filtered-container-model))
+       ;; Make FILTERED-CONTAINER-MODEL aware of existing CMNs in CONTAINER-MODEL.
+       (loop [^ContainerModelNode outer-node (cm-tail-node container-model)]
+         (when outer-node
+           (handle-filtered-container-event filtered-container-model
+                                            context
+                                            filter-node-fn
+                                            extract-vm-from-node-fn
+                                            ['cm-prepend outer-node])
+           (recur (cmn-left-node outer-node))))
+
+       (observe (.observable container-model) (.lifetime filtered-container-model)
+                (fn [_ event-args]
+                  (handle-filtered-container-event filtered-container-model
+                                                   context
+                                                   filter-node-fn
+                                                   extract-vm-from-node-fn
+                                                   event-args)))
+
+       (attach-lifetime (.lifetime container-model) (.lifetime filtered-container-model))
+
+       filtered-container-model)))
