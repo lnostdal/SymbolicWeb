@@ -137,6 +137,14 @@ lifetime (as long as VALUE-MODEL exists)."
 
 
 
+(defmacro ^ValueModel vm-dbg-prin1 [form]
+  `(let [res# ~form]
+     (vm-observe res# nil true
+                 #(println '~form "::" %2 "=>" %3))
+     res#))
+
+
+
 (defn %with-observed-vms [lifetime ^clojure.lang.Fn body-fn]
   (binding [*observed-vms-ctx* {:vms (ref #{})
                                 :lifetime lifetime
