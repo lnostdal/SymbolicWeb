@@ -119,7 +119,7 @@ lifetime (as long as VALUE-MODEL exists)."
 
 
 (defn ^ValueModel vm-syncs
-  "CALLBACK takes no arguments."
+  "  CALLBACK takes no arguments."
   ([value-models lifetime ^clojure.lang.Fn callback]
      (vm-syncs value-models lifetime callback true))
 
@@ -143,6 +143,7 @@ lifetime (as long as VALUE-MODEL exists)."
                                 :body-fn body-fn}
             *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns* body-fn)]
     (body-fn)))
+
 
 
 ;; TODO: RETURN-VM ..?

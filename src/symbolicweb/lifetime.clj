@@ -145,6 +145,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
 (defn mk-LifetimeRoot ^Lifetime []
+  "NOTE: This still needs to be activated."
   (with (mk-Lifetime)
     (ref-set (.parent it) :lifetime-root)
     (ref-set (.state it) :member-of-tree)
