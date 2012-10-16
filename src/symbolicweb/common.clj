@@ -6,6 +6,10 @@
 (set! *print-level* 10)
 
 
+(defn var-alter [var fun & args]
+  (var-set var (apply fun (var-get var) args)))
+
+
 (defn url-encode-component ^String [^String s]
   ;; TODO: This is retarded and slow.
   (.replace (java.net.URLEncoder/encode s "UTF-8")
