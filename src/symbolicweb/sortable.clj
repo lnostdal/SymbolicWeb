@@ -42,4 +42,6 @@
 
         (when callback (callback new-order-nodes))))
      (println "sortable: done!"))
-   :callback-data {:new-order (str "' + encodeURIComponent(JSON.stringify($('#" (.id widget) "').sortable('toArray'))) + '")}))
+   :callback-data {:new-order (str "' + encodeURIComponent(JSON.stringify($('#"
+                                   (.id container-view)
+                                   "').sortable('toArray'))) + '")}))

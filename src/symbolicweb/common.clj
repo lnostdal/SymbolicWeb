@@ -108,8 +108,8 @@ APPLICATION and VIEWPORT are bound within BODY."
          ~@body))))
 
 
-(defn get-widget [id viewport]
-  (get (:widgets @viewport) (str id)))
+(defn get-widget [^String id viewport]
+  (get (:widgets @viewport) id))
 
 
 (defn ensure-model [obj]

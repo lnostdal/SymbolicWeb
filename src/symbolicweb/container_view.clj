@@ -54,7 +54,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 (defn ^WidgetBase make-ContainerView [^ContainerModel container-model ^clojure.lang.Fn view-from-node-fn & args]
   "  VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-nodel] ..)"
-  (with1 (make-WidgetBase (fn [^WidgetBase view] (str "<div id='" (.id view) "'></div>"))
+  (with1 (make-WidgetBase (fn [^WidgetBase container-view] (str "<div id='" (.id container-view) "'></div>"))
                           (merge {:view-of-node (ref {})
                                   :view-from-node-fn view-from-node-fn}
                                  (apply hash-map args)))
