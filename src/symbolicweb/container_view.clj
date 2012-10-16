@@ -13,8 +13,8 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
                                  node)]
        existing-view
        (when-not find-only?
-         (let [new-view (assoc ((:view-from-node-fn container-view) container-view node)
-                          :node-of-view node)] ;; View --> Node  (used by e.g. Sortable)
+         (let [new-view (with1 ((:view-from-node-fn container-view) container-view node)
+                          (alter (:aux it) assoc :node-of-view node))] ;; View --> Node  (used by e.g. Sortable)
            (alter (:view-of-node container-view) assoc node new-view) ;; Node --> View  (via context; CONTAINER-VIEW)
            new-view)))))
 

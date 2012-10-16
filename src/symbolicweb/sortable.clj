@@ -1,10 +1,10 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn sortable [^WidgetBase widget & callback]
-  (add-response-chunk (str "$('#" (.id widget) "').sortable();") widget)
+(defn sortable [^WidgetBase container-view ^ContainerModel container-model & callback]
+  (add-response-chunk (str "$('#" (.id container-view) "').sortable();") container-view)
   (set-event-handler
-   "sortupdate" widget
+   "sortupdate" container-view
    (fn [& {:keys [new-order]}]
      (dosync
       (println "sortable: retry?")
@@ -14,9 +14,8 @@
             ^clojure.lang.PersistentVector
             new-order-nodes (with-local-vars [nodes []]
                               (doseq [widget-id new-order-ids]
-                                (var-set nodes (conj (var-get nodes) (:node-of-view (get-widget widget-id (viewport-of widget))))))
+                                (var-alter nodes conj (:node-of-view @(:aux (get-widget widget-id (viewport-of container-view))))))
                               (var-get nodes))
-            container-model (.model widget)
 
             ^clojure.lang.PersistentVector
             existing-order-nodes (with-local-vars [nodes []]
@@ -25,8 +24,9 @@
                                      (when-let [right-node (cmn-right-node node)]
                                        (recur right-node)))
                                    (var-get nodes))]
+
         ;; Do some simple checks to ensure the client doesn't have less (or different) nodes than the server as we start removing
-        ;; EXISTING-ORDER-NODES on the server end the adding only a few of them back via NEW-ORDER-NODES.
+        ;; EXISTING-ORDER-NODES on the server end the adding (wrongly) only a few of them back via NEW-ORDER-NODES.
         (assert (= (count new-order-nodes)
                    (count existing-order-nodes)))
         (doseq [new-node new-order-nodes]

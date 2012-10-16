@@ -16,7 +16,8 @@
                        ^clojure.lang.Fn render-fn
                        ^clojure.lang.Ref parent ;; WidgetBase
                        ^ValueModel viewport ;; Viewport
-                       ^clojure.lang.Ref callbacks] ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
+                       ^clojure.lang.Ref callbacks ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
+                       ^clojure.lang.Ref aux]
   IWidgetBase
   (viewport-of [_]
     @viewport)
@@ -59,7 +60,8 @@
                                      :parent (ref nil)
                                      :viewport (vm nil)
                                      :callbacks (ref {})
-                                     :escape-html? true}
+                                     :escape-html? true
+                                     :aux (ref {})}
                                     args))
        (when-not (:root-widget? args)
          (add-lifetime-activation-fn (.lifetime it)
