@@ -69,13 +69,13 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
           (setup-observer-for-seen-node [^ContainerModelNode inner-new-node ^ContainerModelNode outer-new-node]
             (vm-observe (extract-vm-from-node-fn inner-new-node) (.lifetime outer-new-node) true
                         (fn [^Lifetime inner-lifetime _ _]
-                          (when (filter-node-fn filtered-container-model inner-new-node)
+                          (when (filter-node-fn inner-new-node)
                             (add-node inner-new-node)
                             (alter context assoc outer-new-node inner-new-node)
                             (detach-lifetime inner-lifetime)
                             (vm-observe (extract-vm-from-node-fn inner-new-node) (.lifetime inner-new-node) false
                                         (fn [inner-lifetime _ _]
-                                          (when-not (filter-node-fn filtered-container-model inner-new-node)
+                                          (when-not (filter-node-fn inner-new-node)
                                             (cmn-remove inner-new-node)
                                             (alter context dissoc outer-new-node)
                                             (detach-lifetime inner-lifetime)
