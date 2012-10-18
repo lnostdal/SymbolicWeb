@@ -1,6 +1,10 @@
 (in-ns 'symbolicweb.core)
 
 
+;; TODO: Perhaps it is possible to do this without having a PARENT field? Just pass information about the parent along
+;; as an argument to ATTACH-LIFETIME to "store" for the later invocation of the ADD-LIFETIME-ACTIVATION-FN callback.
+
+
 (defprotocol IWidgetBase
   (viewport-of [widget-base])
   (parent-of [widget-base])

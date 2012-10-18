@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn ^WidgetBase make-HTMLElement [^String value-model
+(defn ^WidgetBase make-HTMLElement [^ValueModel value-model
                                     ^clojure.lang.Fn render-fn
                                     ^clojure.lang.Fn observer-fn
                                     widget-base-args]
@@ -31,7 +31,7 @@
 (defn ^WidgetBase make-Button [label & widget-base-args]
   "LABEL: \"Some Label\" or (vm \"Some Label\")"
   (mk-he "button"
-         (if (isa? symbolicweb.core.ValueModel (class label))
+         (if (= ValueModel (class label))
            label
            (vm label))
          :widget-base-args (merge {:escape-html? false} (apply hash-map widget-base-args))))
