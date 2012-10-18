@@ -11,13 +11,13 @@
 
 
 
-(defrecord WidgetBase [^String id
-                       ^Lifetime lifetime
-                       ^clojure.lang.Fn render-fn
-                       ^clojure.lang.Ref parent ;; WidgetBase
-                       ^ValueModel viewport ;; Viewport
-                       ^clojure.lang.Ref callbacks ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
-                       ^clojure.lang.Ref aux]
+(deftype WidgetBase [^String id
+                     ^Lifetime lifetime
+                     ^clojure.lang.Fn render-fn
+                     ^clojure.lang.Ref parent ;; WidgetBase
+                     ^ValueModel viewport ;; Viewport
+                     ^clojure.lang.Ref callbacks ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
+                     ^Boolean escape-html?]
   IWidgetBase
   (viewport-of [_]
     @viewport)
@@ -52,17 +52,18 @@
      (make-WidgetBase render-fn {}))
 
   ([^clojure.lang.Fn render-fn args]
-     (with1 (map->WidgetBase (merge {:id (str "sw-" (generate-uid))
-                                     :lifetime (if (:root-widget? args)
-                                                 (mk-LifetimeRoot)
-                                                 (mk-Lifetime))
-                                     :render-fn render-fn
-                                     :parent (ref nil)
-                                     :viewport (vm nil)
-                                     :callbacks (ref {})
-                                     :escape-html? true
-                                     :aux (ref {})}
-                                    args))
+     (with1 (WidgetBase. (or (:id args)
+                             (str "sw-" (generate-uid))) ;; ID
+                         (if (:root-widget? args) ;; LIFETIME
+                           (mk-LifetimeRoot)
+                           (mk-Lifetime))
+                         render-fn ;; RENDER-FN
+                         (ref nil) ;; PARENT
+                         (vm nil) ;; VIEWPORT
+                         (ref {}) ;; CALLBACKS
+                         (:escape-html? args)) ;; ESCAPE-HTML?
+
+
        (when-not (:root-widget? args)
          (add-lifetime-activation-fn (.lifetime it)
                                      (fn [^Lifetime lifetime]
@@ -71,15 +72,16 @@
                                          (alter parent-viewport update-in [:widgets]
                                                 assoc (.id it) it)
                                          ;; Widget --> Viewport.
-                                         (vm-set (.viewport it) parent-viewport))))
-         (add-lifetime-deactivation-fn (.lifetime it)
-                                       (fn [^Lifetime lifetime]
-                                         (let [viewport (viewport-of it)]
-                                           ;; Viewport -/-> Widget (DOM events).
-                                           (alter viewport update-in [:widgets]
-                                                  dissoc (.id it) it)
-                                           ;; Widget -/-> Viewport.
-                                           (vm-set (.viewport it) nil))))))))
+                                         (vm-set (.viewport it) parent-viewport)))))
+
+       (add-lifetime-deactivation-fn (.lifetime it)
+                                     (fn [^Lifetime lifetime]
+                                       (let [viewport (viewport-of it)]
+                                         ;; Viewport -/-> Widget (DOM events).
+                                         (alter viewport update-in [:widgets]
+                                                dissoc (.id it) it)
+                                         ;; Widget -/-> Viewport.
+                                         (vm-set (.viewport it) nil)))))))
 
 
 

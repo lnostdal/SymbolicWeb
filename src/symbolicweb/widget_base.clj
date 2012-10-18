@@ -18,7 +18,7 @@
                          & {:keys [observer-fn widget-base-args]
                             :or {widget-base-args {}
                                  observer-fn (fn [^WidgetBase widget old-value new-value]
-                                               (jqHTML widget (if (:escape-html? widget)
+                                               (jqHTML widget (if (.escape-html? widget)
                                                                 (escape-html new-value)
                                                                 new-value)))}}]
   (make-HTMLElement value-model
