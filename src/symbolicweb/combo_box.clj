@@ -4,7 +4,7 @@
 ;; TODO: This thing is work in progress. Search for "page=blank" in main.clj.
 ;; TODO: Might need a ContainerModelWithOneActiveNode type thing, like in old-Symbolicweb. (probably not actually)
 
-(defn make-ComboBoxElt [value-model]
+(defn mk-ComboBoxElt [value-model]
   ;;(vm-sync vm (fn [v o n] n))
   (ref {:id (cl-format false "~36R" (generate-uid))
         :text (vm value-model)}))
@@ -12,13 +12,13 @@
 
 
 (derive ::ComboBox ::ContainerView)
-(defn make-ComboBox [container-model & attributes]
-  (with1 (apply make-ContainerView "select" container-model
+(defn mk-ComboBox [container-model & attributes]
+  (with1 (apply mk-ContainerView "select" container-model
                 :type ::ComboBox
                 :view-from-node-fn (fn [container-view node]
                                      (dosync
                                       (let [model (cmn-data node)]
-                                        (make-HTMLElement "option" (:text @model)
+                                        (mk-HTMLElement "option" (:text @model)
                                                           :static-attributes {:value (:id @model)}))))
                 attributes)
     (set-event-handler "change" it

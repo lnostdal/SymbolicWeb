@@ -1,8 +1,8 @@
 (in-ns 'symbolicweb.core)
 
 (derive ::CheckBox ::HTMLElement)
-(defn make-CheckBox [model & attributes]
-  (with1 (apply make-HTMLElement "input" model
+(defn mk-CheckBox [model & attributes]
+  (with1 (apply mk-HTMLElement "input" model
                 :type ::CheckBox
                 :static-attributes {:type "checkbox"}
                 :handle-model-event-fn (fn [widget old-state new-state]

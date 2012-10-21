@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn make-Application [& app-args]
+(defn mk-Application [& app-args]
   "This will instantiate a new Application (browser session) and also 'register' it as a part of the server via -APPLICATIONS-.
 On page load (or refresh), the order of things executed are:
 
@@ -20,8 +20,8 @@ On page load (or refresh), the order of things executed are:
                            :last-activity-time (atom (System/currentTimeMillis))
                            :viewports {}
                            :session-data (ref {})
-                           :make-viewport-fn (fn [request application]
-                                               (throw (Exception. "make-Application: No :MAKE-VIEWPORT-FN given.")))
+                           :mk-viewport-fn (fn [request application]
+                                             (throw (Exception. "mk-Application: No :MK-VIEWPORT-FN given.")))
                            :request-handler #'default-request-handler
                            :rest-handler #'default-rest-handler
                            :ajax-handler #'default-ajax-handler
@@ -80,7 +80,7 @@ On page load (or refresh), the order of things executed are:
              ;; Session cookie sent, and Application found on server end.
              application
              ;; Session cookie sent, but Application not found on server end.
-             (make-Application :rest-handler #'clear-session-page-handler :session? false))
+             (mk-Application :rest-handler #'clear-session-page-handler :session? false))
            ;; Session cookie not sent; the user is requesting a brand new session or Application.
            (if-let [application-constructor (find-application-constructor request)]
              (application-constructor :session?
@@ -88,7 +88,7 @@ On page load (or refresh), the order of things executed are:
                                         (if (nil? it)
                                           true
                                           (json-parse it))))
-             (make-Application :rest-handler not-found-page-handler :session? false)))
+             (mk-Application :rest-handler not-found-page-handler :session? false)))
     (reset! (:cookies @it) (:cookies request))))
 
 

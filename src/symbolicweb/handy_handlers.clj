@@ -1,6 +1,6 @@
 (in-ns 'symbolicweb.core)
 
-(declare make-Application)
+(declare mk-Application)
 
 
 (defn default-aux-handler [request application viewport]
@@ -115,7 +115,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
          :body (with-js (clear-session application))}))
     ;; REST.
     (let [viewport (when (:session? @application)
-                     ((:make-viewport-fn @application) request application))]
+                     ((:mk-viewport-fn @application) request application))]
       (dosync
        (with1 ((:rest-handler @application) request application viewport)
          (when viewport

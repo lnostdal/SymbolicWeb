@@ -10,9 +10,9 @@
 
 
 (derive ::TextInput ::HTMLElement)
-(defn make-TextInput [model & attributes]
+(defn mk-TextInput [model & attributes]
   "<input type='text' ..> type widget."
-  (with1 (apply make-HTMLElement "input" model
+  (with1 (apply mk-HTMLElement "input" model
                 :type ::TextInput
                 :static-attributes {:type "text"}
                 :handle-model-event-fn (fn [widget _ new-value]
@@ -28,12 +28,12 @@
 
 
 (derive ::HashedInput ::HTMLElement)
-(defn make-HashedInput [model salt & attributes]
+(defn mk-HashedInput [model salt & attributes]
   "<input type='password' ..> type widget using SHA256 hashing on the client and server end. It is salted on the server end.
 Note that the client-side hash halve is still transferred in clear text form from the client to the server. This is what happens:
 
   (sha (str salt (sha hash)))"
-  (with1 (apply make-HTMLElement "input" model
+  (with1 (apply mk-HTMLElement "input" model
                 :type ::TextInput
                 :static-attributes {:type "password"}
                 :handle-model-event-fn (fn [_ _ _])
@@ -51,16 +51,16 @@ Note that the client-side hash halve is still transferred in clear text form fro
 
 
 (derive ::IntInput ::TextInput)
-(defn make-IntInput [model & attributes]
-  (apply make-TextInput model
+(defn mk-IntInput [model & attributes]
+  (apply mk-TextInput model
          :type ::IntInput
          :input-parsing-fn #(Integer/parseInt %)
          attributes))
 
 
 (derive ::TextArea ::HTMLElement)
-(defn make-TextArea [model & attributes]
-  (with1 (apply make-HTMLElement "textarea" model
+(defn mk-TextArea [model & attributes]
+  (with1 (apply mk-HTMLElement "textarea" model
                 :type ::TextArea
                 :handle-model-event-fn (fn [widget _ new-value]
                                          (jqVal widget new-value))
@@ -75,8 +75,8 @@ Note that the client-side hash halve is still transferred in clear text form fro
 
 
 (derive ::CKEditor ::HTMLElement)
-(defn make-CKEditor [model & attributes]
-  (apply make-TextArea model
+(defn mk-CKEditor [model & attributes]
+  (apply mk-TextArea model
          :type ::CKEditor
          :render-aux-js-fn (fn [widget]
                              (let [w-m @widget

@@ -2,7 +2,7 @@
 
 
 (derive ::UserModelBase ::Model)
-(defn make-UserModelBase [& attributes]
+(defn mk-UserModelBase [& attributes]
   (ref (apply assoc {}
               :type ::UserModelBase
 

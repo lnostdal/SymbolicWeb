@@ -111,8 +111,7 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
   "Returns a ContainerModel that is synced with CONTAINER-MODEL via FILTER-NODE-FN."
   ([^ContainerModel container-model
     ^clojure.lang.Fn filter-node-fn]
-     (mk-FilteredContainerModel container-model filter-node-fn
-                                #(cmn-data %)))
+     (mk-FilteredContainerModel container-model filter-node-fn #(cmn-data %)))
 
 
   ([^ContainerModel container-model

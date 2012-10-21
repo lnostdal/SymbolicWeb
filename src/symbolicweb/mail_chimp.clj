@@ -22,7 +22,7 @@
     :body body}))
 
 
-(defn make-MailChimp [api-key]
+(defn mk-MailChimp [api-key]
   {:api-key api-key
    :url "https://mandrillapp.com/api/1.0/"})
 
@@ -54,7 +54,7 @@
 
 
 
-#_(messages-send (make-MailChimp (:mandrill_key FreeOrDeal.core/-config-data-))
+#_(messages-send (mk-MailChimp (:mandrill_key FreeOrDeal.core/-config-data-))
                {:subject "test subject"
                 :from_email "larsnostdal@gmail.com"
                 :to [{:email "larsnostdal@gmail.com"}]

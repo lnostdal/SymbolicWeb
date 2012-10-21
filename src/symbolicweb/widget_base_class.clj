@@ -51,41 +51,36 @@
 
 
 
-(defn ^WidgetBase make-WidgetBase
-  ([^clojure.lang.Fn render-fn]
-     (make-WidgetBase render-fn {}))
+(defn mk-WidgetBase [^clojure.lang.Fn render-fn args]
+  (with1 (WidgetBase. (or (:id args) ;; ID
+                          (str "sw-" (generate-uid)))
+                      (if (:root-widget? args) ;; LIFETIME
+                        (mk-LifetimeRoot)
+                        (mk-Lifetime))
+                      render-fn ;; RENDER-FN
+                      (ref nil) ;; PARENT
+                      (vm nil) ;; VIEWPORT
+                      (ref {}) ;; CALLBACKS
+                      (:escape-html? args)) ;; ESCAPE-HTML?
 
-  ([^clojure.lang.Fn render-fn args]
-     (with1 (WidgetBase. (or (:id args)
-                             (str "sw-" (generate-uid))) ;; ID
-                         (if (:root-widget? args) ;; LIFETIME
-                           (mk-LifetimeRoot)
-                           (mk-Lifetime))
-                         render-fn ;; RENDER-FN
-                         (ref nil) ;; PARENT
-                         (vm nil) ;; VIEWPORT
-                         (ref {}) ;; CALLBACKS
-                         (:escape-html? args)) ;; ESCAPE-HTML?
+    (when-not (:root-widget? args)
+      (add-lifetime-activation-fn (.lifetime it)
+                                  (fn [^Lifetime lifetime]
+                                    (let [parent-viewport (viewport-of (parent-of it))]
+                                      ;; Viewport --> Widget (DOM events).
+                                      (alter parent-viewport update-in [:widgets]
+                                             assoc (.id it) it)
+                                      ;; Widget --> Viewport.
+                                      (vm-set (.viewport it) parent-viewport)))))
 
-
-       (when-not (:root-widget? args)
-         (add-lifetime-activation-fn (.lifetime it)
-                                     (fn [^Lifetime lifetime]
-                                       (let [parent-viewport (viewport-of (parent-of it))]
-                                         ;; Viewport --> Widget (DOM events).
-                                         (alter parent-viewport update-in [:widgets]
-                                                assoc (.id it) it)
-                                         ;; Widget --> Viewport.
-                                         (vm-set (.viewport it) parent-viewport)))))
-
-       (add-lifetime-deactivation-fn (.lifetime it)
-                                     (fn [^Lifetime lifetime]
-                                       (let [viewport (viewport-of it)]
-                                         ;; Viewport -/-> Widget (DOM events).
-                                         (alter viewport update-in [:widgets]
-                                                dissoc (.id it) it)
-                                         ;; Widget -/-> Viewport.
-                                         (vm-set (.viewport it) nil)))))))
+    (add-lifetime-deactivation-fn (.lifetime it)
+                                  (fn [^Lifetime lifetime]
+                                    (let [viewport (viewport-of it)]
+                                      ;; Viewport -/-> Widget (DOM events).
+                                      (alter viewport update-in [:widgets]
+                                             dissoc (.id it) it)
+                                      ;; Widget -/-> Viewport.
+                                      (vm-set (.viewport it) nil))))))
 
 
 

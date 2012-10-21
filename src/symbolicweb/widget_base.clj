@@ -1,13 +1,13 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn ^WidgetBase make-HTMLElement [^ValueModel value-model
-                                    ^clojure.lang.Fn render-fn
-                                    ^clojure.lang.Fn observer-fn
-                                    widget-base-args]
+(defn ^WidgetBase mk-HTMLElement [^ValueModel value-model
+                                  ^clojure.lang.Fn render-fn
+                                  ^clojure.lang.Fn observer-fn
+                                  widget-base-args]
   "  RENDER-FN: (fn [widget] ..)
   OBSERVER-FN: (fn [widget value-model old-value new-value] ..)"
-  (with1 (make-WidgetBase render-fn widget-base-args)
+  (with1 (mk-WidgetBase render-fn widget-base-args)
     (vm-observe value-model (.lifetime it) true
                 (fn [^Lifetime lifetime old-value new-value]
                   (observer-fn it old-value new-value)))))
@@ -21,14 +21,14 @@
                                                (jqHTML widget (if (.escape-html? widget)
                                                                 (escape-html new-value)
                                                                 new-value)))}}]
-  (make-HTMLElement value-model
-                    (fn [^WidgetBase widget] (str "<" html-element-type " id='" (.id widget) "'></" html-element-type ">"))
-                    observer-fn
-                    widget-base-args))
+  (mk-HTMLElement value-model
+                  (fn [^WidgetBase widget] (str "<" html-element-type " id='" (.id widget) "'></" html-element-type ">"))
+                  observer-fn
+                  widget-base-args))
 
 
 
-(defn ^WidgetBase make-Button [label & widget-base-args]
+(defn ^WidgetBase mk-Button [label & widget-base-args]
   "LABEL: \"Some Label\" or (vm \"Some Label\")"
   (mk-he "button"
          (if (= ValueModel (class label))
@@ -38,9 +38,9 @@
 
 
 
-(defn ^WidgetBase make-Link [^ValueModel value-model & widget-base-args]
+(defn ^WidgetBase mk-Link [^ValueModel value-model & widget-base-args]
   "HTML Link (a href) element. VALUE-MODEL represents the HREF attribute."
   (mk-he "a" value-model
          :observer-fn (fn [^WidgetBase widget old-value new-value]
                         (jqAttr widget "href" new-value))
-         :widget-base-args widget-base-args))
+         :widget-base-args (apply hash-map widget-base-args)))

@@ -55,8 +55,8 @@
       (second-format seconds))))
 
 
-(defn make-SmallIntInput [model & attributes]
-  (with1 (apply make-IntInput model attributes)
+(defn mk-SmallIntInput [model & attributes]
+  (with1 (apply mk-IntInput model attributes)
     (jqCSS it "width" "30px")))
 
 
@@ -64,20 +64,20 @@
 ;; TODO: Parse international date format: http://download.oracle.com/javase/7/docs/api/java/util/Date.html#parse(java.lang.String)
 ;; TODO: Support for AM / PM. This means using Calendar/HOUR instead of Calendar/HOUR_OF_DAY etc..
 ;; .. set(int year, int month, int date) ..
-#_(defn make-TimeAtInput [model & date?]
-  "Specific point in time related to server clock, think: At xx h xx m xx s.
+#_(defn mk-TimeAtInput [model & date?]
+    "Specific point in time related to server clock, think: At xx h xx m xx s.
 MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
-  (assert (= (class @model) java.util.GregorianCalendar))
-  (let [[hours minutes seconds] [(. @model get Calendar/HOUR)
-                                 (. @model get Calendar/MINUTE)
-                                 (. @model get Calendar/SECOND)]
-        hours   (vm hours)
-        minutes (vm minutes)
-        seconds (vm seconds)
-        date-str (vm "")]
+    (assert (= (class @model) java.util.GregorianCalendar))
+    (let [[hours minutes seconds] [(. @model get Calendar/HOUR)
+                                   (. @model get Calendar/MINUTE)
+                                   (. @model get Calendar/SECOND)]
+          hours   (vm hours)
+          minutes (vm minutes)
+          seconds (vm seconds)
+          date-str (vm "")]
 
-    (with1 (whc ["span"]
-             (sw (make-SmallIntInput hours
+      (with1 (whc ["span"]
+               (sw (mk-SmallIntInput hours
                                      :input-parsing-fn
                                      (fn [input-str]
                                        (with1 (Integer/parseInt input-str)
@@ -85,8 +85,8 @@ MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
                                                               (let [new-cal (. old-cal clone)]
                                                                 (. new-cal set Calendar/HOUR_OF_DAY it)
                                                                 new-cal)))))))
-             "h "
-             (sw (make-SmallIntInput minutes
+               "h "
+               (sw (mk-SmallIntInput minutes
                                      :input-parsing-fn
                                      (fn [input-str]
                                        (with1 (Integer/parseInt input-str)
@@ -94,8 +94,8 @@ MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
                                                               (let [new-cal (. old-cal clone)]
                                                                 (. new-cal set Calendar/MINUTE it)
                                                                 new-cal)))))))
-             "m "
-             (sw (make-SmallIntInput seconds
+               "m "
+               (sw (mk-SmallIntInput seconds
                                      :input-parsing-fn
                                      (fn [input-str]
                                        (with1 (Integer/parseInt input-str)
@@ -103,10 +103,10 @@ MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
                                                               (let [new-cal (. old-cal clone)]
                                                                 (. new-cal set Calendar/SECOND it)
                                                                 new-cal)))))))
-             "s"
-             (when date?
-               (str " Date: "
-                    (sw (with1 (make-TextInput date-str
+               "s"
+               (when date?
+                 (str " Date: "
+                      (sw (with1 (mk-TextInput date-str
                                                :input-parsing-fn
                                                (fn [input-str]
                                                  (with1 input-str
@@ -118,21 +118,21 @@ MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
                                                                           (let [new-cal (. old-cal clone)]
                                                                             (. new-cal set year month day)
                                                                             new-cal)))))))
-                          (add-response-chunk (str "$('#" (widget-id-of it) "').datepicker();") it))))))
-      (observe model it false
-               (fn [_ new-calendar]
-                 (vm-set hours (. new-calendar get Calendar/HOUR_OF_DAY))
-                 (vm-set minutes (. new-calendar get Calendar/MINUTE))
-                 (vm-set seconds (. new-calendar get Calendar/SECOND))
-                 (when date?
-                   (vm-set date-str (str (+ 1 (. new-calendar get Calendar/MONTH)) ;; Yup, it counts from 0.
-                                         "/"
-                                         (. new-calendar get Calendar/DATE)
-                                         "/"
-                                         (. new-calendar get Calendar/YEAR)))))))))
+                            (add-response-chunk (str "$('#" (widget-id-of it) "').datepicker();") it))))))
+        (observe model it false
+                 (fn [_ new-calendar]
+                   (vm-set hours (. new-calendar get Calendar/HOUR_OF_DAY))
+                   (vm-set minutes (. new-calendar get Calendar/MINUTE))
+                   (vm-set seconds (. new-calendar get Calendar/SECOND))
+                   (when date?
+                     (vm-set date-str (str (+ 1 (. new-calendar get Calendar/MONTH)) ;; Yup, it counts from 0.
+                                           "/"
+                                           (. new-calendar get Calendar/DATE)
+                                           "/"
+                                           (. new-calendar get Calendar/YEAR)))))))))
 
 
-(defn make-TimeInInput [model]
+(defn mk-TimeInInput [model]
   "Future point in time, think: In xx h xx m xx s.
 MODEL must be a ValueModel like created by e.g. (vm 60), where 60 is seconds."
   (let [[hours minutes seconds] (seconds-to-hms @model)
@@ -140,30 +140,30 @@ MODEL must be a ValueModel like created by e.g. (vm 60), where 60 is seconds."
         minutes (vm minutes)
         seconds (vm seconds)]
     (with1 (whc ["span"]
-             (sw (make-SmallIntInput hours
-                                     :input-parsing-fn
-                                     (fn [input-str]
-                                       (with1 (Integer/parseInt input-str)
-                                         (vm-set model (hms-to-seconds it
-                                                                       @minutes
-                                                                       @seconds))))))
-             "h "
-             (sw (make-SmallIntInput minutes
-                                     :input-parsing-fn
-                                     (fn [input-str]
-                                       (with1 (Integer/parseInt input-str)
-                                         (vm-set model (hms-to-seconds @hours
-                                                                       it
-                                                                       @seconds))))))
-             "m "
-             (sw (make-SmallIntInput seconds
-                                     :input-parsing-fn
-                                     (fn [input-str]
-                                       (with1 (Integer/parseInt input-str)
-                                         (vm-set model (hms-to-seconds @hours
-                                                                       @minutes
-                                                                       it))))))
-             "s")
+                (sw (mk-SmallIntInput hours
+                                      :input-parsing-fn
+                                      (fn [input-str]
+                                        (with1 (Integer/parseInt input-str)
+                                          (vm-set model (hms-to-seconds it
+                                                                        @minutes
+                                                                        @seconds))))))
+                "h "
+                (sw (mk-SmallIntInput minutes
+                                      :input-parsing-fn
+                                      (fn [input-str]
+                                        (with1 (Integer/parseInt input-str)
+                                          (vm-set model (hms-to-seconds @hours
+                                                                        it
+                                                                        @seconds))))))
+                "m "
+                (sw (mk-SmallIntInput seconds
+                                      :input-parsing-fn
+                                      (fn [input-str]
+                                        (with1 (Integer/parseInt input-str)
+                                          (vm-set model (hms-to-seconds @hours
+                                                                        @minutes
+                                                                        it))))))
+                "s")
 
       (observe model it true
                (fn [_ new-value]

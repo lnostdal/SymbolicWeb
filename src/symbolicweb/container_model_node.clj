@@ -4,7 +4,7 @@
 ;; NOTE: ContainerModelNode class (deftype) moved to container_model.clj since forward declaring this doesn't seem to work.
 
 
-(defn ^ContainerModelNode make-ContainerModelNode [data]
+(defn ^ContainerModelNode mk-ContainerModelNode [data]
   "Doubly linked list node."
   (ContainerModelNode. (ref nil)     ;; %CONTAINER-MODEL
                        (mk-Lifetime) ;; LIFETIME
@@ -14,7 +14,7 @@
 
 
 (defn ^ContainerModelNode cmn [data]
-  (make-ContainerModelNode data))
+  (mk-ContainerModelNode data))
 
 
 (defn cmn-remove [^ContainerModelNode node]
