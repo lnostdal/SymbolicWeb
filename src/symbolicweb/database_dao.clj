@@ -23,6 +23,8 @@ Swaps - with _ for INPUT-KEY and passes INPUT-VALUE through as is."
     [(keyword (str/replace (name input-key) \- \_))
      input-value]))
 
+
+
 (defn db-handle-input [^DBCache db-cache object input-key input-value]
   "SW --> DB.
 Returns two values in form of a vector [TRANSLATED-INPUT-KEY TRANSLATED-INPUT-VALUE] or returns NIL if the field in question,
@@ -31,12 +33,16 @@ represented by INPUT-KEY, is not to be stored in the DB."
     (f db-cache object input-key input-value)
     (default-db-handle-input object input-key input-value)))
 
+
+
 (defn default-db-handle-output [^DBCache db-cache object ^clojure.lang.Keyword output-key output-value]
   "DB --> SW.
 Swaps _ with - for OUTPUT-KEY and passes OUTPUT-VALUE through as is."
   (when output-key
     [(keyword (str/replace (name output-key) \_ \-))
      output-value]))
+
+
 
 (defn db-handle-output [^DBCache db-cache object ^clojure.lang.Keyword output-key output-value]
   "DB --> SW.
@@ -45,6 +51,7 @@ represented by OUTPUT-KEY, is not to be fetched from the DB."
   (if-let [f (.db-handle-output-fn db-cache)]
     (f db-cache object output-key output-value)
     (default-db-handle-output db-cache object output-key output-value)))
+
 
 
 (defn db-ensure-persistent-field [^DBCache db-cache object ^Long id ^clojure.lang.Keyword key ^ValueModel value-model]
@@ -57,6 +64,7 @@ Setup reactive SQL UPDATEs for VALUE-MODEL."
                     (when input-key
                       (swdbop value-model #(let [[input-key input-value] (db-handle-input db-cache object key @value-model)]
                                              [input-key input-value (.table-name db-cache) id]))))))))
+
 
 
 (defn db-backend-get [^DBCache db-cache ^Long id ^clojure.lang.Ref obj]
@@ -81,6 +89,7 @@ This does not add the item to the cache."
                      (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; If not, add it.
                      (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value))))))))
         obj))))
+
 
 
 (declare db-cache-put)
