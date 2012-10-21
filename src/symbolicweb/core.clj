@@ -4,7 +4,7 @@
   (:require [clojure.string :as str])
   (:require [clojure.pprint :refer (cl-format)])
 
-  (:import org.apache.commons.collections.map.ReferenceMap)
+  (:import (com.google.common.cache CacheBuilder CacheLoader))
 
   (:require [hiccup.core :refer (html)])
   (:require [hiccup.util :refer (escape-html)])

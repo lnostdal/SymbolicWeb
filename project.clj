@@ -8,7 +8,7 @@
 
                  [overtone/at-at "1.0.0"] ;; Scheduling.
 
-                 [commons-collections/commons-collections "3.2.1"] ;; For soft hash cache.
+                 [com.google.guava/guava "13.0.1"] ;; For soft hash cache.
 
                  [cheshire "4.0.4-SNAPSHOT"] ;; JSON.
 

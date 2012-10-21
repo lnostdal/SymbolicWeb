@@ -1,19 +1,33 @@
 (in-ns 'symbolicweb.core)
 
-;;; TODO: This stuff needs to go away. Issue #34 in FoD: Switch from Apache Commons to Guava?
-;; (let [id (long id)] ;; Because (.equals (int 261) 261) => false
 
-(defrecord DBCache
+;;;; This is a "row-based" (via ID column) cache or layer for DB tables.
+
+
+(defprotocol IDBCache
+  (set-internal-cache [db-cache new-cache])
+  (get-internal-cache [db-cache]))
+
+
+(deftype DBCache
     [^clojure.lang.Fn db-handle-input-fn
      ^clojure.lang.Fn db-handle-output-fn
-     ^clojure.lang.Agent agent
      ^String table-name
      ;; Function called on cache miss to construct the initial skeleton for the data from the DB to fill up.
      ^clojure.lang.Fn constructor-fn
      ;; Function called after CONSTRUCTOR-FN and after the DB data has been filled in for the object.
      ^clojure.lang.Fn after-fn
-     ;; http://commons.apache.org/collections/api/org/apache/commons/collections/ReferenceMap.html
-     ^ReferenceMap cache-data])
+     ;; http://docs.guava-libraries.googlecode.com/git-history/release/javadoc/com/google/common/cache/package-summary.html
+     ^:unsynchronized-mutable internal-cache]
+
+
+  IDBCache
+  (set-internal-cache [_ new-cache]
+    (set! internal-cache new-cache))
+
+  (get-internal-cache [_]
+    internal-cache))
+
 
 
 (defn default-db-handle-input [^DBCache db-cache object input-key input-value]
@@ -140,102 +154,98 @@ UPDATE-CACHE? is given a FALSE value."
               obj)))))))
 
 
-(defn mk-db-cache [table-name constructor-fn after-fn db-handle-input-fn db-handle-output-fn]
-  (DBCache.
-   (if db-handle-input-fn db-handle-input-fn default-db-handle-input)
-   (if db-handle-output-fn db-handle-output-fn default-db-handle-output)
-   (agent :db-cache-agent)
-   table-name
-   constructor-fn
-   after-fn
-   (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT)))
 
+
+(defn ^DBCache mk-DBCache [^String table-name
+                           ^clojure.lang.Fn constructor-fn
+                           ^clojure.lang.Fn after-fn
+                           db-handle-input-fn
+                           db-handle-output-fn]
+  (let [^DBCache db-cache (DBCache.
+                           (if db-handle-input-fn db-handle-input-fn default-db-handle-input)
+                           (if db-handle-output-fn db-handle-output-fn default-db-handle-output)
+                           table-name
+                           constructor-fn
+                           after-fn
+                           nil)]
+    (set-internal-cache db-cache
+                        (-> (CacheBuilder/newBuilder)
+                            (.softValues)
+                            (.concurrencyLevel (.availableProcessors (Runtime/getRuntime))) ;; TODO: Configurable?
+                            (.build)))
+    db-cache))
+
+
+
+;; TODO: All this seems to suck a bit too much.
 (defonce -db-cache-constructors- (atom {})) ;; table-name -> fn
-(defonce -db-caches- ;; table-name -> ReferenceMap
-  (ReferenceMap. ReferenceMap/HARD ReferenceMap/SOFT))
+(defonce -db-caches- ;; table-name -> DBCache
+  (-> (CacheBuilder/newBuilder)
+      (.concurrencyLevel (.availableProcessors (Runtime/getRuntime))) ;; TODO: Configurable?
+      (.build (proxy [CacheLoader] []
+                (load [table-name]
+                  ((get @-db-cache-constructors- table-name)))))))
 
-(defn db-get-cache [table-name]
-  ;; A cache for TABLE-NAME must be found.
-  {:post [(if % true (do (println "DB-GET-CACHE: No cache found for" table-name) false))]}
-  (if-let [db-cache (.get -db-caches- table-name)]
-    db-cache
-    (locking -db-caches-
-      (if-let [db-cache (.get -db-caches- table-name)]
-        db-cache
-        (when-let [db-cache (get @-db-cache-constructors- table-name)]
-          (let [db-cache (db-cache)]
-            (.put -db-caches- table-name db-cache)
-            db-cache))))))
 
-(defn db-reset-cache [table-name]
-  (locking -db-caches-
-    (.remove -db-caches- table-name)))
 
-(defn reset-db-cache [table-name]
-  (db-reset-cache table-name))
+(defn ^DBCache db-get-cache [^String table-name]
+  (.get -db-caches- table-name))
+
+
+
+(defn ^DBCache db-reset-cache [^String table-name]
+  (.invalidate -db-caches- table-name))
+
 
 
 (defn db-cache-put [^DBCache db-cache ^Long id obj]
   "Store association between ID and OBJ in DB-CACHE.
-Fails (via assert) if an object with the same id already exists in DB-CACHE."
+If ID already exists, the entry will be overwritten."
   (let [id (long id)] ;; Because (.equals (int 261) 261) => false
-    (locking db-cache
-      (let [cache-data (.cache-data db-cache)]
-        (assert (not (.containsKey cache-data id)) "DB-CACHE-PUT: Ups. This shouldn't happen.")
-        (.put cache-data id obj)))))
+    (.put (get-internal-cache db-cache) id obj)))
 
-
-(defn db-cache-get [^DBCache db-cache ^Long id after-construction-fn]
-  "Get object based on ID from DB-CACHE or backend (via CONSTRUCTOR-FN in DB-CACHE).
-
-Assuming DB-CACHE-GET is the only function used to fetch objects from the back-end (DB), this will do the needed locking to ensure
-that only one object with id ID exists in the cache and the system at any point in time. It'll fetch from the DB using
-:CONSTRUCTOR-FN from DB-CACHE."
-  (io! "DB-CACHE-GET: This (I/O) cannot be done within DOSYNC or SWSYNC.")
-  (let [id (long id)] ;; Because (.equals (int 261) 261) => false
-    (if-let [cache-entry (.get (.cache-data db-cache) id)]
-      cache-entry
-      (if-let [cache-entry (locking db-cache (.get (.cache-data db-cache) id))] ;; Check cache again while within lock.
-        cache-entry
-        ;; We're OK with this stuff manipulating ValueModels within a WITH-SW-DB context;
-        ;; see the implementation of VM-SET in model.clj.
-        (binding [*in-db-cache-get?* true]
-          (if-let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-            ;; Check cache yet again while within lock; also possibly adding NEW-OBJ to it then fully initializing NEW-OBJ, still
-            ;; within lock.
-            (locking db-cache
-              (if-let [cache-entry (.get (.cache-data db-cache) id)]
-                cache-entry
-                (with1 (dosync (after-construction-fn ((.after-fn db-cache) new-obj)))
-                  (db-cache-put db-cache id new-obj))))
-            nil))))))
 
 
 (defn db-cache-remove [^DBCache db-cache ^Long id]
   "Removes object based on ID from DB-CACHE."
   (let [id (long id)] ;; Because (. (Int. 261) equals 261) => false
-    (locking db-cache
-      (.remove (.cache-data db-cache)
-               id))))
+    (.invalidate (get-internal-cache db-cache) id)))
+
 
 
 (defn db-put
   "SQL `INSERT ...'."
-  ([object table-name]
+  ([object ^String table-name]
      (db-put object table-name true))
-  ([object table-name ^Boolean update-cache?]
-     (db-backend-put object
-                     (db-get-cache table-name)
-                     update-cache?)))
+
+  ([object ^String table-name ^Boolean update-cache?]
+     (db-backend-put object (db-get-cache table-name) update-cache?)))
+
 
 
 (defn db-get
   "SQL `SELECT ...'.
 CONSTRUCTION-FN is called with the resulting (returning) object as argument on cache miss."
-  ([^Long id table-name]
-     (db-get id table-name (fn [obj] obj)))
-  ([^Long id table-name after-construction-fn]
-     (db-cache-get (db-get-cache table-name) id after-construction-fn)))
+  ([^Long id ^String table-name]
+     (db-get id table-name identity))
+
+
+  ([^Long id ^String table-name ^clojure.lang.Fn after-construction-fn]
+     (io! "DB-CACHE-GET: This (I/O) cannot be done within DOSYNC or SWSYNC.")
+     (let [id (long id) ;; Because (.equals (int 261) 261) => false
+           ^DBCache db-cache (db-get-cache table-name)]
+       (try
+         (.get (get-internal-cache db-cache) id
+               (fn []
+                 ;; Binding this makes VMs settable within the currently active WITH-SW-DB context.
+                 ;; See the implementation of VM-SET in value_model.clj.
+                 (binding [*in-db-cache-get?* true]
+                   (let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                     (dosync (after-construction-fn ((.after-fn db-cache) new-obj)))))))
+         (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
+           (println "DB-CACHE-GET: Object with ID" id "not found in" (.table-name db-cache))
+           nil)))))
+
 
 
 ;; TODO:
