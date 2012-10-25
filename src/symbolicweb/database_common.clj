@@ -18,6 +18,7 @@
     (delay {:datasource cpds})))
 
 
+
 (defonce -pooled-db-spec-
   (atom (mk-db-pool (let [db-host  "localhost"
                           db-port  5432
@@ -29,6 +30,7 @@
                        :subname (str "//" db-host ":" db-port "/" db-name)
                        :user user
                        :password password}))))
+
 
 
 (defn %with-sw-connection [body-fn]
@@ -52,10 +54,12 @@
           (throw e))))))
 
 
+
 (defn abort-transaction [return-value]
   (throw (ex-info "WITH-SW-DB: ABORT-TRANSACTION"
                   {:with-sw-db :abort-transaction
                    :return-value return-value})))
+
 
 
 (defn with-sw-db [body-fn]
@@ -117,6 +121,7 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
                  (.execute stmt (str "ROLLBACK PREPARED '" id-str "';")))
                (do (.rollback conn) (.setAutoCommit conn true)))
              (.close stmt))))))))
+
 
 
 (defn db-stmt [sql-str]

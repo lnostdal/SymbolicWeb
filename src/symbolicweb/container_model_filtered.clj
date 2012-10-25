@@ -30,7 +30,6 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
                                        ^clojure.lang.Fn filter-node-fn
                                        ^clojure.lang.Fn extract-vm-from-node-fn
                                        event-args]
-
   (letfn [(add-node [^ContainerModelNode inner-new-node]
             (let [[event-sym & event-args] event-args]
               (case event-sym

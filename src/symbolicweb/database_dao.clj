@@ -155,7 +155,6 @@ UPDATE-CACHE? is given a FALSE value."
 
 
 
-
 (defn ^DBCache mk-DBCache [^String table-name
                            ^clojure.lang.Fn constructor-fn
                            ^clojure.lang.Fn after-fn

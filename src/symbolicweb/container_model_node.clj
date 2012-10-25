@@ -13,8 +13,10 @@
                        data))        ;; DATA
 
 
+
 (defn ^ContainerModelNode cmn [data]
   (mk-ContainerModelNode data))
+
 
 
 (defn cmn-remove [^ContainerModelNode node]
@@ -44,6 +46,7 @@ This mirrors the jQuery `remove' function:
       (cmn-set-left-node (cmn-right-node node) (cmn-left-node node)))
 
     (notify-observers (.observable cm) 'cmn-remove node)))
+
 
 
 (defn cmn-after [^ContainerModelNode existing-node ^ContainerModelNode new-node]
@@ -77,6 +80,7 @@ This mirrors the jQuery `after' function:
     (cmn-set-right-node existing-node new-node)
 
     (notify-observers (.observable cm) 'cmn-after existing-node new-node)))
+
 
 
 (defn cmn-before [^ContainerModelNode existing-node ^ContainerModelNode new-node]
