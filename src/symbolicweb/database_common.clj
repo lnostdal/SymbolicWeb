@@ -33,7 +33,7 @@
 
 
 
-(defn %with-sw-connection [body-fn]
+(defn %with-sw-connection [^clojure.lang.Fn body-fn]
   (io! "WITH-SW-CONNECTION: Cannot be used directly while within Clojure transaction (DOSYNC or SWSYNC).")
   (assert (not *in-sw-db?*)
           "WITH-SW-CONNECTION: Nesting of WITH-SW-CONNECTION forms not allowed.")
@@ -62,7 +62,7 @@
 
 
 
-(defn with-sw-db [body-fn]
+(defn with-sw-db [^clojure.lang.Fn body-fn]
   "BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
 finalized after HOLDING-TRANSACTION has finished executing.
 HOLDING-TRANSACTION is called when the transaction is pending finalization, and it takes one argument; ABORT-TRANSACTION (fn).
@@ -124,7 +124,7 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
 
 
 
-(defn db-stmt [sql-str]
+(defn db-stmt [^String sql-str]
   (let [stmt (.createStatement (find-connection))]
     (.execute stmt sql-str)
     (.close stmt)))
