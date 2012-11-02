@@ -1,6 +1,15 @@
 (in-ns 'symbolicweb.core)
 
-;; TODO: Add an async version of this with a Ref only at the "top" or "head" (I think).
+
+(defmacro cm-iterate [container-model cmn-symbol & body]
+  `(loop [node# (cm-head-node ~container-model)]
+     (when node#
+       (let [~cmn-symbol node#]
+         (if-let [ret-value# (do ~@body)]
+           ret-value#
+           (when-let [right-node# (cmn-right-node node#)]
+             (recur right-node#)))))))
+
 
 
 ;; Doubly linked list node.
