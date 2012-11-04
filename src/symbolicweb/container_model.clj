@@ -2,6 +2,8 @@
 
 
 (defmacro cm-iterate [container-model cmn-symbol & body]
+  "Iterate through CONTAINER-MODEL executing BODY with CMN-SYMBOL bound to each CMN in CONTAINER-MODEL until the first BODY form
+returns a non-false value."
   `(loop [node# (cm-head-node ~container-model)]
      (when node#
        (let [~cmn-symbol node#]
