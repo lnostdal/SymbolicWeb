@@ -6,12 +6,13 @@
             ;; Assign the hashCodes of the CMNs of CONTAINER-MODEL to the DOM so we can find the CMNs later.
             (loop [node (cm-head-node container-model)
                    index 1]
-              (add-response-chunk (str "$('#" (.id container-view) " *:nth-child(" index ")')"
-                                       ".data('cmn_hash_code', '" (.hashCode node) "');")
-                                  container-view)
-              (when-let [right-node (cmn-right-node node)]
-                (recur right-node
-                       (inc index)))))]
+              (when node
+                (add-response-chunk (str "$('#" (.id container-view) " *:nth-child(" index ")')"
+                                         ".data('cmn_hash_code', '" (.hashCode node) "');")
+                                    container-view)
+                (when-let [right-node (cmn-right-node node)]
+                  (recur right-node
+                         (inc index))))))]
 
     (add-response-chunk (str "$('#" (.id container-view) "').sortable();") container-view)
     (update-dom-hash-codes)
