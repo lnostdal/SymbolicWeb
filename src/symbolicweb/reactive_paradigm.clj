@@ -46,6 +46,10 @@
 
 
 
+(def ^:dynamic *observables-stack* #{}) ;; Using a set instead of a vector since we don't care about order.
+
+
+
 (defn observe [^Observable observable lifetime ^clojure.lang.Fn callback]
   "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and last until it is
 deactivated. If given FALSE, observation will start at once and last forever; as long as OBSERVABLE exists.
@@ -54,16 +58,21 @@ deactivated. If given FALSE, observation will start at once and last forever; as
 
 Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
 as the first argument to CALLBACK."
-  (if lifetime
-    (let [inner-lifetime (mk-Lifetime)
-          callback (partial callback inner-lifetime)]
-      (add-lifetime-activation-fn inner-lifetime (fn [_] (add-observer observable callback)))
-      (add-lifetime-deactivation-fn inner-lifetime (fn [_] (remove-observer observable callback)))
-      (attach-lifetime lifetime inner-lifetime)
-      inner-lifetime)
-    (do
-      (add-observer observable (partial callback false))
-      false)))
+  (let [callback (fn [& args]
+                   (if (contains? *observables-stack* observable)
+                     (throw (Exception. "OBSERVE: Possible infinite recursion; bailed out."))
+                     (binding [*observables-stack* (conj *observables-stack* observable)]
+                       (apply callback args))))]
+    (if lifetime
+      (let [inner-lifetime (mk-Lifetime)
+            callback (partial callback inner-lifetime)]
+        (add-lifetime-activation-fn inner-lifetime (fn [_] (add-observer observable callback)))
+        (add-lifetime-deactivation-fn inner-lifetime (fn [_] (remove-observer observable callback)))
+        (attach-lifetime lifetime inner-lifetime)
+        inner-lifetime)
+      (do
+        (add-observer observable (partial callback false))
+        false))))
 
 
 
