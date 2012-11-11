@@ -10,7 +10,11 @@ SW was originally written in Common Lisp, and that version is still found at thi
 
 ## Status
 
-Very, very alpha.
+Stable, but not many features yet.
+It runs the work-in-progress e-commerce platform Free or Deal. Some buzzwords: "shopping, gamification and social networking
+mixed".
+
+  http://freeordeal.no/ (Norwegian only, for now)
 
 
 
@@ -85,7 +89,7 @@ found in jQuery. E.g., append, prepend, before and after:
 
 ## License
 
-Copyright (C) 2011, 2012 Lars Rune Nøstdal
+Copyright (C) 2005 - 2011, 2012 Lars Rune Nøstdal
 
 Distributed under the GNU Affero General Public License (for now):
 
