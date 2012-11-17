@@ -1,4 +1,7 @@
 (ns symbolicweb.facebook
+  (:import clojure.lang.Ref
+           clojure.lang.Keyword
+           clojure.lang.Fn)
   (:require [clojure.string :as str])
   (:use [clojure.pprint :only (cl-format)])
   (:use symbolicweb.core))
