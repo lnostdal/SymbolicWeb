@@ -6,15 +6,15 @@
   "Find or create (if not found) new View of NODE in context of CONTAINER-VIEW.
 If FIND-ONLY? is true no new View will be constructed if an existing one was not found."
   ([^WidgetBase container-view
-    ^clojure.lang.Ref views-of-nodes
-    ^clojure.lang.Fn view-from-node-fn
+    ^Ref views-of-nodes
+    ^Fn view-from-node-fn
     ^ContainerModelNode node]
      (view-of-node-in-context container-view views-of-nodes view-from-node-fn node false))
 
 
   ([^WidgetBase container-view
-    ^clojure.lang.Ref views-of-nodes
-    ^clojure.lang.Fn view-from-node-fn
+    ^Ref views-of-nodes
+    ^Fn view-from-node-fn
     ^ContainerModelNode node
     ^Boolean find-only?]
      (if-let [existing-view (get (ensure views-of-nodes) node)]
@@ -28,8 +28,8 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 (defn handle-container-view-event [^WidgetBase container-view
                                    ^ContainerModel container-model
-                                   ^clojure.lang.Ref views-of-nodes
-                                   ^clojure.lang.Fn view-from-node-fn
+                                   ^Ref views-of-nodes
+                                   ^Fn view-from-node-fn
                                    event-args]
   "Forward CONTAINER-MODEL related operations/events to the CONTAINER-VIEW end."
   (let [[event-sym & event-args] event-args]
@@ -62,7 +62,7 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 
-(defn ^WidgetBase mk-ContainerView [^ContainerModel container-model ^clojure.lang.Fn view-from-node-fn & args]
+(defn ^WidgetBase mk-ContainerView [^ContainerModel container-model ^Fn view-from-node-fn & args]
   "  VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-nodel] ..)"
   (let [container-view (mk-WidgetBase (fn [^WidgetBase container-view] (str "<div id='" (.id container-view) "'></div>"))
                                       (apply hash-map args))

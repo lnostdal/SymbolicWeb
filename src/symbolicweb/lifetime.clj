@@ -41,11 +41,11 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
 
-(deftype Lifetime [^clojure.lang.Ref state ;; :initial --> :member-of-tree --> :activated --> :deactivated
-                   ^clojure.lang.Ref parent ;; nil, Lifetime or :lifetime-root
-                   ^clojure.lang.Ref children ;; []
-                   ^clojure.lang.Ref on-lifetime-activation-fns ;; []
-                   ^clojure.lang.Ref on-lifetime-deactivation-fns] ;; []
+(deftype Lifetime [^Ref state ;; :initial --> :member-of-tree --> :activated --> :deactivated
+                   ^Ref parent ;; nil, Lifetime or :lifetime-root
+                   ^Ref children ;; []
+                   ^Ref on-lifetime-activation-fns ;; []
+                   ^Ref on-lifetime-deactivation-fns] ;; []
 
   ILifetime
   (lifetime-state-of [_] (ensure state))
@@ -111,7 +111,7 @@ If LIFETIME is active it will be deactivated with all its children.")
       (do
         (ref-set state :activated)
         ;; Root and down to leaves (bottom).
-        (doseq [^clojure.lang.Fn f (ensure on-lifetime-activation-fns)]
+        (doseq [^Fn f (ensure on-lifetime-activation-fns)]
           (f lifetime))
         (doseq [^Lifetime child (lifetime-children-of lifetime)]
           (do-lifetime-activation child))))
@@ -127,7 +127,7 @@ If LIFETIME is active it will be deactivated with all its children.")
       :activated
       (do
         (ref-set state :deactivated)
-        (doseq [^clojure.lang.Fn f (ensure on-lifetime-deactivation-fns)]
+        (doseq [^Fn f (ensure on-lifetime-deactivation-fns)]
           (f lifetime)))
 
       nil)

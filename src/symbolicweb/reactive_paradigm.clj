@@ -16,8 +16,8 @@
 
 
 
-(deftype Observable [^clojure.lang.Ref observers ;; #{}
-                     ^clojure.lang.Fn notify-observers-fn]
+(deftype Observable [^Ref observers ;; #{}
+                     ^Fn notify-observers-fn]
   IObservable
   (add-observer [_ observer]
     (if (get (ensure observers) observer)
@@ -35,7 +35,7 @@
 
 
 
-(defn ^Observable mk-Observable [^clojure.lang.Fn notify-observers-fn]
+(defn ^Observable mk-Observable [^Fn notify-observers-fn]
   (Observable. (ref #{}) ;; OBSERVERS
                notify-observers-fn))
 
@@ -50,7 +50,7 @@
 
 
 
-(defn observe [^Observable observable lifetime ^clojure.lang.Fn callback]
+(defn observe [^Observable observable lifetime ^Fn callback]
   "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and last until it is
 deactivated. If given FALSE, observation will start at once and last forever; as long as OBSERVABLE exists.
 

@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
-(defn ref? [x]
-  (= clojure.lang.Ref (type x)))
+(defn ^Boolean ref? [x]
+  (= Ref (type x)))
 
 (def -http-server-string- "SymbolicWeb (nostdal.org)")
 
