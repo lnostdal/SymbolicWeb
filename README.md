@@ -57,7 +57,7 @@ browser, try:
 
 
 
-### Style
+## Style
 
 130 column width using a 1920 or 1600 pixel wide screen should give room for two columns while still being readable:
 
@@ -84,6 +84,17 @@ found in jQuery. E.g., append, prepend, before and after:
 
 * http://api.jquery.com/category/manipulation/dom-insertion-inside/
 * http://api.jquery.com/category/manipulation/dom-insertion-outside/
+
+
+
+
+## Terminology and abbreviations
+
+* MTX: Memory transaction; e.g. DOSYNC.
+* DBTX: Database transaction; e.g. WITH-SW-DB.
+* 2PC: Two-phase transaction; database then memory transaction; e.g. SWSYNC, or WITH-SW-DB with its HOLDING-TRANSACTION callback
+  made use of. http://en.wikipedia.org/wiki/Two-phase_commit_protocol
+
 
 
 
