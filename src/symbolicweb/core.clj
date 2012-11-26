@@ -1,7 +1,8 @@
 (ns symbolicweb.core
   (:import clojure.lang.Ref
            clojure.lang.Keyword
-           clojure.lang.Fn)
+           clojure.lang.Fn
+           clojure.lang.MapEntry)
   (:require [clojure.math.numeric-tower :refer (round)])
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])

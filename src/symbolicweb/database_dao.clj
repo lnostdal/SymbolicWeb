@@ -188,7 +188,7 @@ UPDATE-CACHE? is given a FALSE value."
 
 
 (defn ^DBCache db-get-cache [^String table-name]
-  (.get -db-caches- table-name))
+  (.get ^com.google.common.cache.LocalCache$LocalLoadingCache -db-caches- table-name))
 
 
 
@@ -197,7 +197,7 @@ UPDATE-CACHE? is given a FALSE value."
 
 
 
-(defn db-cache-put [^DBCache db-cache ^Long id obj]
+(defn db-cache-put [^DBCache db-cache ^Long id ^Ref obj]
   "Store association between ID and OBJ in DB-CACHE.
 If ID already exists, the entry will be overwritten."
   (let [id (long id)] ;; Because (.equals (int 261) 261) => false
@@ -213,11 +213,12 @@ If ID already exists, the entry will be overwritten."
 
 
 (defn db-put
-  "SQL `INSERT ...'."
-  ([object ^String table-name]
+  "SQL `INSERT ...'.
+Blocking."
+  ([^Ref object ^String table-name]
      (db-put object table-name true))
 
-  ([object ^String table-name ^Boolean update-cache?]
+  ([^Ref object ^String table-name ^Boolean update-cache?]
      (db-backend-put object (db-get-cache table-name) update-cache?)))
 
 
@@ -229,12 +230,12 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
      (db-get id table-name identity))
 
 
-  ([^Long id ^String table-name ^clojure.lang.Fn after-construction-fn]
+  ([^Long id ^String table-name ^Fn after-construction-fn]
      (io! "DB-CACHE-GET: This (I/O) cannot be done within DOSYNC or SWSYNC.")
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
            ^DBCache db-cache (db-get-cache table-name)]
        (try
-         (.get (get-internal-cache db-cache) id
+         (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
                (fn []
                  ;; Binding this makes VMs settable within the currently active WITH-SW-DB context.
                  ;; See the implementation of VM-SET in value_model.clj.
@@ -248,6 +249,6 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
 
 
 ;; TODO:
-(defn db-remove [id table-name]
+(defn db-remove [^Long id ^String table-name]
   "SQL `DELETE FROM ...'."
   #_(db-backend-remove id table-name))
