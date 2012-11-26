@@ -18,13 +18,14 @@
 
   (:use [cheshire.core :as json]) ;; JSON.
 
-  (:require [clojure.java.jdbc :refer (with-connection
-                                       with-query-results
-                                       find-connection
-                                       update-values
-                                       as-quoted-identifier
-                                       insert-record
-                                       delete-rows)])
+  (:require [clojure.java.jdbc :as jdbc
+             :refer (with-connection
+                     with-query-results
+                     find-connection
+                     update-values
+                     as-quoted-identifier
+                     insert-record
+                     delete-rows)])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource)
 
   (:require ring.util.codec)
@@ -42,11 +43,13 @@
   (:require symbolicweb.value_model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
-  (:require symbolicweb.database-common)
-  (:require symbolicweb.database-dao)
 
   (:require symbolicweb.container-model)
   (:require symbolicweb.container-model-node)
+
+  (:require symbolicweb.database-types)
+  (:require symbolicweb.database-common)
+  (:require symbolicweb.database-dao)
 
   (:require symbolicweb.widget-base-class)
   (:require symbolicweb.jquery)

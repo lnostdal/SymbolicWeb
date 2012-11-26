@@ -1,107 +1,177 @@
 (in-ns 'symbolicweb.core)
 
 
-;;;; This is a "row-based" (via ID column) cache or layer for DB tables.
-
-
-(defprotocol IDBCache
-  (set-internal-cache [db-cache new-cache])
-  (get-internal-cache [db-cache]))
-
-
-(deftype DBCache
-    [^clojure.lang.Fn db-handle-input-fn
-     ^clojure.lang.Fn db-handle-output-fn
-     ^String table-name
-     ;; Function called on cache miss to construct the initial skeleton for the data from the DB to fill up.
-     ^clojure.lang.Fn constructor-fn
-     ;; Function called after CONSTRUCTOR-FN and after the DB data has been filled in for the object.
-     ^clojure.lang.Fn after-fn
-     ;; http://docs.guava-libraries.googlecode.com/git-history/release/javadoc/com/google/common/cache/package-summary.html
-     ^:unsynchronized-mutable internal-cache]
-
-
-  IDBCache
-  (set-internal-cache [_ new-cache]
-    (set! internal-cache new-cache))
-
-  (get-internal-cache [_]
-    internal-cache))
+;;;; This is a "row-based" (via ID column) cache or layer for DB tables
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; This maps a DB row to a Clojure Ref holding a map where the values might be ValueModels or ContainerModels (SQL array refs).
+;;
+;; It further sets up reactive connections between the Clojure side ValueModels or ContainerModels and their associated
+;; DB entries; meaning any change to the content of these objects will be synced to the DB.
+;;
+;;
+;; * DB-PUT: SQL INSERT.
+;; * DB-GET: SQL SELECT.
+;; * DB-ENSURE-PERSISTENT-VM-FIELD: SQL UPDATE.
+;; * DB-ENSURE-PERSISTENT-CM-FIELD: SQL UPDATE.   (SQL array)
+;;
+;;
+;; TODO: ContainerModel based abstraction for SQL queries? This probably belongs in a different file; it's a different concept.
+;; TODO: It should perhaps be possible to call DB-PUT many times on the same object, but only have it added to the DB once.
+;;       I.e., it'll change the :ID field from NIL (only) to some integer in a synchronized fashion.
 
 
 
-(defn default-db-handle-input [^DBCache db-cache object input-key input-value]
-  "SW --> DB.
-Swaps - with _ for INPUT-KEY and passes INPUT-VALUE through as is."
-  (when input-key
-    [(keyword (str/replace (name input-key) \- \_))
-     input-value]))
+(defn db-db-array-to-clj-vector [^java.sql.Array db-array]
+  (vec (.getArray db-array)))
+
+
+(defn ^String db-clj-coll-to-db-array [clj-coll ^String db-type]
+  (cl-format false "ARRAY[~{~S~^, ~}]::~A[]" clj-coll db-type))
+
+
+(defn ^String db-clj-cm-to-db-array [^ContainerModel container-model ^String db-type]
+  (with-local-vars [elts []]
+    (cm-iterate container-model _ obj
+      (var-alter elts conj @(:id @obj))
+      false)
+    (cl-format false "ARRAY[~{~S~^, ~}]::~A[]" (var-get elts) db-type)))
+
+
+(defn ^Keyword db-default-db-to-clj-key-transformer [^Keyword k]
+  ":some_field --> :some-field"
+  (keyword (str/replace (name k) \_ \-)))
+
+
+;; TODO: Consider returning a String instead?
+(defn ^Keyword db-default-clj-to-db-key-transformer [^Keyword k]
+  ":some-field --> :some_field"
+  (keyword (str/replace (name k) \- \_)))
 
 
 
-(defn db-handle-input [^DBCache db-cache object input-key input-value]
+(defn db-default-handle-input [^DBCache db-cache ^Ref object ^Keyword clj-key clj-value]
+  "SW --> DB."
+  [(if (= :id clj-key)
+     nil
+     (db-default-clj-to-db-key-transformer clj-key))
+   clj-value])
+
+
+
+(defn db-handle-input [^DBCache db-cache ^Ref object ^Keyword clj-key clj-value]
   "SW --> DB.
 Returns two values in form of a vector [TRANSLATED-INPUT-KEY TRANSLATED-INPUT-VALUE] or returns NIL if the field in question,
 represented by INPUT-KEY, is not to be stored in the DB."
-  (if-let [f (.db-handle-input-fn db-cache)]
-    (f db-cache object input-key input-value)
-    (default-db-handle-input object input-key input-value)))
+  (if-let [^Fn f (.db-handle-input-fn db-cache)]
+    (f db-cache object clj-key clj-value)
+    (db-default-handle-input object clj-key clj-value)))
 
 
 
-(defn default-db-handle-output [^DBCache db-cache object ^clojure.lang.Keyword output-key output-value]
-  "DB --> SW.
-Swaps _ with - for OUTPUT-KEY and passes OUTPUT-VALUE through as is."
-  (when output-key
-    [(keyword (str/replace (name output-key) \_ \-))
-     output-value]))
+(defn db-ensure-persistent-vm-field [^DBCache db-cache ^Ref object ^Long id ^Keyword clj-key
+                                     ^ValueModel value-model]
 
-
-
-(defn db-handle-output [^DBCache db-cache object ^clojure.lang.Keyword output-key output-value]
-  "DB --> SW.
-Returns two values in form of a vector [TRANSLATED-OUTPUT-KEY TRANSLATED-OUTPUT-VALUE] or returns NIL if the field in question,
-represented by OUTPUT-KEY, is not to be fetched from the DB."
-  (if-let [f (.db-handle-output-fn db-cache)]
-    (f db-cache object output-key output-value)
-    (default-db-handle-output db-cache object output-key output-value)))
-
-
-
-(defn db-ensure-persistent-field [^DBCache db-cache object ^Long id ^clojure.lang.Keyword key ^ValueModel value-model]
-  "SQL `UPDATE ...'.
-Setup reactive SQL UPDATEs for VALUE-MODEL."
+  "Sets up reactive SQL UPDATEs for VALUE-MODEL."
   (vm-observe value-model nil false
-              (fn [lifetime old-value new-value]
-                (when-not (= old-value new-value) ;; TODO: Needed?
-                  (let [[input-key input-value] (db-handle-input db-cache object key new-value)] ;; is even sent to callbacks.
-                    (when input-key
-                      (swdbop value-model #(let [[input-key input-value] (db-handle-input db-cache object key @value-model)]
-                                             [input-key input-value (.table-name db-cache) id]))))))))
+              (fn [inner-lifetime old-value new-value]
+                ;; NOTE: Passing VALUE-MODEL here instead of NEW-VALUE should be OK since we're within the same MTX.
+                (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
+                  (swdbop
+                    (update-values (.table-name db-cache) ["id = ?" id]
+                                   {(as-quoted-identifier \" db-key) db-value})))
+                #_(when-not (= old-value new-value) ;; TODO: Needed?
+                  ;; TODO: Why is DB-HANDLE-INPUT called twice here?
+                  (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
+                    (when db-key
+                      (swdbop value-model #(let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
+                                             [db-key db-value (.table-name db-cache) id]))))))))
 
 
 
-(defn db-backend-get [^DBCache db-cache ^Long id ^clojure.lang.Ref obj]
+(defn db-ensure-persistent-cm-field [^DBCache db-cache ^Ref object ^Long id ^Keyword clj-key
+                                     ^ContainerModel container-model]
+  "Sets up reactive SQL UPDATEs for CONTAINER-MODEL."
+  (observe (.observable container-model) nil
+           (fn [inner-lifetime & args]
+             (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)
+                   db-value (db-clj-cm-to-db-array db-value "bigint")]
+               (swdbop
+                 (jdbc/do-prepared (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value
+                                        " WHERE id = ?;")
+                                   [id]))))))
+
+
+
+(defn ^Ref db-value-to-vm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key clj-value]
+  "Updates ValueModel associated with CLJ-KEY in OBJECT to CLJ-VALUE, or adds a new ValueModel to OBJECT if no entry was found.
+Returns OBJECT."
+  ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases...
+  (dosync
+   (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
+     (do ;; Yes; mutate it.
+       (vm-set existing-vm clj-value)
+       (db-ensure-persistent-vm-field db-cache object (:id db-row) clj-key existing-vm))
+     (let [^ValueModel new-vm (vm clj-value)] ;; No; add it.
+       (ref-set object (assoc (ensure object) clj-key new-vm))
+       (db-ensure-persistent-vm-field db-cache object (:id db-row) clj-key new-vm)))
+   object))
+
+
+
+(declare db-get)
+(defn ^Ref db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value]
+  (let [^clojure.lang.PersistentVector clj-value (db-db-array-to-clj-vector clj-value)]
+    (dosync
+     (if-let [^ContainerModel existing-cm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
+       (do ;; Yes; mutate it.
+         ;; TOOD: Sync existing data with data from DBs somehow? Not sure how, so we just clear out the stuff on the Clj end.
+         (cm-clear existing-cm)
+         (doseq [^Long id clj-value]
+           (cm-append existing-cm (cmn (db-get id (.table-name db-cache)))))
+         (db-ensure-persistent-cm-field db-cache object (:id db-row) clj-key existing-cm))
+       ;; TODO: DB-GET within DOSYNC won't do.
+       (let [^ContainerModel new-cm (with1 (cmn) ;; No; add it.
+                                      (doseq [^Long id clj-value]
+                                        (cm-append it (cmn (db-get id (.table-name db-cache))))))]
+         (db-ensure-persistent-cm-field db-cache object (:id db-row) clj-key new-cm)))
+     object)))
+
+
+
+(defn db-default-handle-output [^DBCache db-cache db-row ^Ref object]
+  "DB --> SW."
+  (doseq [^MapEntry entry db-row]
+    (let [^Keyword db-key (key entry)
+          db-value (val entry)]
+      (if (isa? (class db-value) java.sql.Array) ;; TODO: Also check if DB-KEY ends in "_refs" here?
+        (db-value-to-cm-handler db-cache db-row object
+                                (db-default-db-to-clj-key-transformer db-key)
+                                db-value)
+        (db-value-to-vm-handler db-cache db-row object
+                                (db-default-db-to-clj-key-transformer db-key)
+                                db-value)))))
+
+
+
+(defn db-handle-output [^DBCache db-cache ^Ref object db-row]
+  "DB --> SW."
+  (if-let [^Fn f (.db-handle-output-fn db-cache)]
+    (f db-cache db-row object)
+    (dosync (db-default-handle-output db-cache db-row object))))
+
+
+
+(defn db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
-Returns OBJ, or NIL if no entry with id ID was found in (:table-name DB-CACHE).
+Returns OBJ, or NIL if no entry with ID was found in (:table-name DB-CACHE).
 This does not add the item to the cache."
   (if (not *in-sw-db?*)
     (with-sw-db (fn [_] (db-backend-get db-cache id obj)))
     (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;")
                              id]
-      (when-let [res (first res)]
-        (dosync
-         (let [obj-m (ensure obj)]
-           (doseq [key_val res]
-             (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
-               (when output-key
-                 (if-let [output-vm (output-key obj-m)] ;; Does field OUTPUT-KEY already exist in OBJ?
-                   (do
-                     (vm-set output-vm output-value) ;; If so, mutate it.
-                     (db-ensure-persistent-field db-cache obj (:id res) output-key output-vm))
-                   (let [vm-output-value (vm output-value)]
-                     (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; If not, add it.
-                     (db-ensure-persistent-field db-cache obj (:id res) output-key vm-output-value))))))))
+      (when-let [db-row (first res)]
+        (db-handle-output db-cache obj db-row)
         obj))))
 
 
@@ -109,60 +179,77 @@ This does not add the item to the cache."
 (declare db-cache-put)
 (defn db-backend-put
   "SQL INSERT of OBJ whos keys and values are translated via DB-HANDLE-INPUT. This will also add OBJ to DB-CACHE unless
-UPDATE-CACHE? is given a FALSE value."
-  ([obj ^DBCache db-cache] (db-backend-put obj db-cache true))
-  ([obj ^DBCache db-cache ^Boolean update-cache?]
+UPDATE-CACHE? is given a FALSE value.
+Blocking.
+Returns OBJ when object was added or logical False when object was not added; e.g. if it has been added before."
+  ([^Ref obj ^DBCache db-cache] (db-backend-put obj db-cache true))
+  ([^Ref obj ^DBCache db-cache ^Boolean update-cache?]
      (with-sw-db
-       (fn [holding-transaction]
-         (let [record-data
+       (fn [^Fn holding-transaction]
+         (let [[abort-transaction? sql values-to-escape]
+               ;; Grab snapshot of all data and use it to generate SQL statement.
                (dosync
-                (assert (or (not (:id (ensure obj)))
-                            (not @(:id (ensure obj)))))
-                (with-local-vars [record-data {}]
-                  (doseq [key_val (ensure obj)]
-                    (when (isa? (class (val key_val)) ValueModel)
-                      (let [[input-key input-value] (db-handle-input db-cache obj (key key_val) @(val key_val))]
-                        (when input-key
-                          (var-set record-data (assoc (var-get record-data)
-                                                 input-key input-value))))))
-                  (var-get record-data)))
-               res (insert-record (.table-name db-cache) record-data)] ;; SQL INSERT.
-           ;; NOTE: Object added to cache before fields (added below) are there yet? I guess this is ok since only the one
-           ;; currently adding the object will "know about it" yet.
-           (when update-cache?
-             (db-cache-put db-cache (:id res) obj))
-           (holding-transaction
-            (fn [_]
-              ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
-              (dosync
-               (let [obj-m (ensure obj)]
-                 (doseq [key_val res]
-                   (let [[output-key output-value] (db-handle-output db-cache obj (key key_val) (val key_val))]
-                     (when output-key
-                       (if (= ::not-found (get obj-m output-key ::not-found))
-                         (let [vm-output-value (vm output-value)]
-                           (ref-set obj (assoc (ensure obj) output-key vm-output-value)) ;; Add.
-                           (db-ensure-persistent-field db-cache obj (:id res)
-                                                       output-key vm-output-value))
-                         (do
-                           (vm-set (output-key obj-m) output-value) ;; Update.
-                           (db-ensure-persistent-field db-cache obj (:id res)
-                                                       output-key (output-key obj-m)))))))))
-              ;; Initialize object further; perhaps add external observers of the objects fields etc..
-              (dosync
-               ((.after-fn db-cache) obj))
-              obj)))))))
+                (if (and (:id (ensure obj))
+                         @(:id (ensure obj)))
+                  [true] ;; ABORT-TRANSACTION?
+                  (with-local-vars [record-data {}
+                                    values-to-escape []]
+                    (doseq [^MapEntry key_val (ensure obj)]
+                      ;; TODO: Is this test needed? Why can't DB-HANDLE-INPUT do it?
+                      (when (or (= ValueModel (class (val key_val)))
+                                (= ContainerModel (class (val key_val))))
+                        (let [[db-key db-value] (db-handle-input db-cache obj (key key_val) (val key_val))]
+                          (when db-key
+                            (var-alter record-data assoc db-key db-value)))))
+                    [false ;; ABORT-TRANSACTION? ...
+                     (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
+                                (.table-name db-cache)
+                                (mapv name (keys (var-get record-data)))
+                                (mapv (fn [v]
+                                        (cond
+                                          (isa? (class v) ValueModel)
+                                          (do1 "?"
+                                            (var-alter values-to-escape conj @v))
+
+                                          (isa? (class v) ContainerModel)
+                                          (dosync (db-clj-cm-to-db-array v "bigint"))
+
+                                          true
+                                          (do1 "?"
+                                            (var-alter values-to-escape conj v))))
+                                      (vals (var-get record-data))))
+                     (var-get values-to-escape)])))]
+           (when-not abort-transaction?
+             (let [res (jdbc/do-prepared-return-keys sql values-to-escape)]
+               ;; NOTE: Object added to cache before fields (added below) are there yet? I guess this is ok since only the one
+               ;; currently adding the object (this code) will "know about it" until HOLDING-TRANSACTION returns.
+               #_(when update-cache?
+                 (db-cache-put db-cache (:id res) obj))
+               (holding-transaction
+                (fn [^Fn abort-transaction]
+                  (dosync
+                   (if (and (:id (ensure obj))
+                            @(:id (ensure obj)))
+                     (abort-transaction false)
+                     (when update-cache?
+                       (db-cache-put db-cache (:id res) obj)))
+                   ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
+                   ;; TODO: No need to trigger updates via observers here.
+                   (db-handle-output db-cache obj res)
+                   ;; Initialize object further; perhaps add external observers of the objects fields etc..
+                   ((.after-fn db-cache) obj)
+                   obj))))))))))
 
 
 
 (defn ^DBCache mk-DBCache [^String table-name
-                           ^clojure.lang.Fn constructor-fn
-                           ^clojure.lang.Fn after-fn
+                           ^Fn constructor-fn
+                           ^Fn after-fn
                            db-handle-input-fn
                            db-handle-output-fn]
   (let [^DBCache db-cache (DBCache.
-                           (if db-handle-input-fn db-handle-input-fn default-db-handle-input)
-                           (if db-handle-output-fn db-handle-output-fn default-db-handle-output)
+                           (if db-handle-input-fn db-handle-input-fn db-default-handle-input)
+                           (if db-handle-output-fn db-handle-output-fn db-default-handle-output)
                            table-name
                            constructor-fn
                            after-fn
