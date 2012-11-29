@@ -356,6 +356,8 @@ Returns a string."
 ;;; WITH-SW-IO
 ;;;;;;;;;;;;;;
 
+;; TODO: Yes, this is all quite horrible. The binding propagation thing in Clojure is not a good thing IMHO.
+
 (def -sw-io-agent-error-handler-
   (fn [the-agent exception]
     (try
@@ -385,9 +387,9 @@ Returns a string."
 
 (defonce -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
 
-(defn with-sw-io* [the-agent body-fn]
+(defn with-sw-io* [the-agent ^Fn body-fn]
   (let [the-agent (if the-agent the-agent -sw-io-agent-)]
-    (send-off (:agent the-agent)
+    (send-off ^clojure.lang.Agent (:agent the-agent)
               (fn [_]
                 (with-bindings (merge (get-thread-bindings) (:binding-blacklist the-agent))
                   (body-fn nil))))))
@@ -396,73 +398,3 @@ Returns a string."
 (defmacro with-sw-io [the-agent & body]
   "Runs BODY in an Agent."
   `(with-sw-io* ~the-agent (fn [_#] ~@body)))
-
-
-
-;;; SWSYNC
-;;;;;;;;;;
-
-;; http://en.wikipedia.org/wiki/Two-phase_commit_protocol
-
-(declare with-sw-db) ;; It's actually a funtion now, so..
-
-
-(defn swsync* [db-agent ^Fn bodyfn]
-  (io! "SWSYNC: Nesting of SWSYNC (or SWSYNC inside DOSYNC) contexts not allowed.")
-  (when *in-sw-db?*
-    (assert *pending-prepared-transaction?*
-            "SWSYNC: SWSYNC is meant to be used within the WITH-SW-DB callback context HOLDING-TRANSACTION or outside of WITH-SW-DB context entirely."))
-  (let [^clojure.lang.Agent db-agent (if db-agent db-agent -sw-io-agent-)]
-    (dosync
-     (binding [*swsync-operations* (atom [])
-               *swsync-db-operations* (atom [])]
-       (let [return-value (bodyfn)]
-         (when-not (and (empty? @*swsync-operations*)
-                        (empty? @*swsync-db-operations*))
-           (let [swsync-operations *swsync-operations*
-                 swsync-db-operations *swsync-db-operations*]
-             (with-sw-io db-agent ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
-               (when-not (empty? @swsync-db-operations)
-                 (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
-                   (fn [_]
-                     (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
-                       (doseq [^Fn f @swsync-db-operations]
-                         (f))
-                       ;; This DEREFs all VMs within a single DOSYNC; i.e. we get a snapshot of all of them.
-                       #_(doseq [[key value table-name id] (dosync (mapv #(%) (vals @swsync-db-operations)))]
-                         (update-values table-name ["id = ?" id]
-                                        {(as-quoted-identifier \" key) value}))))))
-               (when-not (empty? @swsync-operations)
-                 (doseq [^Fn f @swsync-operations]
-                   (f))))))
-         return-value)))))
-
-
-
-(defmacro swsync [db-agent & body]
-  "A DOSYNC where database operations (SWDBOP) are gathered up and executed within a _single_ DB transaction in an Agent
-after Clojure side transaction (DOSYNC) is done.
-This only blocks until Clojure transaction is done; it will not block waiting for the DB transaction to finish; use AWAIT1
-with DB-AGENT as argument to do this.
-
-DB-AGENT can be NIL, in which case -SW-IO-AGENT- will be used."
-  `(swsync* ~db-agent (fn [] ~@body)))
-
-
-
-(defmacro swop [& body]
-  "Wrapper for general I/O operation; runs after (SEND-OFF) Clojure transaction. See SWSYNC."
-  `(do
-     (assert (thread-bound? #'*swsync-operations*)
-             "SWOP: general I/O operation outside of SWSYNC context.")
-     (swap! *swsync-operations* conj (fn [] ~@body))))
-
-
-
-(defmacro swdbop [& body]
-  "Wrapper for DB I/O operation; runs after (SEND-OFF) Clojure transaction with other DB I/O operations within a single DB
-transaction. See SWSYNC."
-  `(do
-     (assert (thread-bound? #'*swsync-db-operations*)
-             "SWDBOP: database operation outside of SWSYNC context.")
-     (swap! *swsync-db-operations* conj (fn [] ~@body))))

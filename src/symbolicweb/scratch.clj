@@ -1,6 +1,60 @@
 (in-ns 'symbolicweb.core)
 
 
+(dosync
+ (let [x (vm 2)
+       y (vm-sync x nil (fn [_ _ x-value]
+                          (dbg-prin1 x-value)
+                          (vm-set x (* x-value x-value))))]
+   (dbg-prin1 x)
+   (dbg-prin1 y)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ;; TODO: Another scenario is the actual filter changing, but I think I might as well create a new FilteredContainerModel then(?).
 (defn filtered-container-model-test []
   (dosync

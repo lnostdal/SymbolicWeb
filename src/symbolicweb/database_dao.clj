@@ -97,6 +97,7 @@ represented by INPUT-KEY, is not to be stored in the DB."
              (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)
                    db-value (db-clj-cm-to-db-array db-value "bigint")]
                (swdbop
+                 ;;(db-put object (.table-name db-cache)) ;; Not possible; already in a WITH-SW-DB context.
                  (jdbc/do-prepared (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value
                                         " WHERE id = ?;")
                                    [id]))))))
@@ -184,9 +185,9 @@ Blocking.
 Returns OBJ when object was added or logical False when object was not added; e.g. if it has been added before."
   ([^Ref obj ^DBCache db-cache] (db-backend-put obj db-cache true))
   ([^Ref obj ^DBCache db-cache ^Boolean update-cache?]
-     (with-sw-db
-       (fn [^Fn holding-transaction]
-         (let [[abort-transaction? sql values-to-escape]
+     (if (not *in-sw-db?*)
+       (with-sw-db (fn [_] (db-backend-put obj db-cache update-cache?)))
+       (let [[abort-transaction? sql values-to-escape]
                ;; Grab snapshot of all data and use it to generate SQL statement.
                (dosync
                 (if (and (:id (ensure obj))
@@ -201,7 +202,7 @@ Returns OBJ when object was added or logical False when object was not added; e.
                         (let [[db-key db-value] (db-handle-input db-cache obj (key key_val) (val key_val))]
                           (when db-key
                             (var-alter record-data assoc db-key db-value)))))
-                    [false ;; ABORT-TRANSACTION? ...
+                    [false ;; ABORT-TRANSACTION? SQL VALUES-TO-ESCAPE
                      (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
                                 (.table-name db-cache)
                                 (mapv name (keys (var-get record-data)))
@@ -212,7 +213,7 @@ Returns OBJ when object was added or logical False when object was not added; e.
                                             (var-alter values-to-escape conj @v))
 
                                           (isa? (class v) ContainerModel)
-                                          (dosync (db-clj-cm-to-db-array v "bigint"))
+                                          (db-clj-cm-to-db-array v "bigint")
 
                                           true
                                           (do1 "?"
@@ -221,10 +222,6 @@ Returns OBJ when object was added or logical False when object was not added; e.
                      (var-get values-to-escape)])))]
            (when-not abort-transaction?
              (let [res (jdbc/do-prepared-return-keys sql values-to-escape)]
-               ;; NOTE: Object added to cache before fields (added below) are there yet? I guess this is ok since only the one
-               ;; currently adding the object (this code) will "know about it" until HOLDING-TRANSACTION returns.
-               #_(when update-cache?
-                 (db-cache-put db-cache (:id res) obj))
                (holding-transaction
                 (fn [^Fn abort-transaction]
                   (dosync
@@ -233,10 +230,10 @@ Returns OBJ when object was added or logical False when object was not added; e.
                      (abort-transaction false)
                      (when update-cache?
                        (db-cache-put db-cache (:id res) obj)))
-                   ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
-                   ;; TODO: No need to trigger updates via observers here.
+                   ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation. This will also set up
+                   ;; observers needed for future syncing to the DB.
                    (db-handle-output db-cache obj res)
-                   ;; Initialize object further; perhaps add external observers of the objects fields etc..
+                   ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
                    ((.after-fn db-cache) obj)
                    obj))))))))))
 

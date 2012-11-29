@@ -10,6 +10,7 @@
 (def ^:dynamic *pending-prepared-transaction?* false)
 (def ^:dynamic *swsync-operations*)
 (def ^:dynamic *swsync-db-operations*)
+(def ^:dynamic *swsync-ht-operations*)
 
 
 ;; database_dao.clj
