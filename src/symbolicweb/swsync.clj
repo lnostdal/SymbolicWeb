@@ -19,21 +19,34 @@
            (let [swsync-operations *swsync-operations*
                  swsync-db-operations *swsync-db-operations*
                  swsync-ht-operations *swsync-ht-operations*]
-             (with-sw-io db-agent
-               (when-not (empty? @swsync-db-operations) ;; TODO: What about SWSYNC-HT-OPERATIONS?
-                 (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
-                   (fn [^Fn holding-transaction]
-                     (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
-                       (doseq [^Fn f @swsync-db-operations]
-                         (f)))
-                     (when-not (empty? @swsync-ht-operations)
-                       (holding-transaction
-                        (fn [_]
-                          (doseq [^Fn f @swsync-ht-operations] ;; TODO: DOSYNC or SWSYNC again here?
-                            (f))))))))
-               (when-not (empty? @swsync-operations)
-                 (doseq [^Fn f @swsync-operations] ;; TODO: DOSYNC or SWSYNC again here?
-                   (f))))))
+             (binding [*swsync-operations* :n.a.
+                       *swsync-db-operations* :n.a.
+                       *swsync-ht-operations* :n.a.]
+               (with-sw-io db-agent
+                 (when-not (empty? @swsync-db-operations) ;; TODO: What about SWSYNC-HT-OPERATIONS?
+                   (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
+                     (fn [^Fn holding-transaction]
+                       (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
+                         (doseq [[^Keyword sql-op-type ^Fn f] @swsync-db-operations]
+                           (when (= :insert sql-op-type)
+                             (f)))
+                         (doseq [[^Keyword sql-op-type ^Fn f] @swsync-db-operations]
+                           (when (= :update sql-op-type)
+                             (f)))
+                         (doseq [[^Keyword sql-op-type ^Fn f] @swsync-db-operations]
+                           (when (= :delete sql-op-type)
+                             (f)))
+                         (doseq [[sql-op-type ^Fn f] @swsync-db-operations]
+                           (when-not sql-op-type
+                             (f))))
+                       (when-not (empty? @swsync-ht-operations)
+                         (holding-transaction
+                          (fn [_]
+                            (doseq [^Fn f @swsync-ht-operations] ;; TODO: DOSYNC or SWSYNC again here?
+                              (f))))))))
+                 (when-not (empty? @swsync-operations)
+                   (doseq [^Fn f @swsync-operations] ;; TODO: DOSYNC or SWSYNC again here?
+                     (f)))))))
          return-value)))))
 
 
@@ -68,14 +81,20 @@ See SWSYNC."
 
 
 
-(defmacro swdbop [& body]
+(defmacro swdbop [sql-op-type & body]
   "Wrapper for DB I/O operation; runs after (SEND-OFF) MTX grouped with other DB I/O operations within a single DBTX.
+  SQL-OP-TYPE: :INSERT, :UPDATE, :DELETE or logical False. This governs the order in which SWDBOPs are executed.
 Non-blocking; returns NIL.
 See SWSYNC."
+
   `(do
+     (assert (or (= :insert ~sql-op-type)
+                 (= :update ~sql-op-type)
+                 (= :delete ~sql-op-type)
+                 (not ~sql-op-type)))
      (assert (thread-bound? #'*swsync-db-operations*)
              "SWDBOP: database operation outside of SWSYNC context.")
-     (swap! *swsync-db-operations* conj (fn [] ~@body))
+     (swap! *swsync-db-operations* conj [~sql-op-type (fn [] ~@body)])
      nil))
 
 

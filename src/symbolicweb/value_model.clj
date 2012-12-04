@@ -3,6 +3,9 @@
 (declare ref? observe %vm-deref)
 
 
+;;; TODO: The VALUE field should be a Fn; not a Ref. That Fn could close over a Ref -- or something else.
+
+
 
 (defprotocol IValueModel
   (vm-set [vm new-value])) ;; Get is DEREF or @ (via clojure.lang.IDeref).
