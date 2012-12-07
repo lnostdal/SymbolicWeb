@@ -189,17 +189,24 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 (defn db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
-This does not add the item to the cache."
+This does not add the item to the cache.
+
+Non-blocking; instantly returns OBJ and later fills in its :ID field with either:
+  * A number, meaning success.
+  * A Throwable, meaning something went wrong.
+  * :NOT-FOUND, meaning an object with ID was not found in the DB."
   (swdbop nil
-    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;")
-                             id]
-      (if-let [db-row (first res)]
-        (try
+    (try
+      (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;")
+                               id]
+        (if-let [db-row (first res)]
           (db-handle-output db-cache obj db-row) ;; Not a SWHTOP since this might lead to further SWDBOPs.
-          (catch Throwable e
-            (dosync (vm-set (:id @obj) e))
-            (throw e)))
-        (swhtop (vm-set (:id @obj) :not-found)))))
+          (swhtop
+            (vm-set (:id @obj) :not-found))))
+      (catch Throwable e
+        ;; TODO: Think about this. What about ABORT-TRANSACTION?
+        (dosync (vm-set (:id @obj) e))
+        (throw e))))
   obj)
 
 
@@ -352,6 +359,16 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
                  ;; See the implementation of VM-SET in value_model.clj.
                  (binding [*in-db-cache-get?* true]
                    (let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                     (vm-observe (:id @new-obj) nil true
+                                 (fn [_ old-id new-id]
+                                   (cond
+                                     (or (not new-id)
+                                         (number? new-id))
+                                     (assert (not (number? old-id)))
+
+                                     (or (= :not-found)
+                                         (isa? (class new-id) Throwable))
+                                     (db-cache-remove db-cache id))))
                      (swop
                        (if (number? @(:id @new-obj))
                          (after-construction-fn ((.after-fn db-cache) new-obj))

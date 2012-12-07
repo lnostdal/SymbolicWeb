@@ -16,10 +16,19 @@
                ^Atom *swsync-db-operations* (atom [])
                ^Atom *swsync-ht-operations* (atom [])]
        (let [return-value (bodyfn)]
-         (when-not (and (empty? @*swsync-operations*) ;; TODO: What about SWSYNC-HT-OPERATIONS?
-                        (empty? @*swsync-db-operations*))
-           (with-sw-io db-agent
-             (when-not (empty? @*swsync-db-operations*) ;; TODO: What about SWSYNC-HT-OPERATIONS?
+         (letfn [(handle-swops-and-swhtops []
+                   (let [swsync-ht-operations *swsync-ht-operations*
+                         swsync-operations *swsync-operations*]
+                     (binding [*swsync-db-operations* :n.a.
+                               *swsync-ht-operations* :n.a.
+                               *swsync-operations* :n.a.]
+                       (doseq [^Fn f @swsync-ht-operations]
+                          (f))
+                        (doseq [^Fn f @swsync-operations]
+                          (f)))))]
+           (if (empty? @*swsync-db-operations*)
+             (handle-swops-and-swhtops)
+             (with-sw-io db-agent
                (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
                  (fn [^Fn holding-transaction]
                    (letfn [(handle-swdbops [swsync-db-operations]
@@ -45,16 +54,8 @@
                    (when-not (empty? @*swsync-ht-operations*)
                      (holding-transaction
                       (fn [_]
-                        (let [swsync-ht-operations *swsync-ht-operations*
-                              swsync-operations *swsync-operations*]
-                          (binding [*swsync-db-operations* :n.a.
-                                    *swsync-ht-operations* :n.a.
-                                    *swsync-operations* :n.a.]
-                            (dosync
-                             (doseq [^Fn f @swsync-ht-operations]
-                               (f))
-                             (doseq [^Fn f @swsync-operations]
-                               (f)))))))))))))
+                        (dosync
+                         (handle-swops-and-swhtops))))))))))
          return-value)))))
 
 
