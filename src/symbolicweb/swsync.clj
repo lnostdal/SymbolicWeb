@@ -51,7 +51,8 @@
                                  (handle-swdbops @*swsync-db-operations*))))]
                      (when-not (empty? @*swsync-db-operations*)
                        (handle-swdbops @*swsync-db-operations*)))
-                   (when-not (empty? @*swsync-ht-operations*)
+                   (when-not (and (empty? @*swsync-ht-operations*)
+                                  (empty? @*swsync-operations*))
                      (holding-transaction
                       (fn [_]
                         (dosync
@@ -61,18 +62,27 @@
 
 
 (defmacro swsync [db-agent & body]
-  "A DOSYNC (MTX) wrapper where database operations are gathered up via SWDBOP and executed within a single DBTX after said MTX.
+  "A combined DOSYNC (MTX) and database (DBTX) wrapper.
 
-This is done in a 2PC fashion (MTX --> DBTX) -- and SWHTOP can be used to add further operations that are to be executed while
-holding the prepared DBTX.
+Thingss are done in a 2PC fashion:
+
+    (MTX1 <body>) --SEND-OFF--> (DBTX (MTX2 <swhtop>* <swop>*))
+
+  * MTX1: Is BODY which will be wrapped in a DOSYNC.
+  * DBTX: Is operations added via SWDBOP.
+  * MTX2: Is operations added via SWOP and SWHTOP. These are executed while DBTX is held or pending.
+
 
 The order in which operations are executed is: SWDBOPs, SWHTOPs then SWOPs. The SWHTOPs and SWOPs execute within the same MTX.
-SWDBOPs executed in order :INSERT, :UPDATE, :DELETE then logical False; given by the SQL-OP-TYPE argument to SWDBOP.
+SWDBOPs are executed in order:
+
+  :INSERT, :UPDATE, :DELETE then logical False; given by the SQL-OP-TYPE argument to SWDBOP.
+
 
 DB-AGENT can be NIL, in which case -SW-IO-AGENT- will be used.
 
-This blocks until the MTX (DOSYNC) is done; it does not block for the DBTX. Use AWAIT1 with DB-AGENT as argument if blocking here
-is needed.
+This blocks until the MTX (DOSYNC) is done; it does not block for the DBTX. Use AWAIT1 with (:AGENT DB-AGENT) as argument if
+blocking here is needed.
 
 Returns what BODY returns."
   `(swsync* ~db-agent (fn [] ~@body)))
