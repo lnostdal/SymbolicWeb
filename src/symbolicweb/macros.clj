@@ -14,7 +14,7 @@
 
 
 ;; database_dao.clj
-(def ^:dynamic *in-db-cache-get?* false)
+;;(def ^:dynamic *in-db-cache-get?* false)
 
 ;; html_container.clj
 (def ^:dynamic *in-html-container?* false)

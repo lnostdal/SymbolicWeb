@@ -10,7 +10,7 @@
 
                  [com.google.guava/guava "13.0.1"] ;; For soft hash cache.
 
-                 [cheshire "5.0.1-SNAPSHOT"] ;; JSON.
+                 [cheshire "5.0.2-SNAPSHOT"] ;; JSON.
 
                  [hiccup "1.0.2"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.2-SNAPSHOT"] ;; HTML templating.

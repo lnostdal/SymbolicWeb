@@ -19,13 +19,13 @@
          (letfn [(handle-swops-and-swhtops []
                    (let [swsync-ht-operations *swsync-ht-operations*
                          swsync-operations *swsync-operations*]
-                     (binding [*swsync-db-operations* :n.a.
-                               *swsync-ht-operations* :n.a.
-                               *swsync-operations* :n.a.]
+                     (binding [^Keyword *swsync-db-operations* :n.a.
+                               ^Keyword *swsync-ht-operations* :n.a.
+                               ^Keyword *swsync-operations* :n.a.]
                        (doseq [^Fn f @swsync-ht-operations]
-                          (f))
-                        (doseq [^Fn f @swsync-operations]
-                          (f)))))]
+                         (f))
+                       (doseq [^Fn f @swsync-operations]
+                         (f)))))]
            (if (empty? @*swsync-db-operations*)
              (handle-swops-and-swhtops)
              (with-sw-io db-agent
@@ -66,7 +66,7 @@
 This is done in a 2PC fashion (MTX --> DBTX) -- and SWHTOP can be used to add further operations that are to be executed while
 holding the prepared DBTX.
 
-The order in which operations are executed is: SWOPs, SWDBOPs then SWHTOPs.
+The order in which operations are executed is: SWDBOPs, SWHTOPs then SWOPs. The SWHTOPs and SWOPs execute within the same MTX.
 SWDBOPs executed in order :INSERT, :UPDATE, :DELETE then logical False; given by the SQL-OP-TYPE argument to SWDBOP.
 
 DB-AGENT can be NIL, in which case -SW-IO-AGENT- will be used.

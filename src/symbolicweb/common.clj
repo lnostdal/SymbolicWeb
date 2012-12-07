@@ -373,11 +373,6 @@ Returns a string."
 
                               #'*in-sw-db?* *in-sw-db?*
                               #'*pending-prepared-transaction?* *pending-prepared-transaction?*
-                              ;;#'*swsync-operations*
-                              ;;#'*swsync-db-operations*
-                              ;;#'*swsync-ht-operations*
-
-                              #'*in-db-cache-get?* *in-db-cache-get?*
 
                               #'*in-html-container?* *in-html-container?*
                               #'*with-js?* *with-js?*

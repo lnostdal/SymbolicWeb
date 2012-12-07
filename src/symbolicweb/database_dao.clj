@@ -342,8 +342,7 @@ Blocking."
 
 
 (defn db-get
-  "SQL `SELECT ...'.
-CONSTRUCTION-FN is called with the resulting (returning) object as argument on cache miss."
+  "SQL `SELECT ...'."
   ([^Long id ^String table-name]
      (db-get id table-name identity))
 
@@ -354,26 +353,27 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
        (try
          (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
                (fn []
-                 ;; TODO: Not sure this binding is needed or correct anymore.
-                 ;; Binding this makes VMs settable within the currently active WITH-SW-DB context.
-                 ;; See the implementation of VM-SET in value_model.clj.
-                 (binding [*in-db-cache-get?* true]
-                   (let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                     (vm-observe (:id @new-obj) nil true
-                                 (fn [_ old-id new-id]
-                                   (cond
-                                     (or (not new-id)
-                                         (number? new-id))
-                                     (assert (not (number? old-id)))
+                 (let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                   (vm-observe (:id @new-obj) nil true
+                               (fn [_ old-id new-id]
+                                 (cond
+                                   (not new-id)
+                                   (when-not (= :symbolicweb.core/initial-update old-id)
+                                     (db-cache-remove db-cache id)
+                                     (assert false))
 
-                                     (or (= :not-found)
-                                         (isa? (class new-id) Throwable))
-                                     (db-cache-remove db-cache id))))
-                     (swop
-                       (if (number? @(:id @new-obj))
-                         (after-construction-fn ((.after-fn db-cache) new-obj))
-                         (db-cache-remove db-cache id)))
-                     new-obj))))
+                                   (number? new-id)
+                                   (when-not (not old-id)
+                                     (db-cache-remove db-cache id)
+                                     (assert false))
+
+                                   (or (= :not-found)
+                                       (isa? (class new-id) Throwable))
+                                   (db-cache-remove db-cache id))))
+                   (swop
+                     (when (number? @(:id @new-obj))
+                       (after-construction-fn ((.after-fn db-cache) new-obj))))
+                   new-obj)))
          ;; TODO: This seems wrong..
          (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
            (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
