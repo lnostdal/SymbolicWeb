@@ -1,8 +1,8 @@
 (in-ns 'symbolicweb.core)
 
 
-;;;; This is a "row-based" (via ID column) cache or layer for DB tables
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; This is a "row-based" (via ID column) cache or layer for DB tables; it is quite horrible
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; This maps a DB row to a Clojure Ref holding a map where the values might be ValueModels or ContainerModels (SQL array refs).
 ;;
@@ -17,8 +17,6 @@
 ;;
 ;;
 ;; TODO: ContainerModel based abstraction for SQL queries? This probably belongs in a different file; it's a different concept.
-;; TODO: It should perhaps be possible to call DB-PUT many times on the same object, but only have it added to the DB once.
-;;       I.e., it'll change the :ID field from NIL (only) to some integer in a synchronized fashion.
 
 
 
@@ -58,7 +56,7 @@
 
 (defn db-default-handle-input [^DBCache db-cache ^Ref object ^Keyword clj-key clj-value]
   "SW --> DB."
-  [(if (= :id clj-key)
+  [(if (or (not clj-key) (= :id clj-key))
      nil
      (db-default-clj-to-db-key-transformer clj-key))
    (cond
@@ -128,31 +126,36 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 
 (defn ^Ref db-value-to-vm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key clj-value]
-  "Updates ValueModel associated with CLJ-KEY in OBJECT to CLJ-VALUE, or adds a new ValueModel to OBJECT if no entry was found.
-Returns OBJECT."
+  "DB --> SW."
   ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases...
-  (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-    (do ;; Yes; mutate it.
-      (vm-set existing-vm clj-value)
-      (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
-    (let [^ValueModel new-vm (vm clj-value)] ;; No; add it.
-      (ref-set object (assoc (ensure object) clj-key new-vm))
-      (db-ensure-persistent-vm-field db-cache object clj-key new-vm)))
+  (swhtop
+    (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
+      (do ;; Yes; mutate it.
+        (vm-set existing-vm clj-value)
+        (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
+      (let [^ValueModel new-vm (vm clj-value)] ;; No; add it.
+        (ref-set object (assoc (ensure object) clj-key new-vm))
+        (db-ensure-persistent-vm-field db-cache object clj-key new-vm))))
   object)
 
 
 
 (declare db-get)
 (defn ^Ref db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value]
+  "DB --> SW."
   (let [^clojure.lang.PersistentVector clj-value (db-db-array-to-clj-vector clj-value)]
+
     (if-let [^ContainerModel existing-cm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
       (do ;; Yes; mutate it.
         ;; TOOD: Sync existing data with data from DBs somehow? Not sure how, so we just clear out the stuff on the Clj end.
-        ;;(cm-clear existing-cm)
-        (doseq [^Long id clj-value]
-          ;; TODO: DB-GET within DOSYNC/SWSYNC won't do.
-          (cm-append existing-cm (cmn (db-get id (.table-name db-cache)))))
-        (db-ensure-persistent-cm-field db-cache object clj-key existing-cm))
+        (swhtop
+          (cm-clear existing-cm))
+        (swdbop false
+          (doseq [obj (mapv #(db-get % (.table-name db-cache)) clj-value)]
+            (swhtop
+              (cm-append existing-cm (cmn obj))))
+          (swhtop
+            (db-ensure-persistent-cm-field db-cache object clj-key existing-cm))))
       (let [^ContainerModel new-cm (with1 (cmn) ;; No; add it.
                                      (doseq [^Long id clj-value]
                                        ;; TODO: DB-GET within DOSYNC/SWSYNC won't do.
@@ -167,7 +170,6 @@ Returns OBJECT."
   (doseq [^MapEntry entry db-row]
     (let [^Keyword db-key (db-default-db-to-clj-key-transformer (key entry))
           db-value (val entry)]
-      ;; TODO: Also/Or check if DB-KEY ends in "_refs" here?
       (if (isa? (class db-value) java.sql.Array)
         (db-value-to-cm-handler db-cache db-row object
                                 db-key db-value)
@@ -184,17 +186,21 @@ Returns OBJECT."
 
 
 
+
 (defn db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
-Returns OBJ, or NIL if no entry with ID was found in (:table-name DB-CACHE).
 This does not add the item to the cache."
-  (if (not *in-sw-db?*)
-    (with-sw-db (fn [_] (db-backend-get db-cache id obj)))
+  (swdbop nil
     (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;")
                              id]
-      (when-let [db-row (first res)]
-        (dosync (db-handle-output db-cache obj db-row))
-        obj))))
+      (if-let [db-row (first res)]
+        (try
+          (db-handle-output db-cache obj db-row) ;; Not a SWHTOP since this might lead to further SWDBOPs.
+          (catch Throwable e
+            (dosync (vm-set (:id @obj) e))
+            (throw e)))
+        (swhtop (vm-set (:id @obj) :not-found)))))
+  obj)
 
 
 
@@ -336,19 +342,24 @@ CONSTRUCTION-FN is called with the resulting (returning) object as argument on c
 
 
   ([^Long id ^String table-name ^Fn after-construction-fn]
-     (io! "DB-GET: This (I/O) cannot be done within DOSYNC or SWSYNC.")
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
            ^DBCache db-cache (db-get-cache table-name)]
        (try
          (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
                (fn []
+                 ;; TODO: Not sure this binding is needed or correct anymore.
                  ;; Binding this makes VMs settable within the currently active WITH-SW-DB context.
                  ;; See the implementation of VM-SET in value_model.clj.
                  (binding [*in-db-cache-get?* true]
                    (let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                     (dosync (after-construction-fn ((.after-fn db-cache) new-obj)))))))
+                     (swop
+                       (if (number? @(:id @new-obj))
+                         (after-construction-fn ((.after-fn db-cache) new-obj))
+                         (db-cache-remove db-cache id)))
+                     new-obj))))
+         ;; TODO: This seems wrong..
          (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
-           (println "DB-CACHE-GET: Object with ID" id "not found in" (.table-name db-cache))
+           (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
            nil)))))
 
 

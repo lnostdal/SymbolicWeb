@@ -357,7 +357,7 @@ Returns a string."
 ;;;;;;;;;;;;;;
 
 ;; TODO: Yes, this is all quite horrible. The binding propagation thing in Clojure is not a good thing IMHO.
-
+,
 (def -sw-io-agent-error-handler-
   (fn [the-agent exception]
     (try
@@ -373,8 +373,9 @@ Returns a string."
 
                               #'*in-sw-db?* *in-sw-db?*
                               #'*pending-prepared-transaction?* *pending-prepared-transaction?*
-                              #'*swsync-operations*
-                              #'*swsync-db-operations*
+                              ;;#'*swsync-operations*
+                              ;;#'*swsync-db-operations*
+                              ;;#'*swsync-ht-operations*
 
                               #'*in-db-cache-get?* *in-db-cache-get?*
 
