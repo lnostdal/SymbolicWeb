@@ -66,11 +66,12 @@
 
 Thingss are done in a 2PC fashion:
 
-    (MTX1 <body>) --SEND-OFF--> (DBTX (MTX2 <swhtop>* <swop>*))
+    (MTX1 <body>) --SEND-OFF--> (DBTX <swdbop>* (MTX2 <swhtop>* <swop>*))
 
   * MTX1: Is BODY which will be wrapped in a DOSYNC.
-  * DBTX: Is operations added via SWDBOP.
-  * MTX2: Is operations added via SWOP and SWHTOP. These are executed while DBTX is held or pending.
+  * DBTX: Is operations added via SWDBOP within the dynamic scope of BODY.
+  * MTX2: Is operations added via SWOP and SWHTOP within the dynamic scope of BODY.
+          These are executed while DBTX is held or pending.
 
 
 The order in which operations are executed is: SWDBOPs, SWHTOPs then SWOPs. The SWHTOPs and SWOPs execute within the same MTX.
@@ -81,8 +82,7 @@ SWDBOPs are executed in order:
 
 DB-AGENT can be NIL, in which case -SW-IO-AGENT- will be used.
 
-This blocks until the MTX (DOSYNC) is done; it does not block for the DBTX. Use AWAIT1 with (:AGENT DB-AGENT) as argument if
-blocking here is needed.
+This blocks until the MTX1 is done; it does not block for DBTX and MTX2. Use (await1 (:agent DB-AGENT) if blocking is needed.
 
 Returns what BODY returns."
   `(swsync* ~db-agent (fn [] ~@body)))
