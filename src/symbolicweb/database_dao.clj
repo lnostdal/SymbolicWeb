@@ -1,8 +1,7 @@
 (in-ns 'symbolicweb.core)
 
-
-;;;; This is a "row-based" (via ID column) cache or layer for DB tables; it is quite horrible
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; This is a "row-based" (via ID column) reactive cache or DAO layer for DB tables
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; This maps a DB row to a Clojure Ref holding a map where the values might be ValueModels or ContainerModels (SQL array refs).
 ;;
@@ -18,6 +17,7 @@
 ;;
 ;; TODO: ContainerModel based abstraction for SQL queries? This probably belongs in a different file; it's a different concept.
 
+;; NOTE: :ID fields should only be read within SWDBOPs. This means a small DOSYNC is needed for this.
 
 
 (defn db-db-array-to-clj-vector [^java.sql.Array db-array]
@@ -63,6 +63,10 @@
      (isa? (class clj-value) ValueModel)
      @clj-value
 
+     ;; TODO: This seems natural enough, but won't work since the resulting string will be quoted.
+     ;;(isa? (class clj-value) ContainerModel)
+     ;;(db-clj-cm-to-db-array clj-value "bigint")
+
      true
      clj-value)])
 
@@ -84,9 +88,11 @@ represented by INPUT-KEY, is not to be stored in the DB."
   "Sets up reactive SQL UPDATEs for VALUE-MODEL."
   (vm-observe value-model nil false
               (fn [inner-lifetime old-value new-value]
-                (swdbop :update
-                  ;; TODO: Two DOSYNCs in a row here sucks.
-                  (let [[db-key db-value] (dosync (db-handle-input db-cache object clj-key value-model))]
+                (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
+                  (swdbop :update
+                    ;; NOTE: The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since
+                    ;; in some cases it might (still) be NIL in that context.
+                    ;; TODO: I don't understand how it can be not-NIL though? The :ID field is set using SWHTOP, so..
                     (update-values (.table-name db-cache) ["id = ?" (dosync @(:id @object))]
                                    {(as-quoted-identifier \" db-key) db-value}))))))
 
@@ -97,6 +103,10 @@ represented by INPUT-KEY, is not to be stored in the DB."
 (defn db-ensure-persistent-cm-field [^DBCache db-cache ^Ref object ^Keyword clj-key
                                      ^ContainerModel container-model]
   "Sets up reactive SQL UPDATEs for CONTAINER-MODEL."
+  (println "DB-ENSURE-PERSISTENT-CM-FIELD..")
+  (cm-iterate container-model _ obj
+    (db-put obj (:db-table-name @obj))
+    false)
   (observe (.observable container-model) nil
            (fn [inner-lifetime args]
              (let [[event-sym & event-args] args
@@ -115,27 +125,30 @@ represented by INPUT-KEY, is not to be stored in the DB."
                (case op-type
                  :add (db-put op-object db-table-name)
                  :remove (db-remove @(:id @op-object) db-table-name))
+
                (swdbop :update
                  (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)
                        ;; TODO: Think about the DOSYNC here, and two DOSYNCs in a row sucks.
                        db-value (dosync (db-clj-cm-to-db-array db-value "bigint"))]
-                   (jdbc/do-prepared (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value
+                   (jdbc/do-prepared (str "UPDATE " (dbg-prin1 (.table-name db-cache)) " SET " (name db-key) " = " db-value
                                           " WHERE id = ?;")
-                                     [(dosync @(:id @object))])))))))
+                                     [(dbg-prin1 (dosync @(:id @object)))])))))))
 
 
 
 (defn ^Ref db-value-to-vm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key clj-value]
   "DB --> SW."
-  ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases...
-  (swhtop
-    (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-      (do ;; Yes; mutate it.
-        (vm-set existing-vm clj-value)
-        (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
-      (let [^ValueModel new-vm (vm clj-value)] ;; No; add it.
-        (ref-set object (assoc (ensure object) clj-key new-vm))
-        (db-ensure-persistent-vm-field db-cache object clj-key new-vm))))
+  ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases; there's currently no check
+  ;;; for this.
+  (letfn [(do-it []
+            (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
+              (do ;; Yes; mutate it.
+                (vm-set existing-vm clj-value)
+                (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
+              (let [^ValueModel new-vm (vm clj-value)] ;; No; add it.
+                (ref-set object (assoc (ensure object) clj-key new-vm))
+                (db-ensure-persistent-vm-field db-cache object clj-key new-vm))))]
+    (swhtop (do-it)))
   object)
 
 
@@ -192,6 +205,7 @@ represented by INPUT-KEY, is not to be stored in the DB."
 This does not add the item to the cache.
 
 Non-blocking; instantly returns OBJ and later fills in its :ID field with either:
+
   * A number, meaning success.
   * A Throwable, meaning something went wrong.
   * :NOT-FOUND, meaning an object with ID was not found in the DB."
@@ -211,6 +225,11 @@ Non-blocking; instantly returns OBJ and later fills in its :ID field with either
 
 
 
+#_(with-sw-db
+  (fn [_]
+    (with-query-results res ["SELECT nextval('orders_id_seq'::regclass);"]
+      (dbg-prin1 res))))
+
 (declare db-cache-put)
 (defn db-backend-put
   "SQL INSERT of OBJ whos keys and values are translated via DB-HANDLE-INPUT. This will also add OBJ to DB-CACHE unless
@@ -219,13 +238,16 @@ Blocking.
 Returns OBJ when object was added or logical False when object was not added; e.g. if it has been added before."
   ([^Ref obj ^DBCache db-cache] (db-backend-put obj db-cache true))
   ([^Ref obj ^DBCache db-cache ^Boolean update-cache?]
-     (let [[abort-put? sql values-to-escape]
-           ;; Grab snapshot of all data and use it to generate SQL statement.
-           (if (and (:id (ensure obj))
-                    @(:id (ensure obj)))
-             [true] ;; ABORT-PUT?
-             (with-local-vars [record-data {}
-                               values-to-escape []]
+     (swdbop :insert
+       (let [after-put-fns (atom [])
+             [abort-put? sql values-to-escape]
+             (dosync
+              ;; Grab snapshot of all data and use it to generate SQL statement.
+              (if (and (:id (ensure obj))
+                       @(:id (ensure obj)))
+                [true] ;; ABORT-PUT?
+                (with-local-vars [record-data {}
+                                  values-to-escape []]
                (doseq [^MapEntry key_val (ensure obj)]
                  ;; TODO: Is this test needed? Why can't DB-HANDLE-INPUT do it?
                  (when (or (= ValueModel (class (val key_val)))
@@ -234,15 +256,17 @@ Returns OBJ when object was added or logical False when object was not added; e.
                      (when db-key
                        (cond
                          (isa? (class (val key_val)) ValueModel)
-                         (db-ensure-persistent-vm-field db-cache obj (key key_val) (val key_val))
+                         (swap! after-put-fns conj
+                                (fn [] (db-ensure-persistent-vm-field db-cache obj (key key_val) (val key_val))))
 
                          (isa? (class (val key_val)) ContainerModel)
-                         (db-ensure-persistent-cm-field db-cache obj (key key_val) (val key_val)))
+                         (swap! after-put-fns conj
+                                (fn [] (db-ensure-persistent-cm-field db-cache obj (key key_val) (val key_val)))))
                        (var-alter record-data assoc db-key db-value)))))
                [false ;; ABORT-PUT? SQL VALUES-TO-ESCAPE
                 (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
-                           (.table-name db-cache)
-                           (mapv name (keys (var-get record-data)))
+                           (.table-name db-cache) ;; TODO: Escape.
+                           (mapv name (keys (var-get record-data))) ;; TODO: Escape.
                            (mapv (fn [v]
                                    (cond
                                      (isa? (class v) ValueModel)
@@ -250,26 +274,48 @@ Returns OBJ when object was added or logical False when object was not added; e.
                                        (var-alter values-to-escape conj @v))
 
                                      (isa? (class v) ContainerModel)
-                                     (db-clj-cm-to-db-array v "bigint")
+                                     (do
+                                        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                          ;;;; Yep, the :INSERT for `order' is done first, then the one for `order_deal' --
+                                          ;;;; but, heh, the ContainerModel in `order' has already been filled in with some nodes
+                                          ;;;; holding stuff meant to go into `order_deal'. Seems I got to do the nextval() thing
+                                          ;;;; when creating objects meant for :INSERT'ing later on.
+                                          ;;;; Or, ContainerModel fields must be synced as :UPDATE SWDBOPs! (better i think)
+                                       ;;;; 2ND PROBLEM:
+                                       ;;;; When DB-PUT'ing
+                                       ;;(db-clj-cm-to-db-array v "bigint")
+                                       #_(swap! after-put-fns conj
+                                              (fn []
+                                                (swdbop :update
+
+                                                  )))
+                                       "ARRAY[]::bigint[]")
 
                                      true
                                      (do1 "?"
                                        (var-alter values-to-escape conj v))))
                                  (vals (var-get record-data))))
-                (var-get values-to-escape)]))]
-       (when-not abort-put?
-         (swdbop :insert
+                (var-get values-to-escape)])))]
+         (when-not abort-put?
            (let [res (jdbc/do-prepared-return-keys sql values-to-escape)]
-             (dosync
-              (if (and (:id (ensure obj))
-                       @(:id (ensure obj)))
-                (abort-transaction false)
-                (when update-cache?
-                  (db-cache-put db-cache (:id res) obj)))
-              (vm-set (:id @obj) (:id res)) ;; TODO: ..or add.
-              ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
-              ((.after-fn db-cache) obj)
-              obj)))))))
+             ;; TODO: Hacky.
+             ;;(dbg-prin1 [:db-backend-put (:id res) (.table-name db-cache)])
+             (dosync (vm-set (:id @obj) (:id res))) ;; TODO: ..or add.
+             (swhtop
+               #_(and (:id (ensure obj))
+                      @(:id (ensure obj)))
+               (if false
+                   (abort-transaction false) ;; TODO: DB-CACHE-REMOVE?
+                   (when update-cache?
+                     (db-cache-put db-cache (:id res) obj)))
+               ;;(vm-set (:id @obj) (:id res)) ;; TODO: ..or add.
+               ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
+               ((.after-fn db-cache) obj)
+               obj))
+           (dosync
+            (doseq [^Fn f @after-put-fns]
+              (f))))))))
+
 
 
 
@@ -350,34 +396,32 @@ Blocking."
   ([^Long id ^String table-name ^Fn after-construction-fn]
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
            ^DBCache db-cache (db-get-cache table-name)]
-       (try
-         (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
-               (fn []
-                 (let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                   (vm-observe (:id @new-obj) nil true
-                               (fn [_ old-id new-id]
-                                 (cond
-                                   (not new-id)
-                                   (when-not (= :symbolicweb.core/initial-update old-id)
-                                     (db-cache-remove db-cache id)
-                                     (assert false))
+       (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
+             (fn []
+               (let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                 (vm-observe (:id @new-obj) nil true
+                             (fn [_ old-id new-id]
+                               (cond
+                                 (not new-id)
+                                 (when-not (= :symbolicweb.core/initial-update old-id)
+                                   (db-cache-remove db-cache id)
+                                   (assert false))
 
-                                   (number? new-id)
-                                   (when-not (not old-id)
-                                     (db-cache-remove db-cache id)
-                                     (assert false))
+                                 (number? new-id)
+                                 (when-not (not old-id)
+                                   (db-cache-remove db-cache id)
+                                   (assert false))
 
-                                   (or (= :not-found)
-                                       (isa? (class new-id) Throwable))
-                                   (db-cache-remove db-cache id))))
-                   (swop
-                     (when (number? @(:id @new-obj))
-                       (after-construction-fn ((.after-fn db-cache) new-obj))))
-                   new-obj)))
-         ;; TODO: This seems wrong..
-         (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
-           (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
-           nil)))))
+                                 (or (= :not-found)
+                                     (isa? (class new-id) Throwable))
+                                 (db-cache-remove db-cache id)
+
+                                 true
+                                 (assert false))))
+                 (swop
+                   (when (number? @(:id @new-obj))
+                     (after-construction-fn ((.after-fn db-cache) new-obj))))
+                 new-obj))))))
 
 
 

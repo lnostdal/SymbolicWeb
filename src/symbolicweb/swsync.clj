@@ -10,7 +10,7 @@
   (when *in-sw-db?*
     (assert *pending-prepared-transaction?*
             "SWSYNC: SWSYNC is meant to be used within the WITH-SW-DB callback context HOLDING-TRANSACTION or outside of WITH-SW-DB context entirely."))
-  (let [^clojure.lang.Agent db-agent (if db-agent db-agent -sw-io-agent-)]
+  (let [db-agent (if db-agent db-agent -sw-io-agent-)]
     (dosync ;; DOSYNC placed here ensures that new BINDINGs are created on MTX retry.
      (binding [^Atom *swsync-operations* (atom [])
                ^Atom *swsync-db-operations* (atom [])
@@ -34,21 +34,15 @@
                    (letfn [(handle-swdbops [swsync-db-operations]
                              (binding [^Atom *swsync-db-operations* (atom [])
                                        *pending-prepared-transaction?* true] ;; TODO: Why this?
-                               (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
-                                 (when (= :insert sql-op-type)
-                                   (f)))
-                               (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
-                                 (when (= :update sql-op-type)
-                                   (f)))
-                               (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
-                                 (when (= :delete sql-op-type)
-                                   (f)))
-                               (doseq [[sql-op-type ^Fn f] swsync-db-operations]
-                                 (when-not sql-op-type
-                                   (f)))
-                               ;; SWDBOPs might lead to (call) further SWDBOPs.
-                               (when-not (empty? @*swsync-db-operations*)
-                                 (handle-swdbops @*swsync-db-operations*))))]
+                               (letfn [(handle-swdbop [the-sql-op-type]
+                                         (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
+                                           (when (= the-sql-op-type sql-op-type)
+                                             (f)
+                                             (when-not (empty? @*swsync-db-operations*)
+                                               (handle-swdbops @*swsync-db-operations*))))
+                                         (when-not (empty? @*swsync-db-operations*)
+                                           (handle-swdbops @*swsync-db-operations*)))]
+                                 (dorun (map handle-swdbop [:insert :update :delete nil])))))]
                      (when-not (empty? @*swsync-db-operations*)
                        (handle-swdbops @*swsync-db-operations*)))
                    (when-not (and (empty? @*swsync-ht-operations*)
@@ -79,6 +73,10 @@ SWDBOPs are executed in order:
 
   :INSERT, :UPDATE, :DELETE then logical False; given by the SQL-OP-TYPE argument to SWDBOP.
 
+
+If the :INSERT operations trigger new :INSERT operations, those will be executed before any :UPDATE operations.
+If the :UPDATE operations trigger new :INSERT or :UPDATE operations, those will be executed before any :DELETE operations.
+..and so on.
 
 DB-AGENT can be NIL, in which case -SW-IO-AGENT- will be used.
 
