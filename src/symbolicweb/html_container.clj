@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn ^WidgetBase %mk-HTMLContainer [[^String html-element-type & widget-base-args] ^clojure.lang.Fn content-fn]
+(defn ^WidgetBase %mk-HTMLContainer [[^String html-element-type & widget-base-args] ^Fn content-fn]
   (mk-WidgetBase (fn [^WidgetBase html-container]
                    (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
                      (str "<" html-element-type " id='" (.id html-container) "'>"
@@ -23,7 +23,7 @@
 
 
 ;; TODO: This should support the same "syntax" as HTMLTemplate.
-(defn ^WidgetBase mk-PostHTMLTemplate [^String id ^clojure.lang.Fn content-fn & widget-base-args]
+(defn ^WidgetBase mk-PostHTMLTemplate [^String id ^Fn content-fn & widget-base-args]
   "This applies templating to an already existing HTML element, specified by ID, on the page."
   (with1 (%mk-HTMLContainer (into ["%PostHTMLTemplate"] (into widget-base-args (list id :id)))
                             content-fn)
@@ -32,7 +32,7 @@
 
 
 (defn ^WidgetBase mk-HTMLTemplate [^org.jsoup.nodes.Document html-resource
-                                   ^clojure.lang.Fn content-fn
+                                   ^Fn content-fn
                                    & widget-base-args]
   "  CONTENT-FN is something like:
   (fn [html-template]

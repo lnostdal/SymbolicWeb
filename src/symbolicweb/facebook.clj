@@ -1,4 +1,7 @@
 (ns symbolicweb.facebook
+  (:import clojure.lang.Ref
+           clojure.lang.Keyword
+           clojure.lang.Fn)
   (:require [clojure.string :as str])
   (:use [clojure.pprint :only (cl-format)])
   (:use symbolicweb.core))
@@ -203,7 +206,7 @@
                   ^String app-access-token
                   ^String fb-id
                   ^String action
-                  ^clojure.lang.Keyword object
+                  ^Keyword object
                   ^String object-url]
   (let [url (str "https://graph.facebook.com/" fb-id "/" app-namespace ":" action)]
     (with (http-post-request url (ring.util.codec/form-encode {:access_token app-access-token

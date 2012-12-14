@@ -2,8 +2,8 @@
 
 
 (defn ^WidgetBase mk-HTMLElement [^ValueModel value-model
-                                  ^clojure.lang.Fn render-fn
-                                  ^clojure.lang.Fn observer-fn
+                                  ^Fn render-fn
+                                  ^Fn observer-fn
                                   widget-base-args]
   "  RENDER-FN: (fn [widget] ..)
   OBSERVER-FN: (fn [widget value-model old-value new-value] ..)"

@@ -32,8 +32,8 @@ Iteration will end whenever BODY returns a non-FALSE value, or when the tail of 
 
 (deftype ContainerModelNode [%container-model
                              ^Lifetime lifetime
-                             ^clojure.lang.Ref left
-                             ^clojure.lang.Ref right
+                             ^Ref left
+                             ^Ref right
                              data]
   IContainerModelNode
   (cmn-left-node [_]
@@ -69,9 +69,9 @@ Iteration will end whenever BODY returns a non-FALSE value, or when the tail of 
 
 
 (deftype ContainerModel [^Lifetime lifetime
-                         ^clojure.lang.Ref head-node
-                         ^clojure.lang.Ref tail-node
-                         ^clojure.lang.Ref %count
+                         ^Ref head-node
+                         ^Ref tail-node
+                         ^Ref %count
                          ^Observable observable]
   clojure.lang.Counted
   (count [_]
@@ -104,7 +104,7 @@ Iteration will end whenever BODY returns a non-FALSE value, or when the tail of 
                    (ref 0)       ;; %COUNT
                    ;; OBSERVABLE
                    (mk-Observable (fn [^Observable observable & event-args]
-                                    (doseq [^clojure.lang.Fn observer-fn (ensure (.observers observable))]
+                                    (doseq [^Fn observer-fn (ensure (.observers observable))]
                                       (observer-fn event-args))))))
 
 

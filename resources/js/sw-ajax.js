@@ -101,18 +101,9 @@ var swAjax =
        if(queue.push(function(){
                        var url = swURL(["&_sw_request_type=ajax", params]);
                        var options = {
-                         type: (function(){
-                                  // http://bit.ly/1z3xEu
-                                  // MAX for GET is apparently 2048 (IE). We stay a bit below this just in case.
-                                  //console.log(callback_data.length + url.length);
-                                  if(callback_data.length + url.length > 1950)
-                                    return "POST";
-                                  else
-                                    return "GET";
-                                })(),
+                         type: "POST",
                          url: url,
                          data: callback_data,
-                         cache: false,
                          dataType: "script",
                          beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }}, // TODO: 500 should be configurable.
                          error: function(jq_xhr, text_status, thrown_error){
@@ -152,10 +143,9 @@ var swComet  =
      }
 
      function doIt(params){
-       $.ajax({type: "GET",
+       $.ajax({type: "POST",
                url: swURL(["&_sw_request_type=comet", params]),
                dataType: "script",
-               cache: false,
                error: function(jq_xhr, text_status, error_thrown){
                  swHandleError(jq_xhr, text_status, error_thrown);
                },
@@ -249,9 +239,8 @@ if(typeof(opera) != "undefined"){
 // Eager, instead of based on timeout -- GC of the server side Viewport object and all its Widgets (and their incomming connections from the Model/DB) on page unload.
 $(window).on("unload", function(){
   if(typeof(_sw_viewport_id) != "undefined")
-    $.ajax({type: "GET",
+    $.ajax({type: "POST",
             url: swURL(["&_sw_request_type=ajax", ["&do=unload"]]),
-            cache: false,
             async: false});
 });
 
@@ -264,7 +253,7 @@ function swBoot(url){
   // Pre-boot; sets _sw_viewport_id etc..
   $.ajax({
     async: false,
-    type: "GET",
+    type: "POST",
     url: url,
     dataType: "script",
     success: function(){

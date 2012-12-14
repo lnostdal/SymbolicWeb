@@ -26,9 +26,9 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
 
 
 (defn handle-filtered-container-event [^ContainerModel filtered-container-model
-                                       ^clojure.lang.Ref context
-                                       ^clojure.lang.Fn filter-node-fn
-                                       ^clojure.lang.Fn extract-vm-from-node-fn
+                                       ^Ref context
+                                       ^Fn filter-node-fn
+                                       ^Fn extract-vm-from-node-fn
                                        event-args]
   (letfn [(add-node [^ContainerModelNode inner-new-node]
             (let [[event-sym & event-args] event-args]
@@ -110,13 +110,13 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
 (defn ^ContainerModel mk-FilteredContainerModel
   "Returns a ContainerModel that is synced with CONTAINER-MODEL via FILTER-NODE-FN."
   ([^ContainerModel container-model
-    ^clojure.lang.Fn filter-node-fn]
+    ^Fn filter-node-fn]
      (mk-FilteredContainerModel container-model filter-node-fn #(cmn-data %)))
 
 
   ([^ContainerModel container-model
-    ^clojure.lang.Fn filter-node-fn
-    ^clojure.lang.Fn extract-vm-from-node-fn] ;; TODO: Default value; identity.
+    ^Fn filter-node-fn
+    ^Fn extract-vm-from-node-fn] ;; TODO: Default value; identity.
 
      (let [^ContainerModel filtered-container-model (cm)
            context (ref {})] ;; Mapping between CMNs in CONTAINER-MODEL and CMNs in FILTERED-CONTAINER-MODEL.

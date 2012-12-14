@@ -17,10 +17,10 @@
 
 (deftype WidgetBase [^String id
                      ^Lifetime lifetime
-                     ^clojure.lang.Fn render-fn
-                     ^clojure.lang.Ref parent ;; WidgetBase
+                     ^Fn render-fn
+                     ^Ref parent ;; WidgetBase
                      ^ValueModel viewport ;; Viewport
-                     ^clojure.lang.Ref callbacks ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
+                     ^Ref callbacks ;; {CB-NAME -> [HANDLER-FN CALLBACK-DATA], ...}   (DOM events)
                      ^Boolean escape-html?]
   IWidgetBase
   (viewport-of [_]
@@ -51,7 +51,7 @@
 
 
 
-(defn mk-WidgetBase [^clojure.lang.Fn render-fn args]
+(defn mk-WidgetBase [^Fn render-fn args]
   (with1 (WidgetBase. (or (:id args) ;; ID
                           (str "sw-" (generate-uid)))
                       (if (:root-widget? args) ;; LIFETIME
@@ -117,7 +117,7 @@
 
 (defn ^WidgetBase set-event-handler [^String event-type
                                      ^WidgetBase widget
-                                     ^clojure.lang.Fn callback-fn
+                                     ^Fn callback-fn
                                      & {:keys [callback-data]}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
