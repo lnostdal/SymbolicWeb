@@ -59,16 +59,7 @@
   [(if (or (not clj-key) (= :id clj-key))
      nil
      (db-default-clj-to-db-key-transformer clj-key))
-   (cond
-     (isa? (class clj-value) ValueModel)
-     @clj-value
-
-     ;; TODO: This seems natural enough, but won't work since the resulting string will be quoted.
-     ;;(isa? (class clj-value) ContainerModel)
-     ;;(db-clj-cm-to-db-array clj-value "bigint")
-
-     true
-     clj-value)])
+   clj-value])
 
 
 
@@ -88,13 +79,20 @@ represented by INPUT-KEY, is not to be stored in the DB."
   "Sets up reactive SQL UPDATEs for VALUE-MODEL."
   (vm-observe value-model nil false
               (fn [inner-lifetime old-value new-value]
-                (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
+                (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)
+                      db-value (cond
+                                 (isa? (class db-value) ValueModel)
+                                 @db-value
+
+                                 true
+                                 db-value)]
                   (swdbop :update
                     ;; NOTE: The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since
                     ;; in some cases it might (still) be NIL in that context.
-                    ;; TODO: I don't understand how it can be not-NIL though? The :ID field is set using SWHTOP, so..
+                    ;;;(dbg-prin1 clj-key)
                     (update-values (.table-name db-cache) ["id = ?" (dosync @(:id @object))]
                                    {(as-quoted-identifier \" db-key) db-value}))))))
+
 
 
 
@@ -103,36 +101,41 @@ represented by INPUT-KEY, is not to be stored in the DB."
 (defn db-ensure-persistent-cm-field [^DBCache db-cache ^Ref object ^Keyword clj-key
                                      ^ContainerModel container-model]
   "Sets up reactive SQL UPDATEs for CONTAINER-MODEL."
-  (println "DB-ENSURE-PERSISTENT-CM-FIELD..")
-  (cm-iterate container-model _ obj
-    (db-put obj (:db-table-name @obj))
-    false)
-  (observe (.observable container-model) nil
-           (fn [inner-lifetime args]
-             (let [[event-sym & event-args] args
-                   ;; TODO: OP-TYPE stuff here can be simplified.
-                   [op-type op-object]
-                   (case event-sym
-                     cm-prepend
-                     [:add (cmn-data (nth event-args 0))]
+  (letfn [(do-it []
+            (swdbop :update
+              (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)
+                    ;; TODO: Think about the DOSYNC here.
+                    [id db-value] (dosync [@(:id @object)
+                                           (db-clj-cm-to-db-array db-value "bigint")])]
+                (jdbc/do-prepared (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value
+                                       " WHERE id = ?;")
+                                  [id]))))]
+    ;; TODO: The two next forms only make sense for DB-PUTs.
+    (cm-iterate container-model _ obj
+      (db-put obj (:db-table-name @obj))
+      false)
+    (do-it)
+    (observe (.observable container-model) nil
+             (fn [inner-lifetime args]
+               (let [[event-sym & event-args] args
+                     ;; TODO: OP-TYPE stuff here can be simplified.
+                     [op-type op-object]
+                     (case event-sym
+                       cm-prepend
+                       [:add (cmn-data (nth event-args 0))]
 
-                     (cmn-after cmn-before)
-                     [:add (cmn-data (nth event-args 1))]
+                       (cmn-after cmn-before)
+                       [:add (cmn-data (nth event-args 1))]
 
-                     cmn-remove
-                     [:remove (cmn-data (nth event-args 0))])
-                   db-table-name (:db-table-name @op-object)]
-               (case op-type
-                 :add (db-put op-object db-table-name)
-                 :remove (db-remove @(:id @op-object) db-table-name))
+                       cmn-remove
+                       [:remove (cmn-data (nth event-args 0))])
+                     db-table-name (:db-table-name @op-object)]
 
-               (swdbop :update
-                 (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)
-                       ;; TODO: Think about the DOSYNC here, and two DOSYNCs in a row sucks.
-                       db-value (dosync (db-clj-cm-to-db-array db-value "bigint"))]
-                   (jdbc/do-prepared (str "UPDATE " (dbg-prin1 (.table-name db-cache)) " SET " (name db-key) " = " db-value
-                                          " WHERE id = ?;")
-                                     [(dbg-prin1 (dosync @(:id @object)))])))))))
+                 (case op-type
+                   :add (db-put op-object db-table-name)
+                   :remove (db-remove @(:id @op-object) db-table-name))
+
+                 (do-it))))))
 
 
 
@@ -239,83 +242,66 @@ Returns OBJ when object was added or logical False when object was not added; e.
   ([^Ref obj ^DBCache db-cache] (db-backend-put obj db-cache true))
   ([^Ref obj ^DBCache db-cache ^Boolean update-cache?]
      (swdbop :insert
-       (let [after-put-fns (atom [])
-             [abort-put? sql values-to-escape]
+       (let [[abort-put? sql values-to-escape]
              (dosync
-              ;; Grab snapshot of all data and use it to generate SQL statement.
+              ;; Grab snapshot of all data and use it to generate SQL statement. Note how this is done inside the :INSERT; this is
+              ;; to ensure that
               (if (and (:id (ensure obj))
                        @(:id (ensure obj)))
                 [true] ;; ABORT-PUT?
                 (with-local-vars [record-data {}
-                                  values-to-escape []]
-               (doseq [^MapEntry key_val (ensure obj)]
-                 ;; TODO: Is this test needed? Why can't DB-HANDLE-INPUT do it?
-                 (when (or (= ValueModel (class (val key_val)))
-                           (= ContainerModel (class (val key_val))))
-                   (let [[db-key db-value] (db-handle-input db-cache obj (key key_val) (val key_val))]
-                     (when db-key
-                       (cond
-                         (isa? (class (val key_val)) ValueModel)
-                         (swap! after-put-fns conj
-                                (fn [] (db-ensure-persistent-vm-field db-cache obj (key key_val) (val key_val))))
+                                  values-to-escape []
+                                  after-put-fns []]
+                  (doseq [^MapEntry key_val (ensure obj)]
+                    ;; TODO: Is this test needed? Why can't DB-HANDLE-INPUT do it?
+                    (when (or (= ValueModel (class (val key_val)))
+                              (= ContainerModel (class (val key_val))))
+                      (let [[db-key db-value] (db-handle-input db-cache obj (key key_val) (val key_val))]
+                        (when db-key
+                          (cond
+                            (isa? (class (val key_val)) ValueModel)
+                            (db-ensure-persistent-vm-field db-cache obj (key key_val) (val key_val))
 
-                         (isa? (class (val key_val)) ContainerModel)
-                         (swap! after-put-fns conj
-                                (fn [] (db-ensure-persistent-cm-field db-cache obj (key key_val) (val key_val)))))
-                       (var-alter record-data assoc db-key db-value)))))
-               [false ;; ABORT-PUT? SQL VALUES-TO-ESCAPE
-                (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
-                           (.table-name db-cache) ;; TODO: Escape.
-                           (mapv name (keys (var-get record-data))) ;; TODO: Escape.
-                           (mapv (fn [v]
-                                   (cond
-                                     (isa? (class v) ValueModel)
-                                     (do1 "?"
-                                       (var-alter values-to-escape conj @v))
+                            (isa? (class (val key_val)) ContainerModel)
+                            (db-ensure-persistent-cm-field db-cache obj (key key_val) (val key_val)))
+                          (var-alter record-data assoc db-key db-value)))))
+                  [false ;; ABORT-PUT? SQL VALUES-TO-ESCAPE
+                   (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
+                              (.table-name db-cache) ;; TODO: Escape.
+                              (mapv name (keys (var-get record-data))) ;; TODO: Escape?
+                              (mapv (fn [v]
+                                      (cond
+                                        (isa? (class v) ValueModel)
+                                        (do1 "?"
+                                          (var-alter values-to-escape conj @v))
 
-                                     (isa? (class v) ContainerModel)
-                                     (do
-                                        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                          ;;;; Yep, the :INSERT for `order' is done first, then the one for `order_deal' --
-                                          ;;;; but, heh, the ContainerModel in `order' has already been filled in with some nodes
-                                          ;;;; holding stuff meant to go into `order_deal'. Seems I got to do the nextval() thing
-                                          ;;;; when creating objects meant for :INSERT'ing later on.
-                                          ;;;; Or, ContainerModel fields must be synced as :UPDATE SWDBOPs! (better i think)
-                                       ;;;; 2ND PROBLEM:
-                                       ;;;; When DB-PUT'ing
-                                       ;;(db-clj-cm-to-db-array v "bigint")
-                                       #_(swap! after-put-fns conj
-                                              (fn []
-                                                (swdbop :update
+                                        ;; Dummy value here so we can do our INSERT without having to INSERT other objects first.
+                                        ;; Doing that would be tricky since those objects might rely on this object having been
+                                        ;; INSERTed first (:ID field).
+                                        (isa? (class v) ContainerModel)
+                                        "ARRAY[]::bigint[]"
 
-                                                  )))
-                                       "ARRAY[]::bigint[]")
-
-                                     true
-                                     (do1 "?"
-                                       (var-alter values-to-escape conj v))))
-                                 (vals (var-get record-data))))
-                (var-get values-to-escape)])))]
+                                        true
+                                        (do1 "?"
+                                          (var-alter values-to-escape conj v))))
+                                    (vals (var-get record-data))))
+                   (var-get values-to-escape)])))]
          (when-not abort-put?
            (let [res (jdbc/do-prepared-return-keys sql values-to-escape)]
-             ;; TODO: Hacky.
-             ;;(dbg-prin1 [:db-backend-put (:id res) (.table-name db-cache)])
-             (dosync (vm-set (:id @obj) (:id res))) ;; TODO: ..or add.
+             ;; Doing this here (instead of in the SWHTOP that followss) so other SWDBOPs can refer to the :ID field e.g. while
+             ;; generating SQL.
+             (dosync
+              (if (and (:id (ensure obj))
+                       @(:id (ensure obj)))
+                (abort-transaction false) ;; TODO: DB-CACHE-REMOVE?
+                (do
+                  (vm-set (:id @obj) (:id res)) ;; TODO: ..or add?
+                  (when update-cache?
+                    (db-cache-put db-cache (:id res) obj)))))
              (swhtop
-               #_(and (:id (ensure obj))
-                      @(:id (ensure obj)))
-               (if false
-                   (abort-transaction false) ;; TODO: DB-CACHE-REMOVE?
-                   (when update-cache?
-                     (db-cache-put db-cache (:id res) obj)))
-               ;;(vm-set (:id @obj) (:id res)) ;; TODO: ..or add.
                ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
                ((.after-fn db-cache) obj)
-               obj))
-           (dosync
-            (doseq [^Fn f @after-put-fns]
-              (f))))))))
-
+               obj)))))))
 
 
 
