@@ -71,6 +71,9 @@
                                              "?access_token=" (url-encode-component user-access-token)))]
     (json-parse (:body http-response))))
 
+(defn user-get-info-by-id [fb-uid]
+  (let [http-response (http-get-request (str "https://graph.facebook.com/" fb-uid))]
+    (json-parse (:body http-response))))
 
 (defn user-get-likes [^String user-access-token]
   (let [http-response (http-get-request (str "https://graph.facebook.com/me/likes?access_token="
@@ -138,12 +141,29 @@
                           ^String app-id
                           ^String app-secret
                           permission-names
+                          ^String realtime-verify-token
                           ^String user-authenticate-display
                           authorization-accepted-fn
-                          authorization-declined-fn]
+                          authorization-declined-fn
+                          user-data-updated-fn]
   "Example of use from JS:
   window.open('http://lrn.freeordeal.no/sw?page=facebook-api&do=init&' + new Date().getTime(), 'blah', 'width=640,height=340');"
   (case (get (:query-params request) "do")
+    "realtime-update"
+    (if (and ;; test if this is a subscription verification
+         (= (get (:query-params request) "hub.mode") "subscribe")
+         (= (get (:query-params request) "hub.verify_token") realtime-verify-token))
+      (http-html-response (get (:query-params request) "hub.challenge"))
+      ;; else: assume that this is realtime update POST request
+      (do
+        (let [update-json (dbg-prin1 (json-parse (aleph.formats/bytes->string (:body request))))
+              entry (get update-json :entry)
+              entries (if (coll? entry) entry [entry])]
+          (when (= "user" (get update-json :object)) ;; ignore anything but user updates for now
+            (doseq [entry entries]
+              (user-data-updated-fn (get entry :changed_fields)
+                                    (user-get-info-by-id (get entry :uid))))))))
+
     "init"
     ;; FB: 1. Redirect the user to the OAuth Dialog
     (let [csrf-check (generate-uuid)]
