@@ -17,7 +17,7 @@
                  [ring/ring-core "1.2.0-SNAPSHOT"] ;; HTTP protocol handling.
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
-                 [postgresql/postgresql "9.2-1000.jdbc4"] ;; PostgreSQL JDBC driver.
+                 [postgresql/postgresql "9.2-1002.jdbc4"] ;; PostgreSQL JDBC driver.
                  [c3p0/c3p0 "0.9.1.2"] ;; DB connection pooling.
 
                  [org.clojure/tools.nrepl "0.2.0-SNAPSHOT"]]
