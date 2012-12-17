@@ -92,8 +92,8 @@ represented by INPUT-KEY, is not to be stored in the DB."
               (fn [inner-lifetime old-value new-value]
                 (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
                   (swdbop :update
-                    ;; NOTE: The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since
-                    ;; in some cases it might (still) be NIL in that context.
+                    ;; The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since in some
+                    ;; cases it might (still) be NIL in that context.
                     (update-values (.table-name db-cache) ["id = ?" (dosync @(:id @object))]
                                    {(as-quoted-identifier \" db-key) db-value}))))))
 
@@ -109,16 +109,16 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
   ([^DBCache db-cache ^Ref object ^Keyword clj-key ^ContainerModel container-model ^Boolean initial-sync?]
      (letfn [(do-it []
-               ;; Extract objects while in the scope of the BODY of SWSYNC. Note how the :IDs aren't extractly directly here, as
-               ;; those fields might still be NIL while pending :INSERTs.
+               ;; Extract objects while in the scope of the BODY of SWSYNC. Note how the :IDs aren't extracted here, as those
+               ;; fields might still be NIL while pending :INSERTs.
                (let [cm-objects (with-local-vars [cm-objects []]
                                   (cm-iterate container-model _ cm-obj
                                     (var-alter cm-objects cm-obj)
                                     false)
                                   (var-get cm-objects))]
                  (swdbop :update
-                   ;; NOTE: The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since
-                   ;; in some cases it might (still) be NIL in that context. The same ID-related concern applies to the CM.
+                   ;; The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since in some
+                   ;; cases it might (still) be NIL in that context. The same ID-related concern applies to the CM.
                    (let [[db-key db-value id]
                          ;; TODO: It seems silly having to go through DB-HANDLE-INPUT here just for key translation.
                          (dosync (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)]
@@ -157,38 +157,31 @@ represented by INPUT-KEY, is not to be stored in the DB."
   ;;; for this.
   (swhtop
     (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-      (do ;; Yes; mutate it.
+      (do
         (vm-set existing-vm clj-value)
         (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
-      (let [^ValueModel new-vm (vm clj-value)] ;; No; add it.
+      (let [^ValueModel new-vm (vm clj-value)]
         (ref-set object (assoc (ensure object) clj-key new-vm))
-        (db-ensure-persistent-vm-field db-cache object clj-key new-vm))))
-  object)
+        (db-ensure-persistent-vm-field db-cache object clj-key new-vm)))))
 
 
 
 (declare db-get)
 (defn ^Ref db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value]
   "DB --> SW."
-  (let [^clojure.lang.PersistentVector clj-value (db-db-array-to-clj-vector clj-value)]
-
-    (if-let [^ContainerModel existing-cm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-      (do ;; Yes; mutate it.
-        ;; TOOD: Sync existing data with data from DBs somehow? Not sure how, so we just clear out the stuff on the Clj end.
-        (swhtop
-          (cm-clear existing-cm))
-        (swdbop false
-          (doseq [obj (mapv #(db-get % (.table-name db-cache)) clj-value)]
-            (swhtop
-              (cm-append existing-cm (cmn obj))))
-          (swhtop
-            (db-ensure-persistent-cm-field db-cache object clj-key existing-cm))))
-      (let [^ContainerModel new-cm (with1 (cmn) ;; No; add it.
-                                     (doseq [^Long id clj-value]
-                                       ;; TODO: DB-GET within DOSYNC/SWSYNC won't do.
-                                       (cm-append it (cmn (db-get id (.table-name db-cache))))))]
-        (db-ensure-persistent-cm-field db-cache object clj-key new-cm)))
-    object))
+  (let [^clojure.lang.PersistentVector cm-objects (mapv #(db-get % (.table-name db-cache))
+                                                        (db-db-array-to-clj-vector clj-value))]
+    (swhtop
+      (if-let [^ContainerModel existing-cm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
+        (do
+          (assert (zero? (count existing-cm)))
+          (doseq [obj cm-objects]
+            (cm-append existing-cm (cmn obj)))
+          (db-ensure-persistent-cm-field db-cache object clj-key existing-cm))
+        (let [^ContainerModel new-cm (with1 (cm)
+                                       (doseq [obj cm-objects]
+                                         (cm-append it (cmn obj))))]
+          (db-ensure-persistent-cm-field db-cache object clj-key new-cm))))))
 
 
 
@@ -233,7 +226,8 @@ Non-blocking; instantly returns OBJ and later fills in its :ID field with either
             (vm-set (:id @obj) :not-found))))
       (catch Throwable e
         ;; TODO: Think about this. What about ABORT-TRANSACTION?
-        (dosync (vm-set (:id @obj) e))
+        (dosync
+         (vm-set (:id @obj) e))
         (throw e))))
   obj)
 
@@ -249,7 +243,7 @@ Non-blocking."
      (swdbop :insert
        (let [[abort-put? sql values-to-escape]
              (dosync
-              ;; Grab snapshot of all data and use it to generate SQL statement. Note how this is done inside the :INSERT. This is
+              ;; Grab snapshot of all data and use it to generate SQL statement. Note how this is done inside the :INSERT; this is
               ;; to ensure that any :UPDATES from the DB-ENSURE-PERSISTENT-* calls below won't happen before this :INSERT.
               (if (and (:id (ensure obj))
                        @(:id (ensure obj)))
@@ -391,25 +385,26 @@ Blocking."
        (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
              (fn []
                (let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                 (vm-observe (:id @new-obj) nil true
-                             (fn [_ old-id new-id]
-                               (cond
-                                 (not new-id)
-                                 (when-not (= :symbolicweb.core/initial-update old-id)
-                                   (db-cache-remove db-cache id)
-                                   (assert false))
+                 (dosync
+                  (vm-observe (:id @new-obj) nil true
+                              (fn [_ old-id new-id]
+                                (cond
+                                  (not new-id)
+                                  (when-not (= :symbolicweb.core/initial-update old-id)
+                                    (db-cache-remove db-cache id)
+                                    (assert false))
 
-                                 (number? new-id)
-                                 (when-not (not old-id)
-                                   (db-cache-remove db-cache id)
-                                   (assert false))
+                                  (number? new-id)
+                                  (when-not (not old-id)
+                                    (db-cache-remove db-cache id)
+                                    (assert false))
 
-                                 (or (= :not-found)
-                                     (isa? (class new-id) Throwable))
-                                 (db-cache-remove db-cache id)
+                                  (or (= :not-found)
+                                      (isa? (class new-id) Throwable))
+                                  (db-cache-remove db-cache id)
 
-                                 true
-                                 (assert false))))
+                                  true
+                                  (assert false)))))
                  (swop
                    (when (number? @(:id @new-obj))
                      (after-construction-fn ((.after-fn db-cache) new-obj))))
