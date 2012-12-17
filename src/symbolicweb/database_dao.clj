@@ -384,27 +384,28 @@ Blocking."
            ^DBCache db-cache (db-get-cache table-name)]
        (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
              (fn []
-               (let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                 (dosync
-                  (vm-observe (:id @new-obj) nil true
-                              (fn [_ old-id new-id]
-                                (cond
-                                  (not new-id)
-                                  (when-not (= :symbolicweb.core/initial-update old-id)
-                                    (db-cache-remove db-cache id)
-                                    (assert false))
+               (let [^Ref new-obj (db-backend-get db-cache id
+                                                  (with1 ((.constructor-fn db-cache) db-cache id)
+                                                    (dosync
+                                                     (vm-observe (:id @it) nil true
+                                                                 (fn [_ old-id new-id]
+                                                                   (cond
+                                                                     (not new-id)
+                                                                     (when-not (= :symbolicweb.core/initial-update old-id)
+                                                                       (db-cache-remove db-cache id)
+                                                                       (assert false))
 
-                                  (number? new-id)
-                                  (when-not (not old-id)
-                                    (db-cache-remove db-cache id)
-                                    (assert false))
+                                                                     (number? new-id)
+                                                                     (when-not (not old-id)
+                                                                       (db-cache-remove db-cache id)
+                                                                       (assert false))
 
-                                  (or (= :not-found)
-                                      (isa? (class new-id) Throwable))
-                                  (db-cache-remove db-cache id)
+                                                                     (or (= :not-found)
+                                                                         (isa? (class new-id) Throwable))
+                                                                     (db-cache-remove db-cache id)
 
-                                  true
-                                  (assert false)))))
+                                                                     true
+                                                                     (assert false)))))))]
                  (swop
                    (when (number? @(:id @new-obj))
                      (after-construction-fn ((.after-fn db-cache) new-obj))))
