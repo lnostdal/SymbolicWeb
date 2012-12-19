@@ -151,7 +151,7 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 
 
-(defn ^Ref db-value-to-vm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key clj-value]
+(defn db-value-to-vm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key clj-value]
   "DB --> SW."
   ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases; there's currently no check
   ;;; for this.
@@ -167,7 +167,7 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 
 (declare db-get)
-(defn ^Ref db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value]
+(defn db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value]
   "DB --> SW."
   (let [^clojure.lang.PersistentVector cm-objects (mapv #(db-get % (.table-name db-cache))
                                                         (db-db-array-to-clj-vector clj-value))]
@@ -206,17 +206,10 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 
 
-
-(defn db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
-  "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
-This does not add the item to the cache.
-
-Non-blocking; instantly returns OBJ and later fills in its :ID field with either:
-
-  * A number, meaning success.
-  * A Throwable, meaning something went wrong.
-  * :NOT-FOUND, meaning an object with ID was not found in the DB."
-  (swdbop nil
+(defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
+  "Used by DB-GET; see DB-GET.
+Non-blocking; returns OBJ."
+  (swdbop :insert ;; TODO: :SELECT?
     (try
       (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;")
                                id]
@@ -373,11 +366,24 @@ Blocking."
 
 
 
-(defn db-get
-  "SQL `SELECT ...'."
+(defn ^Ref db-get
+  "Non-blocking; instantly returns an object.
+The :ID field of the returned object will later be mutated:
+
+  * To ID, meaning success. The object will then also have fields added to it or other fields mutated too.
+  * To a Throwable, meaning something went wrong.
+  * To the Keyword :NOT-FOUND, meaning an object with ID was not found in the DB.
+
+Example use:
+
+  (do
+   (db-reset-cache \"auctions\")
+   (swsync -db-agent-
+     (with (db-get 4493 \"auctions\")
+       (swop
+         (dbg-prin1 @(:id @it))))))"
   ([^Long id ^String table-name]
      (db-get id table-name identity))
-
 
   ([^Long id ^String table-name ^Fn after-construction-fn]
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
@@ -406,7 +412,7 @@ Blocking."
 
                                                                      true
                                                                      (assert false)))))))]
-                 (swop
+                 (swhtop
                    (when (number? @(:id @new-obj))
                      (after-construction-fn ((.after-fn db-cache) new-obj))))
                  new-obj))))))
@@ -418,3 +424,10 @@ Blocking."
   "SQL `DELETE FROM ...'."
   (assert false "DB-REMOVE: TODO!")
   #_(db-backend-remove id table-name))
+
+
+
+(defmacro with-db-obj [id table-name obj-sym & body]
+  `(db-get ~id ~table-name
+           (fn [~obj-sym]
+             ~@body)))

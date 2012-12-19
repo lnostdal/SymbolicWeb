@@ -3,6 +3,8 @@
 ;;; http://en.wikipedia.org/wiki/Two-phase_commit_protocol
 
 ;; TODO: There isn't much difference between SWHTOPs and SWOPs at the moment except SWHTOPs execute before SWOPs. Combine them?
+;; Perhaps it'd make sense to build trees based on dynamic scope? E.g., see how SWOP is needed in the DB-GET docstring example.
+;; clojure.zip/*
 
 
 (defn swsync* [db-agent ^Fn bodyfn]
@@ -34,15 +36,14 @@
                    (letfn [(handle-swdbops [swsync-db-operations]
                              (binding [^Atom *swsync-db-operations* (atom [])
                                        *pending-prepared-transaction?* true] ;; TODO: Why this?
-                               (letfn [(handle-swdbop [the-sql-op-type]
-                                         (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
-                                           (when (= the-sql-op-type sql-op-type)
-                                             (f)
-                                             (when-not (empty? @*swsync-db-operations*)
-                                               (handle-swdbops @*swsync-db-operations*))))
-                                         (when-not (empty? @*swsync-db-operations*)
-                                           (handle-swdbops @*swsync-db-operations*)))]
-                                 (dorun (map handle-swdbop [:insert :update :delete nil])))))]
+                               (doseq [the-sql-op-type [:insert :update :delete nil]]
+                                 (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
+                                   (when (= the-sql-op-type sql-op-type)
+                                     (f)
+                                     (when-not (empty? @*swsync-db-operations*)
+                                       (handle-swdbops @*swsync-db-operations*))))
+                                 (when-not (empty? @*swsync-db-operations*)
+                                   (handle-swdbops @*swsync-db-operations*)))))]
                      (when-not (empty? @*swsync-db-operations*)
                        (handle-swdbops @*swsync-db-operations*)))
                    (when-not (and (empty? @*swsync-ht-operations*)
