@@ -155,46 +155,51 @@ represented by INPUT-KEY, is not to be stored in the DB."
   "DB --> SW."
   ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases; there's currently no check
   ;;; for this.
-  (swhtop
-    (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-      (do
-        (vm-set existing-vm clj-value)
-        (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
-      (let [^ValueModel new-vm (vm clj-value)]
-        (ref-set object (assoc (ensure object) clj-key new-vm))
-        (db-ensure-persistent-vm-field db-cache object clj-key new-vm)))))
+  (dosync
+   (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
+     (do
+       (vm-set existing-vm clj-value)
+       #_(try
+         (vm-set existing-vm clj-value)
+         (catch Throwable e
+           (clojure.stacktrace/print-stack-trace e)))
+       (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
+     (let [^ValueModel new-vm (vm clj-value)]
+       (ref-set object (assoc (ensure object) clj-key new-vm))
+       (db-ensure-persistent-vm-field db-cache object clj-key new-vm)))))
 
 
 
 (declare db-get)
-(defn db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value]
+(defn db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value
+                              ^String ref-db-table-name]
   "DB --> SW."
-  (let [^clojure.lang.PersistentVector cm-objects (mapv #(db-get % (.table-name db-cache))
+  (let [^clojure.lang.PersistentVector cm-objects (mapv #(db-get % ref-db-table-name)
                                                         (db-db-array-to-clj-vector clj-value))]
-    (swhtop
-      (if-let [^ContainerModel existing-cm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-        (do
-          (assert (zero? (count existing-cm)))
-          (doseq [obj cm-objects]
-            (cm-append existing-cm (cmn obj)))
-          (db-ensure-persistent-cm-field db-cache object clj-key existing-cm))
-        (let [^ContainerModel new-cm (with1 (cm)
-                                       (doseq [obj cm-objects]
-                                         (cm-append it (cmn obj))))]
-          (db-ensure-persistent-cm-field db-cache object clj-key new-cm))))))
+    (dosync
+     (if-let [^ContainerModel existing-cm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
+       (do
+         (assert (zero? (count existing-cm)))
+         (doseq [obj cm-objects]
+           (cm-append existing-cm (cmn obj)))
+         (db-ensure-persistent-cm-field db-cache object clj-key existing-cm))
+       (let [^ContainerModel new-cm (with1 (cm)
+                                      (doseq [obj cm-objects]
+                                        (cm-append it (cmn obj))))]
+         (db-ensure-persistent-cm-field db-cache object clj-key new-cm))))))
 
 
 
-(defn db-default-handle-output [^DBCache db-cache db-row ^Ref object]
+(defn ^Ref db-default-handle-output [^DBCache db-cache db-row ^Ref object]
   "DB --> SW."
   (doseq [^MapEntry entry db-row]
     (let [^Keyword db-key (db-default-db-to-clj-key-transformer (key entry))
           db-value (val entry)]
       (if (isa? (class db-value) java.sql.Array)
-        (db-value-to-cm-handler db-cache db-row object
-                                db-key db-value)
-        (db-value-to-vm-handler db-cache db-row object
-                                db-key db-value)))))
+        (db-value-to-cm-handler db-cache db-row object db-key db-value
+                                false)
+        (db-value-to-vm-handler db-cache db-row object db-key db-value)))))
+
 
 
 
@@ -208,21 +213,15 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 (defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "Used by DB-GET; see DB-GET.
-Non-blocking; returns OBJ."
-  (swdbop :insert ;; TODO: :SELECT?
-    (try
-      (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;")
-                               id]
-        (if-let [db-row (first res)]
-          (db-handle-output db-cache obj db-row) ;; Not a SWHTOP since this might lead to further SWDBOPs.
-          (swhtop
-            (vm-set (:id @obj) :not-found))))
-      (catch Throwable e
-        ;; TODO: Think about this. What about ABORT-TRANSACTION?
-        (dosync
-         (vm-set (:id @obj) e))
-        (throw e))))
-  obj)
+Returns OBJ."
+  (dbg-prin1 [(.table-name db-cache) id])
+  (if (not *in-sw-db?*)
+    ;; TODO: WITH-SW-CONNECTION doesn't work, but it'd be all we need here.
+    (with-sw-db (fn [_] (db-backend-get db-cache id obj)))
+    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;") id]
+      (when-let [db-row (first res)]
+        (db-handle-output db-cache obj db-row)
+        obj))))
 
 
 
@@ -230,6 +229,7 @@ Non-blocking; returns OBJ."
 (defn db-backend-put
   "SQL INSERT of OBJ whos keys and values are translated via DB-HANDLE-INPUT. This will also add OBJ to DB-CACHE unless
 UPDATE-CACHE? is given a FALSE value.
+Sets the :ID field of OBJ to an integer.
 Non-blocking."
   ([^Ref obj ^DBCache db-cache] (db-backend-put obj db-cache true))
   ([^Ref obj ^DBCache db-cache ^Boolean update-cache?]
@@ -367,55 +367,27 @@ Blocking."
 
 
 (defn ^Ref db-get
-  "Non-blocking; instantly returns an object.
-The :ID field of the returned object will later be mutated:
-
-  * To ID, meaning success. The object will then also have fields added to it or other fields mutated too.
-  * To a Throwable, meaning something went wrong.
-  * To the Keyword :NOT-FOUND, meaning an object with ID was not found in the DB.
-
-Example use:
-
-  (do
-   (db-reset-cache \"auctions\")
-   (swsync -db-agent-
-     (with (db-get 4493 \"auctions\")
-       (swop
-         (dbg-prin1 @(:id @it))))))"
   ([^Long id ^String table-name]
      (db-get id table-name identity))
 
   ([^Long id ^String table-name ^Fn after-construction-fn]
+     (io! "DB-GET: Cannot be used directly while within Clojure transaction (DOSYNC or SWSYNC).")
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
            ^DBCache db-cache (db-get-cache table-name)]
-       (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
-             (fn []
-               (let [^Ref new-obj (db-backend-get db-cache id
-                                                  (with1 ((.constructor-fn db-cache) db-cache id)
-                                                    (dosync
-                                                     (vm-observe (:id @it) nil true
-                                                                 (fn [_ old-id new-id]
-                                                                   (cond
-                                                                     (not new-id)
-                                                                     (when-not (= :symbolicweb.core/initial-update old-id)
-                                                                       (db-cache-remove db-cache id)
-                                                                       (assert false))
+       (try
+         (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
+               (fn []
+                 (when-let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                   (dosync (after-construction-fn ((.after-fn db-cache) new-obj)))
+                   new-obj)))
+         (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
+           (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
+           (throw (Exception. (str "DB-GET: Object with ID " id " not found in " (.table-name db-cache)))))
+         (catch com.google.common.util.concurrent.UncheckedExecutionException e
+           (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
+           (throw (.getCause e)))))))
 
-                                                                     (number? new-id)
-                                                                     (when-not (not old-id)
-                                                                       (db-cache-remove db-cache id)
-                                                                       (assert false))
 
-                                                                     (or (= :not-found)
-                                                                         (isa? (class new-id) Throwable))
-                                                                     (db-cache-remove db-cache id)
-
-                                                                     true
-                                                                     (assert false)))))))]
-                 (swhtop
-                   (when (number? @(:id @new-obj))
-                     (after-construction-fn ((.after-fn db-cache) new-obj))))
-                 new-obj))))))
 
 
 
