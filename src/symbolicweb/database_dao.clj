@@ -214,11 +214,11 @@ represented by INPUT-KEY, is not to be stored in the DB."
 (defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "Used by DB-GET; see DB-GET.
 Returns OBJ."
-  (dbg-prin1 [(.table-name db-cache) id])
   (if (not *in-sw-db?*)
     ;; TODO: WITH-SW-CONNECTION doesn't work, but it'd be all we need here.
     (with-sw-db (fn [_] (db-backend-get db-cache id obj)))
-    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;") id]
+    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache)) " WHERE id = ? LIMIT 1;")
+                             id]
       (when-let [db-row (first res)]
         (db-handle-output db-cache obj db-row)
         obj))))
