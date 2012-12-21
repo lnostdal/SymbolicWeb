@@ -1,10 +1,45 @@
 (in-ns 'symbolicweb.core)
 
+;;; A DOSYNC (MTX; Clojure) and database (DBTX; PostgreSQL) 2PC wrapper:
 ;;; http://en.wikipedia.org/wiki/Two-phase_commit_protocol
 
 ;; TODO: There isn't much difference between SWHTOPs and SWOPs at the moment except SWHTOPs execute before SWOPs. Combine them?
-;; Perhaps it'd make sense to build trees based on dynamic scope? E.g., see how SWOP is needed in the DB-GET docstring example.
-;; clojure.zip/*
+;; ..or have something like:
+;;
+;;
+;; Multi-pass:
+;;;;;;;;;;;;;;
+;;
+;; (swop
+;;  (println "1")
+;;  (swop
+;;   (println "3")
+;;   (swop
+;;    (println "5"))
+;;   (println "4"))
+;;  (println "2"))
+;; => 1, 2, 3, 4, 5
+;;
+;;
+;; Single-pass:
+;;;;;;;;;;;;;;;
+;;
+;; (swop
+;;  (println "1")
+;;  (swop
+;;   (println "2")
+;;   (swop
+;;    (println "3"))
+;;   (println "4"))
+;;  (println "5"))
+;; => 1, 2, 3, 4, 5
+;;
+;;
+;; ...could perhaps have SWSPOP and SWMPOP here. ..or SW This Pass OP and SW Next Pass OP. There's a chance this would be a
+;; better mechanism than the current :INSERT, :UPDATE, etc. stuff for SWDBOP too -- and it can be generalized to not related
+;; to this code or component at all.
+;;
+;; TODO: I suppose SWSYNC* would be simpler if *SWSYNC-OPERATIONS* was a map with :INSERT, :UPDATE, :DELETE etc. for keys?
 
 
 (defn swsync* [db-agent ^Fn bodyfn]
@@ -36,7 +71,7 @@
                    (letfn [(handle-swdbops [swsync-db-operations]
                              (binding [^Atom *swsync-db-operations* (atom [])
                                        *pending-prepared-transaction?* true] ;; TODO: Why this?
-                               (doseq [the-sql-op-type [:insert :update :delete nil]]
+                               (doseq [the-sql-op-type [:insert :update :delete :select nil]]
                                  (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
                                    (when (= the-sql-op-type sql-op-type)
                                      (f)
@@ -57,27 +92,28 @@
 
 
 (defmacro swsync [db-agent & body]
-  "A combined DOSYNC (MTX) and database (DBTX) wrapper.
+  "A DOSYNC (MTX; Clojure) and database (DBTX; PostgreSQL) 2PC wrapper:
+  http://en.wikipedia.org/wiki/Two-phase_commit_protocol
 
-Thingss are done in a 2PC fashion:
+Things are done in a 2PC fashion after MTX1:
 
     (MTX1 <body>) --SEND-OFF--> (DBTX <swdbop>* (MTX2 <swhtop>* <swop>*))
 
   * MTX1: Is BODY which will be wrapped in a DOSYNC.
   * DBTX: Is operations added via SWDBOP within the dynamic scope of BODY.
-  * MTX2: Is operations added via SWOP and SWHTOP within the dynamic scope of BODY.
+  * MTX2: Is operations added via SWOP and SWHTOP within the dynamic scopes of BODY and DBTX.
           These are executed while DBTX is held or pending.
 
 
-The order in which operations are executed is: SWDBOPs, SWHTOPs then SWOPs. The SWHTOPs and SWOPs execute within the same MTX.
-SWDBOPs are executed in order:
+The order in which operations are executed is: SWDBOPs, SWHTOPs then SWOPs. The SWHTOPs and SWOPs execute within the same MTX;
+MTX2. SWDBOPs are executed in this order:
 
-  :INSERT, :UPDATE, :DELETE then logical False; given by the SQL-OP-TYPE argument to SWDBOP.
+  :INSERT, :UPDATE, :DELETE, :SELECT then logical False; given by the SQL-OP-TYPE argument to SWDBOP.
 
 
-If the :INSERT operations trigger new :INSERT operations, those will be executed before any :UPDATE operations.
-If the :UPDATE operations trigger new :INSERT or :UPDATE operations, those will be executed before any :DELETE operations.
-..and so on.
+* If the :INSERT operations trigger new :INSERT operations, those will be executed in turn before any :UPDATE operations.
+* If the :UPDATE operations trigger new :INSERT or :UPDATE operations, those will be executed before any :DELETE operations.
+* ..and so on..
 
 DB-AGENT can be NIL, in which case -SW-IO-AGENT- will be used.
 
@@ -98,6 +134,7 @@ See SWSYNC."
      (assert (or (= :insert ~sql-op-type)
                  (= :update ~sql-op-type)
                  (= :delete ~sql-op-type)
+                 (= :select ~sql-op-type)
                  (not ~sql-op-type)))
      (assert (thread-bound? #'*swsync-db-operations*)
              "SWDBOP: database operation outside of SWSYNC context.")
