@@ -35,7 +35,9 @@
   (with-local-vars [elts []]
     (cm-iterate container-model _ obj
       (var-alter elts conj (with1 @(:id @obj)
-                             (assert it "DB-CLJ-CM-TO-DB-ARRAY: Object not in DB yet? It has no :ID.")))
+                             (assert (integer? it)
+                                     (str "DB-CLJ-CM-TO-DB-ARRAY: Object not in DB yet? :ID is not an integer: " it))))
+
       false)
     (cl-format false "ARRAY[~{~S~^, ~}]::~A[]" (var-get elts) db-type)))
 
@@ -190,7 +192,7 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 
 
-(defn ^Ref db-default-handle-output [^DBCache db-cache db-row ^Ref object]
+(defn db-default-handle-output [^DBCache db-cache db-row ^Ref object]
   "DB --> SW."
   (doseq [^MapEntry entry db-row]
     (let [^Keyword db-key (db-default-db-to-clj-key-transformer (key entry))
@@ -199,7 +201,6 @@ represented by INPUT-KEY, is not to be stored in the DB."
         (db-value-to-cm-handler db-cache db-row object db-key db-value
                                 false)
         (db-value-to-vm-handler db-cache db-row object db-key db-value)))))
-
 
 
 
@@ -382,12 +383,10 @@ Blocking."
                    new-obj)))
          (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
            (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
-           (throw (Exception. (str "DB-GET: Object with ID " id " not found in " (.table-name db-cache)))))
+           false)
          (catch com.google.common.util.concurrent.UncheckedExecutionException e
            (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
            (throw (.getCause e)))))))
-
-
 
 
 
@@ -396,10 +395,3 @@ Blocking."
   "SQL `DELETE FROM ...'."
   (assert false "DB-REMOVE: TODO!")
   #_(db-backend-remove id table-name))
-
-
-
-(defmacro with-db-obj [id table-name obj-sym & body]
-  `(db-get ~id ~table-name
-           (fn [~obj-sym]
-             ~@body)))
