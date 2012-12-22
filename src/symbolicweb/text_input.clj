@@ -9,22 +9,24 @@
 ;; * Error handling and feedback to user.
 
 
-(derive ::TextInput ::HTMLElement)
-(defn mk-TextInput [model & attributes]
+
+(defn ^WidgetBase mk-TextInput [^ValueModel value-model]
   "<input type='text' ..> type widget."
-  (with1 (apply mk-HTMLElement "input" model
-                :type ::TextInput
-                :static-attributes {:type "text"}
-                :handle-model-event-fn (fn [widget _ new-value]
-                                         (jqVal widget new-value))
-                attributes)
+  (with1 (mk-WidgetBase (fn [^WidgetBase widget]
+                          (str "<input type='text' id='" (.id widget) "'>"
+                               "<script>$('#" (.id widget) "').change(function(){ $(this).prop('disabled', true); });</script>"))
+                        [])
+
+    (vm-observe value-model (.lifetime it) true
+                (fn [_ _ new-value]
+                  (jqVal it new-value)
+                  (jqProp it "disabled" "false")))
+
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]
-                         (dosync
-                          (vm-set model (if-let [input-parsing-fn (:input-parsing-fn @it)]
-                                          (input-parsing-fn new-value)
-                                          new-value))))
+                         (dosync (vm-set value-model new-value)))
                        :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
+
 
 
 (derive ::HashedInput ::HTMLElement)
