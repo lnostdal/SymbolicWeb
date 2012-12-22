@@ -3,6 +3,80 @@
 ;;; A DOSYNC (MTX; Clojure) and database (DBTX; PostgreSQL) 2PC wrapper:
 ;;; http://en.wikipedia.org/wiki/Two-phase_commit_protocol
 
+
+;; TODO: Any single Agent isn't concurrent at all.
+;; Seems the only way to "improve" this is to do something insane like:
+;;
+;; (let [a (agent nil)]
+;;   (dosync
+;;    (send-off a (fn [_] (future (Thread/sleep 1000) (println "hi")))))
+;;   (dosync
+;;    (send-off a (fn [_] (future (Thread/sleep 1000) (println "hi"))))))
+;;
+;;
+;; Since using FUTURE directly wouldn't work well with STM retries. Yep, the Clojure STM is a closed, black box. Not very clever.
+;; Perhaps using the :VALIDATOR option for a dummy ref would be an option though?
+;;
+;; (let [r (ref 42 :validator (fn [r-val] (println "committing MTX!") true))]
+;;   (dosync
+;;    (println "a")
+;;    (ref-set r 0)
+;;    (println "b"))
+;;   (println "done"))
+;; committing MTX!
+;; a
+;; b
+;; committing MTX!
+;; done
+;;
+;;
+;; ..of course, the :VALIDATOR will be called on construction time also, but that's easy to deal with:
+
+
+
+#_(def ^:dynamic *on-commit-fns*)
+
+
+
+#_(defmacro on-commit [& body]
+  `(swap! *on-commit-fns* conj (fn [] ~@body)))
+
+
+
+#_(defmacro with-on-commit-ctx [& body]
+  `(binding [*on-commit-fns* (atom [])]
+     (let [on-commit# (ref 0)]
+
+       (add-watch on-commit# :on-commit
+                  (fn [_# _# _# on-commit-fns#]
+                    (doseq [^Fn on-commit-fn# on-commit-fns#]
+                      (on-commit-fn#))))
+
+       (let [res# (do ~@body)]
+         (ref-set on-commit# @*on-commit-fns*)
+         res#))))
+
+
+
+#_(let [r (ref 0)]
+  (future
+    (dosync
+     (with-on-commit-ctx
+       (println "frst: trying..")
+       (ref-set r 1)
+       (let [r-value (ensure r)]
+         (on-commit (println "first:" r-value)))
+       (Thread/sleep 500))))
+  (future
+    (dosync
+     (with-on-commit-ctx
+       (println "second: trying..")
+       (ref-set r 2)
+       (let [r-value (ensure r)]
+         (on-commit (println "second:" r-value)))
+       (Thread/sleep 1000)))))
+
+
 ;; TODO: There isn't much difference between SWHTOPs and SWOPs at the moment except SWHTOPs execute before SWOPs. Combine them?
 ;; ..or have something like:
 ;;
@@ -38,7 +112,8 @@
 ;; ...could perhaps have SWSPOP and SWMPOP here. ..or SW This Pass OP and SW Next Pass OP. There's a chance this would be a
 ;; better mechanism than the current :INSERT, :UPDATE, etc. stuff for SWDBOP too -- and it can be generalized to not related
 ;; to this code or component at all.
-;;
+
+
 ;; TODO: I suppose SWSYNC* would be simpler if *SWSYNC-OPERATIONS* was a map with :INSERT, :UPDATE, :DELETE etc. for keys?
 
 
@@ -70,7 +145,7 @@
                  (fn [^Fn holding-transaction]
                    (letfn [(handle-swdbops [swsync-db-operations]
                              (binding [^Atom *swsync-db-operations* (atom [])
-                                       *pending-prepared-transaction?* true] ;; TODO: Why this?
+                                       ^Boolean *pending-prepared-transaction?* true] ;; TODO: Why this?
                                (doseq [the-sql-op-type [:insert :update :delete :select nil]]
                                  (doseq [[^Keyword sql-op-type ^Fn f] swsync-db-operations]
                                    (when (= the-sql-op-type sql-op-type)

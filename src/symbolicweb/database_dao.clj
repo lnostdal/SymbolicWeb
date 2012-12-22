@@ -160,11 +160,13 @@ represented by INPUT-KEY, is not to be stored in the DB."
   (dosync
    (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
      (do
+       (when-not (isa? (class existing-vm) ValueModel)
+         (println "DB-VALUE-TO-VM-HANDLER:"
+                  (class existing-vm)
+                  "," (.table-name db-cache)
+                  "," clj-key
+                  "," clj-value))
        (vm-set existing-vm clj-value)
-       #_(try
-         (vm-set existing-vm clj-value)
-         (catch Throwable e
-           (clojure.stacktrace/print-stack-trace e)))
        (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
      (let [^ValueModel new-vm (vm clj-value)]
        (ref-set object (assoc (ensure object) clj-key new-vm))
