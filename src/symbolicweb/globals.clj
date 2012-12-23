@@ -38,3 +38,8 @@
 
 
 (defonce -overtone-pool- (overtone.at-at/mk-pool))
+
+(defonce -now- (with1 (vm (clj-time.core/now))
+                 (overtone.at-at/every 1000
+                                       (fn [] (dosync (vm-set it (clj-time.core/now))))
+                                       -overtone-pool-)))
