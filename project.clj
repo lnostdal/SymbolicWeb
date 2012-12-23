@@ -27,5 +27,11 @@
 
   :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
              "-server" "-XX:+TieredCompilation"
+
+             ;;; Garbage Collection
+             "-XX:+UseG1GC"
+             ;;"-verbose:gc"
+             ;;"-XX:+PrintGCDetails"
+
              "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
              "-XX:+HeapDumpOnOutOfMemoryError"])
