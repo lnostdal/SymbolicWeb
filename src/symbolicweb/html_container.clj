@@ -43,9 +43,13 @@
    (fn [^WidgetBase template-widget]
      (let [transformation-data (content-fn template-widget)
            html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
-       (doseq [[selector content] (partition 2 transformation-data)]
-         (let [^org.jsoup.nodes.Element element (.first (.select html-resource selector))]
-           (assert element (str "HTMLTemplate: No element found for selector: " selector))
+       (doseq [[^String selector content] (partition 2 transformation-data)]
+         (let [^org.jsoup.nodes.Element element (with (.select html-resource selector)
+                                                  (assert (= 1 (count it))
+                                                          (str "mk-HTMLTemplate: " (count it)
+                                                               " (i.e. not 1) elements found for for selector \"" selector "\""
+                                                               " in context of HTMLTemplate \"" (.id template-widget) "\""))
+                                                  (.first it))]
            (if (string? content)
              ;; NOTE: I could do (.html content) here. That would actually parse the HTML and add it to our HTML-RESOURCE
              ;; for the next iteration to pick up for possible templating.
