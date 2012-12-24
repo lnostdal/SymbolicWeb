@@ -13,9 +13,8 @@
 (defn ^WidgetBase mk-TextInput [^ValueModel value-model]
   "<input type='text' ..> type widget."
   (with1 (mk-WidgetBase (fn [^WidgetBase widget]
-                          (str "<input type='text' id='" (.id widget) "'>"
-                               "<script>$('#" (.id widget) "').change(function(){ $(this).prop('disabled', true); });</script>"))
-                        [])
+                          (str "<input type='text' id='" (.id widget) "' onchange='$(this).prop(\"disabled\", true);'>"))
+                        {})
 
     (vm-observe value-model (.lifetime it) true
                 (fn [_ _ new-value]
@@ -29,14 +28,12 @@
 
 
 
-(derive ::HashedInput ::HTMLElement)
-(defn mk-HashedInput [model salt & attributes]
+#_(defn mk-HashedInput [model salt & attributes]
   "<input type='password' ..> type widget using SHA256 hashing on the client and server end. It is salted on the server end.
 Note that the client-side hash halve is still transferred in clear text form from the client to the server. This is what happens:
 
   (sha (str salt (sha hash)))"
   (with1 (apply mk-HTMLElement "input" model
-                :type ::TextInput
                 :static-attributes {:type "password"}
                 :handle-model-event-fn (fn [_ _ _])
                 :input-parsing-fn (fn [input-str]
@@ -52,16 +49,16 @@ Note that the client-side hash halve is still transferred in clear text form fro
                        {:new-value "' + encodeURIComponent($.sha256($(this).val())) + '"}))) ;; Hash once on client end.
 
 
-(derive ::IntInput ::TextInput)
-(defn mk-IntInput [model & attributes]
+
+#_(defn mk-IntInput [model & attributes]
   (apply mk-TextInput model
          :type ::IntInput
          :input-parsing-fn #(Integer/parseInt %)
          attributes))
 
 
-(derive ::TextArea ::HTMLElement)
-(defn mk-TextArea [model & attributes]
+
+#_(defn mk-TextArea [model & attributes]
   (with1 (apply mk-HTMLElement "textarea" model
                 :type ::TextArea
                 :handle-model-event-fn (fn [widget _ new-value]
@@ -76,8 +73,8 @@ Note that the client-side hash halve is still transferred in clear text form fro
                        :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
 
 
-(derive ::CKEditor ::HTMLElement)
-(defn mk-CKEditor [model & attributes]
+
+#_(defn mk-CKEditor [model & attributes]
   (apply mk-TextArea model
          :type ::CKEditor
          :render-aux-js-fn (fn [widget]
