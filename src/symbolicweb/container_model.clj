@@ -5,7 +5,7 @@
   "Iterate over CMNs in CONTAINER-MODEL executing BODY for each iteration with CMN-DATA-SYMBOL bound to the CMN-DATA of each
 CMN respectively.
 
-Iteration will end whenever BODY returns a non-FALSE value, or when the tail of CONTAINER-MODEL was reached."
+Iteration will end whenever BODY returns a True value, or when the tail of CONTAINER-MODEL was reached."
   `(loop [~cmn-symbol (cm-head-node ~container-model)]
      (when ~cmn-symbol
        (let [~cmn-data-symbol (cmn-data ~cmn-symbol)]

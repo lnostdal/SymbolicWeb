@@ -17,6 +17,9 @@ mixed".
   http://freeordeal.no/ (Norwegian only, for now)
 
 
+The least stable things API-wise is probably the DB related stuff.
+
+
 
 ## Usage
 
@@ -90,11 +93,17 @@ found in jQuery. E.g., append, prepend, before and after:
 
 ## Terminology and abbreviations
 
-* MTX: Memory transaction; e.g. DOSYNC.
+* MTX: Memory transaction; e.g. DOSYNC (STM).
 * DBTX: Database transaction; e.g. WITH-SW-DB.
 * 2PC: Two-phase transaction; database then memory transaction; e.g. SWSYNC, or WITH-SW-DB with its HOLDING-TRANSACTION callback
   made use of. http://en.wikipedia.org/wiki/Two-phase_commit_protocol
 
+
+
+## Notes
+
+* Anything blocking (I/O) means no MTX (i.e., DOSYNC or STM) possible.
+* Async, non-blocking reads (Input) is a bad idea.
 
 
 

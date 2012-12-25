@@ -1,8 +1,7 @@
 (in-ns 'symbolicweb.core)
 
-
-;;;; This is a "row-based" (via ID column) cache or layer for DB tables
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; This is a "row-based" (via ID column) reactive cache or DAO layer for DB tables
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; This maps a DB row to a Clojure Ref holding a map where the values might be ValueModels or ContainerModels (SQL array refs).
 ;;
@@ -17,45 +16,63 @@
 ;;
 ;;
 ;; TODO: ContainerModel based abstraction for SQL queries? This probably belongs in a different file; it's a different concept.
-;; TODO: It should perhaps be possible to call DB-PUT many times on the same object, but only have it added to the DB once.
-;;       I.e., it'll change the :ID field from NIL (only) to some integer in a synchronized fashion.
 
+;; NOTE: :ID fields should only be read within SWDBOPs. This means a small DOSYNC is needed for this.
 
 
 (defn db-db-array-to-clj-vector [^java.sql.Array db-array]
+  "DB --> SW."
   (vec (.getArray db-array)))
 
 
 (defn ^String db-clj-coll-to-db-array [clj-coll ^String db-type]
+  "SW --> DB."
   (cl-format false "ARRAY[~{~S~^, ~}]::~A[]" clj-coll db-type))
 
 
 (defn ^String db-clj-cm-to-db-array [^ContainerModel container-model ^String db-type]
+  "SW --> DB."
   (with-local-vars [elts []]
     (cm-iterate container-model _ obj
-      (var-alter elts conj @(:id @obj))
+      (var-alter elts conj (with1 @(:id @obj)
+                             (assert (integer? it)
+                                     (str "DB-CLJ-CM-TO-DB-ARRAY: Object not in DB yet? :ID is not an integer: " it))))
+
       false)
     (cl-format false "ARRAY[~{~S~^, ~}]::~A[]" (var-get elts) db-type)))
 
 
 (defn ^Keyword db-default-db-to-clj-key-transformer [^Keyword k]
-  ":some_field --> :some-field"
+  "DB --> SW.
+:some_field --> :some-field"
   (keyword (str/replace (name k) \_ \-)))
 
 
 ;; TODO: Consider returning a String instead?
 (defn ^Keyword db-default-clj-to-db-key-transformer [^Keyword k]
-  ":some-field --> :some_field"
+  "SW --> DB.
+:some-field --> :some_field"
   (keyword (str/replace (name k) \- \_)))
 
 
 
 (defn db-default-handle-input [^DBCache db-cache ^Ref object ^Keyword clj-key clj-value]
   "SW --> DB."
-  [(if (= :id clj-key)
+  [(if (or (not clj-key)
+           (= :id clj-key))
      nil
      (db-default-clj-to-db-key-transformer clj-key))
-   clj-value])
+
+   (cond
+     (isa? (class clj-value) ValueModel)
+     @clj-value
+
+     ;; NOTE: DB-PUT'ing objects with CM fields not possible if we do this here; it's too early with regards to :ID fields.
+     ;; (isa? (class clj-value) ContainerModel)
+     ;; (db-clj-cm-to-db-array clj-value "bigint") ;; TODO: Magic value "bigint".
+
+     true
+     clj-value)])
 
 
 
@@ -69,88 +86,121 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 
 
-(defn db-ensure-persistent-vm-field [^DBCache db-cache ^Ref object ^Long id ^Keyword clj-key
+(defn db-ensure-persistent-vm-field [^DBCache db-cache ^Ref object ^Keyword clj-key
                                      ^ValueModel value-model]
-
   "Sets up reactive SQL UPDATEs for VALUE-MODEL."
   (vm-observe value-model nil false
               (fn [inner-lifetime old-value new-value]
-                ;; NOTE: Passing VALUE-MODEL here instead of NEW-VALUE should be OK since we're within the same MTX.
                 (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
-                  (swdbop
-                    (update-values (.table-name db-cache) ["id = ?" id]
-                                   {(as-quoted-identifier \" db-key) db-value})))
-                #_(when-not (= old-value new-value) ;; TODO: Needed?
-                  ;; TODO: Why is DB-HANDLE-INPUT called twice here?
-                  (let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
-                    (when db-key
-                      (swdbop value-model #(let [[db-key db-value] (db-handle-input db-cache object clj-key value-model)]
-                                             [db-key db-value (.table-name db-cache) id]))))))))
+                  (swdbop :update
+                    ;; The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since in some
+                    ;; cases it might (still) be NIL in that context.
+                    (update-values (.table-name db-cache) ["id = ?" (dosync @(:id @object))]
+                                   {(as-quoted-identifier \" db-key) db-value}))))))
 
 
 
-(defn db-ensure-persistent-cm-field [^DBCache db-cache ^Ref object ^Long id ^Keyword clj-key
-                                     ^ContainerModel container-model]
+(declare db-put)
+(declare db-remove)
+(defn db-ensure-persistent-cm-field
   "Sets up reactive SQL UPDATEs for CONTAINER-MODEL."
-  (observe (.observable container-model) nil
-           (fn [inner-lifetime & args]
-             (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)
-                   db-value (db-clj-cm-to-db-array db-value "bigint")]
-               (swdbop
-                 (jdbc/do-prepared (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value
-                                        " WHERE id = ?;")
-                                   [id]))))))
+  ([^DBCache db-cache ^Ref object ^Keyword clj-key ^ContainerModel container-model]
+     (db-ensure-persistent-cm-field db-cache object clj-key container-model false))
+
+  ([^DBCache db-cache ^Ref object ^Keyword clj-key ^ContainerModel container-model ^Boolean initial-sync?]
+     (letfn [(do-it []
+               ;; Extract objects while in the scope of the BODY of SWSYNC. Note how the :IDs aren't extracted here, as those
+               ;; fields might still be NIL while pending :INSERTs.
+               (let [cm-objects (with-local-vars [cm-objects []]
+                                  (cm-iterate container-model _ cm-obj
+                                    (var-alter cm-objects cm-obj)
+                                    false)
+                                  (var-get cm-objects))]
+                 (swdbop :update
+                   ;; The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC -- since in some
+                   ;; cases it might (still) be NIL in that context. The same ID-related concern applies to the CM.
+                   (let [[db-key db-value id]
+                         ;; TODO: It seems silly having to go through DB-HANDLE-INPUT here just for key translation.
+                         (dosync (let [[db-key db-value] (db-handle-input db-cache object clj-key container-model)]
+                                   [db-key
+                                    (db-clj-cm-to-db-array db-value "bigint") ;; TODO: Magic value.
+                                    @(:id @object)]))]
+                     (jdbc/do-prepared (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value " WHERE id = ?;")
+                                       [id])))))]
+       (when initial-sync?
+         (cm-iterate container-model _ obj
+           (db-put obj (:db-table-name @obj))
+           false)
+         (do-it))
+       (observe (.observable container-model) nil
+                (fn [inner-lifetime args]
+                  (let [[event-sym & event-args] args
+                        [op-type op-object] (case event-sym
+                                              cm-prepend
+                                              [:add (cmn-data (nth event-args 0))]
+
+                                              (cmn-after cmn-before)
+                                              [:add (cmn-data (nth event-args 1))]
+
+                                              cmn-remove
+                                              [:remove (cmn-data (nth event-args 0))])]
+                    (case op-type
+                      :add (db-put op-object (:db-table-name @op-object))
+                      :remove (db-remove @(:id @op-object) (:db-table-name @op-object)))
+                    (do-it)))))))
 
 
 
-(defn ^Ref db-value-to-vm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key clj-value]
-  "Updates ValueModel associated with CLJ-KEY in OBJECT to CLJ-VALUE, or adds a new ValueModel to OBJECT if no entry was found.
-Returns OBJECT."
-  ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases...
+(defn db-value-to-vm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key clj-value]
+  "DB --> SW."
+  ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases; there's currently no check
+  ;;; for this.
   (dosync
    (if-let [^ValueModel existing-vm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-     (do ;; Yes; mutate it.
+     (do
+       (when-not (isa? (class existing-vm) ValueModel)
+         (println "DB-VALUE-TO-VM-HANDLER:"
+                  (class existing-vm)
+                  "," (.table-name db-cache)
+                  "," clj-key
+                  "," clj-value))
        (vm-set existing-vm clj-value)
-       (db-ensure-persistent-vm-field db-cache object (:id db-row) clj-key existing-vm))
-     (let [^ValueModel new-vm (vm clj-value)] ;; No; add it.
+       (db-ensure-persistent-vm-field db-cache object clj-key existing-vm))
+     (let [^ValueModel new-vm (vm clj-value)]
        (ref-set object (assoc (ensure object) clj-key new-vm))
-       (db-ensure-persistent-vm-field db-cache object (:id db-row) clj-key new-vm)))
-   object))
+       (db-ensure-persistent-vm-field db-cache object clj-key new-vm)))))
 
 
 
 (declare db-get)
-(defn ^Ref db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value]
-  (let [^clojure.lang.PersistentVector clj-value (db-db-array-to-clj-vector clj-value)]
+(defn db-value-to-cm-handler [^DBCache db-cache db-row ^Ref object ^Keyword clj-key ^java.sql.Array clj-value
+                              ^String ref-db-table-name]
+  "DB --> SW."
+  (let [^clojure.lang.PersistentVector cm-objects (mapv #(db-get % ref-db-table-name)
+                                                        (db-db-array-to-clj-vector clj-value))]
     (dosync
      (if-let [^ContainerModel existing-cm (clj-key (ensure object))] ;; Does field already exist in OBJECT?
-       (do ;; Yes; mutate it.
-         ;; TOOD: Sync existing data with data from DBs somehow? Not sure how, so we just clear out the stuff on the Clj end.
-         (cm-clear existing-cm)
-         (doseq [^Long id clj-value]
-           (cm-append existing-cm (cmn (db-get id (.table-name db-cache)))))
-         (db-ensure-persistent-cm-field db-cache object (:id db-row) clj-key existing-cm))
-       ;; TODO: DB-GET within DOSYNC won't do.
-       (let [^ContainerModel new-cm (with1 (cmn) ;; No; add it.
-                                      (doseq [^Long id clj-value]
-                                        (cm-append it (cmn (db-get id (.table-name db-cache))))))]
-         (db-ensure-persistent-cm-field db-cache object (:id db-row) clj-key new-cm)))
-     object)))
+       (do
+         (assert (zero? (count existing-cm)))
+         (doseq [obj cm-objects]
+           (cm-append existing-cm (cmn obj)))
+         (db-ensure-persistent-cm-field db-cache object clj-key existing-cm))
+       (let [^ContainerModel new-cm (with1 (cm)
+                                      (doseq [obj cm-objects]
+                                        (cm-append it (cmn obj))))]
+         (db-ensure-persistent-cm-field db-cache object clj-key new-cm))))))
 
 
 
 (defn db-default-handle-output [^DBCache db-cache db-row ^Ref object]
   "DB --> SW."
   (doseq [^MapEntry entry db-row]
-    (let [^Keyword db-key (key entry)
+    (let [^Keyword db-key (db-default-db-to-clj-key-transformer (key entry))
           db-value (val entry)]
-      (if (isa? (class db-value) java.sql.Array) ;; TODO: Also check if DB-KEY ends in "_refs" here?
-        (db-value-to-cm-handler db-cache db-row object
-                                (db-default-db-to-clj-key-transformer db-key)
-                                db-value)
-        (db-value-to-vm-handler db-cache db-row object
-                                (db-default-db-to-clj-key-transformer db-key)
-                                db-value)))))
+      (if (isa? (class db-value) java.sql.Array)
+        (db-value-to-cm-handler db-cache db-row object db-key db-value
+                                false)
+        (db-value-to-vm-handler db-cache db-row object db-key db-value)))))
 
 
 
@@ -158,17 +208,17 @@ Returns OBJECT."
   "DB --> SW."
   (if-let [^Fn f (.db-handle-output-fn db-cache)]
     (f db-cache db-row object)
-    (dosync (db-default-handle-output db-cache db-row object))))
+    (db-default-handle-output db-cache db-row object)))
 
 
 
-(defn db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
-  "SQL SELECT. This will mutate fields in OBJ or add missing fields to OBJ.
-Returns OBJ, or NIL if no entry with ID was found in (:table-name DB-CACHE).
-This does not add the item to the cache."
+(defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
+  "Used by DB-GET; see DB-GET.
+Returns OBJ."
   (if (not *in-sw-db?*)
+    ;; TODO: WITH-SW-CONNECTION doesn't work, but it'd be all we need here.
     (with-sw-db (fn [_] (db-backend-get db-cache id obj)))
-    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache))" WHERE id = ? LIMIT 1;")
+    (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache)) " WHERE id = ? LIMIT 1;")
                              id]
       (when-let [db-row (first res)]
         (db-handle-output db-cache obj db-row)
@@ -180,65 +230,72 @@ This does not add the item to the cache."
 (defn db-backend-put
   "SQL INSERT of OBJ whos keys and values are translated via DB-HANDLE-INPUT. This will also add OBJ to DB-CACHE unless
 UPDATE-CACHE? is given a FALSE value.
-Blocking.
-Returns OBJ when object was added or logical False when object was not added; e.g. if it has been added before."
+Sets the :ID field of OBJ to an integer.
+Non-blocking."
   ([^Ref obj ^DBCache db-cache] (db-backend-put obj db-cache true))
   ([^Ref obj ^DBCache db-cache ^Boolean update-cache?]
-     (with-sw-db
-       (fn [^Fn holding-transaction]
-         (let [[abort-transaction? sql values-to-escape]
-               ;; Grab snapshot of all data and use it to generate SQL statement.
-               (dosync
-                (if (and (:id (ensure obj))
-                         @(:id (ensure obj)))
-                  [true] ;; ABORT-TRANSACTION?
-                  (with-local-vars [record-data {}
-                                    values-to-escape []]
-                    (doseq [^MapEntry key_val (ensure obj)]
-                      ;; TODO: Is this test needed? Why can't DB-HANDLE-INPUT do it?
-                      (when (or (= ValueModel (class (val key_val)))
-                                (= ContainerModel (class (val key_val))))
-                        (let [[db-key db-value] (db-handle-input db-cache obj (key key_val) (val key_val))]
-                          (when db-key
-                            (var-alter record-data assoc db-key db-value)))))
-                    [false ;; ABORT-TRANSACTION? ...
-                     (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
-                                (.table-name db-cache)
-                                (mapv name (keys (var-get record-data)))
-                                (mapv (fn [v]
-                                        (cond
-                                          (isa? (class v) ValueModel)
-                                          (do1 "?"
-                                            (var-alter values-to-escape conj @v))
+     (swdbop :insert
+       (let [[abort-put? sql values-to-escape]
+             (dosync
+              ;; Grab snapshot of all data and use it to generate SQL statement. Note how this is done inside the :INSERT; this is
+              ;; to ensure that any :UPDATES from the DB-ENSURE-PERSISTENT-* calls below won't happen before this :INSERT.
+              (if (and (:id (ensure obj))
+                       @(:id (ensure obj)))
+                [true] ;; ABORT-PUT?
+                (with-local-vars [record-data {}
+                                  values-to-escape []
+                                  after-put-fns []]
+                  (doseq [^MapEntry key_val (ensure obj)]
+                    ;; TODO: This test kind of sucks, but DB-HANDLE-INPUT can't do it because it will DEREF some ValueModels in
+                    ;; order to convert them to a format suitable for the DB.
+                    (when (or (= ValueModel (class (val key_val)))
+                              (= ContainerModel (class (val key_val))))
+                      (let [[db-key db-value] (db-handle-input db-cache obj (key key_val) (val key_val))]
+                        (when db-key
+                          (cond
+                            (isa? (class (val key_val)) ValueModel)
+                            (db-ensure-persistent-vm-field db-cache obj (key key_val) (val key_val))
 
-                                          (isa? (class v) ContainerModel)
-                                          (dosync (db-clj-cm-to-db-array v "bigint"))
+                            (isa? (class (val key_val)) ContainerModel)
+                            (db-ensure-persistent-cm-field db-cache obj (key key_val) (val key_val) true))
+                          (var-alter record-data assoc db-key db-value)))))
+                  [false ;; ABORT-PUT? SQL VALUES-TO-ESCAPE
+                   (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
+                              (.table-name db-cache) ;; TODO: Escape.
+                              (mapv name (keys (var-get record-data))) ;; TODO: Escape?
+                              (mapv (fn [v]
+                                      (cond
+                                        (isa? (class v) ValueModel)
+                                        (do1 "?"
+                                          (var-alter values-to-escape conj @v))
 
-                                          true
-                                          (do1 "?"
-                                            (var-alter values-to-escape conj v))))
-                                      (vals (var-get record-data))))
-                     (var-get values-to-escape)])))]
-           (when-not abort-transaction?
-             (let [res (jdbc/do-prepared-return-keys sql values-to-escape)]
-               ;; NOTE: Object added to cache before fields (added below) are there yet? I guess this is ok since only the one
-               ;; currently adding the object (this code) will "know about it" until HOLDING-TRANSACTION returns.
-               #_(when update-cache?
-                 (db-cache-put db-cache (:id res) obj))
-               (holding-transaction
-                (fn [^Fn abort-transaction]
-                  (dosync
-                   (if (and (:id (ensure obj))
-                            @(:id (ensure obj)))
-                     (abort-transaction false)
-                     (when update-cache?
-                       (db-cache-put db-cache (:id res) obj)))
-                   ;; Add or update fields in OBJ where needed based on result of SQL INSERT operation.
-                   ;; TODO: No need to trigger updates via observers here.
-                   (db-handle-output db-cache obj res)
-                   ;; Initialize object further; perhaps add external observers of the objects fields etc..
-                   ((.after-fn db-cache) obj)
-                   obj))))))))))
+                                        ;; Dummy value here so we can do our :INSERT without having to :INSERT other objects first.
+                                        ;; Doing that would be tricky since those objects might rely on this object having been
+                                        ;; :INSERTed first (:ID field).
+                                        (isa? (class v) ContainerModel)
+                                        "ARRAY[]::bigint[]"
+
+                                        true
+                                        (do1 "?"
+                                          (var-alter values-to-escape conj v))))
+                                    (vals (var-get record-data))))
+                   (var-get values-to-escape)])))]
+         (when-not abort-put?
+           (let [res (jdbc/do-prepared-return-keys sql values-to-escape)]
+             ;; Doing this here (instead of in the SWHTOP that followss) so other SWDBOPs can refer to the :ID field e.g. while
+             ;; generating SQL.
+             (dosync
+              (if (and (:id (ensure obj))
+                       @(:id (ensure obj)))
+                (abort-transaction false)
+                (do
+                  (vm-set (:id @obj) (:id res)) ;; TODO: ..or add?
+                  (when update-cache?
+                    (db-cache-put db-cache (:id res) obj)))))
+             (swhtop
+               ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
+               ((.after-fn db-cache) obj)
+               obj)))))))
 
 
 
@@ -310,32 +367,31 @@ Blocking."
 
 
 
-(defn db-get
-  "SQL `SELECT ...'.
-CONSTRUCTION-FN is called with the resulting (returning) object as argument on cache miss."
+(defn ^Ref db-get
   ([^Long id ^String table-name]
      (db-get id table-name identity))
 
-
   ([^Long id ^String table-name ^Fn after-construction-fn]
-     (io! "DB-CACHE-GET: This (I/O) cannot be done within DOSYNC or SWSYNC.")
+     (io! "DB-GET: Cannot be used directly while within Clojure transaction (DOSYNC or SWSYNC).")
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
            ^DBCache db-cache (db-get-cache table-name)]
        (try
          (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
                (fn []
-                 ;; Binding this makes VMs settable within the currently active WITH-SW-DB context.
-                 ;; See the implementation of VM-SET in value_model.clj.
-                 (binding [*in-db-cache-get?* true]
-                   (let [new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                     (dosync (after-construction-fn ((.after-fn db-cache) new-obj)))))))
+                 (when-let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                   (dosync (after-construction-fn ((.after-fn db-cache) new-obj)))
+                   new-obj)))
          (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
-           (println "DB-CACHE-GET: Object with ID" id "not found in" (.table-name db-cache))
-           nil)))))
+           (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
+           false)
+         (catch com.google.common.util.concurrent.UncheckedExecutionException e
+           (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
+           (throw (.getCause e)))))))
 
 
 
 ;; TODO:
 (defn db-remove [^Long id ^String table-name]
   "SQL `DELETE FROM ...'."
+  (assert false "DB-REMOVE: TODO!")
   #_(db-backend-remove id table-name))

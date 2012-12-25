@@ -41,7 +41,7 @@
      \"#sw-js-bootstrap\" (sw-js-bootstrap)]) ;; String."
   (mk-WidgetBase
    (fn [^WidgetBase template-widget]
-     (let [transformation-data (content-fn template-widget)
+     (let [transformation-data (content-fn template-widget) ;; NOTE: Using a Vector since it maintains order; Clojure Maps do not.
            html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
        (doseq [[^String selector content] (partition 2 transformation-data)]
          (let [^org.jsoup.nodes.Element element (with (.select html-resource selector)

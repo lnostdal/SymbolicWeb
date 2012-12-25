@@ -2,7 +2,7 @@
   :description "SymbolicWeb: WUI for Clojure"
   :dependencies [[org.clojure/clojure "1.5.0-master-SNAPSHOT"]
 
-                 [org.clojure/math.numeric-tower "0.0.2-SNAPSHOT"] ;; ROUND etc.
+                 [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
 
                  [aleph "0.3.0-SNAPSHOT"] ;; Deals with boring HTTP server stuff.
 
@@ -10,9 +10,9 @@
 
                  [com.google.guava/guava "13.0.1"] ;; For soft hash cache.
 
-                 [cheshire "4.0.4-SNAPSHOT"] ;; JSON.
+                 [cheshire "5.0.2-SNAPSHOT"] ;; JSON.
 
-                 [hiccup "1.0.1"] ;; HTML generation.
+                 [hiccup "1.0.2"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.2-SNAPSHOT"] ;; HTML templating.
                  [ring/ring-core "1.2.0-SNAPSHOT"] ;; HTTP protocol handling.
 

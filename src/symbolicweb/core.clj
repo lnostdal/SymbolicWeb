@@ -49,6 +49,7 @@
 
   (:require symbolicweb.database-types)
   (:require symbolicweb.database-common)
+  (:require symbolicweb.swsync)
   (:require symbolicweb.database-dao)
 
   (:require symbolicweb.widget-base-class)
@@ -84,9 +85,9 @@
 
 (defn handler [request]
   (swap! -request-counter- inc')
-  (binding [*print-level* 2] ;; Clojure printing isn't very solid; pretty printing with circular checks is needed!
+  (binding [*print-level* 2] ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
     (try
-      (let [application (find-or-create-application-instance request)]
+      (let [^Ref application (find-or-create-application-instance request)]
         (touch application)
         ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
         ;; TODO: Production / development modes needed here too. Logging, etc. etc...
