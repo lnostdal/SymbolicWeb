@@ -94,7 +94,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 
 (declare clear-session-page-handler)
-(defn default-request-handler [request application]
+(defn default-request-handler [request ^Ref application]
   "Default top-level request handler for both REST and AJAX/Comet type requests."
   (if (get (:query-params request) "_sw_request_type") ;; sw-ajax.js adds this to our AJAX requests.
     ;; AJAX.
@@ -104,8 +104,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                  "Server" -http-server-string-}
        :body (str (set-default-session-cookie nil)
                   "window.location.reload();")}
-      (if-let [viewport (get (:viewports @application)
-                             (get (:query-params request) "_sw_viewport_id"))]
+      (if-let [^Ref viewport (get (:viewports @application)
+                                  (get (:query-params request) "_sw_viewport_id"))]
         (do
           (touch viewport)
           ((:ajax-handler @application) request application viewport))

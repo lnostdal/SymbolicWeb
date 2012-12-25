@@ -169,26 +169,21 @@ Returns a string."
   (.toString (java.util.UUID/randomUUID)))
 
 
-(defn time-since-last-activity [obj]
-  (- (System/currentTimeMillis)
-     (:last-activity-time @obj)))
-
-
-(defn touch [obj]
-  (reset! (:last-activity-time @obj)
+(defn touch [^Ref obj]
+  (reset! ^Atom (:last-activity-time @obj)
           (System/currentTimeMillis)))
 
 
- (defn script-src [src]
+ (defn script-src [^String src]
   [:script {:type "text/javascript" :src src}])
 
 
-(defn link-css [href]
+(defn link-css [^String href]
   [:link {:rel "stylesheet" :type "text/css"
           :href href}])
 
 
-(defn set-document-cookie ^String [& {:keys [path domain? name value]
+(defn ^String set-document-cookie [& {:keys [path domain? name value]
                                       :or {domain? true
                                            path "\" + window.location.pathname + \""
                                            name "name"
@@ -208,18 +203,18 @@ Returns a string."
        "\";" \newline))
 
 
-(defn set-default-session-cookie ^String [^String value]
+(defn ^String set-default-session-cookie [^String value]
   "If VALUE is NIL the cookie will be cleared."
   (set-document-cookie :name "_sw_application_id" :value value :path "/" :domain? false))
 
 
-(defn set-default-login-cookie ^String  [^String value]
+(defn ^String set-default-login-cookie [^String value]
   (str (set-document-cookie :name "_sw_login_id" :value value :path "/" :domain? false)
        (when-not value
          (set-document-cookie :name "PHPSESSID" :value value :path "/" :domain? false))))
 
 
-(defn remove-session [application]
+(defn remove-session [^Ref application]
   (let [application @application]
     (swap! -applications- #(dissoc % (:id application)))))
 
@@ -312,7 +307,7 @@ Returns a string."
   (.id widget))
 
 
-(defn sw-js-base-bootstrap [application viewport]
+(defn ^String sw-js-base-bootstrap [^Ref application ^Ref viewport]
   (str (set-default-session-cookie (:id @application))
        "_sw_viewport_id = '" (:id @viewport) "';" \newline
        "_sw_comet_timeout_ts = " -comet-timeout- ";" \newline))

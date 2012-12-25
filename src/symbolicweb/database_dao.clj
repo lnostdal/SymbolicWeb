@@ -88,7 +88,6 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 (defn db-ensure-persistent-vm-field [^DBCache db-cache ^Ref object ^Keyword clj-key
                                      ^ValueModel value-model]
-
   "Sets up reactive SQL UPDATEs for VALUE-MODEL."
   (vm-observe value-model nil false
               (fn [inner-lifetime old-value new-value]
@@ -98,7 +97,6 @@ represented by INPUT-KEY, is not to be stored in the DB."
                     ;; cases it might (still) be NIL in that context.
                     (update-values (.table-name db-cache) ["id = ?" (dosync @(:id @object))]
                                    {(as-quoted-identifier \" db-key) db-value}))))))
-
 
 
 
