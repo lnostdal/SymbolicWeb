@@ -10,11 +10,11 @@
 
 
 
-(defn ^WidgetBase mk-TextInput [^ValueModel value-model]
+(defn ^WidgetBase mk-TextInput [^ValueModel value-model & args]
   "<input type='text' ..> type widget."
   (with1 (mk-WidgetBase (fn [^WidgetBase widget]
                           (str "<input type='text' id='" (.id widget) "' onchange='$(this).prop(\"disabled\", true);'>"))
-                        {})
+                        (apply hash-map args))
 
     (vm-observe value-model (.lifetime it) true
                 (fn [_ _ new-value]
