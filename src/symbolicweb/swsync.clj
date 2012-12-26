@@ -213,9 +213,9 @@ See SWSYNC."
                  (not ~sql-op-type)))
      (assert (thread-bound? #'*swsync-db-operations*)
              "SWDBOP: database operation outside of SWSYNC context.")
-     (if (= :n.a. *swsync-db-operations*)
-       "SWDBOP: database operation ouside of SWSYNC's BODY context. E.g., inside SWOP or SWHTOP."
-       (swap! *swsync-db-operations* conj [~sql-op-type (fn [] ~@body)]))
+     (assert (not= :n.a. *swsync-db-operations*)
+             "SWDBOP: database operation ouside of SWSYNC's BODY context. E.g., inside SWOP or SWHTOP.")
+     (swap! *swsync-db-operations* conj [~sql-op-type (fn [] ~@body)])
      nil))
 
 
