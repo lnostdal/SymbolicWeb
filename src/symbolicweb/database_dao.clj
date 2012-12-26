@@ -293,6 +293,7 @@ Non-blocking."
                   (when update-cache?
                     (db-cache-put db-cache (:id res) obj)))))
              (swhtop
+               (db-handle-output db-cache obj res)
                ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
                ((.after-fn db-cache) obj)
                obj)))))))
