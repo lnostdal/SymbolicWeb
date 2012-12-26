@@ -56,12 +56,27 @@
 
 
 
+(defn db-db-to-clj-key-transformer [^DBCache db-cache ^Ref object k]
+  "DB --> SW."
+  (if-let [^Fn f (.db-db-to-clj-key-transformer-fn db-cache)]
+    (f db-cache object k)
+    (db-default-db-to-clj-key-transformer k)))
+
+
+(defn db-clj-to-db-key-transformer [^DBCache db-cache ^Ref object k]
+  "SW --> DB."
+  (if-let [^Fn f (.db-clj-to-db-key-transformer-fn db-cache)]
+    (f db-cache object k)
+    (db-default-clj-to-db-key-transformer k)))
+
+
+
 (defn db-default-handle-input [^DBCache db-cache ^Ref object ^Keyword clj-key clj-value]
   "SW --> DB."
   [(if (or (not clj-key)
            (= :id clj-key))
      nil
-     (db-default-clj-to-db-key-transformer clj-key))
+     (db-clj-to-db-key-transformer db-cache object clj-key))
 
    (cond
      (isa? (class clj-value) ValueModel)
@@ -86,8 +101,7 @@ represented by INPUT-KEY, is not to be stored in the DB."
 
 
 
-(defn db-ensure-persistent-vm-field [^DBCache db-cache ^Ref object ^Keyword clj-key
-                                     ^ValueModel value-model]
+(defn db-ensure-persistent-vm-field [^DBCache db-cache ^Ref object ^Keyword clj-key ^ValueModel value-model]
   "Sets up reactive SQL UPDATEs for VALUE-MODEL."
   (vm-observe value-model nil false
               (fn [inner-lifetime old-value new-value]
@@ -195,12 +209,12 @@ represented by INPUT-KEY, is not to be stored in the DB."
 (defn db-default-handle-output [^DBCache db-cache db-row ^Ref object]
   "DB --> SW."
   (doseq [^MapEntry entry db-row]
-    (let [^Keyword db-key (db-default-db-to-clj-key-transformer (key entry))
+    (let [^Keyword clj-key (db-db-to-clj-key-transformer db-cache object (key entry))
           db-value (val entry)]
       (if (isa? (class db-value) java.sql.Array)
-        (db-value-to-cm-handler db-cache db-row object db-key db-value
+        (db-value-to-cm-handler db-cache db-row object clj-key db-value
                                 false)
-        (db-value-to-vm-handler db-cache db-row object db-key db-value)))))
+        (db-value-to-vm-handler db-cache db-row object clj-key db-value)))))
 
 
 
@@ -303,11 +317,22 @@ Non-blocking."
 (defn ^DBCache mk-DBCache [^String table-name
                            ^Fn constructor-fn
                            ^Fn after-fn
+                           ;; SW -> DB.
                            db-handle-input-fn
-                           db-handle-output-fn]
+                           db-clj-to-db-key-transformer-fn
+
+                           ;; DB --> SW.
+                           db-handle-output-fn
+                           db-db-to-clj-key-transformer-fn]
   (let [^DBCache db-cache (DBCache.
-                           (if db-handle-input-fn db-handle-input-fn db-default-handle-input)
-                           (if db-handle-output-fn db-handle-output-fn db-default-handle-output)
+                           ;; SW -> DB.
+                           db-handle-input-fn
+                           db-clj-to-db-key-transformer-fn
+
+                           ;; DB --> SW.
+                           db-handle-output-fn
+                           db-db-to-clj-key-transformer-fn
+
                            table-name
                            constructor-fn
                            after-fn

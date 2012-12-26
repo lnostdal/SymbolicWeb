@@ -8,15 +8,25 @@
 
 
 (deftype DBCache
-    [^Fn db-handle-input-fn  ;; SW -> DB.
-     ^Fn db-handle-output-fn ;; DB -> SW.
+    [;; SW -> DB.
+     ^Fn db-handle-input-fn
+     ^Fn db-clj-to-db-key-transformer-fn
+
+     ;; DB -> SW.
+     ^Fn db-handle-output-fn
+     ^Fn db-db-to-clj-key-transformer-fn
+
      ^String table-name
+
      ;; Function called on cache miss to construct the initial skeleton for the data from the DB to fill up.
      ^Fn constructor-fn
+
      ;; Function called after CONSTRUCTOR-FN and after the DB data has been filled in for the object.
      ^Fn after-fn
+
      ;; http://docs.guava-libraries.googlecode.com/git-history/release/javadoc/com/google/common/cache/package-summary.html
      ^:unsynchronized-mutable internal-cache]
+
 
   IDBCache
   (set-internal-cache [_ new-cache]
