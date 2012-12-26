@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn ^WidgetBase %mk-HTMLContainer [[^String html-element-type & widget-base-args] ^Fn content-fn]
+(defn ^WidgetBase %mk-HTMLContainer [^String html-element-type ^Fn content-fn widget-base-args]
   (mk-WidgetBase (fn [^WidgetBase html-container]
                    (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
                      (str "<" html-element-type " id='" (.id html-container) "'>"
@@ -11,22 +11,19 @@
 
 
 
-(defmacro with-html-container [[html-element-type & widget-base-args] & body]
-  `(%mk-HTMLContainer (into [~html-element-type] ~widget-base-args)
-                      (fn [^WidgetBase html-container#]
-                        (html ~@body))))
-
 (defmacro whc [[html-element-type & widget-base-args] & body]
-  `(with-html-container ~(into [html-element-type] widget-base-args)
-     ~@body))
+  "WITH-HTML-CONTAINER."
+  `(%mk-HTMLContainer ~html-element-type
+                      (fn [_#] ~@body)
+                      '~widget-base-args))
 
 
 
-;; TODO: This should support the same "syntax" as HTMLTemplate.
 (defn ^WidgetBase mk-PostHTMLTemplate [^String id ^Fn content-fn & widget-base-args]
   "This applies templating to an already existing HTML element, specified by ID, on the page."
-  (with1 (%mk-HTMLContainer (into ["%PostHTMLTemplate"] (into widget-base-args (list id :id)))
-                            content-fn)
+  (with1 (%mk-HTMLContainer "%PostHTMLTemplate"
+                            content-fn
+                            (into widget-base-args (list id :id))) ;; TODO: This seems hacky.
     (render-html it)))
 
 
@@ -41,11 +38,15 @@
      \"#sw-js-bootstrap\" (sw-js-bootstrap)]) ;; String."
   (mk-WidgetBase
    (fn [^WidgetBase template-widget]
-     (let [transformation-data (content-fn template-widget)
+     (let [transformation-data (content-fn template-widget) ;; NOTE: Using a Vector since it maintains order; Clojure Maps do not.
            html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
-       (doseq [[selector content] (partition 2 transformation-data)]
-         (let [^org.jsoup.nodes.Element element (.first (.select html-resource selector))]
-           (assert element (str "HTMLTemplate: No element found for selector: " selector))
+       (doseq [[^String selector content] (partition 2 transformation-data)]
+         (let [^org.jsoup.nodes.Element element (with (.select html-resource selector)
+                                                  (assert (= 1 (count it))
+                                                          (str "mk-HTMLTemplate: " (count it)
+                                                               " (i.e. not 1) elements found for for selector \"" selector "\""
+                                                               " in context of HTMLTemplate \"" (.id template-widget) "\""))
+                                                  (.first it))]
            (if (string? content)
              ;; NOTE: I could do (.html content) here. That would actually parse the HTML and add it to our HTML-RESOURCE
              ;; for the next iteration to pick up for possible templating.

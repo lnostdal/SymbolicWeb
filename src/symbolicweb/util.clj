@@ -5,12 +5,12 @@
   (= java.lang.Boolean (class x)))
 
 
-(defn json-parse [^String string]
-  "Parse JSON STRING returning Clojure object."
-  (json/parse-string string true))
+(defn json-parse [^String json-string]
+  "Parse JSON-STRING returning Clojure object."
+  (json/parse-string json-string true))
 
 
-(defn json-generate [clojure-object]
+(defn ^String json-generate [clojure-object]
   "Returns JSON string from CLOJURE-OBJECT."
   (json/generate-string clojure-object))
 

@@ -6,7 +6,7 @@
 (set! *print-level* 10)
 
 
-(defn var-alter [var fun & args]
+(defn var-alter [^clojure.lang.Var var ^Fn fun & args]
   (var-set var (apply fun (var-get var) args)))
 
 
@@ -169,26 +169,21 @@ Returns a string."
   (.toString (java.util.UUID/randomUUID)))
 
 
-(defn time-since-last-activity [obj]
-  (- (System/currentTimeMillis)
-     (:last-activity-time @obj)))
-
-
-(defn touch [obj]
-  (reset! (:last-activity-time @obj)
+(defn touch [^Ref obj]
+  (reset! ^Atom (:last-activity-time @obj)
           (System/currentTimeMillis)))
 
 
- (defn script-src [src]
+ (defn script-src [^String src]
   [:script {:type "text/javascript" :src src}])
 
 
-(defn link-css [href]
+(defn link-css [^String href]
   [:link {:rel "stylesheet" :type "text/css"
           :href href}])
 
 
-(defn set-document-cookie ^String [& {:keys [path domain? name value]
+(defn ^String set-document-cookie [& {:keys [path domain? name value]
                                       :or {domain? true
                                            path "\" + window.location.pathname + \""
                                            name "name"
@@ -208,18 +203,18 @@ Returns a string."
        "\";" \newline))
 
 
-(defn set-default-session-cookie ^String [^String value]
+(defn ^String set-default-session-cookie [^String value]
   "If VALUE is NIL the cookie will be cleared."
   (set-document-cookie :name "_sw_application_id" :value value :path "/" :domain? false))
 
 
-(defn set-default-login-cookie ^String  [^String value]
+(defn ^String set-default-login-cookie [^String value]
   (str (set-document-cookie :name "_sw_login_id" :value value :path "/" :domain? false)
        (when-not value
          (set-document-cookie :name "PHPSESSID" :value value :path "/" :domain? false))))
 
 
-(defn remove-session [application]
+(defn remove-session [^Ref application]
   (let [application @application]
     (swap! -applications- #(dissoc % (:id application)))))
 
@@ -312,7 +307,7 @@ Returns a string."
   (.id widget))
 
 
-(defn sw-js-base-bootstrap [application viewport]
+(defn ^String sw-js-base-bootstrap [^Ref application ^Ref viewport]
   (str (set-default-session-cookie (:id @application))
        "_sw_viewport_id = '" (:id @viewport) "';" \newline
        "_sw_comet_timeout_ts = " -comet-timeout- ";" \newline))
@@ -356,6 +351,8 @@ Returns a string."
 ;;; WITH-SW-IO
 ;;;;;;;;;;;;;;
 
+;; TODO: Yes, this is all quite horrible. The binding propagation thing in Clojure is not a good thing IMHO.
+,
 (def -sw-io-agent-error-handler-
   (fn [the-agent exception]
     (try
@@ -371,10 +368,6 @@ Returns a string."
 
                               #'*in-sw-db?* *in-sw-db?*
                               #'*pending-prepared-transaction?* *pending-prepared-transaction?*
-                              #'*swsync-operations*
-                              #'*swsync-db-operations*
-
-                              #'*in-db-cache-get?* *in-db-cache-get?*
 
                               #'*in-html-container?* *in-html-container?*
                               #'*with-js?* *with-js?*
@@ -385,9 +378,9 @@ Returns a string."
 
 (defonce -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
 
-(defn with-sw-io* [the-agent body-fn]
+(defn with-sw-io* [the-agent ^Fn body-fn]
   (let [the-agent (if the-agent the-agent -sw-io-agent-)]
-    (send-off (:agent the-agent)
+    (send-off ^clojure.lang.Agent (:agent the-agent)
               (fn [_]
                 (with-bindings (merge (get-thread-bindings) (:binding-blacklist the-agent))
                   (body-fn nil))))))
@@ -396,60 +389,3 @@ Returns a string."
 (defmacro with-sw-io [the-agent & body]
   "Runs BODY in an Agent."
   `(with-sw-io* ~the-agent (fn [_#] ~@body)))
-
-
-
-;;; SWSYNC
-;;;;;;;;;;
-
-;; http://en.wikipedia.org/wiki/Two-phase_commit_protocol
-
-(declare with-sw-db) ;; It's actually a funtion now, so..
-
-
-(defn swsync* [db-agent bodyfn]
-  (io! "SWSYNC: Nesting of SWSYNC (or SWSYNC inside DOSYNC) contexts not allowed.")
-  (when *in-sw-db?*
-    (assert *pending-prepared-transaction?*
-            "SWSYNC: SWSYNC is meant to be used within the WITH-SW-DB callback context HOLDING-TRANSACTION or outside of WITH-SW-DB context entirely."))
-  (let [db-agent (if db-agent db-agent -sw-io-agent-)]
-    (dosync
-     (binding [*swsync-operations* (atom [])
-               *swsync-db-operations* (atom {})]
-       (let [return-value (bodyfn)]
-         (when-not (and (empty? @*swsync-operations*)
-                        (empty? @*swsync-db-operations*))
-           (let [swsync-operations *swsync-operations*
-                 swsync-db-operations *swsync-db-operations*]
-             (with-sw-io db-agent ;; After this point we can be sure DOSYNC won't roll back; we're in an Agent.
-               (when-not (empty? @swsync-db-operations)
-                 (with-sw-db ;; All pending DB operations execute within a _single_ DB transaction.
-                   (fn [_]
-                     (binding [*pending-prepared-transaction?* true] ;; TODO: Hm. Why this?
-                       ;; This DEREFs all VMs within a single DOSYNC; i.e. we get a snapshot of all of them.
-                       (doseq [[key value table-name id] (dosync (mapv #(%) (vals @swsync-db-operations)))]
-                         (update-values table-name ["id = ?" id]
-                                        {(as-quoted-identifier \" key) value}))))))
-               (when-not (empty? @swsync-operations)
-                 (doseq [f @swsync-operations]
-                   (f))))))
-         return-value)))))
-
-(defmacro swsync [db-agent & body]
-  "A DOSYNC where database operations (SWDBOP) are gathered up and executed within a _single_ DB transaction in an Agent
-after Clojure side transaction (DOSYNC) is done.
-This only blocks until Clojure transaction is done; it will not block waiting for the DB transaction to finish; use AWAIT1
-with DB-AGENT as argument to do this."
-  `(swsync* ~db-agent (fn [] ~@body)))
-
-(defmacro swop [& body]
-  "Wrapper for general I/O operation; runs after (SEND-OFF) Clojure transaction (SWSYNC)."
-  `(do
-     (assert (thread-bound? #'*swsync-operations*)
-             "SWOP (general I/O operation) outside of SWSYNC context.")
-     (swap! *swsync-operations* conj (fn [] ~@body))))
-
-(defn swdbop [vm input-entry-fn]
-  (assert (thread-bound? #'*swsync-db-operations*)
-          "SWVMOP: (database operation) outside of SWSYNC context.")
-  (swap! *swsync-db-operations* assoc vm input-entry-fn))

@@ -109,7 +109,6 @@
 
 (defn ^String sw [^WidgetBase widget]
   "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
-  ;;(println "SW:" (.id widget))
   (attach-branch *in-html-container?* widget)
   (render-html widget))
 

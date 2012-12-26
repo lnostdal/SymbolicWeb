@@ -63,7 +63,8 @@
 
 
 (defn with-sw-db [^Fn body-fn]
-  "BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
+  "Two-phase commit core function: http://en.wikipedia.org/wiki/Two-phase_commit_protocol
+BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
 finalized after HOLDING-TRANSACTION has finished executing.
 HOLDING-TRANSACTION is called when the transaction is pending finalization, and it takes one argument; ABORT-TRANSACTION (fn).
 If either BODY-FN or HOLDING-TRANSACTION throws an exception, the transaction, in either pre-pending or pending state, is rolled

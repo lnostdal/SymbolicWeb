@@ -1,7 +1,8 @@
 (ns symbolicweb.core
   (:import clojure.lang.Ref
            clojure.lang.Keyword
-           clojure.lang.Fn)
+           clojure.lang.Fn
+           clojure.lang.MapEntry)
   (:require [clojure.math.numeric-tower :refer (round)])
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])
@@ -17,13 +18,14 @@
 
   (:use [cheshire.core :as json]) ;; JSON.
 
-  (:require [clojure.java.jdbc :refer (with-connection
-                                       with-query-results
-                                       find-connection
-                                       update-values
-                                       as-quoted-identifier
-                                       insert-record
-                                       delete-rows)])
+  (:require [clojure.java.jdbc :as jdbc
+             :refer (with-connection
+                     with-query-results
+                     find-connection
+                     update-values
+                     as-quoted-identifier
+                     insert-record
+                     delete-rows)])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource)
 
   (:require ring.util.codec)
@@ -41,11 +43,14 @@
   (:require symbolicweb.value_model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
-  (:require symbolicweb.database-common)
-  (:require symbolicweb.database-dao)
 
   (:require symbolicweb.container-model)
   (:require symbolicweb.container-model-node)
+
+  (:require symbolicweb.database-types)
+  (:require symbolicweb.database-common)
+  (:require symbolicweb.swsync)
+  (:require symbolicweb.database-dao)
 
   (:require symbolicweb.widget-base-class)
   (:require symbolicweb.jquery)
@@ -80,9 +85,9 @@
 
 (defn handler [request]
   (swap! -request-counter- inc')
-  (binding [*print-level* 2] ;; Clojure printing isn't very solid; pretty printing with circular checks is needed!
+  (binding [*print-level* 2] ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
     (try
-      (let [application (find-or-create-application-instance request)]
+      (let [^Ref application (find-or-create-application-instance request)]
         (touch application)
         ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
         ;; TODO: Production / development modes needed here too. Logging, etc. etc...

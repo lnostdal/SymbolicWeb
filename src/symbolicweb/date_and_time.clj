@@ -55,7 +55,7 @@
       (second-format seconds))))
 
 
-(defn mk-SmallIntInput [model & attributes]
+#_(defn mk-SmallIntInput [model & attributes]
   (with1 (apply mk-IntInput model attributes)
     (jqCSS it "width" "30px")))
 
@@ -132,7 +132,7 @@ MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
                                            (. new-calendar get Calendar/YEAR)))))))))
 
 
-(defn mk-TimeInInput [model]
+#_(defn mk-TimeInInput [model]
   "Future point in time, think: In xx h xx m xx s.
 MODEL must be a ValueModel like created by e.g. (vm 60), where 60 is seconds."
   (let [[hours minutes seconds] (seconds-to-hms @model)
