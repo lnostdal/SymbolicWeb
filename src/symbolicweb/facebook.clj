@@ -159,7 +159,7 @@
       (http-html-response (get (:query-params request) "hub.challenge"))
       ;; else: assume that this is realtime update POST request
       (do
-        (let [update-json (dbg-prin1 (json-parse (aleph.formats/bytes->string (:body request))))
+        (let [update-json (json-parse (aleph.formats/bytes->string (:body request)))
               entry (get update-json :entry)
               entries (if (coll? entry) entry [entry])]
           (when (= "user" (get update-json :object)) ;; ignore anything but user updates for now
