@@ -25,6 +25,8 @@
   :plugins [[swank-clojure "1.5.0-SNAPSHOT"]
             [lein-swank "1.4.4"]]
 
+  :warn-on-reflection true
+
   :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
              "-server" "-XX:+TieredCompilation"
 
