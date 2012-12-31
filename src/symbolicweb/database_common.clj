@@ -125,19 +125,18 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
 
 
 
+
+
+
+
+
+
+
+
 (defn db-stmt [^String sql-str]
   (let [stmt (.createStatement (find-connection))]
     (.execute stmt sql-str)
     (.close stmt)))
-
-
-
-
-
-
-
-
-
 
 
 

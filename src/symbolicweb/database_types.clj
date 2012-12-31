@@ -8,13 +8,8 @@
 
 
 (deftype DBCache
-    [;; SW -> DB.
-     ^Fn db-handle-input-fn
-     ^Fn db-clj-to-db-key-transformer-fn
-
-     ;; DB -> SW.
-     ^Fn db-handle-output-fn
-     ^Fn db-db-to-clj-key-transformer-fn
+    [^Fn db-clj-to-db-transformer-fn
+     ^Fn db-db-to-clj-transformer-fn
 
      ^String table-name
 
