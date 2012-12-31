@@ -278,11 +278,12 @@ Non-blocking."
                   ;; CLJ-VALUE; Too early to DEREF stuff here; see the note about "dummy value" below.
                   (doseq [[^Keyword clj-key clj-value] (ensure obj)]
                     (let [res (db-clj-to-db-transformer db-cache obj clj-key clj-value)
-                          ^Keyword db-key (:key res)]
+                          ^Keyword db-key (:key res)
+                          db-value (:value res)]
                       (when (and db-key
                                  (or (= ValueModel (class clj-value))
                                      (= ContainerModel (class clj-value))))
-                        (var-alter record-data assoc db-key clj-value)
+                        (var-alter record-data assoc db-key db-value)
                         (cond
                          (isa? (class clj-value) ValueModel)
                          (db-ensure-persistent-vm-field db-cache obj clj-key clj-value)
@@ -324,6 +325,7 @@ Non-blocking."
                   (when update-cache?
                     (db-cache-put db-cache (:id res) obj)))))
              (swhtop
+              ;; TODO: The True here leads to multiple calls to DB-ENSURE-PERSISTENT.. for the same fields...
               (db-db-to-clj-entry-handler db-cache obj res true)
               ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
               ((.after-fn db-cache) obj)
