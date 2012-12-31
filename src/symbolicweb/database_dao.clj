@@ -55,8 +55,7 @@
           (= :id (:key m))
           nil
 
-          (or (isa? (class (:value m)) ValueModel)
-              (isa? (class (:value m)) ContainerModel))
+          true
           (keyword (str/replace (name (:key m)) \- \_)))
 
     :value (cond
