@@ -71,6 +71,7 @@
             (:value m))))
 
 
+
 (defn db-clj-to-db-transformer [^DBCache db-cache ^Ref obj ^Keyword clj-key clj-value]
   "SW --> DB"
   (let [m {:db-cache db-cache :obj obj :key clj-key :value clj-value}]
@@ -157,7 +158,8 @@
   ([^DBCache db-cache ^Ref obj ^Keyword clj-key ^ContainerModel container-model ^Boolean initial-sync?]
      (letfn [(do-it []
                ;; Extract objects while in the scope of the BODY of SWSYNC. Note how the :IDs aren't extracted here, as those
-               ;; fields might still be NIL while pending :INSERTs.
+               ;; fields might still be NIL while pending :INSERTs. CM-OBJCS isn't actually "used"; so this is done for the same
+               ;; reason one might call ENSURE for Refs.
                (let [cm-objs (with-local-vars [cm-objs []]
                                   (cm-iterate container-model _ cm-obj
                                     (var-alter cm-objs cm-obj)
@@ -168,7 +170,7 @@
                    ;; cases it might (still) be NIL in that context. The same ID-related concern applies to the CM.
                    (let [[db-key db-value id]
                          (dosync
-                          (let [res ((.db-clj-to-db-transformer-fn db-cache) db-cache obj clj-key container-model)]
+                          (let [res (db-clj-to-db-transformer db-cache obj clj-key container-model)]
                             [(:key res)
                              (db-clj-cm-to-db-array (:value res) "bigint") ;; TODO: Magic value.
                              @(:id @obj)]))]
@@ -322,11 +324,10 @@ Non-blocking."
                   (when update-cache?
                     (db-cache-put db-cache (:id res) obj)))))
              (swhtop
-               ;; TODO: This certainly adds multiple observers for each field (DB-ENSURE-PERSISTENT...).
-               (db-db-to-clj-entry-handler db-cache obj res)
-               ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
-               ((.after-fn db-cache) obj)
-               obj)))))))
+              (db-db-to-clj-entry-handler db-cache obj res true)
+              ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
+              ((.after-fn db-cache) obj)
+              obj)))))))
 
 
 
