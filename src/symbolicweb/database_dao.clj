@@ -105,36 +105,45 @@
 
 
 
-(defn db-db-to-clj-handler [^DBCache db-cache ^Ref obj ^Keyword db-key db-value]
+(declare db-ensure-persistent-vm-field) (declare db-ensure-persistent-cm-field)
+(defn db-db-to-clj-handler [^DBCache db-cache ^Ref obj ^Keyword db-key db-value ^Boolean ensure-persistent?]
   "DB --> SW"
   (let [res (db-db-to-clj-transformer db-cache obj db-key db-value)]
     (when (:key res)
-      ((:handler res) (:key res) (:value res)))))
+      (with ((:handler res) (:key res) (:value res))
+        (when ensure-persistent?
+          (cond
+           (isa? (class it) ValueModel)
+           (dosync (db-ensure-persistent-vm-field db-cache obj (:key res) it))
+
+           (isa? (class it) ContainerModel)
+           (dosync (db-ensure-persistent-cm-field db-cache obj (:key res) it))
+
+           true
+           (assert false (str "DB-DB-TO-CLJ-HANDLER: Don't know how to deal with " it " (" (class it) ") here."))))))))
 
 
 
-(defn db-db-to-clj-entry-handler [^DBCache db-cache ^Ref obj entry-data]
+(defn db-db-to-clj-entry-handler [^DBCache db-cache ^Ref obj entry-data ^Boolean ensure-persistent?]
   "DB --> SW
   ENTRY-DATA: Map representing a DB Row; DB-KEY and DB-VALUEs."
   (doseq [[^Keyword db-key db-value] entry-data]
-    (db-db-to-clj-handler db-cache obj db-key db-value)))
+    (db-db-to-clj-handler db-cache obj db-key db-value ensure-persistent?)))
 
 
 
 (defn db-ensure-persistent-vm-field [^DBCache db-cache ^Ref obj ^Keyword clj-key ^ValueModel value-model]
   "Sets up reactive SQL UPDATEs for VALUE-MODEL."
-  ;; TODO: I think this gets called many times for the same VALUE-MODELs in some cases -- which of course is a bad.
   (vm-observe value-model nil false
               (fn [inner-lifetime old-value new-value]
                 (let [res (db-clj-to-db-transformer db-cache obj clj-key value-model)
                       ^Keyword db-key (:key res)
                       db-value (:value res)]
-                  (when db-key ;; TODO: Remove this check later..
-                    (swdbop :update
-                            ;; The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC --
-                            ;; since in some cases it might (still) be NIL in that context.
-                            (update-values (.table-name db-cache) ["id = ?" (dosync @(:id @obj))]
-                                           {(as-quoted-identifier \" db-key) db-value})))))))
+                  (swdbop :update
+                          ;; The :ID field is extracted here, inside SWDBOP instead of in the BODY context of SWSYNC --
+                          ;; since in some cases it might (still) be NIL in that context.
+                          (update-values (.table-name db-cache) ["id = ?" (dosync @(:id @obj))]
+                                         {(as-quoted-identifier \" db-key) db-value}))))))
 
 
 
@@ -192,9 +201,8 @@
 
 
 (defn db-value-to-vm-handler [^DBCache db-cache ^Ref obj ^Keyword clj-key db-value]
-  "DB --> SW"
-  ;; TODO: I think DB-ENSURE-PERSISTENT-VM-FIELD can be called for the same VM twice in some cases; there's currently no check
-  ;;; for this.
+  "DB --> SW
+Returns the ValueModel."
   (dosync
    (if-let [^ValueModel existing-vm (clj-key (ensure obj))] ;; Does field already exist in OBJ?
      (do
@@ -205,31 +213,31 @@
                   "," clj-key
                   "," db-value))
        (vm-set existing-vm db-value)
-       (db-ensure-persistent-vm-field db-cache obj clj-key existing-vm))
+       existing-vm)
      (let [^ValueModel new-vm (vm db-value)]
        (ref-set obj (assoc (ensure obj) clj-key new-vm))
-       (db-ensure-persistent-vm-field db-cache obj clj-key new-vm))))
-  true)
+       new-vm))))
 
 
 
 (declare db-get)
-(defn db-value-to-cm-handler [^DBCache db-cache ^Ref obj ^Keyword clj-key ^java.sql.Array clj-value
+(defn db-value-to-cm-handler [^DBCache db-cache ^Ref obj ^Keyword clj-key ^java.sql.Array db-value
                               ^String ref-db-table-name]
-  "DB --> SW"
+  "DB --> SW
+Returns the ContainerModel"
   (let [^clojure.lang.PersistentVector cm-objs (mapv #(db-get % ref-db-table-name)
-                                                        (db-db-array-to-clj-vector clj-value))]
+                                                        (db-db-array-to-clj-vector db-value))]
     (dosync
      (if-let [^ContainerModel existing-cm (clj-key (ensure obj))] ;; Does field already exist in OBJ?
        (do
          (assert (zero? (count existing-cm)))
          (doseq [cm-obj cm-objs]
            (cm-append existing-cm (cmn cm-obj)))
-         (db-ensure-persistent-cm-field db-cache obj clj-key existing-cm))
+         existing-cm)
        (let [^ContainerModel new-cm (with1 (cm)
                                       (doseq [cm-obj cm-objs]
                                         (cm-append it (cmn cm-obj))))]
-         (db-ensure-persistent-cm-field db-cache obj clj-key new-cm))))))
+         new-cm)))))
 
 
 
@@ -241,7 +249,7 @@ Returns OBJ or NIL"
     (with-sw-db (fn [_] (db-backend-get db-cache id obj)))
     (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache)) " WHERE id = ? LIMIT 1;") id]
       (when-let [db-row (first res)]
-        (db-db-to-clj-entry-handler db-cache obj db-row)
+        (db-db-to-clj-entry-handler db-cache obj db-row true)
         obj))))
 
 
