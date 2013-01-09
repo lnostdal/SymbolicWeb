@@ -41,12 +41,17 @@
      (let [transformation-data (content-fn template-widget) ;; NOTE: Using a Vector since it maintains order; Clojure Maps do not.
            html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
        (doseq [[^String selector content] (partition 2 transformation-data)]
-         (let [^org.jsoup.nodes.Element element (with (.select html-resource selector)
-                                                  (assert (= 1 (count it))
-                                                          (str "mk-HTMLTemplate: " (count it)
-                                                               " (i.e. not 1) elements found for for selector \"" selector "\""
-                                                               " in context of HTMLTemplate \"" (.id template-widget) "\""))
-                                                  (.first it))]
+         (when-let [^org.jsoup.nodes.Element element
+                    (with (.select html-resource selector)
+                      (if (zero? (count it))
+                        (do
+                          (println "mk-HTMLTemplate: No element found for" selector "in context of" (.id template-widget))
+                          nil)
+                        (do
+                          (assert (= 1 (count it))
+                                  (str "mk-HTMLTemplate: " (count it) " (i.e. not 1) elements found for for" selector
+                                       "in context of" (.id template-widget)))
+                          (.first it))))]
            (if (string? content)
              ;; NOTE: I could do (.html content) here. That would actually parse the HTML and add it to our HTML-RESOURCE
              ;; for the next iteration to pick up for possible templating.
