@@ -49,7 +49,6 @@
 
   (:require symbolicweb.database-types)
   (:require symbolicweb.database-common)
-  (:require symbolicweb.swsync)
   (:require symbolicweb.database-dao)
 
   (:require symbolicweb.widget-base-class)

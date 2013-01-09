@@ -6,15 +6,8 @@
 ;;; Macros and dynamic variables.
 
 ;; database_common.clj
-(def ^:dynamic *in-sw-db?* false)
-(def ^:dynamic *pending-prepared-transaction?* false)
-(def ^:dynamic *swsync-operations*)
-(def ^:dynamic *swsync-db-operations*)
-(def ^:dynamic *swsync-ht-operations*)
+(def ^:dynamic *in-swsync?* false)
 
-
-;; database_dao.clj
-;;(def ^:dynamic *in-db-cache-get?* false)
 
 ;; html_container.clj
 (def ^:dynamic *in-html-container?* false)
@@ -23,6 +16,7 @@
 ;; model.clj
 (def ^:dynamic *observed-vms-ctx* false)
 (def ^:dynamic *observed-vms-active-body-fns* #{})
+
 
 
 

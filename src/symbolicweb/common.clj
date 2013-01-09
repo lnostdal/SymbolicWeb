@@ -352,6 +352,7 @@ Returns a string."
 ;;;;;;;;;;;;;;
 
 ;; TODO: Yes, this is all quite horrible. The binding propagation thing in Clojure is not a good thing IMHO.
+;; TODO: This should be based on a whitelist.
 ,
 (def -sw-io-agent-error-handler-
   (fn [the-agent exception]
@@ -362,12 +363,12 @@ Returns a string."
         (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
+
 (defn mk-sw-agent [binding-blacklist]
-  {:agent (agent ::initial-state :error-handler #'-sw-io-agent-error-handler-)
+  {:agent (agent :initial-state :error-handler #'-sw-io-agent-error-handler-)
    :binding-blacklist (merge {#'clojure.java.jdbc/*db* @#'clojure.java.jdbc/*db*
 
-                              #'*in-sw-db?* *in-sw-db?*
-                              #'*pending-prepared-transaction?* *pending-prepared-transaction?*
+                              #'*in-swsync?* *in-swsync?*
 
                               #'*in-html-container?* *in-html-container?*
                               #'*with-js?* *with-js?*
@@ -376,7 +377,10 @@ Returns a string."
                               #'*observed-vms-active-body-fns* *observed-vms-active-body-fns*}
                              binding-blacklist)})
 
+
+
 (defonce -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
+
 
 (defn with-sw-io* [the-agent ^Fn body-fn]
   (let [the-agent (if the-agent the-agent -sw-io-agent-)]

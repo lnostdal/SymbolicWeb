@@ -33,95 +33,158 @@
 
 
 
-(defn %with-sw-connection [^Fn body-fn]
-  (io! "WITH-SW-CONNECTION: Cannot be used directly while within Clojure transaction (DOSYNC or SWSYNC).")
-  (assert (not *in-sw-db?*)
-          "WITH-SW-CONNECTION: Nesting of WITH-SW-CONNECTION forms not allowed.")
-  (assert (not *pending-prepared-transaction?*)
-          "WITH-SW-CONNECTION: This is not meant to be used within WITH-SW-DB's HOLDING-TRANSACTION callback. Use SWSYNC and SWDBOP instead?")
-  (assert (not (find-connection))
-          "WITH-SW-CONNECTION: Cannot be nested.")
+(defn %with-db-conn [^Fn body-fn]
+  (with-connection @@-pooled-db-spec-
+    ;; TODO: Superidiotic hack because clajure.java.jdbc sucks balls.
+    ;; TODO: Think about whether this should be placed in e.g. DO-DBTX or something.
+    (binding [clojure.java.jdbc/*db* (update-in @#'clojure.java.jdbc/*db* [:level] inc)]
+      (body-fn))))
+
+
+
+(defmacro with-db-conn [& body]
+  `(%with-db-conn (fn [] ~@body)))
+
+
+
+(defn abort-2pctx [return-value]
+  (throw (ex-info "ABORT-2PCTX" {:2pctx-state :abort, :return-value return-value})))
+
+
+
+(defn retry-2pctx [^String msg]
+  (throw (ex-info msg {:2pctx-state :retry})))
+
+
+
+(defn %with-dbtx-ctx [^Fn body-fn]
   (try
-    (with-connection @@-pooled-db-spec-
-      (body-fn))
+    (body-fn)
     (catch java.sql.SQLException e
       (if (= "40001" (.getSQLState e))
         (do
-          (println "WITH-SW-CONNECTION: Serialization conflict; retrying!")
-          (%with-sw-connection body-fn))
-        (do
-          (clojure.java.jdbc/print-sql-exception-chain e)
-          (throw e))))))
+          (println "%WITH-DBTX-CTX: Serialization conflict (PostgreSQL state 40001); retrying!")
+          (retry-2pctx "%WITH-DBTX-CTX: Retry."))
+        (throw e)))))
 
 
 
-(defn abort-transaction [return-value]
-  (throw (ex-info "WITH-SW-DB: ABORT-TRANSACTION"
-                  {:with-sw-db :abort-transaction
-                   :return-value return-value})))
+(defmacro with-dbtx-ctx [& body]
+  `(%with-dbtx-ctx (fn [] ~@body)))
 
 
 
-(defn with-sw-db [^Fn body-fn]
-  "Two-phase commit core function: http://en.wikipedia.org/wiki/Two-phase_commit_protocol
-BODY-FN is passed one argument; HOLDING-TRANSACTION (callback fn). BODY-FN is executed in a DB transaction which is fully
-finalized after HOLDING-TRANSACTION has finished executing.
-HOLDING-TRANSACTION is called when the transaction is pending finalization, and it takes one argument; ABORT-TRANSACTION (fn).
-If either BODY-FN or HOLDING-TRANSACTION throws an exception, the transaction, in either pre-pending or pending state, is rolled
-back.
-Note that actually calling HOLDING-TRANSACTION is optional, and that further, direct i.e. non-Agent, DB operations within
-HOLDING-TRANSACTION are not allowed.
-If HOLDING-TRANSACTION is called, its return value will be the return value of WITH-SW-DB.
-If HOLDING-TRANSACTION isn't called, the return value of BODY-FN will be the return value of WITH-SW-DB.
-If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW-DB."
-  (assert (fn? body-fn))
-  (with-sw-connection
-    ;; The BINDING here is sort of a hack to ensure that java.jdbc's UPDATE-VALUES etc. type functions doesn't create
-    ;; inner transactions which will commit even though we'd want them to roll back here in WITH-SW-DB.
-    (binding [clojure.java.jdbc/*db* (update-in @#'clojure.java.jdbc/*db* [:level] inc)
-              *in-sw-db?* true]
-      (let [id-str (str (generate-uid))
-            conn (find-connection)
-            stmt (.createStatement conn)]
-        (with-local-vars [result nil
-                          holding-transaction-fn nil
-                          commit-inner-transaction? false
-                          commit-prepared-transaction? false]
-          (try
-            (.setTransactionIsolation conn java.sql.Connection/TRANSACTION_SERIALIZABLE)
-            (.setAutoCommit conn false) ;; Start transaction.
-            (var-set result (body-fn (fn [holding-transaction]
-                                       (assert (not (var-get holding-transaction-fn))
-                                               "WITH-SW-DB: HOLDING-TRANSACTION callback should only be called once.")
-                                       (assert (fn? holding-transaction))
-                                       (var-set holding-transaction-fn holding-transaction))))
-            (when (var-get holding-transaction-fn)
-              (.execute stmt (str "PREPARE TRANSACTION '" id-str "';")))
-            (.commit conn) (.setAutoCommit conn true) ;; Commit or prepare commit; "hold" the transaction.
-            (var-set commit-inner-transaction? true)
-            (when-let [holding-transaction (var-get holding-transaction-fn)]
-              (binding [clojure.java.jdbc/*db* nil ;; Cancel out current low-level DB connection while we do this..
-                        *pending-prepared-transaction?* true] ;; ..and make sure no further connections can be made here.
-                (var-set result (holding-transaction (fn [return-value]
-                                                       (throw (ex-info "WITH-SW-DB: ABORT-TRANSACTION"
-                                                                       {:with-sw-db :abort-transaction
-                                                                        :return-value return-value})))))))
-            (var-set commit-prepared-transaction? true)
-            (var-get result)
-            (catch clojure.lang.ExceptionInfo e
-              (if (= :abort-transaction (:with-sw-db (ex-data e)))
-                (do
-                  ;;(println "WITH-SW-DB: Manual abort of both DB and Clojure transactions!")
-                  (:return-value (ex-data e)))
-                (throw e)))
-            (finally
-             (if (var-get commit-inner-transaction?)
-               (if (var-get commit-prepared-transaction?)
-                 (when (var-get holding-transaction-fn)
-                   (.execute stmt (str "COMMIT PREPARED '" id-str "';")))
-                 (.execute stmt (str "ROLLBACK PREPARED '" id-str "';")))
-               (do (.rollback conn) (.setAutoCommit conn true)))
-             (.close stmt))))))))
+(defn do-dbtx [^Fn body-fn]
+  (let [db-conn (find-connection)
+        db-stmt (.createStatement db-conn)
+        dbtx-id (.toString (generate-uid))
+        dbtx-phase (atom 0)]
+    (try
+      (with-dbtx-ctx
+        ;; (println "DO-DBTX: Start transaction.. (1st phase)")
+        (.setTransactionIsolation db-conn java.sql.Connection/TRANSACTION_SERIALIZABLE)
+        (.setAutoCommit db-conn false)
+        (reset! dbtx-phase 1)
+
+        (body-fn (fn []
+                   ;; (println "DO-DBTX: ..hold-transaction.. (2nd phase)")
+                   (.execute db-stmt (str "PREPARE TRANSACTION '" dbtx-id "';"))
+                   (.commit db-conn)
+                   (.setAutoCommit db-conn true)
+                   (reset! dbtx-phase 2))
+                 (fn []
+                   (assert (= 2 @dbtx-phase))
+                   ;; (println "DO-DBTX: ..commit!")
+                   (.execute db-stmt (str "COMMIT PREPARED '" dbtx-id "';"))
+                   (reset! dbtx-phase 3))))
+      (catch Throwable e
+        ;; (println "DO-DBTX: Rolling back phase" @dbtx-phase "DBTX.")
+        (case @dbtx-phase
+          0 nil
+          1 (do (.rollback db-conn)
+                (.setAutoCommit db-conn true))
+          2 (.execute db-stmt (str "ROLLBACK PREPARED '" dbtx-id "';"))
+          3 (assert false "DO-DBTX: This shouldn't happen."))
+        (throw e))
+      (finally
+        (.close db-stmt)))))
+
+
+
+(defn do-mtx [^Fn body-fn ^Fn prepare-fn ^Fn commit-fn]
+  "  PREPARE-FN is called just before the MTX is held; we might still roll back.
+  COMMIT-FN is called while the MTX is held; we will not roll back here."
+  (with-local-vars [mtx-phase 0]
+    (let [dummy (ref nil :validator (fn [x]
+                                      (when (= x 42)
+                                        (assert (= 1 (var-get mtx-phase)))
+                                        (var-set mtx-phase 2) ;; ..hold transaction.. (2nd phase)
+                                        (commit-fn)
+                                        (var-set mtx-phase 3))
+                                      true))] ;; ..and here the transaction will be commited in full (return value).
+      ;; Start transaction.. (1st phase)
+      (dosync
+       (if-not (zero? (var-get mtx-phase))
+         (retry-2pctx "DO-MTX: Retry.")
+         (do
+           (var-set mtx-phase 1)
+           (ref-set dummy 42)
+           (do1 (body-fn)
+             (prepare-fn))))))))
+
+
+
+(defn do-2pctx [^Fn body-fn]
+  (if (clojure.lang.LockingTransaction/isRunning) ;; Handle nesting..
+    (do
+      (println "WARN: DO-2PCTX nested MTX assumed to be part of 2PCTX.")
+      (body-fn)) ;; ..by assuming we're already inside a DO-2PCTX BODY-FN.
+    (with-local-vars [^Boolean done? false
+                      retval nil]
+      (while (not (var-get done?))
+        (try
+          (var-set retval (do-dbtx (fn [^Fn dbtx-prepare-fn ^Fn dbtx-commit-fn]
+                                     (do-mtx body-fn dbtx-prepare-fn dbtx-commit-fn))))
+          (var-set done? true)
+          (catch clojure.lang.ExceptionInfo e
+            (case (:2pctx-state (ex-data e))
+              :retry
+              (do #_(println "DO-2PCTX: :RETRY"))
+
+              :abort
+              (let [ex-retval (:return-value (ex-data e))]
+                #_(println "DO-2PCTX: :ABORT, :RETURN-VALUE:" ex-retval)
+                (var-set done? true)
+                (var-set retval ex-retval))
+
+              (throw e)))))
+      (var-get retval))))
+
+
+
+(defmacro with-2pctx [& body]
+  `(do-2pctx (fn [] ~@body)))
+
+
+
+(defmacro swsync [& body]
+  "BODY executes within a 2PCTX; MTX and DBTX."
+  `(if *in-swsync?*
+     (do ~@body) ;; Handle nesting.
+     (binding [*in-swsync?* true]
+       (with-db-conn
+         (with-2pctx
+           ~@body)))))
+
+
+
+(defn swsync-abort
+  "Abort SWSYNC transaction in progress; rolls back all transactions in progress; MTX and DBTX."
+  ([]
+     (swsync-abort nil))
+
+  ([retval]
+     (abort-2pctx retval)))
 
 
 
@@ -130,6 +193,9 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
 
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -141,49 +207,8 @@ If ABORT-TRANSACTION is called, its argument will be the return value of WITH-SW
 
 
 (defn db-delete-prepared-transactions []
-  (with-sw-connection
+  (with-db-conn
     (with-query-results res ["SELECT gid FROM pg_prepared_xacts;"]
       (doseq [res res]
         (println "deleting prepared transaction:" (:gid res))
         (db-stmt (str "ROLLBACK PREPARED '" (:gid res) "';"))))))
-
-
-
-;; To test out serialization conflict:
-(defn test-serialization [do-after]
-  (db-delete-prepared-transactions) ;; NOTE: While developing.
-  (let [local (ref [])
-        f (future
-            (with-sw-db
-              (fn [holding-transaction]
-                (with-query-results res ["SELECT * FROM test WHERE id = ?;" 78]
-                  (println "inner-transaction #1 before:" res)
-                  (update-values :test ["id = ?" 78] {:value (inc (Integer/parseInt (:value (first res))))}))
-                (with-query-results res ["SELECT * FROM test WHERE id = ?;" 78]
-                  (println "inner-transaction #1 after:" res))
-
-                (dosync (alter local conj "inner-transaction #1"))
-
-                (when do-after
-                  (holding-transaction (fn [tid]
-                                       (println "holding-transaction #1: begin")
-                                       (dosync (alter local conj "holding-transaction #1"))
-                                       (Thread/sleep 1000)
-                                       (println "holding-transaction #1: end")))))))]
-    (with-sw-db
-      (fn [holding-transaction]
-        (with-query-results res ["SELECT * FROM test WHERE id = ?;" 78]
-          (println "inner-transaction #2 before:" res)
-          (update-values :test ["id = ?" 78] {:value (inc (Integer/parseInt (:value (first res))))}))
-        (with-query-results res ["SELECT * FROM test WHERE id = ?;" 78]
-          (println "inner-transaction #2 after:" res))
-        (dosync (alter local conj "inner-transaction #2"))
-        (when do-after
-          (holding-transaction (fn [tid]
-                               (dosync
-                                (println "holding-transaction #2: begin")
-                                (alter local conj "holding-transaction #2")
-                                (Thread/sleep 500) ;; To make sure the first ts has gotten to its call to Thread/sleep.
-                                (println "holding-transaction #2: end")))))))
-    @f
-    @local))
