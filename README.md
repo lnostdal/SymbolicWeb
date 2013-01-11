@@ -10,7 +10,7 @@ SW was originally written in Common Lisp, and that version is still found at thi
 
 ## Status
 
-Stable, but not many features yet.
+Core functionality is stable (if one ignore some of the DB stuff), but not many features yet.
 It runs the work-in-progress e-commerce platform Free or Deal. Some buzzwords: "shopping, gamification and social networking
 mixed".
 
@@ -23,10 +23,10 @@ The least stable things API-wise is probably the DB related stuff.
 
 ## Usage
 
-*This is out of date; if you really want to try this just get in touch instead for now.*
+*This is very out of date; if you really want to try this just get in touch instead for now.*
 
 
-Lighttpd 1.5.x (from svn/git) is used (recommended) for the boring static content. To enable serving from port 80 we do:
+Lighttpd 1.5.x (from git) is used (recommended) for the boring static content. To enable serving from port 80 we do:
 
     sudo setcap 'cap_net_bind_service=+ep' /usr/local/sbin/lighttpd
 
@@ -97,19 +97,13 @@ found in jQuery. E.g., append, prepend, before and after:
 * DBTX: Database transaction; e.g. WITH-SW-DB.
 * 2PC: Two-phase transaction; database then memory transaction; e.g. SWSYNC, or WITH-SW-DB with its HOLDING-TRANSACTION callback
   made use of. http://en.wikipedia.org/wiki/Two-phase_commit_protocol
-
-
-
-## Notes
-
-* Anything blocking (I/O) means no MTX (i.e., DOSYNC or STM) possible.
-* Async, non-blocking reads (Input) is a bad idea.
+* CTX: Context.
 
 
 
 ## License
 
-Copyright (C) 2005 - 2011, 2012 Lars Rune Nøstdal
+Copyright (C) 2005 - 2011, 2012, 2013 Lars Rune Nøstdal
 
 Distributed under the GNU Affero General Public License (for now):
 
