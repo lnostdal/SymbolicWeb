@@ -48,6 +48,7 @@
        "&display=" (url-encode-component user-authenticate-display)))
 
 
+
 ;;; 4. Exchange the code for a user access token
 
 (defn user-access-token-url ^String [^String app-id
@@ -146,9 +147,9 @@
                           permission-names
                           ^String realtime-verify-token
                           ^String user-authenticate-display
-                          authorization-accepted-fn
-                          authorization-declined-fn
-                          user-data-updated-fn]
+                          ^Fn authorization-accepted-fn
+                          ^Fn authorization-declined-fn
+                          ^Fn user-data-updated-fn]
   "Example of use from JS:
   window.open('http://lrn.freeordeal.no/sw?page=facebook-api&do=init&' + new Date().getTime(), 'blah', 'width=640,height=340');"
   (case (get (:query-params request) "do")
