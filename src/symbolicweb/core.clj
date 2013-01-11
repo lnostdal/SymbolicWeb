@@ -81,38 +81,40 @@
 
 (set! *warn-on-reflection* true)
 
+(let [bnds (get-thread-bindings)]
+  (defn handler [request]
+    (swap! -request-counter- inc')
+    ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
+    (with-bindings bnds
+      (binding [*print-level* 2]
+        (try
+          (let [^Ref application (find-or-create-application-instance request)]
+            (touch application)
+            ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
+            ;; TODO: Production / development modes needed here too. Logging, etc. etc...
+            ((:request-handler @application) request application))
+          (catch Throwable e
+            ;; Send to REPL first..
+            ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
+            (println) (println)
+            (println "SymbolicWeb.core/handler (core.clj); Top Level Exception")
+            (println "--------------------------------------------------------")
+            (clojure.stacktrace/print-stack-trace e 50)
 
-(defn handler [request]
-  (swap! -request-counter- inc')
-  (binding [*print-level* 2] ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
-    (try
-      (let [^Ref application (find-or-create-application-instance request)]
-        (touch application)
-        ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
-        ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-        ((:request-handler @application) request application))
-      (catch Throwable e
-        ;; Send to REPL first..
-        ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
-        (println) (println)
-        (println "SymbolicWeb.core/handler (core.clj); Top Level Exception")
-        (println "--------------------------------------------------------")
-        (clojure.stacktrace/print-stack-trace e 50)
-
-        ;; ..then send to HTTP client.
-        {:status 500
-         :headers {"Content-Type" "text/html; charset=UTF-8"
-                   "Server" "http://nostdal.org/"}
-         :body
-         (html
-          [:html
-           [:body {:style "font-family: sans-serif;"}
-            [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": Top Level Server Exception (HTTP 500)"]
-            [:pre
-             \newline
-             (with-out-str (clojure.stacktrace/print-stack-trace e 1000))
-             \newline]
-            [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))
+            ;; ..then send to HTTP client.
+            {:status 500
+             :headers {"Content-Type" "text/html; charset=UTF-8"
+                       "Server" "http://nostdal.org/"}
+             :body
+             (html
+              [:html
+               [:body {:style "font-family: sans-serif;"}
+                [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": Top Level Server Exception (HTTP 500)"]
+                [:pre
+                 \newline
+                 (with-out-str (clojure.stacktrace/print-stack-trace e 1000))
+                 \newline]
+                [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))))
 
 
 
