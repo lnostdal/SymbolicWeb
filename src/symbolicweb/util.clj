@@ -35,11 +35,13 @@
      ys)))
 
 
+
 (defmacro with-string-builder [name & body]
   "For use with STRB."
   `(let [~name (StringBuilder.)]
      ~@body
      (.toString ~name)))
+
 
 
 (defn http-build-query [query-map & php-compatible-boolean-output?]
@@ -80,3 +82,55 @@
       (doseq [map-entry query-map]
         (handle-url-value (name (key map-entry))
                           (val map-entry))))))
+
+
+
+(defn ^String genURL [^Ref viewport ^String path]
+  "Generates an absolute URL to resource denoted by PATH.
+Appends a timestamp to the URL based on file mtime."
+  ;; TODO: Check whether the JVM caches calls to lastModified. If not, add a cache based on PATH here.
+  (let [fs-path (str (:genurl-fs-path @viewport) path) ;; resources/web-design/
+        mtime (.lastModified (java.io.File. fs-path))]
+    (assert (not (zero? mtime))
+            (str "genURL: " fs-path " not found."))
+    (str (:genurl-scheme @viewport) ;; http
+         "://"
+         (:genurl-domain @viewport) ;; static.site.com
+         "/"
+         (:genurl-path @viewport) ;; some-common-path/      (note trailing slash)
+         path ;; js/ajax.js
+         "?_=" mtime)))
+
+
+
+(defn mk-rest-css-entry [^String url]
+  {:url url})
+
+
+
+(defn ^String generate-rest-css [rest-css-entries]
+  (with-out-str
+    (doseq [css-entry rest-css-entries]
+      (print (str "<link rel='stylesheet' href='" (:url css-entry) "'>")))))
+
+
+
+(defn mk-rest-js-entry [^String url ^Boolean defer? ^Boolean async?]
+  {:url url :defer? defer? :async? async?})
+
+
+
+(defn ^String generate-rest-js [rest-js-entries]
+  (with-out-str
+    (doseq [js-entry rest-js-entries]
+      (print (str "<script src='" (:url js-entry) "'"
+                  (when (:defer? js-entry)
+                    " defer ")
+                  (when (:async? js-entry)
+                    " async ")
+                  "></script>")))))
+
+
+
+(defn ^java.sql.Timestamp datetime-to-sql-timestamp [^org.joda.time.DateTime datetime]
+  (java.sql.Timestamp. (clj-time.coerce/to-long datetime)))

@@ -5,8 +5,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defn mk-Viewport [request application ^WidgetBase root-widget & args]
-  "This will instantiate a new Viewport and also 'register' it as a part of APPLICATION and the server via -VIEWPORTS-."
+(defn mk-Viewport [request ^Ref session ^WidgetBase root-widget & args]
+  "This will instantiate a new Viewport and also 'register' it as a part of SESSION and the server via -VIEWPORTS-."
   (assert (= :lifetime-root @(.parent (.lifetime root-widget))))
   (let [viewport-id (str "sw-" (generate-uid))
         viewport (ref (apply assoc {}
@@ -14,21 +14,40 @@
                              :id viewport-id
                              :last-activity-time (atom (System/currentTimeMillis))
                              :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
+
+                             ;; Comet.
                              :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)
                              :response-agent (agent nil)
-                             :application application
-                             :root-element root-widget
+
+                             ;; Resources.
+                             :rest-css-entries (ref [])
+                             :rest-js-entries (ref [])
+
+                             :session session
+                             :root-element root-widget ;; TODO: Rename...
                              :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
                              args))]
-    (when (:session? @application)
+    (when-not (:one-shot? @session)
       (swap! -viewports- #(assoc % viewport-id viewport)))
     (dosync
-     (alter application update-in [:viewports] assoc viewport-id viewport)
+     (alter session update-in [:viewports] assoc viewport-id viewport)
      ;; Widget --> Viewport.
      (vm-set (.viewport root-widget) viewport)
      (do-lifetime-activation (.lifetime root-widget)))
     viewport))
+
+
+
+(defn add-rest-css [^Ref viewport rest-css-entry]
+  (alter (:rest-css-entries @viewport)
+         conj rest-css-entry))
+
+
+
+(defn add-rest-js [^Ref viewport rest-js-entry]
+  (alter (:rest-js-entries @viewport)
+         conj rest-js-entry))
 
 
 

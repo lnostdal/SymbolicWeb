@@ -7,12 +7,12 @@
      (swap! -viewports- #(dissoc % (:id viewport-m))) ;; Remove VIEWPORT from -VIEWPORTS- global.
      ;; This will call the DO-LIFETIME-DEACTIVATION CBs which will disconnect the widgets from their models (Observables).
      (detach-lifetime (.lifetime (:root-element viewport-m)))
-     ;; Application -/-> Viewport.
-     (alter (:application viewport-m) update-in [:viewports] dissoc (:id viewport-m)))))
+     ;; Session -/-> Viewport.
+     (alter (:session viewport-m) update-in [:viewports] dissoc (:id viewport-m)))))
 
 
 
-;; This thing iterates through all sessions in -APPLICATIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
+;; This thing iterates through all sessions in -SESSIONS- and -VIEWPORTS- and checks their :LAST-ACTIVITY-TIME
 ;; properties removing unused or timed out sessions / viewports.
 (defn do-gc []
   (let [now (System/currentTimeMillis)
@@ -21,18 +21,18 @@
                        (let [obj-ref (val obj)
                              obj @(val obj)]
                          (when (< timeout (- now @(:last-activity-time obj)))
-                           (swap! cnt #(dissoc % (:id obj))) ;; Remove OBJ from -APPLICATIONS- or -VIEWPORTS- global.
+                           (swap! cnt #(dissoc % (:id obj))) ;; Remove OBJ from -SESSIONS- or -VIEWPORTS- global.
                            (case (:type obj)
-                             ::Application
+                             ::Session
                              (dosync
-                              (vm-alter -num-applications-model- - 1)
-                              ;; UserModel -/-> Application.
+                              (vm-alter -num-sessions-model- - 1)
+                              ;; UserModel -/-> Session
                               (when-let [user-model @(:user-model obj)]
-                                (vm-alter (:applications user-model) disj obj-ref)))
+                                (vm-alter (:sessionss user-model) disj obj-ref)))
 
                              ::Viewport
                              (gc-viewport obj-ref))))))]
-    (checker-fn -applications- -application-timeout-)
+    (checker-fn -sessions- -session-timeout-)
     (checker-fn -viewports- -viewport-timeout-)))
 
 

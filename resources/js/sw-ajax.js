@@ -14,25 +14,6 @@ function swHandleError(jq_xhr, text_status, error_thrown){
 
 
 
-/// swGetCurrentHash ///
-////////////////////////
-
-var swGetCurrentHash;
-if($.browser.mozilla)
-  swGetCurrentHash = function(){
-    if((window.location.hash).length > 1)
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=378962 *sigh*
-      return "#" + window.location.href.split("#")[1].replace(/%27/g, "'");
-    else
-      return "#";
-  };
-else
-  swGetCurrentHash = function(){
-    return location.hash;
-  };
-
-
-
 /// swAddOnLoadFN ///
 /////////////////////
 
@@ -65,7 +46,7 @@ var swAddOnLoadFN, swDoOnLoadFNs;
 function swURL(params){
   return([window.location.protocol, "//",
           window.location.host,
-          "/sw?_sw_viewport_id=", _sw_viewport_id,
+          "/sw.sw?_sw_viewport_id=", _sw_viewport_id, // TODO: Magic value "sw.sw" here.
           params.join("")
          ].join(""));
 }
@@ -249,36 +230,28 @@ $(window).on("unload", function(){
 /// Boot! ///
 /////////////
 
-function swBoot(url){
-  // Pre-boot; sets _sw_viewport_id etc..
-  $.ajax({
-    async: false,
-    type: "POST",
-    url: url,
-    dataType: "script",
-    success: function(){
-      if(document.cookie.indexOf("_sw_application_id") != -1){
-        // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
-        swComet("&do=refresh");
-        // ..and set up something that'll ensure the channel stays alive
-        // when faced with JS dying after computer waking up from suspend etc..
-        var sw_mouse_poll_ts = new Date().getTime();
-        var sw_mouse_poll_interval_ms = 5000;
-        var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
-        $(document).on("mousemove", function(e){
-          var ts = new Date().getTime();
-          if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
-            sw_mouse_poll_ts = ts;
-            if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
-              console.log("SymbolicWeb: Client connection JS-loop has died: rebooting...");
-              window.location.href = window.location.href;
-            }
-          }
-        });
+function swBoot(){
+  if(document.cookie.indexOf(sw_cookie_name) != -1){
+    // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
+    swComet("&do=boot");
+    // ..and set up something that'll ensure the channel stays alive
+    // when faced with JS dying after computer waking up from suspend etc..
+    var sw_mouse_poll_ts = new Date().getTime();
+    var sw_mouse_poll_interval_ms = 5000;
+    var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
+    // TODO: onfocus too?
+    $(document).on("mousemove", function(e){
+      var ts = new Date().getTime();
+      if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
+        sw_mouse_poll_ts = ts;
+        if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
+          console.log("SymbolicWeb: Client connection JS-loop has died: rebooting...");
+          window.location.href = window.location.href;
+        }
       }
-      else{
-        console.log("SymbolicWeb: Cookies must be enabled.");
-      }
-    }
-  });
+    });
+  }
+  else{
+    console.log("SymbolicWeb: Cookies must be enabled.");
+  }
 }

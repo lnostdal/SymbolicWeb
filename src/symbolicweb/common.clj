@@ -10,18 +10,18 @@
   (var-set var (apply fun (var-get var) args)))
 
 
-(defn url-encode-component ^String [^String s]
+(defn ^String url-encode-component [^String s]
   ;; TODO: This is retarded and slow.
   (.replace (java.net.URLEncoder/encode s "UTF-8")
             "+"
             "%20"))
 
 
-(defn url-decode-component ^String [^String s]
+(defn ^String url-decode-component [^String s]
   (java.net.URLDecoder/decode s "UTF-8"))
 
 
-(defn mime-encode-rfc-2047 ^String [^String s]
+(defn ^String mime-encode-rfc-2047 [^String s]
   (str "=?UTF-8?Q?"
        (-> (url-encode-component s)
            (str/replace "%20" "_")
@@ -45,9 +45,9 @@
 
 
 (declare viewport-of)
-(defn application-of [widget]
+(defn session-of [widget]
   (when-let [viewport (viewport-of widget)]
-    (:application @viewport)))
+    (:session @viewport)))
 
 
 (defn alter-options [options fn & args]
@@ -87,32 +87,32 @@
 
 (defmacro with-all-viewports [& body]
   "Handy when testing things in the REPL.
-APPLICATION and VIEWPORT are bound within BODY."
-  `(doseq [~'application (vals @-applications-)]
-     (doseq [~'viewport (vals (:viewports @~'application))]
+SESSION and VIEWPORT are bound within BODY."
+  `(doseq [~'session (vals @-sessions-)]
+     (doseq [~'viewport (vals (:viewports @~'session))]
        (dosync
         ~@body))))
 
 
-(defmacro with-app-viewports [app & body]
-  "Run BODY in context of all Viewports of APP (Application).
-APPLICATION and VIEWPORT are bound within BODY."
-  `(let [application# ~app]
-     (doseq [~'viewport (vals (:viewports @application#))]
+(defmacro with-session-viewports [session & body]
+  "Run BODY in context of all Viewports of SESSION..
+SESSION and VIEWPORT are bound within BODY."
+  `(let [session# ~session]
+     (doseq [~'viewport (vals (:viewports @session#))]
        (dosync
         ~@body))))
 
 
 (defmacro with-user-viewports [user-model & body]
-  "Run BODY in context of all Viewports in all Applications of USER-MODEL (UserModelBase).
-APPLICATION and VIEWPORT are bound within BODY."
+  "Run BODY in context of all Viewports in all Sessions of USER-MODEL (UserModelBase).
+SESSION and VIEWPORT are bound within BODY."
   `(let [user-model# ~user-model]
-     (doseq [application# (dosync @(:applications @user-model#))]
-       (with-app-viewports application#
+     (doseq [session# (dosync @(:sessions @user-model#))]
+       (with-session-viewports session#
          ~@body))))
 
 
-(defn get-widget [^String id viewport]
+(defn get-widget [^String id ^Ref viewport]
   (get (:widgets @viewport) id))
 
 
@@ -146,13 +146,13 @@ APPLICATION and VIEWPORT are bound within BODY."
                   ", ")))))
 
 
-(defn defapp [[name fit-fn & args] application-constructor-fn]
-  (swap! -application-types-
+(defn defapp [[name fit-fn & args] session-constructor-fn]
+  (swap! -session-types-
          #(assoc % name (apply hash-map
                                :name name
                                :fit-fn fit-fn
-                               :cookie-name "_sw_application_id"
-                               :application-constructor-fn application-constructor-fn
+                               :cookie-name "_sw_s"
+                               :session-constructor-fn session-constructor-fn
                                args))))
 
 
@@ -183,6 +183,7 @@ Returns a string."
           :href href}])
 
 
+
 (defn ^String set-document-cookie [& {:keys [path domain? name value]
                                       :or {domain? true
                                            path "\" + window.location.pathname + \""
@@ -196,27 +197,21 @@ Returns a string."
            (str "domain=" domain? "; ")))
        (if value
          (str "expires=\""
-              " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear()+1); return date.toUTCString(); })()"
+              " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear() + 5); return date.toUTCString(); })()"
               " + \"; ")
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=" path "; "
        "\";" \newline))
 
 
-(defn ^String set-default-session-cookie [^String value]
-  "If VALUE is NIL the cookie will be cleared."
-  (set-document-cookie :name "_sw_application_id" :value value :path "/" :domain? false))
+(defn ^String set-session-cookie [value]
+  (set-document-cookie :name -session-cookie-name- :value value :path "/" :domain? false))
 
 
-(defn ^String set-default-login-cookie [^String value]
-  (str (set-document-cookie :name "_sw_login_id" :value value :path "/" :domain? false)
-       (when-not value
-         (set-document-cookie :name "PHPSESSID" :value value :path "/" :domain? false))))
 
-
-(defn remove-session [^Ref application]
-  (let [application @application]
-    (swap! -applications- #(dissoc % (:id application)))))
+(defn remove-session [^Ref session]
+  (let [session @session]
+    (swap! -sessions- #(dissoc % (:id session)))))
 
 
 (defn http-js-response [body]
@@ -271,10 +266,10 @@ Returns a string."
                       viewport))
 
 
-(defn clear-session [application]
+(defn clear-session [session]
   ;; TODO: Do this on the server end instead or also?
-  (with-app-viewports application
-    (add-response-chunk (set-default-session-cookie nil)
+  (with-session-viewports session
+    (add-response-chunk (set-session-cookie nil)
                         viewport)
     (add-response-chunk "window.location.href = window.location.href;"
                         viewport)))
@@ -307,14 +302,13 @@ Returns a string."
   (.id widget))
 
 
+
 (defn ^String sw-js-base-bootstrap [^Ref application ^Ref viewport]
-  (str (set-default-session-cookie (:id @application))
-       "_sw_viewport_id = '" (:id @viewport) "';" \newline
-       "_sw_comet_timeout_ts = " -comet-timeout- ";" \newline))
+  (str "var sw_cookie_name = '" -session-cookie-name- "'; "
+       (set-session-cookie (:id @application))
+       "var _sw_viewport_id = '" (:id @viewport) "'; "
+       "var _sw_comet_timeout_ts = " -comet-timeout- "; "))
 
-
-(defn sw-css-bootstrap []
-  "")
 
 
 (defn pred-with-limit [pred limit]

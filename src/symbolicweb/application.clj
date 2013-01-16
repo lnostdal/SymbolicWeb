@@ -1,96 +1,109 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn mk-Application [& app-args]
-  "This will instantiate a new Application (browser session) and also 'register' it as a part of the server via -APPLICATIONS-.
-On page load (or refresh), the order of things executed are:
+(defn mk-Session [id & args]
+  "ID is session cookie value or NIL when creating new session."
+  (let [session (ref (apply assoc {}
+                            :type ::Session
+                            :id id
 
-  :MAKE-VIEWPORT-FN
-  :REST-HANDLER"
-  (let [application-id (generate-uuid)
-        application (apply assoc {}
-                           :type ::Application
-                           :agent (agent ::ApplicationAgent)
-                           :cookies (atom nil)
-                           :id application-id
-                           :id-generator (let [last-id (atom 0N)]
-                                           (fn [] (swap! last-id inc')))
-                           :logged-in? (vm false)
-                           :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
-                           :last-activity-time (atom (System/currentTimeMillis))
-                           :viewports {}
-                           :session-data (ref {})
-                           :mk-viewport-fn (fn [request application]
-                                             (throw (Exception. "mk-Application: No :MK-VIEWPORT-FN given.")))
-                           :request-handler #'default-request-handler
-                           :rest-handler #'default-rest-handler
-                           :ajax-handler #'default-ajax-handler
-                           :aux-handler #'default-aux-handler
-                           :session? true
-                           :html-title "[SymbolicWeb]"
-                           app-args)
-        application-ref (ref application)]
-    (when (:session? application)
-      (swap! -applications- #(assoc % application-id application-ref))
-      (dosync
-       (vm-alter -num-applications-model- + 1)))
-    application-ref))
+                            :logged-in? (vm false)
+                            :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
+                            :last-activity-time (atom (System/currentTimeMillis))
+                            :viewports {}
+
+                            :session-data (ref {})
+
+                            :mk-viewport-fn (fn [request ^Ref session]
+                                              (throw (Exception. "mk-Session: No :MK-VIEWPORT-FN given.")))
+
+                            :request-handler #'default-request-handler
+                            :rest-handler #'default-rest-handler
+                            :ajax-handler #'default-ajax-handler
+                            :aux-handler #'default-aux-handler
+
+                            :one-shot? false
+                            args))]
+
+    (letfn [(add-new-db-entry []
+              ;; TODO: _Very_ small chance of UUID collision; not a security problem though since the DB col is UNIQUE.
+              (let [cookie-value (generate-uuid)
+                    db-entry (jdbc/insert-record :sessions {:cookie_value cookie-value
+                                                            :created (datetime-to-sql-timestamp (clj-time.core/now))})]
+                (alter session assoc
+                       :db-entry db-entry
+                       :id cookie-value)))]
+
+      (when-not (:one-shot? @session)
+        (if id
+          (if-let [db-entry (jdbc/with-query-results res ["SELECT * FROM sessions WHERE cookie_value = ? LIMIT 1;" id]
+                              (doall (first res)))]
+            (alter session assoc :db-entry db-entry) ;; TODO: Update timestamp.
+            (add-new-db-entry))
+          (add-new-db-entry))
+        (vm-alter -num-sessions-model- + 1)
+        (swap! -sessions- #(assoc % (:id @session) session))))
+
+    session))
 
 
-(defn session-get [application key]
+
+(defn session-get [^Ref session key]
   "KEY is KEYWORD."
   (dosync
-   (when-let [res (get @(:session-data @application)
+   (when-let [res (get @(:session-data @session)
                        key)]
      @res)))
 
 
-(defn session-set [application m]
+
+(defn session-set [^Ref session m]
   (dosync
    (doseq [map-entry m]
-     (if (contains? @(:session-data @application) (key map-entry))
+     (if (contains? @(:session-data @session) (key map-entry))
        ;; An entry with that key already exists; set its value.
-       (vm-set ((key map-entry) @(:session-data @application))
+       (vm-set ((key map-entry) @(:session-data @session))
                (val map-entry))
        ;; An entry with that key doesn't exist; add the key and value (wrapped in a ValueModel).
-       (alter (:session-data @application)
+       (alter (:session-data @session)
               assoc (key map-entry) (vm (val map-entry)))))))
 
 
-(defn session-del [application key]
+
+(defn session-del [^Ref session key]
   (dosync
-   (alter (:session-data @application)
+   (alter (:session-data @session)
           dissoc key)))
 
 
-(defn find-application-constructor [request]
-  (loop [app-types @-application-types-]
-    (when-first [app-type app-types]
-      (let [app-type (val app-type)]
-        (if ((:fit-fn app-type) request)
-          (:application-constructor-fn app-type)
-          (recur (next app-types)))))))
+
+(defn find-session-constructor [request]
+  (loop [session-types @-session-types-]
+    (when-first [session-type session-types]
+      (let [session-type (val session-type)]
+        (if ((:fit-fn session-type) request)
+          (:session-constructor-fn session-type)
+          (recur (next session-types)))))))
+
 
 
 (declare json-parse)
-(defn find-or-create-application-instance [request]
-  (with1 (if-let [cookie-value (:value (get (:cookies request) "_sw_application_id"))]
-           ;; Session cookie sent.
-           (if-let [application (get @-applications- cookie-value)]
-             ;; Session cookie sent, and Application found on server end.
-             application
-             ;; Session cookie sent, but Application not found on server end.
-             (mk-Application :rest-handler #'clear-session-page-handler :session? false))
-           ;; Session cookie not sent; the user is requesting a brand new session or Application.
-           (if-let [application-constructor (find-application-constructor request)]
-             (application-constructor :session?
-                                      (with (get (:query-params request) "_sw_session_p")
-                                        (if (nil? it)
-                                          true
-                                          (json-parse it))))
-             (mk-Application :rest-handler not-found-page-handler :session? false)))
-    (reset! (:cookies @it) (:cookies request))))
+(defn find-or-create-session [request]
+  (let [cookie-value (:value (get (:cookies request) -session-cookie-name-))]
+    (if-let [session (get @-sessions- cookie-value)]
+      session
+      (if-let [^Fn session-constructor (find-session-constructor request)]
+        (swsync
+         (session-constructor cookie-value
+                              :one-shot? (with (get (:query-params request) "_sw_session_one_shot_p")
+                                           (if (nil? it)
+                                             false
+                                             (json-parse it)))))
+        (mk-Session cookie-value
+                    :rest-handler not-found-page-handler
+                    :one-shot? true)))))
+
 
 
 (defn undefapp [name]
-  (swap! -application-types- #(dissoc % name)))
+  (swap! -session-types- #(dissoc % name)))

@@ -12,29 +12,35 @@
 (def -viewport-timeout- (+ -comet-timeout- 10000))
 
 ;; X / 1000 seconds since -VIEWPORT-TIMEOUT- and still no new request (long poll) from any Viewport in the session?
-(def -application-timeout- (+ -viewport-timeout- 10000))
+(def -session-timeout- (+ -viewport-timeout- 10000))
 
 (def -request-counter-
   "Number of HTTP requests since server started."
   (atom 0))
 
 
-(def -application-types-
+
+
+(def -session-cookie-name- "_sw")
+
+
+(def -session-types-
   "name -> {:fit-fn fit-fn
-            :application-constructor-fn application-constructor-fn]"
+            :session-constructor-fn session-constructor-fn]"
   (atom {}))
 
 
-(def -num-applications-model-
+(def -num-sessions-model-
   (vm 0))
 
-(def -applications-
+(def -sessions-
   "SESSION-COOKIE-VALUE -> APPLICATION"
   (atom {}))
 
 (def -viewports-
   "ID -> VIEWPORT"
   (atom {}))
+
 
 
 (defonce -overtone-pool- (overtone.at-at/mk-pool))

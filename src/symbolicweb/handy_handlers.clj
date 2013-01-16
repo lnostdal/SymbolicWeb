@@ -1,9 +1,8 @@
 (in-ns 'symbolicweb.core)
 
-(declare mk-Application)
 
 
-(defn default-aux-handler [request application viewport]
+(defn default-aux-handler [request ^Ref session ^Ref viewport]
   "Attempt to handle auxiliary callbacks or events; AJAX requests that do not follow the SW protocol. These might come from 3rd
 party code or plugins or similar running on the browser end.
 Returns TRUE if the event was handled or FALSE if no callback was found for the event."
@@ -21,13 +20,12 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 
 
-(defn handle-out-channel-request [channel request application viewport]
+(defn handle-out-channel-request [channel request ^Ref session ^Ref viewport]
   "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [^StringBuilder response-str]
             (lamina.core/enqueue channel
                      {:status 200
-                      :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                                "Server" -http-server-string-}
+                      :headers {"Content-Type" "text/javascript; charset=UTF-8"}
                       :body (do
                               (.append response-str "_sw_comet_response = true;")
                               (with1 (.toString response-str)
@@ -53,7 +51,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 
 
-(defn handle-in-channel-request [request application viewport]
+(defn handle-in-channel-request [request ^Ref session ^Ref viewport]
   "Input (AJAX) channel."
   (cond
     ;; TODO: This stuff doesn't belong here.
@@ -61,8 +59,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (do
       (gc-viewport viewport)
       {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" -http-server-string-}
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
        :body "" ;;"console.log('SymbolicWeb: Server got DOM unload notification.');"
        })
 
@@ -75,145 +72,82 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           [callback-fn callback-data] callback]
       (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
       {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" -http-server-string-}
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
        :body ""})))
 
 
 
-(defn default-ajax-handler [request application viewport]
+(defn default-ajax-handler [request ^Ref session ^Ref viewport]
   (if-let [sw-request-type-str (get (:query-params request) "_sw_request_type")]
     (case sw-request-type-str
-      "comet" ((aleph.http/wrap-aleph-handler (fn [channel request]
-                                                (handle-out-channel-request channel request application viewport)))
-               request)
-      "ajax"  (handle-in-channel-request request application viewport)
-      (throw (Exception. (str "SymbolicWeb: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))
-    ((:aux-handler @application) request application viewport)))
+      "comet"
+      ((aleph.http/wrap-aleph-handler (fn [channel request]
+                                        (handle-out-channel-request channel request session viewport)))
+       request)
+
+      "ajax"
+      (handle-in-channel-request request session viewport)
+
+      (throw (Exception. (str "DEFAULT-AJAX-HANDLER: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))
+    ((:aux-handler @session) request session viewport)))
 
 
 
-(declare clear-session-page-handler)
-(defn default-request-handler [request ^Ref application]
+(defn default-request-handler [request ^Ref session]
   "Default top-level request handler for both REST and AJAX/Comet type requests."
   (if (get (:query-params request) "_sw_request_type") ;; sw-ajax.js adds this to our AJAX requests.
     ;; AJAX.
-    (if (= clear-session-page-handler (:rest-handler @application))
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" -http-server-string-}
-       :body (str (set-default-session-cookie nil)
-                  "window.location.reload();")}
-      (if-let [^Ref viewport (get (:viewports @application)
-                                  (get (:query-params request) "_sw_viewport_id"))]
-        (do
-          (touch viewport)
-          ((:ajax-handler @application) request application viewport))
+    (if-let [^Ref viewport (get (:viewports @session)
+                                (get (:query-params request) "_sw_viewport_id"))]
+      (do
+        (touch viewport)
+        ((:ajax-handler @session) request session viewport))
+      (do
+        (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
+                 "Reloading page, but keeping Session (cookie).")
         {:status 200
-         :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                   "Server" -http-server-string-}
-         :body (with-js (clear-session application))}))
+         :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+         :body (str (set-session-cookie (:id @session)) ;; A new Session might have been started for this request.
+                    "window.location.href = window.location.href;")}))
     ;; REST.
-    (let [viewport (when (:session? @application)
-                     ((:mk-viewport-fn @application) request application))]
+    (let [viewport (when-not (:one-shot? @session)
+                     ((:mk-viewport-fn @session) request session))]
       (dosync
-       (with1 ((:rest-handler @application) request application viewport)
+       (with1 ((:rest-handler @session) request session viewport)
          (when viewport
            (add-response-chunk "swDoOnLoadFNs();" (:root-element @viewport))))))))
 
 
 
-(defn clear-session-page-handler [request application viewport]
-  "Clears the session; removes client side cookies and reloads the page."
-  (let [accept-header (expected-response-type request)]
-    (case accept-header
-      :javascript
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                 "Server" -http-server-string-}
-       :body
-       (str ;; Clear session cookie and reload page.
-        (set-default-session-cookie nil)
-        "window.location.reload();")}
-
-      :html
-      {:status 200
-       :headers {"Content-Type" "text/html; charset=UTF-8"
-                 "Server" "SymbolicWeb"}
-       :body
-       (html
-        (doctype :xhtml-strict)
-        (xhtml-tag
-         "en"
-         [:head
-          [:title "Reloading page..."]
-          [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-          ;; Clear session cookie and reload page.
-          [:script {:type "text/javascript"}
-           (set-default-session-cookie nil)]]
-         [:body {:onload "window.location.reload();"}
-          [:p "Reloading page..."]]))}
-
-      :plugin-api
-      {:status 404
-       :headers {"Content-Type" "text/plain; charset=UTF-8"
-                 "Server" "SymbolicWeb"}
-       :body "This session has timed out."}
-
-      (println "CLEAR-SESSION-PAGE-HANDLER: Unknown HTTP ACCEPT header value:" accept-header))))
-
-
-
-(defn default-rest-handler [request application viewport]
-  {:status  200
-   :headers {"Content-Type"  "text/html; charset=UTF-8"
-             "Server" -http-server-string-
-             "Expires"       "Mon, 26 Jul 1997 05:00:00 GMT"
-             "Cache-Control" "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
-             "Pragma"        "no-cache"}
+(defn default-rest-handler [request ^Ref session ^Ref viewport]
+  {:status 200
+   :headers {"Content-Type" "text/html; charset=UTF-8"}
    :body
    (html
-    (doctype :xhtml-strict)
-    (xhtml-tag
-     "en"
+    (hiccup.page/doctype :html5)
+    (str "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->" \newline)
+    [:html
      [:head
-      [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
-      ;; Do want; http://blog.chromium.org/2009/09/introducing-google-chrome-frame.html
-      [:meta {:http-equiv "X-UA-Compatible" :content "chrome=1"}]
-      [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
-      [:title (:html-title @application)]
-      ;; TODO: #sw-root doesn't exist anymore; check ID of :ROOT-ELEMENT!
-      [:style {:type "text/css"} "
-* {
-  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
-  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
-  box-sizing: border-box;         /* Opera/IE 8+ */
-}
-html, body, #sw-root {
-  font-family: sans-serif;
-  position: absolute;
-  width: 100%; height: 100%;
-  margin: 0; padding: 0; border: 0;
-}
-.sw-hide {
-  display: none !important;
-}"]
-      (sw-css-bootstrap)
-      (script-src "/js/common/jquery-1.6.4.min.js")
-      (script-src "/js/common/sw/jquery.sha256/jquery.sha256.js")
-      (with-out-str
-        (doseq [head-element (:head-elements @application)]
-          (println head-element)))
-      ;;(sw-js-bootstrap)
-      (assert false "handler doesn't work atm. ... fix fix")
-      ]
+      [:meta {:charset "UTF-8"}] ;; In case the user wants to save a snapshot of the page.
+      ;; TODO: Extract from VIEWPORT.
+      [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,maximum-scale=1.0"}]
+      [:title (:page-title @viewport)]
 
-     [:body
-      (render-html (:root-element @viewport) (:root-element @viewport))]))})
+      (generate-rest-css @(:rest-css-entries @viewport))
+      ;;[:script {:src (genURL viewport "sw/js/jquery-1.8.3.min.js")}]
+      "<script src='http://code.jquery.com/jquery-2.0.0b1.js'></script>"
+      "<script src='http://code.jquery.com/jquery-migrate-1.0.0.js'></script>"
+      [:script (sw-js-base-bootstrap session viewport)]
+      [:script {:src (genURL viewport "sw/js/sw-ajax.js")}]
+      (generate-rest-js @(:rest-js-entries @viewport))]
+
+     [:body {:id "_body"}
+      [:noscript "SymbolicWeb: JavaScript needs to be enabled."]
+      [:script "$(function(){ swBoot(); });"]]])})
 
 
 
-(defn not-found-page-handler []
+(defn not-found-page-handler [request ^Ref session ^Ref viewport]
   {:status 404
    :headers {"Content-Type" "text/html; charset=UTF-8"
              "Server" -http-server-string-}

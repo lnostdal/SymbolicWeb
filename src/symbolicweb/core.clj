@@ -32,6 +32,9 @@
   (:require ring.middleware.params)
   (:require ring.middleware.cookies)
 
+  (:use [clj-time.core :as time :exclude (extend)])
+  (:use [clj-time.coerce :as time.coerce :exclude (extend)])
+
   ;; Netty (EPOLL).
   (:require lamina.core)
   (:require aleph.http)
@@ -88,11 +91,11 @@
     (with-bindings bnds
       (binding [*print-level* 2]
         (try
-          (let [^Ref application (find-or-create-application-instance request)]
-            (touch application)
-            ;; TODO: Application level try/catch here: ((:exception-handler-fn @application) e).
+          (let [^Ref session (find-or-create-session request)]
+            (touch session)
+            ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
             ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-            ((:request-handler @application) request application))
+            ((:request-handler @session) request session))
           (catch Throwable e
             ;; Send to REPL first..
             ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
@@ -103,8 +106,7 @@
 
             ;; ..then send to HTTP client.
             {:status 500
-             :headers {"Content-Type" "text/html; charset=UTF-8"
-                       "Server" "http://nostdal.org/"}
+             :headers {"Content-Type" "text/html; charset=UTF-8"}
              :body
              (html
               [:html
@@ -125,5 +127,5 @@
      (defonce stop-sw-server (aleph.http/start-http-server
                               (aleph.http/wrap-ring-handler
                                (ring.middleware.cookies/wrap-cookies
-                                (ring.middleware.params/wrap-params handler)))
+                                (ring.middleware.params/wrap-params #'handler)))
                               {:port port}))))
