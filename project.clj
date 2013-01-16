@@ -12,6 +12,8 @@
 
                  [cheshire "5.0.2-SNAPSHOT"] ;; JSON.
 
+                 [clj-time/clj-time "0.4.5-SNAPSHOT"]
+
                  [hiccup "1.0.2"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.2-SNAPSHOT"] ;; HTML templating.
                  [ring/ring-core "1.2.0-SNAPSHOT"] ;; HTTP protocol handling.
