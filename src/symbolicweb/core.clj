@@ -78,7 +78,7 @@
 
   (:require symbolicweb.garbage-collection)
   (:require symbolicweb.handy-handlers)
-  (:require symbolicweb.application))
+  (:require symbolicweb.session))
 
 
 
