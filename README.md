@@ -10,7 +10,7 @@ SW was originally written in Common Lisp, and that version is still found at thi
 
 ## Status
 
-Core functionality is stable (if one ignore some of the DB stuff), but not many features yet.
+Some interesting features, but not API stable -- and not many features yet.
 It runs the work-in-progress e-commerce platform Free or Deal. Some buzzwords: "shopping, gamification and social networking
 mixed".
 

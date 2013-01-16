@@ -12,6 +12,8 @@
 
                  [cheshire "5.0.2-SNAPSHOT"] ;; JSON.
 
+                 [clj-time/clj-time "0.4.5-SNAPSHOT"]
+
                  [hiccup "1.0.2"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.2-SNAPSHOT"] ;; HTML templating.
                  [ring/ring-core "1.2.0-SNAPSHOT"] ;; HTTP protocol handling.
@@ -20,7 +22,7 @@
                  [postgresql/postgresql "9.2-1002.jdbc4"] ;; PostgreSQL JDBC driver.
                  [c3p0/c3p0 "0.9.1.2"] ;; DB connection pooling.
 
-                 [org.clojure/tools.nrepl "0.2.0-SNAPSHOT"]]
+                 [org.clojure/tools.nrepl "0.2.2-SNAPSHOT"]]
 
   :warn-on-reflection true
 
