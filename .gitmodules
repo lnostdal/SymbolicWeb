@@ -1,0 +1,3 @@
+[submodule "resources/deps/ckeditor"]
+	path = resources/deps/ckeditor
+	url = git://github.com/ckeditor/ckeditor-dev.git
