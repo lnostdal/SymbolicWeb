@@ -140,8 +140,8 @@
                 (let [res (db-clj-to-db-transformer db-cache obj clj-key value-model)
                       ^Keyword db-key (:key res)
                       db-value (:value res)]
-                  (update-values (.table-name db-cache) ["id = ?" @(:id @obj)]
-                                 {(as-quoted-identifier \" db-key) db-value})))))
+                  (jdbc/update-values (.table-name db-cache) ["id = ?" @(:id @obj)]
+                                      {(jdbc/as-quoted-identifier \" db-key) db-value})))))
 
 
 
@@ -226,7 +226,8 @@ Returns the ContainerModel"
 (defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "Used by DB-GET; see DB-GET.
 Returns OBJ or NIL"
-  (with-query-results res [(str "SELECT * FROM " (as-quoted-identifier \" (.table-name db-cache)) " WHERE id = ? LIMIT 1;") id]
+  (jdbc/with-query-results res [(str "SELECT * FROM " (jdbc/as-quoted-identifier \" (.table-name db-cache))
+                                     " WHERE id = ? LIMIT 1;") id]
     (when-let [db-row (first res)]
       (db-db-to-clj-entry-handler db-cache obj db-row true)
       obj)))

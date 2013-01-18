@@ -34,7 +34,7 @@
 
 
 (defn %with-db-conn [^Fn body-fn]
-  (with-connection @@-pooled-db-spec-
+  (jdbc/with-connection @@-pooled-db-spec-
     ;; TODO: Superidiotic hack because clajure.java.jdbc sucks balls.
     ;; TODO: Think about whether this should be placed in e.g. DO-DBTX or something.
     (binding [clojure.java.jdbc/*db* (update-in @#'clojure.java.jdbc/*db* [:level] inc)]
@@ -75,7 +75,7 @@
 
 
 (defn do-dbtx [^Fn body-fn]
-  (let [db-conn (find-connection)
+  (let [db-conn (jdbc/find-connection)
         db-stmt (.createStatement db-conn)
         dbtx-id (.toString (generate-uid))
         dbtx-phase (atom 0)]
@@ -200,7 +200,7 @@
 
 
 (defn db-stmt [^String sql-str]
-  (let [stmt (.createStatement (find-connection))]
+  (let [stmt (.createStatement (jdbc/find-connection))]
     (.execute stmt sql-str)
     (.close stmt)))
 
@@ -208,7 +208,7 @@
 
 (defn db-delete-prepared-transactions []
   (with-db-conn
-    (with-query-results res ["SELECT gid FROM pg_prepared_xacts;"]
+    (jdbc/with-query-results res ["SELECT gid FROM pg_prepared_xacts;"]
       (doseq [res res]
         (println "deleting prepared transaction:" (:gid res))
         (db-stmt (str "ROLLBACK PREPARED '" (:gid res) "';"))))))

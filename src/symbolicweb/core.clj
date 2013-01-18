@@ -18,20 +18,13 @@
 
   (:use [cheshire.core :as json]) ;; JSON.
 
-  (:require [clojure.java.jdbc :as jdbc
-             :refer (with-connection
-                     with-query-results
-                     find-connection
-                     update-values
-                     as-quoted-identifier
-                     insert-record
-                     delete-rows)])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource)
 
   (:require ring.util.codec)
   (:require ring.middleware.params)
   (:require ring.middleware.cookies)
 
+  (:require [clojure.java.jdbc :as jdbc])
   (:use [clj-time.core :as time :exclude (extend)])
   (:use [clj-time.coerce :as time.coerce :exclude (extend)])
 
