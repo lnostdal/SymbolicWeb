@@ -16,7 +16,7 @@
 
   (:import [org.jsoup Jsoup])
 
-  (:use [cheshire.core :as json]) ;; JSON.
+  (:require [cheshire.core :as json])
 
   (:import com.mchange.v2.c3p0.ComboPooledDataSource)
 
@@ -25,8 +25,9 @@
   (:require ring.middleware.cookies)
 
   (:require [clojure.java.jdbc :as jdbc])
-  (:use [clj-time.core :as time :exclude (extend)])
-  (:use [clj-time.coerce :as time.coerce :exclude (extend)])
+
+  (:require [clj-time.core :as time])
+  (:require [clj-time.coerce :as time.coerce])
 
   ;; Netty (EPOLL).
   (:require lamina.core)
