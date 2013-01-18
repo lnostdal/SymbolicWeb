@@ -6,9 +6,9 @@
 
                  [aleph "0.3.0-SNAPSHOT"] ;; Deals with boring HTTP server stuff.
 
-                 [overtone/at-at "1.0.0"] ;; Scheduling.
+                 [overtone/at-at "1.1.1"] ;; Scheduling.
 
-                 [com.google.guava/guava "13.0.1"] ;; For soft hash cache.
+                 [com.google.guava/guava "14.0-rc1"] ;; For soft hash cache.
 
                  [cheshire "5.0.2-SNAPSHOT"] ;; JSON.
 
