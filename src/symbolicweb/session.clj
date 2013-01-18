@@ -1,6 +1,18 @@
 (in-ns 'symbolicweb.core)
 
 
+
+(defn %mk-SessionTable []
+  (with-db-conn
+    (jdbc/do-commands
+     (str "CREATE TABLE sessions ("
+          "id text PRIMARY KEY"
+          ", created timestamp without time zone NOT NULL"
+          ", touched timestamp without time zone NOT NULL"
+          ");"))))
+
+
+
 (defn mk-Session [id & args]
   "ID is session cookie value or NIL when creating new session."
   (let [session (ref (apply assoc {}
@@ -26,19 +38,24 @@
                             args))]
 
     (letfn [(add-new-db-entry []
-              ;; TODO: _Very_ small chance of UUID collision; not a security problem though since the DB col is UNIQUE.
+              ;; TODO: _Very_ small chance of UUID collision, but not a security problem though since the DB col is UNIQUE.
               (let [cookie-value (generate-uuid)
-                    db-entry (jdbc/insert-record :sessions {:cookie_value cookie-value
-                                                            :created (datetime-to-sql-timestamp (clj-time.core/now))})]
+                    db-entry (jdbc/insert-record :sessions (let [ts (datetime-to-sql-timestamp (time/now))]
+                                                             {:id cookie-value
+                                                              :touched ts
+                                                              :created ts}))]
                 (alter session assoc
                        :db-entry db-entry
                        :id cookie-value)))]
 
       (when-not (:one-shot? @session)
         (if id
-          (if-let [db-entry (jdbc/with-query-results res ["SELECT * FROM sessions WHERE cookie_value = ? LIMIT 1;" id]
+          (if-let [db-entry (jdbc/with-query-results res ["SELECT * FROM sessions WHERE id = ? LIMIT 1;" id]
                               (doall (first res)))]
-            (alter session assoc :db-entry db-entry) ;; TODO: Update timestamp.
+            (do
+              (jdbc/update-values :sessions ["id = ?" (:id db-entry)]
+                                  {:touched (datetime-to-sql-timestamp (time/now))})
+              (alter session assoc :db-entry db-entry)) ;; TODO: Update timestamp.
             (add-new-db-entry))
           (add-new-db-entry))
         (vm-alter -num-sessions-model- + 1)
