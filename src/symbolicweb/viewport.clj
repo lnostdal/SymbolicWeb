@@ -1,8 +1,12 @@
 (in-ns 'symbolicweb.core)
 
 
-;;; Represents a browser window or tab within a single browser session
+;;; Represents a browser window or tab within a single browser Session
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; TODO: Instead of using an Agent, this code could probably do the same thing DO-MTX (database_common.clj) does.
+
 
 
 (defn mk-Viewport [request ^Ref session ^WidgetBase root-widget & args]
