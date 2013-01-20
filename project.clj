@@ -8,7 +8,7 @@
 
                  [overtone/at-at "1.1.1"] ;; Scheduling.
 
-                 [com.google.guava/guava "14.0-rc1"] ;; For soft hash cache.
+                 [com.google.guava/guava "14.0-rc2"] ;; For soft hash cache.
 
                  [cheshire "5.0.2-SNAPSHOT"] ;; JSON.
 
