@@ -110,12 +110,10 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
          :body (str (set-session-cookie (:id @session)) ;; A new Session might have been started for this request.
                     "window.location.href = window.location.href;")}))
     ;; REST.
-    (let [viewport (when-not (:one-shot? @session)
-                     ((:mk-viewport-fn @session) request session))]
+    (let [viewport ((:mk-viewport-fn @session) request session)]
       (dosync
        (with1 ((:rest-handler @session) request session viewport)
-         (when viewport
-           (add-response-chunk "swDoOnLoadFNs();" (:root-element @viewport))))))))
+         (add-response-chunk "swDoOnLoadFNs();" (:root-element @viewport)))))))
 
 
 

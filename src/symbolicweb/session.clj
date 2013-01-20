@@ -104,6 +104,15 @@
 
 
 
+(defn search-engine? [request]
+  (let [^String user-agent (get (:headers request) "user-agent")]
+    (not (or (neg? (.indexOf user-agent "bot"))
+             (neg? (.indexOf user-agent "Mediapartners-Google"))
+             (neg? (.indexOf user-agent "ia_archiver"))
+             ))))
+
+
+
 (declare json-parse)
 (defn find-or-create-session [request]
   (let [cookie-value (:value (get (:cookies request) -session-cookie-name-))]
@@ -112,10 +121,11 @@
       (if-let [^Fn session-constructor (find-session-constructor request)]
         (swsync
          (session-constructor cookie-value
-                              :one-shot? (with (get (:query-params request) "_sw_session_one_shot_p")
-                                           (if (nil? it)
-                                             false
-                                             (json-parse it)))))
+                              :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
+                                               (if (nil? it)
+                                                 false
+                                                 (json-parse it)))
+                                             (search-engine? request))))
         (mk-Session cookie-value
                     :rest-handler not-found-page-handler
                     :one-shot? true)))))
