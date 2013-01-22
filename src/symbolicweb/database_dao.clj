@@ -140,8 +140,9 @@
                 (let [res (db-clj-to-db-transformer db-cache obj clj-key value-model)
                       ^Keyword db-key (:key res)
                       db-value (:value res)]
-                  (jdbc/update-values (.table-name db-cache) ["id = ?" @(:id @obj)]
-                                      {(jdbc/as-quoted-identifier \" db-key) db-value})))))
+                  (db-update (.table-name db-cache)
+                             {db-key db-value}
+                             ["id = ?" @(:id @obj)])))))
 
 
 
@@ -157,8 +158,8 @@
                (let [res (db-clj-to-db-transformer db-cache obj clj-key container-model)
                      db-key (:key res)
                      db-value (db-clj-cm-to-db-array (:value res) "bigint")] ;; TODO: Magic value.
-                 (jdbc/do-prepared (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value " WHERE id = ?;")
-                                   [@(:id @obj)])))]
+                 (db-stmt (str "UPDATE " (.table-name db-cache) " SET " (name db-key) " = " db-value
+                               " WHERE id = " @(:id @obj) ";"))))]
 
        (when initial-sync?
          (cm-iterate container-model _ obj
@@ -226,8 +227,7 @@ Returns the ContainerModel"
 (defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "Used by DB-GET; see DB-GET.
 Returns OBJ or NIL"
-  (jdbc/with-query-results res [(str "SELECT * FROM " (jdbc/as-quoted-identifier \" (.table-name db-cache))
-                                     " WHERE id = ? LIMIT 1;") id]
+  (let [res (db-stmt (str "SELECT * FROM " (.table-name db-cache) " WHERE id = " id " LIMIT 1;"))]
     (when-let [db-row (first res)]
       (db-db-to-clj-entry-handler db-cache obj db-row true)
       obj)))
@@ -254,7 +254,7 @@ Returns OBJ or NIL"
                               (var-alter after-insert-fns conj
                                          (fn [] (db-ensure-persistent-cm-field db-cache obj clj-key clj-value true))))))
                (var-alter record-data assoc db-key db-value))))
-         (let [sql (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~});"
+         (let [sql (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~}) RETURNING *;"
                               (.table-name db-cache)
                               (mapv name (keys (var-get record-data)))
                               (mapv (fn [v]
@@ -273,7 +273,7 @@ Returns OBJ or NIL"
                                        (do1 "?"
                                          (var-alter values-to-escape conj v))))
                                     (vals (var-get record-data))))
-               res (jdbc/do-prepared-return-keys sql (var-get values-to-escape))]
+               res (apply db-pstmt sql (var-get values-to-escape))]
            (vm-set (:id @obj) (:id res))
            (when update-cache?
              (db-cache-put db-cache (:id res) obj))
