@@ -46,6 +46,7 @@
   (:require symbolicweb.container-model-node)
 
   (:require symbolicweb.database-types)
+  (:require symbolicweb.database-jdbc)
   (:require symbolicweb.database-common)
   (:require symbolicweb.database-dao)
 

@@ -33,17 +33,50 @@
 
 
 
-(defn %with-db-conn [^Fn body-fn]
-  (jdbc/with-connection @@-pooled-db-spec-
-    ;; TODO: Superidiotic hack because clajure.java.jdbc sucks balls.
-    ;; TODO: Think about whether this should be placed in e.g. DO-DBTX or something.
-    (binding [clojure.java.jdbc/*db* (update-in @#'clojure.java.jdbc/*db* [:level] inc)]
-      (body-fn))))
-
-
-
 (defmacro with-db-conn [& body]
-  `(%with-db-conn (fn [] ~@body)))
+  `(with-jdbc-conn @@-pooled-db-spec-
+     ~@body))
+
+
+
+(defn db-stmt [^String sql]
+  (jdbc-stmt *db* sql))
+
+
+
+(defn db-pstmt [^String sql & params]
+  (jdbc-pstmt *db* sql params))
+
+
+
+(defn db-insert
+  ([table-name m]
+     (db-insert table-name m true))
+
+  ([table-name m ^Boolean return-result?]
+     (let [res (first (sql/insert table-name m))
+           sql (if return-result?
+                 (str (first res) " RETURNING *")
+                 (first res))
+           params (rest res)]
+       (apply db-pstmt sql params))))
+
+
+
+(defn db-update [table-name m where]
+  (let [res (sql/update table-name m where)
+        ^String sql (first res)
+        params (rest res)]
+    (apply db-pstmt sql params)))
+
+
+
+(defn db-delete [table-name where]
+  (let [res (sql/delete table-name where)
+        ^String sql (first res)
+        params (rest res)]
+    (apply db-pstmt sql params)))
+
 
 
 
@@ -57,6 +90,7 @@
 
 
 
+;; TODO: Switch to WITH-JDBC-DBTX.
 (defn %with-dbtx-ctx [^Fn body-fn]
   (try
     (body-fn)
@@ -69,18 +103,19 @@
 
 
 
+;; TODO: Switch to WITH-JDBC-DBTX.
 (defmacro with-dbtx-ctx [& body]
   `(%with-dbtx-ctx (fn [] ~@body)))
 
 
 
 (defn do-dbtx [^Fn body-fn]
-  (let [db-conn (jdbc/find-connection)
+  (let [^java.sql.Connection db-conn *db*
         db-stmt (.createStatement db-conn)
         dbtx-id (.toString (generate-uid))
         dbtx-phase (atom 0)]
     (try
-      (with-dbtx-ctx
+      (with-dbtx-ctx ;; TODO: Switch to WITH-JDBC-DBTX.
         ;; (println "DO-DBTX: Start transaction.. (1st phase)")
         (.setTransactionIsolation db-conn java.sql.Connection/TRANSACTION_SERIALIZABLE)
         (.setAutoCommit db-conn false)
@@ -97,6 +132,7 @@
                    ;; (println "DO-DBTX: ..commit!")
                    (.execute db-stmt (str "COMMIT PREPARED '" dbtx-id "';"))
                    (reset! dbtx-phase 3))))
+
       (catch Throwable e
         ;; (println "DO-DBTX: Rolling back phase" @dbtx-phase "DBTX.")
         (case @dbtx-phase
@@ -172,7 +208,7 @@
   `(if *in-swsync?*
      (do ~@body) ;; Handle nesting.
      (binding [*in-swsync?* true]
-       (with-db-conn
+       (with-jdbc-conn
          (with-2pctx
            ~@body)))))
 
@@ -199,16 +235,10 @@
 
 
 
-(defn db-stmt [^String sql-str]
-  (let [stmt (.createStatement (jdbc/find-connection))]
-    (.execute stmt sql-str)
-    (.close stmt)))
-
-
 
 (defn db-delete-prepared-transactions []
   (with-db-conn
-    (jdbc/with-query-results res ["SELECT gid FROM pg_prepared_xacts;"]
-      (doseq [res res]
+    (with-jdbc-dbtx nil
+      (doseq [res (db-stmt "SELECT gid FROM pg_prepared_xacts;")]
         (println "deleting prepared transaction:" (:gid res))
-        (db-stmt (str "ROLLBACK PREPARED '" (:gid res) "';"))))))
+        (db-stmt "ROLLBACK PREPARED ?;" (:gid res))))) )

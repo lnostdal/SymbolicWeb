@@ -1,5 +1,7 @@
 (in-ns 'symbolicweb.core)
 
+;;; PostgreSQL specific "JDBC stuff".
+
 
 (def ^:dynamic *db* nil)
 
@@ -57,53 +59,27 @@
 
 
 
-(defn jdbc-prepare-statement ^java.sql.PreparedStatement [^java.sql.Connection db-conn ^String sql ^Boolean return-keys?]
-  (if return-keys?
-    (.prepareStatement db-conn sql java.sql.Statement/RETURN_GENERATED_KEYS)
-    (.prepareStatement db-conn sql)))
-
-
-
-(defn jdbc-command [^java.sql.Connection db-conn ^String sql params]
-  (with-open [stmt (jdbc-prepare-statement db-conn sql true)]
+(defn jdbc-pstmt [^java.sql.Connection db-conn ^String sql params]
+  "Create (or fetch from cache) and execute PreparedStatement."
+  (with-open [stmt (.prepareStatement db-conn sql)] ;; TODO: I'm assuming the Pg JDBC driver caches based on SQL here.
     (#'jdbc/set-parameters stmt params)
-    (let [count (.executeUpdate stmt)]
-      (with-open [rs (.getGeneratedKeys stmt)]
-        (first (resultset-seq rs))))))
+    (if (.execute stmt)
+      (with-open [rs (.getResultSet stmt)]
+        ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
+        ;; This could be dealt with via sessions and Lifetime tracking of course, but it is pointless; using DB cursors is better.
+        ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
+        (doall (resultset-seq rs)))
+      (.getUpdateCount stmt))))
 
 
 
-(defn jdbc-query [^java.sql.Connection db-conn ^String sql params]
-  (with-open [stmt (jdbc-prepare-statement db-conn sql false)]
-    (#'jdbc/set-parameters stmt params)
-    (with-open [rs (.executeQuery stmt)]
-      ;; Being lazy is worse than pointless when "non-lazy" design (WITH-OPEN) is enforced on the underlying source anyway.
-      ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
-      (doall (resultset-seq rs)))))
-
-
-
-(defn db-query [^String sql & params]
-  (jdbc-query *db* sql params))
-
-
-
-(defn db-command [args]
-  (let [^String sql (first args)
-        params (rest args)]
-    (jdbc-command *db* sql params)))
-
-
-
-(defn db-insert [table-name m]
-  (db-command (first (sql/insert table-name m))))
-
-
-
-(defn db-update [table-name m where]
-  (db-command (sql/update table-name m where)))
-
-
-
-(defn db-delete [table-name where]
-  (db-command (sql/delete table-name where)))
+(defn jdbc-stmt [^java.sql.Connection db-conn ^String sql]
+  "Create and execute Statement."
+  (with-open [stmt (.createStatement db-conn)]
+    (if (.execute stmt sql)
+      (with-open [rs (.getResultSet stmt)]
+        ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
+        ;; This could be dealt with via sessions and Lifetime tracking of course, but it is pointless; using DB cursors is better.
+        ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
+        (doall (resultset-seq rs)))
+      (.getUpdateCount stmt))))

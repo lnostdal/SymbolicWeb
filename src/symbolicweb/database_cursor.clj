@@ -1,30 +1,26 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn mk-DBCursor [^Lifetime lifetime ^String sql-query]
-  ;; TODO: Escaping for SQL-QUERY?
+(defn mk-DBCursor ^String [^Lifetime lifetime ^String sql & params]
   ;;(assert lifetime)
-  (let [cursor-id (str "sw_cursor_" (generate-uid))
-        sql (str "DECLARE " cursor-id " SCROLL CURSOR WITH HOLD FOR " sql-query ";")] ;; TODO: ; needed here?
-    (with-db-conn
-      (jdbc/do-commands sql))
+  (assert (not *in-swsync?*)
+          "mk-DBCursor: Can't do this within SWSYNC dynamic context; SQL cursors and prepared transactions (2pct) don't mix.")
+  (let [cursor-id (str "sw_cursor_" (generate-uid))]
+    (apply db-pstmt (str "DECLARE " cursor-id " SCROLL CURSOR WITH HOLD FOR " sql ";") params)
     cursor-id))
 
 
 
-(defn db-cursor-fetch [db-cursor ^Long range-start ^Long range-end]
+(defn db-cursor-fetch [^String db-cursor ^Long range-start ^Long range-end]
   (assert (or (> range-end range-start)
               (= range-start range-end)))
-  (with-db-conn
-    (jdbc/do-commands (str "MOVE ABSOLUTE " range-start " IN " db-cursor ";"))
-    (jdbc/with-query-results res [(str "FETCH FORWARD " (- range-end range-start) " IN " db-cursor ";")]
-      (doall res))))
+  (db-stmt (str "MOVE ABSOLUTE " range-start " IN " db-cursor  "; "
+                "FETCH FORWARD " (- range-end range-start) " IN " db-cursor ";")))
 
 
 
 (defn db-cursor-close [db-cursor]
-  (with-db-conn
-    (jdbc/do-commands (str "CLOSE " db-cursor ";"))))
+  (db-stmt (str "CLOSE " db-cursor ";")))
 
 
 
@@ -32,7 +28,10 @@
   (let [db-cursor (mk-DBCursor nil "SELECT * FROM testing ORDER BY id")]
     (dbg-prin1 (db-cursor-fetch db-cursor 0 5))
     (dbg-prin1 (db-cursor-fetch db-cursor 5 10))
-    (db-cursor-close db-cursor)))
+    (dbg-prin1 (db-cursor-fetch db-cursor 10000 10010))
+    (dbg-prin1 (db-cursor-fetch db-cursor 149995 150000))
+    (db-cursor-close db-cursor)
+    db-cursor))
 
 
 
