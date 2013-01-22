@@ -59,7 +59,7 @@
 
 
 
-(defn jdbc-pstmt [^java.sql.Connection db-conn ^String sql params]
+(defn- jdbc-pstmt [^java.sql.Connection db-conn ^String sql params]
   "Create (or fetch from cache) and execute PreparedStatement."
   (with-open [stmt (.prepareStatement db-conn sql)] ;; TODO: I'm assuming the Pg JDBC driver caches based on SQL here.
     (#'jdbc/set-parameters stmt params)
@@ -73,7 +73,7 @@
 
 
 
-(defn jdbc-stmt [^java.sql.Connection db-conn ^String sql]
+(defn- jdbc-stmt [^java.sql.Connection db-conn ^String sql]
   "Create and execute Statement."
   (with-open [stmt (.createStatement db-conn)]
     (if (.execute stmt sql)
