@@ -208,7 +208,7 @@
   `(if *in-swsync?*
      (do ~@body) ;; Handle nesting.
      (binding [*in-swsync?* true]
-       (with-jdbc-conn
+       (with-db-conn
          (with-2pctx
            ~@body)))))
 
