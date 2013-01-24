@@ -20,16 +20,16 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 
 
-(defn handle-out-channel-request [channel request ^Ref session ^Ref viewport]
+(defn handle-out-channel-request [^Fn response-fn request ^Ref session ^Ref viewport]
   "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [^StringBuilder response-str]
-            (lamina.core/enqueue channel
-                     {:status 200
-                      :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-                      :body (do
-                              (.append response-str "_sw_comet_response = true;")
-                              (with1 (.toString response-str)
-                                (.setLength response-str 0)))}))]
+            (response-fn
+             {:status 200
+              :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+              :body (do
+                      (.append response-str "_sw_comet_response = true;")
+                      (with1 (.toString response-str)
+                        (.setLength response-str 0)))}))]
     (locking viewport
       (let [viewport-m @viewport
             response-sched-fn (:response-sched-fn viewport-m)
@@ -81,9 +81,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
   (if-let [sw-request-type-str (get (:query-params request) "_sw_request_type")]
     (case sw-request-type-str
       "comet"
-      ((aleph.http/wrap-aleph-handler (fn [channel request]
-                                        (handle-out-channel-request channel request session viewport)))
-       request)
+      (http.server/async-response respond-fn (handle-out-channel-request respond-fn request session viewport))
 
       "ajax"
       (handle-in-channel-request request session viewport)
@@ -104,7 +102,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         ((:ajax-handler @session) request session viewport))
       (do
         (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
-                 "Reloading page, but keeping Session (cookie).")
+                 "Refreshing page, but keeping Session (cookie).")
         {:status 200
          :headers {"Content-Type" "text/javascript; charset=UTF-8"}
          :body (str (set-session-cookie (:id @session)) ;; A new Session might have been started for this request.

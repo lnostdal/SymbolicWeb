@@ -30,9 +30,6 @@
   (:require [clj-time.core :as time])
   (:require [clj-time.coerce :as time.coerce])
 
-  ;; Netty (EPOLL).
-  (:require lamina.core)
-  (:require aleph.http)
   (:require overtone.at-at)
 
   (:require symbolicweb.macros)
@@ -73,6 +70,8 @@
   (:require symbolicweb.date-and-time)
 
   (:require symbolicweb.garbage-collection)
+
+  (:require [me.shenfeng.http.server :as http.server])
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session))
 
@@ -116,12 +115,19 @@
 
 
 
-;; TODO: STOP-SW-SERVER doesn't actually work. Hm.
-(defn main
-  ([] (main 8080))
-  ([port]
-     (defonce stop-sw-server (aleph.http/start-http-server
-                              (aleph.http/wrap-ring-handler
-                               (ring.middleware.cookies/wrap-cookies
-                                (ring.middleware.params/wrap-params #'handler)))
-                              {:port port}))))
+(defonce -server- (atom nil))
+
+
+
+(defn stop-server []
+  (when @-server-
+    (@-server-)))
+
+
+
+(defn start-server [^Long port]
+  (stop-server)
+  (def -server- (http.server/run-server (ring.middleware.cookies/wrap-cookies
+                                         (ring.middleware.params/wrap-params
+                                          #'handler))
+                                        {:port port})))

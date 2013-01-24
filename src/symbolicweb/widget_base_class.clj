@@ -51,7 +51,7 @@
 
 
 
-(defn mk-WidgetBase [^Fn render-fn args]
+(defn mk-WidgetBase ^WidgetBase  [^Fn render-fn args]
   (with1 (WidgetBase. (or (:id args) ;; ID
                           (str "sw-" (generate-uid)))
                       (if (:root-widget? args) ;; LIFETIME
@@ -61,7 +61,10 @@
                       (ref nil) ;; PARENT
                       (vm nil) ;; VIEWPORT
                       (ref {}) ;; CALLBACKS
-                      (:escape-html? args)) ;; ESCAPE-HTML?
+                      ;; ESCAPE-HTML?
+                      (if-let [entry (find args :escape-html?)]
+                        (val entry)
+                        true))
 
     (when-not (:root-widget? args)
       (add-lifetime-activation-fn (.lifetime it)
