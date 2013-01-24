@@ -102,7 +102,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         ((:ajax-handler @session) request session viewport))
       (do
         (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
-                 "Reloading page, but keeping Session (cookie).")
+                 "Refreshing page, but keeping Session (cookie).")
         {:status 200
          :headers {"Content-Type" "text/javascript; charset=UTF-8"}
          :body (str (set-session-cookie (:id @session)) ;; A new Session might have been started for this request.
