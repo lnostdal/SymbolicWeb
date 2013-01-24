@@ -4,7 +4,7 @@
 
                  [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
 
-                 [aleph "0.3.0-SNAPSHOT"] ;; Deals with boring HTTP server stuff.
+                 [me.shenfeng/http-kit "2.0-rc1"] ;; HTTP stuff.
 
                  [overtone/at-at "1.1.1"] ;; Scheduling.
 
