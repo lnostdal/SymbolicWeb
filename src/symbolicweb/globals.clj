@@ -35,11 +35,7 @@
 
 (def -sessions-
   "SESSION-COOKIE-VALUE -> APPLICATION"
-  (atom {}))
-
-(def -viewports-
-  "ID -> VIEWPORT"
-  (atom {}))
+  (ref {}))
 
 
 

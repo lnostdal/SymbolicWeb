@@ -86,11 +86,13 @@
     (with-bindings bnds
       (binding [*print-level* 2]
         (try
-          (let [^Ref session (find-or-create-session request)]
+          (let [^Ref session (dosync (find-or-create-session request))]
             (touch session)
             ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
             ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-            ((:request-handler @session) request session))
+            (with1 (dosync ((:request-handler @session) request session))
+              (when (:one-shot? @session)
+                (gc-session session))))
           (catch Throwable e
             ;; Send to REPL first..
             ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it

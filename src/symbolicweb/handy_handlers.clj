@@ -95,7 +95,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
   "Default top-level request handler for both REST and AJAX/Comet type requests."
   (if (get (:query-params request) "_sw_request_type") ;; sw-ajax.js adds this to our AJAX requests.
     ;; AJAX.
-    (if-let [^Ref viewport (get (:viewports @session)
+    (if-let [^Ref viewport (get (ensure (:viewports @session))
                                 (get (:query-params request) "_sw_viewport_id"))]
       (do
         (touch viewport)
@@ -109,9 +109,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                     "window.location.href = window.location.href;")}))
     ;; REST.
     (let [viewport ((:mk-viewport-fn @session) request session)]
-      (dosync
-       (with1 ((:rest-handler @session) request session viewport)
-         (add-response-chunk "swDoOnLoadFNs();" (:root-element @viewport)))))))
+      (with1 ((:rest-handler @session) request session viewport)
+        (add-response-chunk "swDoOnLoadFNs();" (:root-element @viewport))))))
 
 
 

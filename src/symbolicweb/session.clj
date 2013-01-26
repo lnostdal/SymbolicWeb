@@ -22,7 +22,8 @@
                             :logged-in? (vm false)
                             :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
                             :last-activity-time (atom (System/currentTimeMillis))
-                            :viewports {}
+
+                            :viewports (ref {})
 
                             :session-data (ref {})
 
@@ -49,18 +50,22 @@
                        :id cookie-value)))]
 
       (when-not (:one-shot? @session)
-        (if id
-          (if-let [db-entry (first (db-pstmt "SELECT * FROM sessions WHERE id = ? LIMIT 1;" id))]
-            (do
-              (db-update :sessions {:touched (datetime-to-sql-timestamp (time/now))}
-                         ["id = ?" (:id db-entry)])
-              (alter session assoc :db-entry db-entry))
-            (add-new-db-entry))
-          (add-new-db-entry))
-        (vm-alter -num-sessions-model- + 1)
-        (swap! -sessions- #(assoc % (:id @session) session))))
+        (swsync
+         (if id
+           (if-let [db-entry (first (db-pstmt "SELECT * FROM sessions WHERE id = ? LIMIT 1;" id))]
+             (do
+               (db-update :sessions {:touched (datetime-to-sql-timestamp (time/now))}
+                          ["id = ?" (:id db-entry)])
+               (alter session assoc :db-entry db-entry))
+             (add-new-db-entry))
+           (add-new-db-entry))))
 
-    session))
+      (when-not (:id @session)
+        (alter session assoc :id (generate-uuid)))
+
+      (alter -sessions- assoc (:id @session) session)
+      (vm-alter -num-sessions-model- + 1)
+      session)))
 
 
 
@@ -115,16 +120,15 @@
 (declare json-parse)
 (defn find-or-create-session [request]
   (let [cookie-value (:value (get (:cookies request) -session-cookie-name-))]
-    (if-let [session (get @-sessions- cookie-value)]
+    (if-let [session (get (ensure -sessions-) cookie-value)]
       session
       (if-let [^Fn session-constructor (find-session-constructor request)]
-        (swsync
-         (session-constructor cookie-value
-                              :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
-                                               (if (nil? it)
-                                                 false
-                                                 (json-parse it)))
-                                             (search-engine? request))))
+        (session-constructor cookie-value
+                             :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
+                                              (if (nil? it)
+                                                false
+                                                (json-parse it)))
+                                            (search-engine? request)))
         (mk-Session cookie-value
                     :rest-handler not-found-page-handler
                     :one-shot? true)))))

@@ -32,13 +32,11 @@
                              :root-element root-widget ;; TODO: Rename...
                              :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
                              args))]
-    (when-not (:one-shot? @session)
-      (swap! -viewports- #(assoc % viewport-id viewport)))
-    (dosync
-     (alter session update-in [:viewports] assoc viewport-id viewport)
-     ;; Widget --> Viewport.
-     (vm-set (.viewport root-widget) viewport)
-     (do-lifetime-activation (.lifetime root-widget)))
+    ;; Session --> Viewport
+    (alter (:viewports @session) assoc viewport-id viewport)
+    ;; Widget --> Viewport.
+    (vm-set (.viewport root-widget) viewport)
+    (do-lifetime-activation (.lifetime root-widget))
     viewport))
 
 
