@@ -115,13 +115,13 @@
 
 
 
-(defonce -server- (atom nil))
+(defonce -server- nil)
 
 
 
 (defn stop-server []
-  (when @-server-
-    (@-server-)))
+  (when -server-
+    (-server-)))
 
 
 
