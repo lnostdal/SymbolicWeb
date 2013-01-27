@@ -50,15 +50,14 @@
                        :id cookie-value)))]
 
       (when-not (:one-shot? @session)
-        (swsync
-         (if id
-           (if-let [db-entry (first (db-pstmt "SELECT * FROM sessions WHERE id = ? LIMIT 1;" id))]
-             (do
-               (db-update :sessions {:touched (datetime-to-sql-timestamp (time/now))}
-                          ["id = ?" (:id db-entry)])
-               (alter session assoc :db-entry db-entry))
-             (add-new-db-entry))
-           (add-new-db-entry))))
+        (if id
+          (if-let [db-entry (first (db-pstmt "SELECT * FROM sessions WHERE id = ? LIMIT 1;" id))]
+            (do
+              (db-update :sessions {:touched (datetime-to-sql-timestamp (time/now))}
+                         ["id = ?" (:id db-entry)])
+              (alter session assoc :db-entry db-entry))
+            (add-new-db-entry))
+          (add-new-db-entry)))
 
       (when-not (:id @session)
         (alter session assoc :id (generate-uuid)))

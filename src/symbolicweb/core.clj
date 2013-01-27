@@ -86,13 +86,14 @@
     (with-bindings bnds
       (binding [*print-level* 2]
         (try
-          (let [^Ref session (dosync (find-or-create-session request))]
-            (touch session)
-            ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
-            ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-            (with1 (dosync ((:request-handler @session) request session))
-              (when (:one-shot? @session)
-                (gc-session session))))
+          (swsync
+           (let [^Ref session (find-or-create-session request)]
+             (touch session)
+             ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
+             ;; TODO: Production / development modes needed here too. Logging, etc. etc...
+             (with1 ((:request-handler @session) request session)
+               (when (:one-shot? @session)
+                 (gc-session session)))))
           (catch Throwable e
             ;; Send to REPL first..
             ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
@@ -108,7 +109,8 @@
              (html
               [:html
                [:body {:style "font-family: sans-serif;"}
-                [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": Top Level Server Exception (HTTP 500)"]
+                [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"]
+                 ": Top Level Server Exception (HTTP 500)"]
                 [:pre
                  \newline
                  (with-out-str (clojure.stacktrace/print-stack-trace e 1000))
