@@ -39,7 +39,7 @@
                             args))]
 
     (letfn [(add-new-db-entry []
-              ;; TODO: _Very_ small chance of UUID collision, but not a security problem though since the DB col is UNIQUE.
+              ;; TODO: _Very_ small chance of UUID collision, but not a security problem since the DB col is UNIQUE.
               (let [cookie-value (generate-uuid)
                     db-entry (db-insert :sessions (let [ts (datetime-to-sql-timestamp (time/now))]
                                                     {:id cookie-value
