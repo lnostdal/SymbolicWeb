@@ -6,7 +6,7 @@
 ;;; Macros and dynamic variables.
 
 ;; database_common.clj
-(def ^:dynamic *in-swsync?* false)
+(def ^:dynamic *swsync-ctx* false)
 
 
 ;; html_container.clj

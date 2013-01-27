@@ -40,11 +40,13 @@
 
 
 (defn db-stmt [^String sql]
+  (set! *swsync-ctx* (assoc *swsync-ctx* :db-touched? true))
   (jdbc-stmt *db* sql))
 
 
 
 (defn db-pstmt [^String sql & params]
+  (set! *swsync-ctx* (assoc *swsync-ctx* :db-touched? true))
   (jdbc-pstmt *db* sql params))
 
 
@@ -110,6 +112,7 @@
 
 
 (defn do-dbtx [^Fn body-fn]
+  "  BODY-FN: (fn [DBTX-PREPARE-FN DBTX-COMMIT-FN] ..)"
   (let [^java.sql.Connection db-conn *db*
         db-stmt (.createStatement db-conn)
         dbtx-id (.toString (generate-uid))
@@ -152,7 +155,8 @@
   COMMIT-FN is called while the MTX is held; we will not roll back here."
   (with-local-vars [mtx-phase 0]
     (let [dummy (ref nil :validator (fn [x]
-                                      (when (= x 42)
+                                      (when (and (= x 42)
+                                                 (:db-touched? *swsync-ctx*))
                                         (assert (= 1 (var-get mtx-phase)))
                                         (var-set mtx-phase 2) ;; ..hold transaction.. (2nd phase)
                                         (commit-fn)
@@ -166,35 +170,34 @@
            (var-set mtx-phase 1)
            (ref-set dummy 42)
            (do1 (body-fn)
-             (prepare-fn))))))))
+             (when (:db-touched? *swsync-ctx*)
+               (prepare-fn)))))))))
 
 
 
 (defn do-2pctx [^Fn body-fn]
-  (if (clojure.lang.LockingTransaction/isRunning) ;; Handle nesting..
-    (do
-      (println "WARN: DO-2PCTX nested MTX assumed to be part of 2PCTX.")
-      (body-fn)) ;; ..by assuming we're already inside a DO-2PCTX BODY-FN.
-    (with-local-vars [^Boolean done? false
-                      retval nil]
-      (while (not (var-get done?))
-        (try
-          (var-set retval (do-dbtx (fn [^Fn dbtx-prepare-fn ^Fn dbtx-commit-fn]
-                                     (do-mtx body-fn dbtx-prepare-fn dbtx-commit-fn))))
-          (var-set done? true)
-          (catch clojure.lang.ExceptionInfo e
-            (case (:2pctx-state (ex-data e))
-              :retry
-              (do #_(println "DO-2PCTX: :RETRY"))
+  (assert (not (clojure.lang.LockingTransaction/isRunning))
+          "DO-2PCTX: SWSYNC within DOSYNC not allowed.")
+  (with-local-vars [^Boolean done? false
+                    retval nil]
+    (while (not (var-get done?))
+      (try
+        (var-set retval (do-dbtx (fn [^Fn dbtx-prepare-fn ^Fn dbtx-commit-fn]
+                                   (do-mtx body-fn dbtx-prepare-fn dbtx-commit-fn))))
+        (var-set done? true)
+        (catch clojure.lang.ExceptionInfo e
+          (case (:2pctx-state (ex-data e))
+            :retry
+            (do #_(println "DO-2PCTX: :RETRY"))
 
-              :abort
-              (let [ex-retval (:return-value (ex-data e))]
-                #_(println "DO-2PCTX: :ABORT, :RETURN-VALUE:" ex-retval)
-                (var-set done? true)
-                (var-set retval ex-retval))
+            :abort
+            (let [ex-retval (:return-value (ex-data e))]
+              #_(println "DO-2PCTX: :ABORT, :RETURN-VALUE:" ex-retval)
+              (var-set done? true)
+              (var-set retval ex-retval))
 
-              (throw e)))))
-      (var-get retval))))
+            (throw e)))))
+    (var-get retval)))
 
 
 
@@ -205,12 +208,13 @@
 
 (defmacro swsync [& body]
   "BODY executes within a 2PCTX; MTX and DBTX."
-  `(if *in-swsync?*
-     (do ~@body) ;; Handle nesting.
-     (binding [*in-swsync?* true]
-       (with-db-conn
-         (with-2pctx
-           ~@body)))))
+  `(let [body-fn# (fn [] ~@body)]
+     (if *swsync-ctx*
+       (body-fn#)
+       (binding [*swsync-ctx* {:db-touched? false}]
+         (with-db-conn
+           (with-2pctx
+             (body-fn#)))))))
 
 
 
