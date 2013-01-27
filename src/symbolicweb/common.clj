@@ -362,7 +362,7 @@ Returns a string."
   {:agent (agent :initial-state :error-handler #'-sw-io-agent-error-handler-)
    :binding-blacklist (merge {#'clojure.java.jdbc/*db* @#'clojure.java.jdbc/*db*
 
-                              #'*in-swsync?* *in-swsync?*
+                              #'*swsync-ctx* *swsync-ctx*
 
                               #'*in-html-container?* *in-html-container?*
                               #'*with-js?* *with-js?*

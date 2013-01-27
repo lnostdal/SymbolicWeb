@@ -8,7 +8,7 @@
      ;; This will call the DO-LIFETIME-DEACTIVATION CBs which will disconnect the widgets from their models (Observables).
      (detach-lifetime (.lifetime (:root-element viewport-m)))
      ;; Session -/-> Viewport.
-     (alter (:viewports @(:session viewport-m))
+     (alter (:viewports (ensure (:session viewport-m)))
             dissoc (:id viewport-m)))))
 
 
