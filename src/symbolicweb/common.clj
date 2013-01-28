@@ -358,11 +358,10 @@ Returns a string."
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
 
-(let [default-bnds (get-thread-bindings)]
-  (defn mk-sw-agent [binding-whitelist]
-    {:agent (agent :initial-state :error-handler #'-sw-io-agent-error-handler-)
+(defn mk-sw-agent [binding-whitelist]
+  {:agent (agent :initial-state :error-handler #'-sw-io-agent-error-handler-)
 
-     :binding-whitelist (into (keys default-bnds) binding-whitelist)}))
+   :binding-whitelist (into (keys -initial-bindings-) binding-whitelist)})
 
 
 (defonce -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?

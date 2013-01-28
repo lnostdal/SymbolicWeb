@@ -1,4 +1,6 @@
 (ns symbolicweb.core
+  (:require symbolicweb.init)
+
   (:import clojure.lang.Ref
            clojure.lang.Keyword
            clojure.lang.Fn
