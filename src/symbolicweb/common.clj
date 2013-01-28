@@ -346,8 +346,8 @@ Returns a string."
 ;;;;;;;;;;;;;;
 
 ;; TODO: Yes, this is all quite horrible. The binding propagation thing in Clojure is not a good thing IMHO.
-;; TODO: This should be based on a whitelist.
-,
+
+
 (def -sw-io-agent-error-handler-
   (fn [the-agent exception]
     (try
@@ -358,32 +358,29 @@ Returns a string."
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
 
-(defn mk-sw-agent [binding-blacklist]
-  {:agent (agent :initial-state :error-handler #'-sw-io-agent-error-handler-)
-   :binding-blacklist (merge {#'clojure.java.jdbc/*db* @#'clojure.java.jdbc/*db*
+(let [default-bnds (get-thread-bindings)]
+  (defn mk-sw-agent [binding-whitelist]
+    {:agent (agent :initial-state :error-handler #'-sw-io-agent-error-handler-)
 
-                              #'*swsync-ctx* *swsync-ctx*
-
-                              #'*in-html-container?* *in-html-container?*
-                              #'*with-js?* *with-js?*
-
-                              #'*observed-vms-ctx* false
-                              #'*observed-vms-active-body-fns* *observed-vms-active-body-fns*}
-                             binding-blacklist)})
-
+     :binding-whitelist (into (keys default-bnds) binding-whitelist)}))
 
 
 (defonce -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
 
 
 (defn with-sw-io* [the-agent ^Fn body-fn]
-  (let [the-agent (if the-agent the-agent -sw-io-agent-)]
-    (send-off ^clojure.lang.Agent (:agent the-agent)
-              (fn [_]
-                (with-bindings (merge (get-thread-bindings) (:binding-blacklist the-agent))
-                  (body-fn nil))))))
+  (let [the-agent (if the-agent the-agent -sw-io-agent-)
+        ^clojure.lang.Agent a (:agent the-agent)]
+    (.dispatch a
+               (let [bnds (get-thread-bindings)]
+                 (fn [& _]
+                   (with-bindings (merge (select-keys bnds (:binding-whitelist the-agent))
+                                         {#'clojure.core/*agent* a})
+                     (body-fn))))
+               nil
+               clojure.lang.Agent/soloExecutor))) ;; "SEND-OFF"
 
 
 (defmacro with-sw-io [the-agent & body]
   "Runs BODY in an Agent."
-  `(with-sw-io* ~the-agent (fn [_#] ~@body)))
+  `(with-sw-io* ~the-agent (fn [] ~@body)))
