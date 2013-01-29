@@ -19,7 +19,7 @@
 (defapp
   [::Clock
    (fn [request]
-     (re-find #"clock.sw" (:uri request)))]
+     (re-find #"clock.sw$" (:uri request)))]
 
   (fn [id & args]
     (apply mk-Session id :mk-viewport-fn mk-clock-viewport
