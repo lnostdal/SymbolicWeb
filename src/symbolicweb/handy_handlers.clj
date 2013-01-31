@@ -123,7 +123,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     (str "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->" \newline)
     [:html
      [:head
-      [:meta {:charset "UTF-8"}] ;; In case the user wants to save a snapshot of the page.
+      ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
+      [:meta {:charset "UTF-8"}]
       ;; TODO: Extract from VIEWPORT.
       [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,maximum-scale=1.0"}]
       [:title (:page-title @viewport)]
