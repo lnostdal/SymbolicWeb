@@ -15,7 +15,7 @@
                  [clj-time/clj-time "0.4.5-SNAPSHOT"]
 
                  [hiccup/hiccup "1.0.2"] ;; HTML generation.
-                 [org.jsoup/jsoup "1.7.2-SNAPSHOT"] ;; HTML templating.
+                 [org.jsoup/jsoup "1.7.3-SNAPSHOT"] ;; HTML templating.
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "1.0.0"] ;; ring.util.codec
