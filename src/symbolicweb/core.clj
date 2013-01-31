@@ -20,8 +20,6 @@
 
   (:require [cheshire.core :as json])
 
-  (:import com.mchange.v2.c3p0.ComboPooledDataSource)
-
   (:require ring.util.codec)
   (:require ring.middleware.params)
   (:require ring.middleware.cookies)

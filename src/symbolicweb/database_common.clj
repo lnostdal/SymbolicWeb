@@ -5,7 +5,7 @@
 
 
 (defn mk-db-pool [spec]
-  (let [cpds (doto (ComboPooledDataSource.)
+  (let [cpds (doto (com.mchange.v2.c3p0.ComboPooledDataSource.)
                (.setDriverClass (:classname spec))
                (.setJdbcUrl (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
                (.setUser (:user spec))
