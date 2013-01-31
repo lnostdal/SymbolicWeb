@@ -73,7 +73,7 @@
 
   (:require symbolicweb.garbage-collection)
 
-  (:require [me.shenfeng.http.server :as http.server])
+  (:require [org.httpkit.server :as http.server])
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session))
 
@@ -137,6 +137,6 @@
                                          (ring.middleware.params/wrap-params
                                           handler))
                                         {:port port
-                                         :thread 8
+                                         :thread (. (Runtime/getRuntime) availableProcessors)
                                          :worker-name-prefix "http-worker-"
                                          :max-body 1048576}))) ;; Max 1M request body (e.g. POST).
