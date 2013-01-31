@@ -22,7 +22,8 @@
                  [ring/ring-core "1.2.0-SNAPSHOT"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
-                 [postgresql/postgresql "9.2-1002.jdbc4"] ;; PostgreSQL JDBC driver.
+
+                 [org.jumpmind.symmetric.jdbc/postgresql "9.2-1002-jdbc4"] ;; http://search.maven.org/#browse%7C-1373495709
                  [com.mchange/c3p0 "0.9.2-pre8"] ;; DB connection pooling.
 
                  [org.clojure/tools.nrepl "0.2.2-SNAPSHOT"]]
