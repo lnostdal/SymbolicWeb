@@ -73,7 +73,7 @@
 
   (:require symbolicweb.garbage-collection)
 
-  (:require [me.shenfeng.http.server :as http.server])
+  (:require [org.httpkit.server :as http.server])
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session))
 
