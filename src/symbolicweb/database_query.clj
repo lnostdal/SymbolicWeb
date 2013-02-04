@@ -86,16 +86,15 @@
 
 
 (defn db-query-next-chunk [^Ref db-query]
-  (when @(:chunk-end-id @db-query) ;; Not the first call?
-    (vm-set (:chunk-start-id @db-query)
-            (case @(:global-direction @db-query)
-              :oldest-first (inc @(:chunk-end-id @db-query))
-              :newest-first (dec @(:chunk-end-id @db-query)))))
+  "Returns the 'next' chunk (Coll of result sets) in series of chunks and moves the internal cursor -- or returns an EMPTY? Coll
+if no next chunk was available."
   (db-query-get-chunk db-query :forward))
 
 
 
 (defn db-query-prev-chunk [^Ref db-query]
+  "Returns the 'previous' chunk (Coll of result sets) in series of chunks and moves the curser -- or returns an an EMPTY? Coll
+if no previous chunk was available."
   (db-query-get-chunk db-query :backward))
 
 
