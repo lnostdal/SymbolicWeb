@@ -101,7 +101,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         (touch viewport)
         ((:ajax-handler @session) request session viewport))
       (do
-        (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
+        #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
                  "Refreshing page, but keeping Session (cookie).")
         {:status 200
          :headers {"Content-Type" "text/javascript; charset=UTF-8"}
@@ -132,7 +132,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       (generate-rest-css @(:rest-css-entries @viewport))
       ;;[:script {:src (genURL viewport "sw/js/jquery-1.8.3.min.js")}]
       "<script src='http://code.jquery.com/jquery-2.0.0b1.js'></script>"
-      "<script src='http://code.jquery.com/jquery-migrate-1.0.0.js'></script>"
+      "<script src='http://code.jquery.com/jquery-migrate-1.1.0.js'></script>"
       [:script (sw-js-base-bootstrap session viewport)]
       [:script {:src (genURL viewport "sw/js/sw-ajax.js")}]
       (generate-rest-js @(:rest-js-entries @viewport))]
