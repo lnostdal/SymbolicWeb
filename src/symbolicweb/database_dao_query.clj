@@ -15,8 +15,8 @@
 (defn dao-query-transform-db-chunk [^Ref dao-query db-chunk]
   "Converts a DB-CHUNK to a DAO-CHUNK."
   (let [table-name (:query-table-name @(:db-query @dao-query))]
-    (mapv #(db-get (:id %) table-name)
-          db-chunk)))
+    (map #(db-get (:id %) table-name)
+         db-chunk)))
 
 
 
