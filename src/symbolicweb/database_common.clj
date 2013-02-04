@@ -40,13 +40,15 @@
 
 
 (defn db-stmt [^String sql]
-  (set! *swsync-ctx* (assoc *swsync-ctx* :db-touched? true))
+  (when *swsync-ctx*
+    (set! *swsync-ctx* (assoc *swsync-ctx* :db-touched? true)))
   (jdbc-stmt *db* sql))
 
 
 
 (defn db-pstmt [^String sql & params]
-  (set! *swsync-ctx* (assoc *swsync-ctx* :db-touched? true))
+  (when *swsync-ctx*
+    (set! *swsync-ctx* (assoc *swsync-ctx* :db-touched? true)))
   (jdbc-pstmt *db* sql params))
 
 
