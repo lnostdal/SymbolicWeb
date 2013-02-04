@@ -66,7 +66,6 @@
     (if (.execute stmt)
       (with-open [rs (.getResultSet stmt)]
         ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
-        ;; This could be dealt with via sessions and Lifetime tracking of course, but it is pointless; using DB cursors is better.
         ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
         (doall (resultset-seq rs)))
       (.getUpdateCount stmt))))
@@ -79,7 +78,6 @@
     (if (.execute stmt sql)
       (with-open [rs (.getResultSet stmt)]
         ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
-        ;; This could be dealt with via sessions and Lifetime tracking of course, but it is pointless; using DB cursors is better.
         ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
         (doall (resultset-seq rs)))
       (.getUpdateCount stmt))))

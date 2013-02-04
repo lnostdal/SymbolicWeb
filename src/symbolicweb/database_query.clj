@@ -6,36 +6,35 @@
 ;;
 ;; Features and limitations:
 ;;
-;;   * No global sorting by user defined criteria.
+;;   * No global sorting by user defined criteria i.e. via ORDER BY.
 ;;   * Global ordering by newest or oldest entries first is supported though.
 ;;
 ;;
-;; TODO: If this runs within context of e.g. SWSYNC (full isolation level), it'd be great to change to a less strict isolation
-;;       level, locally, here, if that's possible.
+;; TODO: It'd be great to change to a less strict isolation level, locally, here, if that's possible.
 
 
 
 (defn mk-DBQuery [& args]
-  (let [model (ref (apply assoc {}
-                          :global-direction (vm :oldest-first)
+  (let [dbq (ref (apply assoc {}
+                        :global-direction :oldest-first
 
-                          :chunk-start-id (vm nil) ;; >=
-                          :chunk-size 3 ;; SQL LIMIT.
-                          :chunk-end-id (vm nil) ;; <
+                        :chunk-start-id (vm nil) ;; >=
+                        :chunk-size 3 ;; SQL LIMIT.
+                        :chunk-end-id (vm nil) ;; <
 
-                          :query-table-name "testing" ;; TODO: Set to NIL.
-                          :query-where (vm nil)
-                          :query-other (vm nil)
-                          :query-params (vm nil)
-                          args))]
-    model))
+                        :query-table-name "testing" ;; TODO: Set to NIL.
+                        :query-where (vm nil)
+                        :query-other (vm nil)
+                        :query-params (vm nil)
+                        args))]
+    dbq))
 
 
 
 ;; TODO: Private?
 (defn db-query-get-chunk [^Ref db-query ^Keyword direction]
-  (let [global-direction @(:global-direction @db-query)]
-    ;; TODO: What about future INSERTs? Need to resync somehow.
+  (let [global-direction (:global-direction @db-query)]
+    ;; TODO: What about future INSERTs? Need to resync `max(id)' somehow.
     (when-not @(:chunk-start-id @db-query) ;; First call?
       (case global-direction
         :oldest-first (vm-set (:chunk-start-id @db-query) 0)
@@ -62,18 +61,24 @@
                                      (str " " other))
 
                                    " LIMIT ?;")
-                     (conj (into [@(:chunk-start-id @db-query)]
+                     (conj (into [(if-let [end-id (and (= :forward direction) @(:chunk-end-id @db-query))]
+                                    (case global-direction
+                                      :oldest-first (inc end-id)
+                                      :newest-first (dec end-id))
+                                    @(:chunk-start-id @db-query))]
                                  @(:query-params @db-query))
                            (:chunk-size @db-query)))]
-      (vm-set (:chunk-start-id @db-query)
-              (case direction
-                :forward (:id (first res))
-                :backward (:id (last res))))
-      (vm-set (:chunk-end-id @db-query)
-              (case direction
-                :forward (:id (last res))
-                :backward (:id (first res))))
-      ;; TODO: Should probably only grab ID here, then return a Coll of IDs instead of RES directly.
+
+      (when-not (empty? res)
+        (vm-set (:chunk-start-id @db-query)
+                (case direction
+                  :forward (:id (first res))
+                  :backward (:id (last res))))
+        (vm-set (:chunk-end-id @db-query)
+                (case direction
+                  :forward (:id (last res))
+                  :backward (:id (first res)))))
+
       (case direction
         :forward res
         :backward (reverse res)))))
