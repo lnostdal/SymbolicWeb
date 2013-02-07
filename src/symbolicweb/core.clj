@@ -4,7 +4,9 @@
   (:import clojure.lang.Ref
            clojure.lang.Keyword
            clojure.lang.Fn
-           clojure.lang.MapEntry)
+           clojure.lang.MapEntry
+           clojure.lang.Atom
+           clojure.lang.Delay)
   (:require [clojure.math.numeric-tower :refer (round)])
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])

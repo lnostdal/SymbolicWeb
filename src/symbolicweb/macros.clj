@@ -5,10 +5,6 @@
 
 ;;; Macros and dynamic variables.
 
-;; database_common.clj
-(def ^:dynamic *swsync-ctx* false)
-
-
 ;; html_container.clj
 (def ^:dynamic *in-html-container?* false)
 (def ^:dynamic *with-js?* false)
