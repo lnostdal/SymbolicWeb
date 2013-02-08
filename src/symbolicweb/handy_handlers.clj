@@ -155,20 +155,23 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (defn not-found-page-handler [request ^Ref session ^Ref viewport]
   {:status 404
-   :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Server" -http-server-string-}
+   :headers {"Content-Type" "text/html; charset=UTF-8"}
+
    :body
    (html
-    (doctype :xhtml-strict)
-    (xhtml-tag
-     "en"
+    (hiccup.page/doctype :html5)
+    (str "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->" \newline)
+    [:html
      [:head
-      [:title "[SymbolicWeb] HTTP 404: Not Found"]
-      [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]]
+      ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
+      [:meta {:charset "UTF-8"}]
+      ;; TODO: Extract from VIEWPORT.
+      [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,maximum-scale=1.0"}]
+      [:title "SW: 404 Page Not Found"]
 
      [:body
-      [:h1 "HTTP 404: Not Found"]
-      [:p "Going " [:a {:href "javascript:history.go(-1);"} "back"] " might help."]]))})
+      [:h1 "SW: HTTP 404: Not Found"]
+      [:p "Going " [:a {:href "javascript:history.go(-1);"} "back"] " might help."]]]])})
 
 
 
