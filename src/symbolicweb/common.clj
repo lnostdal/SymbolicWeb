@@ -164,8 +164,7 @@ SESSION and VIEWPORT are bound within BODY."
 
 (defn generate-uuid ^String []
   "Generates an universal unique ID (UUID).
-Returns a string."
-  ;; TODO: This is only pseudo random; we can do better.
+Returns a String."
   (.toString (java.util.UUID/randomUUID)))
 
 

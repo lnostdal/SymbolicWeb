@@ -47,13 +47,13 @@
           (try
             (binding [*db* db-conn]
               (reset! retval (body-fn))
-              (when (and (realized? db-conn)
+              (when (and (.isRealized db-conn)
                          (not (.getAutoCommit ^com.jolbox.bonecp.ConnectionHandle @db-conn)))
                 (.commit ^com.jolbox.bonecp.ConnectionHandle @db-conn)) ;; Commit.
               (reset! done? true))
 
             (catch Throwable e
-              (when (and (realized? db-conn)
+              (when (and (.isRealized db-conn)
                          (not (.getAutoCommit ^com.jolbox.bonecp.ConnectionHandle @db-conn)))
                 (.rollback ^com.jolbox.bonecp.ConnectionHandle @db-conn)) ;; Rollback.
               (if (isa? (class e) java.sql.SQLException)
