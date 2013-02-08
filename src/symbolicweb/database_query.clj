@@ -19,13 +19,13 @@
                         :global-direction :oldest-first
 
                         :chunk-start-id (vm nil) ;; >=
-                        :chunk-size 3 ;; SQL LIMIT.
+                        :chunk-size (vm 3) ;; SQL LIMIT.
                         :chunk-end-id (vm nil) ;; <
 
                         :query-table-name "testing" ;; TODO: Set to NIL.
-                        :query-where (vm nil)
-                        :query-other (vm nil)
-                        :query-params (vm nil)
+                        :query-where nil
+                        :query-other nil
+                        :query-params nil
                         args))]
     dbq))
 
@@ -48,7 +48,7 @@
                                      [:backward :oldest-first] "id < ?"
                                      [:forward :newest-first] "id <= ?"
                                      [:backward :newest-first] "id > ?")
-                                   (when-let [where @(:query-where @db-query)]
+                                   (when-let [where (:query-where @db-query)]
                                      (str " AND " where))
 
                                    " ORDER BY " (case [direction global-direction]
@@ -57,17 +57,18 @@
                                                   [:forward :newest-first] "id DESC"
                                                   [:backward :newest-first] "id ASC")
 
-                                   (when-let [other @(:query-other @db-query)]
+                                   (when-let [other (:query-other @db-query)]
                                      (str " " other))
 
                                    " LIMIT ?;")
-                     (conj (into [(if-let [end-id (and (= :forward direction) @(:chunk-end-id @db-query))]
-                                    (case global-direction
-                                      :oldest-first (inc end-id)
-                                      :newest-first (dec end-id))
-                                    @(:chunk-start-id @db-query))]
-                                 @(:query-params @db-query))
-                           (:chunk-size @db-query)))]
+                     `[~(if-let [end-id (and (= :forward direction) @(:chunk-end-id @db-query))]
+                          (case global-direction
+                            :oldest-first (inc end-id)
+                            :newest-first (dec end-id))
+                          @(:chunk-start-id @db-query))
+                       ~@(:query-params @db-query)
+                       ;; Space for Clojure syntax bummer; @ is both deref and part of unquote splice.
+                       ~ @(:chunk-size @db-query)])]
 
       (when-not (empty? res)
         (vm-set (:chunk-start-id @db-query)
@@ -101,21 +102,31 @@ if no previous chunk was available."
 
 
 
+
+
+
+
+
 ;;;;;;;
+
+
 
 (defn db-query-test []
   (swsync
-   (let [dbq (mk-DBQuery :query-where (vm "value > 100 AND value < 200")
-                         ;:global-direction (vm :newest-first)
-                         )]
-     (println (db-query-next-chunk dbq))
-     (println "--")
-     (println (db-query-next-chunk dbq))
-     (println (db-query-next-chunk dbq))
+   (let [dbq (mk-DBQuery ;;:query-where "value > 100 AND value < 200"
+              :global-direction :newest-first
+              )]
+
+     (println "next:")
      (println (db-query-next-chunk dbq))
      (println (db-query-next-chunk dbq))
-     (println "---")
+     (println (db-query-next-chunk dbq))
+     (println "prev:")
      (println (db-query-prev-chunk dbq))
      (println (db-query-prev-chunk dbq))
      (println (db-query-prev-chunk dbq))
-     (println (db-query-prev-chunk dbq)))))
+     (println "next:")
+     (println (db-query-next-chunk dbq))
+     (println (db-query-next-chunk dbq))
+     (println (db-query-next-chunk dbq))
+     )))
