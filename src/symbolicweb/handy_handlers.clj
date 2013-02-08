@@ -130,9 +130,19 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       [:title (:page-title @viewport)]
 
       (generate-rest-css @(:rest-css-entries @viewport))
-      ;;[:script {:src (genURL viewport "sw/js/jquery-1.8.3.min.js")}]
-      "<script src='http://code.jquery.com/jquery-2.0.0b1.js'></script>"
-      "<script src='http://code.jquery.com/jquery-migrate-1.1.0.js'></script>"
+
+      ;; jQuery.
+      ;; http://www.impressivewebs.com/loading-different-jquery-version-ie6-8/
+      "<!--[if lt IE 9]>
+  <script src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
+<![endif]-->
+<!--[if (gte IE 9) | (!IE)]><!-->
+  <script src='http://code.jquery.com/jquery-2.0.0b1.js'></script>
+<!--<![endif]-->"
+
+      ;; jQuery migrate.
+      "<script src='http://code.jquery.com/jquery-migrate-git.min.js'></script>"
+
       [:script (sw-js-base-bootstrap session viewport)]
       [:script {:src (genURL viewport "sw/js/sw-ajax.js")}]
       (generate-rest-js @(:rest-js-entries @viewport))]
