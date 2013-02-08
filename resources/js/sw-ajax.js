@@ -46,7 +46,8 @@ var swAddOnLoadFN, swDoOnLoadFNs;
 function swURL(params){
   return([window.location.protocol, "//",
           window.location.host,
-          "/sw.sw?_sw_viewport_id=", _sw_viewport_id, // TODO: Magic value "sw.sw" here.
+          window.location.pathname,
+          "?_sw_viewport_id=", _sw_viewport_id,
           params.join("")
          ].join(""));
 }

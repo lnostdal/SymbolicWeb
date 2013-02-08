@@ -204,7 +204,7 @@ Returns a String."
 
 
 (defn ^String set-session-cookie [value]
-  (set-document-cookie :name -session-cookie-name- :value value :path "/" :domain? false))
+  (set-document-cookie :name -session-cookie-name- :value value :domain? false))
 
 
 
