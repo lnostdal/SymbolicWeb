@@ -196,7 +196,7 @@ Returns a String."
            (str "domain=" domain? "; ")))
        (if value
          (str "expires=\""
-              " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear() + 5); return date.toUTCString(); })()"
+              " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear() + 42); return date.toUTCString(); })()"
               " + \"; ")
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=" path "; "

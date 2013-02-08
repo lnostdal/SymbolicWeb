@@ -11,7 +11,7 @@
                  :page-title "SymbolicWeb: Clock example"
                  :genurl-fs-path "resources/web-design/"
                  :genurl-scheme "http"
-                 :genurl-domain "static.cb.freeordeal.no"
+                 :genurl-domain "static.nostdal.org"
                  :genurl-path "")))
 
 
