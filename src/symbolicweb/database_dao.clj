@@ -364,12 +364,11 @@ Blocking."
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
            ^DBCache db-cache (db-get-cache table-name)]
        (try
-         (swsync
-          (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
-                (fn []
-                  (when-let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                    (after-construction-fn ((.after-fn db-cache) new-obj))
-                    new-obj))))
+         (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
+               (fn []
+                 (when-let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                   (after-construction-fn ((.after-fn db-cache) new-obj))
+                   new-obj)))
          (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
            (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
            false)

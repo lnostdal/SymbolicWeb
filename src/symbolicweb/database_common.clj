@@ -127,7 +127,7 @@
 
 (defn do-2pctx [^Fn body-fn]
   (assert (not (clojure.lang.LockingTransaction/isRunning))
-          "DO-2PCTX: SWSYNC within DOSYNC not allowed.")
+          "DO-2PCTX: SWSYNC within DOSYNC (or another SWSYNC) not allowed.")
   (let [done? (atom false)
         retval (atom nil)]
     (while (not @done?)
