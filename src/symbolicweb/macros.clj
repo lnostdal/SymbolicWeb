@@ -21,9 +21,12 @@
      ~@body
      x#))
 
+
+
 (defmacro with-js [& body]
   `(binding [*with-js?* true]
      ~@body))
+
 
 
 ;; Doesn't belong here, but can't find a way to bootstrap this crap proper.
@@ -31,6 +34,7 @@
   `(let [res# ~form]
      (println '~form "=>" res#)
      res#))
+
 
 
 (defn %with-errors-logged [f]
@@ -49,15 +53,18 @@
   `(%with-errors-logged (fn [] ~@body)))
 
 
+
 (defmacro with [form & body]
   `(let [~'it ~form]
      ~@body))
+
 
 
 (defmacro with1 [form & body]
   `(with ~form
      ~@body
      ~'it))
+
 
 
 (defmacro with-object [object & body]
@@ -69,8 +76,7 @@
   `(~signature ~'%with-object))
 
 
-;; Not really a macro, but screw it; model.clj needs it, and since common.clj needs model.clj it doesn't fit in common.clj where it
-;; should.
+
 (defn check-type [obj type]
   (assert (isa? (class obj) type)
           (str "CHECK-TYPE: Expected " type ", but got: "
@@ -80,14 +86,15 @@
 
 
 
-
-(declare %with-sw-connection)
-(defmacro with-sw-connection [& body]
-  `(%with-sw-connection (fn [] ~@body)))
-
-
 (defmacro do1 [x & body]
   "As PROG1 from Common Lisp."
   `(let [x# ~x]
      ~@body
      x#))
+
+
+
+(declare do-2pctx)
+(defmacro swsync [& body]
+  "BODY executes within a 2PCTX; a combined MTX and DBTX."
+  `(do-2pctx (fn [] ~@body)))

@@ -134,3 +134,10 @@ Appends a timestamp to the URL based on file mtime."
 
 (defn ^java.sql.Timestamp datetime-to-sql-timestamp [^org.joda.time.DateTime datetime]
   (java.sql.Timestamp. (clj-time.coerce/to-long datetime)))
+
+
+
+(def -now- (with1 (vm (clj-time.core/now))
+             (overtone.at-at/every 1000
+                                   (fn [] (swsync (vm-set it (clj-time.core/now))))
+                                   -overtone-pool-)))

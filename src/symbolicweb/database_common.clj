@@ -154,18 +154,6 @@
 
 
 
-(defmacro with-2pctx [& body]
-  `(do-2pctx (fn [] ~@body)))
-
-
-
-(defmacro swsync [& body]
-  "BODY executes within a 2PCTX; a combined MTX and DBTX."
-  `(with-2pctx
-     ~@body))
-
-
-
 (defn swsync-abort
   "Abort SWSYNC transaction in progress; rolls back all transactions in progress; MTX and DBTX."
   ([]
