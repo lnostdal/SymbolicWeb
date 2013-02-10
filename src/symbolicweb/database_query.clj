@@ -22,9 +22,15 @@
   "Returns a Coll of IDs.
 
   GLOBAL-DIRECTION: :OLDEST-FIRST or :NEWEST-FIRST
+
   FROM-ID: If -1 the last DB entry is implied; SELECT max(id) FROM ..
+
   DIRECTION: :RIGHT or :LEFT
+
+  SIZE: Size of chunk. E.g. LIMIT in SQL query.
+
   :WHERE: E.g. \"mod(value, 2) = 1\"
+
   :PARAMS: Params (prepared DB statement) for :WHERE and :OTHER (in that order)."
   (let [table (name table-name)
         res (apply db-pstmt (str "SELECT id FROM " table
@@ -64,12 +70,23 @@
 
 (defn db-query-seq [table-name ^Keyword global-direction ^Long from-id ^Keyword direction ^Long size
                     & {:keys [where other params]}]
-  "Returns a Seq. A DB table with 10 entries, IDs 1 to 10, would give results like:
+  "Returns a Seq.
+
+  SIZE: Size of internal chunks; how much to fetch at a time from the DB when consuming data from the Seq.
+
+
+A DB table with 10 entries, IDs 1 to 10, would give results like:
 
   (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :right 2)))) => (5 6 7)
   (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :left 2))))  => (5 4 3)
   (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :right 2)))) => (5 4 3)
-  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :left 2))))  => (5 6 7)"
+  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :left 2))))  => (5 6 7)
+
+
+Mapping to DAOs goes like this::
+
+  (swsync (doall (take 3 (map #(db-get % \"testing\")
+                              (db-query-seq :testing :oldest-first 5 :right 2)))))"
   (let [chunk (db-query-get-chunk table-name global-direction from-id direction size
                                   :where where :other other :params params)]
     (when-not (empty? chunk)
