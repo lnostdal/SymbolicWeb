@@ -1,6 +1,6 @@
 (in-ns 'symbolicweb.core)
 
-;;; Chunked DB query results by using LIMIT and ORDER BY on indexed (for performance) ID fields.
+;;; Chunked DB query results by using LIMIT and ORDER BY without OFFSET on indexed (for performance) ID fields.
 ;;; Used for e.g. pagination or "infinite scroll".
 ;;
 ;;
@@ -8,125 +8,77 @@
 ;;
 ;;   * No global sorting by user defined criteria i.e. via ORDER BY.
 ;;   * Global ordering by newest or oldest entries first is supported though.
+;;   * These limitations are tradeoffs for (I hope) scalability and performance.
 ;;
 ;;
-;; TODO: It'd be great to change to a less strict isolation level, locally, here, if that's possible.
+;; TODO:
+;;
+;;   * It'd perhaps be great to change to a less strict isolation level, locally, here, if that's possible.
 
 
 
-(defn mk-DBQuery [& args]
-  (let [dbq (ref (apply assoc {}
-                        :global-direction :oldest-first
+(defn db-query-get-chunk [table-name ^Keyword global-direction ^Long from-id ^Keyword direction ^Long size
+                          & {:keys [where other params]}]
+  "Returns a Coll of IDs.
 
-                        :chunk-start-id (vm nil) ;; >=
-                        :chunk-size (vm 3) ;; SQL LIMIT.
-                        :chunk-end-id (vm nil) ;; <
+  GLOBAL-DIRECTION: :OLDEST-FIRST or :NEWEST-FIRST
+  FROM-ID: If -1 the last DB entry is implied; SELECT max(id) FROM ..
+  DIRECTION: :RIGHT or :LEFT
+  :WHERE: E.g. \"mod(value, 2) = 1\"
+  :PARAMS: Params (prepared DB statement) for :WHERE and :OTHER (in that order)."
+  (let [table (name table-name)
+        res (apply db-pstmt (str "SELECT id FROM " table
 
-                        :query-table-name "testing" ;; TODO: Set to NIL.
-                        :query-where nil
-                        :query-other nil
-                        :query-params nil
-                        args))]
-    dbq))
+                                 " WHERE "
+                                 (case [direction global-direction]
+                                   [:right :oldest-first] "id >= ?"
+                                   [:left :oldest-first] " id <= ?"
+                                   [:right :newest-first] (if (neg? from-id)
+                                                            (str "id <= (SELECT max(id) FROM " table ")")
+                                                            "id <= ?")
+                                   [:left :newest-first] (if (neg? from-id)
+                                                           (str "id >= (SELECT max(id) FROM " table ")")
+                                                           "id >= ?"))
+                                 (when where
+                                   (str " AND " where))
 
+                                 " ORDER BY " (case [direction global-direction]
+                                                [:right :oldest-first] "id ASC"
+                                                [:left :oldest-first] "id DESC"
+                                                [:right :newest-first] "id DESC"
+                                                [:left :newest-first] "id ASC")
 
+                                 (when other
+                                   (str " " other))
 
-;; TODO: Private?
-(defn db-query-get-chunk [^Ref db-query ^Keyword direction]
-  (let [global-direction (:global-direction @db-query)]
-    ;; TODO: What about future INSERTs? Need to resync `max(id)' somehow.
-    (when-not @(:chunk-start-id @db-query) ;; First call?
-      (case global-direction
-        :oldest-first (vm-set (:chunk-start-id @db-query) 0)
-        :newest-first (vm-set (:chunk-start-id @db-query)
-                              (:max (first (db-stmt (str "SELECT max(id) FROM " (:query-table-name @db-query) ";")))))))
-    (let [res (apply db-pstmt (str "SELECT * FROM " (:query-table-name @db-query)
+                                 " LIMIT ?;")
 
-                                   " WHERE "
-                                   (case [direction global-direction]
-                                     [:forward :oldest-first] "id >= ?"
-                                     [:backward :oldest-first] "id < ?"
-                                     [:forward :newest-first] "id <= ?"
-                                     [:backward :newest-first] "id > ?")
-                                   (when-let [where (:query-where @db-query)]
-                                     (str " AND " where))
-
-                                   " ORDER BY " (case [direction global-direction]
-                                                  [:forward :oldest-first] "id ASC"
-                                                  [:backward :oldest-first] "id DESC"
-                                                  [:forward :newest-first] "id DESC"
-                                                  [:backward :newest-first] "id ASC")
-
-                                   (when-let [other (:query-other @db-query)]
-                                     (str " " other))
-
-                                   " LIMIT ?;")
-                     `[~(if-let [end-id (and (= :forward direction) @(:chunk-end-id @db-query))]
-                          (case global-direction
-                            :oldest-first (inc end-id)
-                            :newest-first (dec end-id))
-                          @(:chunk-start-id @db-query))
-                       ~@(:query-params @db-query)
-                       ;; Space for Clojure syntax bummer; @ is both deref and part of unquote splice.
-                       ~ @(:chunk-size @db-query)])]
-
-      (when-not (empty? res)
-        (vm-set (:chunk-start-id @db-query)
-                (case direction
-                  :forward (:id (first res))
-                  :backward (:id (last res))))
-        (vm-set (:chunk-end-id @db-query)
-                (case direction
-                  :forward (:id (last res))
-                  :backward (:id (first res)))))
-
-      (case direction
-        :forward res
-        :backward (reverse res)))))
+                   (concat (if (neg? from-id)
+                             []
+                             [from-id])
+                           params
+                           [size]))]
+    (map :id res)))
 
 
 
-(defn db-query-next-chunk [^Ref db-query]
-  "Returns the 'next' chunk (Coll of result sets) in series of chunks and moves the internal cursor -- or returns an EMPTY? Coll
-if no next chunk was available."
-  (db-query-get-chunk db-query :forward))
+(defn db-query-seq [table-name ^Keyword global-direction ^Long from-id ^Keyword direction ^Long size
+                    & {:keys [where other params]}]
+  "Returns a Seq. A DB table with 10 entries, IDs 1 to 10, would give results like:
 
-
-
-(defn db-query-prev-chunk [^Ref db-query]
-  "Returns the 'previous' chunk (Coll of result sets) in series of chunks and moves the curser -- or returns an an EMPTY? Coll
-if no previous chunk was available."
-  (db-query-get-chunk db-query :backward))
-
-
-
-
-
-
-
-
-
-
-;;;;;;;
-
-
-
-(defn db-query-test []
-  (swsync
-   (let [dbq (mk-DBQuery ;;:query-where "value > 100 AND value < 200"
-              :global-direction :newest-first
-              )]
-
-     (println "next:")
-     (println (db-query-next-chunk dbq))
-     (println (db-query-next-chunk dbq))
-     (println (db-query-next-chunk dbq))
-     (println "prev:")
-     (println (db-query-prev-chunk dbq))
-     (println (db-query-prev-chunk dbq))
-     (println (db-query-prev-chunk dbq))
-     (println "next:")
-     (println (db-query-next-chunk dbq))
-     (println (db-query-next-chunk dbq))
-     (println (db-query-next-chunk dbq))
-     )))
+  (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :right 2)))) => (5 6 7)
+  (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :left 2))))  => (5 4 3)
+  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :right 2)))) => (5 4 3)
+  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :left 2))))  => (5 6 7)"
+  (let [chunk (db-query-get-chunk table-name global-direction from-id direction size
+                                  :where where :other other :params params)]
+    (when-not (empty? chunk)
+      (concat chunk
+              (lazy-seq (db-query-seq table-name global-direction
+                                      (case [direction global-direction]
+                                        [:right :oldest-first] (inc (last chunk))
+                                        [:left :oldest-first] (dec (last chunk))
+                                        [:right :newest-first] (dec (last chunk))
+                                        [:left :newest-first] (inc (last chunk)))
+                                      direction size
+                                      :where where :other other :params params))))))

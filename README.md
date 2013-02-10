@@ -19,6 +19,10 @@ mixed".
 
 The least stable things API-wise is probably the DB related stuff.
 
+Developed and tested on Oracle JDK 7:
+  http://www.webupd8.org/2012/01/install-oracle-java-jdk-7-in-ubuntu-via.html
+
+
 
 
 ## Usage
