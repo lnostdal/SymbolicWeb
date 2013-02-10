@@ -25,8 +25,7 @@ result.
   GLOBAL-DIRECTION: :OLDEST-FIRST or :NEWEST-FIRST
 
   FROM-ID: Relative ID of chunk start.
-           If <= 0 and GLOBAL-DIRECTION is :NEWEST-FIRST, the DB entry | FROM-ID | number of steps from the last DB entry is
-           implied.
+           If -1 and GLOBAL-DIRECTION is :NEWEST-FIRST, the last DB entry is implied.
 
   DIRECTION: :RIGHT or :LEFT
 
@@ -42,11 +41,11 @@ result.
                                  (case [direction global-direction]
                                    [:right :oldest-first] "id >= ?"
                                    [:left :oldest-first] " id <= ?"
-                                   [:right :newest-first] (if (>= 0 from-id)
-                                                            (str "id <= (SELECT max(id) FROM " table ") + ?")
+                                   [:right :newest-first] (if (neg? from-id)
+                                                            (str "id <= (SELECT max(id) FROM " table ")")
                                                             "id <= ?")
-                                   [:left :newest-first] (if (>= 0 from-id)
-                                                           (str "id >= (SELECT max(id) FROM " table ") + ?")
+                                   [:left :newest-first] (if (neg? from-id)
+                                                           (str "id >= (SELECT max(id) FROM " table ")")
                                                            "id >= ?"))
                                  (when where
                                    (str " AND " where))
@@ -62,7 +61,10 @@ result.
 
                                  " LIMIT ?;")
 
-                   (concat [from-id]
+                   (concat (if (and (= :newest-first global-direction)
+                                    (neg? from-id))
+                             []
+                             [from-id])
                            params
                            [size]))]
     (map :id res)))
