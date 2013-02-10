@@ -80,10 +80,11 @@ result.
 
 A DB table with 10 entries, IDs 1 to 10, would give results like:
 
-  (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :right 2)))) => (5 6 7)
-  (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :left 2))))  => (5 4 3)
-  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :right 2)))) => (5 4 3)
-  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :left 2))))  => (5 6 7)
+  (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :right 2))))  => (5 6 7)
+  (swsync (doall (take 3 (db-query-seq :testing :oldest-first 5 :left 2))))   => (5 4 3)
+  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :right 2))))  => (5 4 3)
+  (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :left 2))))   => (5 6 7)
+  (swsync (doall (take 3 (db-query-seq :testing :newest-first -1 :right 2)))) => (10 9 8)
 
 
 Mapping to DAOs goes like this:
