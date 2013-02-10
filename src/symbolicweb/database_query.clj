@@ -19,11 +19,14 @@
 
 (defn db-query-get-chunk [table-name ^Keyword global-direction ^Long from-id ^Keyword direction ^Long size
                           & {:keys [where other params]}]
-  "Returns a Coll of IDs.
+  "Returns a LazySeq of IDs representing a chunk of a complete result. See DB-QUERY-SEQ for a way to get hold of the complete
+result.
 
   GLOBAL-DIRECTION: :OLDEST-FIRST or :NEWEST-FIRST
 
-  FROM-ID: If -1 the last DB entry is implied; SELECT max(id) FROM ..
+  FROM-ID: Relative ID of chunk start.
+           If <= 0 and GLOBAL-DIRECTION is :NEWEST-FIRST, the DB entry | FROM-ID | number of steps from the last DB entry is
+           implied.
 
   DIRECTION: :RIGHT or :LEFT
 
@@ -39,11 +42,11 @@
                                  (case [direction global-direction]
                                    [:right :oldest-first] "id >= ?"
                                    [:left :oldest-first] " id <= ?"
-                                   [:right :newest-first] (if (neg? from-id)
-                                                            (str "id <= (SELECT max(id) FROM " table ")")
+                                   [:right :newest-first] (if (>= 0 from-id)
+                                                            (str "id <= (SELECT max(id) FROM " table ") + ?")
                                                             "id <= ?")
-                                   [:left :newest-first] (if (neg? from-id)
-                                                           (str "id >= (SELECT max(id) FROM " table ")")
+                                   [:left :newest-first] (if (>= 0 from-id)
+                                                           (str "id >= (SELECT max(id) FROM " table ") + ?")
                                                            "id >= ?"))
                                  (when where
                                    (str " AND " where))
@@ -59,9 +62,7 @@
 
                                  " LIMIT ?;")
 
-                   (concat (if (neg? from-id)
-                             []
-                             [from-id])
+                   (concat [from-id]
                            params
                            [size]))]
     (map :id res)))
@@ -70,7 +71,7 @@
 
 (defn db-query-seq [table-name ^Keyword global-direction ^Long from-id ^Keyword direction ^Long size
                     & {:keys [where other params]}]
-  "Returns a Seq.
+  "Returns a LazySeq of IDs representing the complete result set (which can be very big).
 
   SIZE: Size of internal chunks; how much to fetch at a time from the DB when consuming data from the Seq.
 
@@ -83,7 +84,7 @@ A DB table with 10 entries, IDs 1 to 10, would give results like:
   (swsync (doall (take 3 (db-query-seq :testing :newest-first 5 :left 2))))  => (5 6 7)
 
 
-Mapping to DAOs goes like this::
+Mapping to DAOs goes like this:
 
   (swsync (doall (take 3 (map #(db-get % \"testing\")
                               (db-query-seq :testing :oldest-first 5 :right 2)))))"
