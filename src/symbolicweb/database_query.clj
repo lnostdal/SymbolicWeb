@@ -61,9 +61,8 @@ result.
 
                                  " LIMIT ?;")
 
-                   (concat (if (and (= :newest-first global-direction)
-                                    (neg? from-id))
-                             []
+                   (concat (when-not (and (= :newest-first global-direction)
+                                          (neg? from-id))
                              [from-id])
                            params
                            [size]))]
