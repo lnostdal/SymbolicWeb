@@ -1,5 +1,6 @@
 (ns symbolicweb.examples.history
-  (:use symbolicweb.core))
+  (:use symbolicweb.core)
+  (:use hiccup.core))
 
 ;; Need two way observers for the Models in question. From server to client and the other way around.
 ;;
@@ -18,8 +19,11 @@
 
     (jqAppend root-widget
       (whc [:div]
-        (hiccup.core/html
-         [:p (sw (mk-LongInput a)) " + " (sw (mk-LongInput b)) " = " (sw (mk-span sum))])))
+        (html
+         [:p (sw (mk-LongInput a)) " + " (sw (mk-LongInput b)) " = " (sw (mk-span sum))]
+         [:hr]
+         [:em [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj"}
+               "Source code"]])))
 
     (mk-Viewport request session root-widget
                  :page-title "SW: History example"

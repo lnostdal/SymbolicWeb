@@ -1,5 +1,6 @@
 (ns symbolicweb.examples.dataflow
-  (:use symbolicweb.core))
+  (:use symbolicweb.core)
+  (:use hiccup.core))
 
 ;;; Shows some basic dataflow.
 
@@ -14,7 +15,7 @@
 
     (jqAppend root-widget
       (whc [:div]
-        (hiccup.core/html
+        (html
          [:p (sw (mk-LongInput a)) " + " (sw (mk-LongInput b)) " = " (sw (mk-span sum))]
          [:hr]
          [:pre
