@@ -87,9 +87,9 @@ var swAjax =
                          url: url,
                          data: callback_data,
                          dataType: "script",
-                         beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }}, // TODO: 500 should be configurable.
+                         // TODO: 500 should be configurable.
+                         beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }},
                          error: function(jq_xhr, text_status, thrown_error){
-                           $.sticky("<b>SymbolicWeb: HTTP 500</b><br/>Something went wrong. Check <b>console.error</b> for details.<br/><br/>Developers have been notified of this event.");
                            handleRestOfQueue();
                          },
                          complete: handleRestOfQueue
@@ -253,6 +253,6 @@ function swBoot(){
     });
   }
   else{
-    console.log("SymbolicWeb: Cookies must be enabled.");
+    console.error("SymbolicWeb: Cookies must be enabled.");
   }
 }
