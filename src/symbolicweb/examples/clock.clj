@@ -8,7 +8,7 @@
     (jqAppend root-widget
       (mk-b -now-))
     (mk-Viewport request session root-widget
-                 :page-title "SymbolicWeb: Clock example"
+                 :page-title "SW: Clock example"
                  :genurl-fs-path "resources/web-design/"
                  :genurl-scheme "http"
                  :genurl-domain "static.nostdal.org"

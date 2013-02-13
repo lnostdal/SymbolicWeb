@@ -19,7 +19,7 @@
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "1.0.0"] ;; ring.util.codec
-                 [ring/ring-core "1.2.0-SNAPSHOT"] ;; ring.middleware.params, ring.middleware.cookies
+                 [ring/ring-core "1.2.0-beta1"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 
@@ -30,13 +30,18 @@
 
   :warn-on-reflection true
 
-  :jvm-opts [;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
+  :jvm-opts [;; General.
              "-server" "-XX:+TieredCompilation"
+
 
              ;;; Garbage Collection
              "-XX:+UseG1GC"
              ;;"-verbose:gc"
              ;;"-XX:+PrintGCDetails"
 
+
+             ;; Debugging.
              "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
-             "-XX:+HeapDumpOnOutOfMemoryError"])
+             "-XX:+HeapDumpOnOutOfMemoryError"
+             ;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
+             ])

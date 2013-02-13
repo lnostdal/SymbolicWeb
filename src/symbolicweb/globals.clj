@@ -1,7 +1,7 @@
 (in-ns 'symbolicweb.core)
 
 (defn ^Boolean ref? [x]
-  (= Ref (type x)))
+  (= Ref (class x)))
 
 (def -http-server-string- "SymbolicWeb (nostdal.org)")
 
