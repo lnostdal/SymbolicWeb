@@ -1,13 +1,14 @@
 (in-ns 'symbolicweb.core)
 
 
-(defn ^WidgetBase %mk-HTMLContainer [^String html-element-type ^Fn content-fn widget-base-args]
-  (mk-WidgetBase (fn [^WidgetBase html-container]
-                   (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
-                     (str "<" html-element-type " id='" (.id html-container) "'>"
-                          (content-fn html-container)
-                          "</" html-element-type ">")))
-                 (apply hash-map widget-base-args)))
+(defn ^WidgetBase %mk-HTMLContainer [html-element-type ^Fn content-fn widget-base-args]
+  (let [html-element-type (name html-element-type)]
+    (mk-WidgetBase (fn [^WidgetBase html-container]
+                     (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
+                       (str "<" html-element-type " id='" (.id html-container) "'>"
+                            (content-fn html-container)
+                            "</" html-element-type ">")))
+                   (apply hash-map widget-base-args))))
 
 
 
