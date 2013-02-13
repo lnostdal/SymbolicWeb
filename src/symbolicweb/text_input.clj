@@ -12,19 +12,39 @@
 
 (defn ^WidgetBase mk-TextInput [^ValueModel value-model & args]
   "<input type='text' ..> type widget."
-  (with1 (mk-WidgetBase (fn [^WidgetBase widget]
-                          (str "<input type='text' id='" (.id widget) "' onchange='$(this).prop(\"disabled\", true);'>"))
-                        (apply hash-map args))
+  (let [args (apply hash-map args)]
+    (with1 (mk-WidgetBase (fn [^WidgetBase widget]
+                            (str "<input type='text' id='" (.id widget) "' onchange='$(this).prop(\"disabled\", true);'>"))
+                          args)
 
-    (vm-observe value-model (.lifetime it) true
-                (fn [_ _ new-value]
-                  (jqVal it new-value)
-                  (jqProp it "disabled" "false")))
+      (vm-observe value-model (.lifetime it) true
+                  (fn [_ _ new-value]
+                    (jqVal it new-value)))
 
-    (set-event-handler "change" it
-                       (fn [& {:keys [new-value]}]
-                         (dosync (vm-set value-model new-value)))
-                       :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})))
+      (set-event-handler "change" it
+                         (fn [& {:keys [new-value]}]
+                           (future (dosync (jqProp it "disabled" "false"))) ;; Regardless of any e.g. exception (TX rollback).
+                           (let [new-value (if-let [f (:input-parsing-fn args)]
+                                             (try
+                                               (f new-value)
+                                               (catch Throwable e
+                                                 (if-let [f (:input-parsing-error-fn args)]
+                                                   (f new-value)
+                                                   (throw (ex-info (str "mk-TextInput: Input parsing error for widget: " (.id it))
+                                                                   {:widget it :model value-model :new-value new-value}
+                                                                   e)))))
+                                             new-value)]
+                             (vm-set value-model new-value)))
+                         :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"}))))
+
+
+
+(defn ^WidgetBase mk-LongInput [^ValueModel value-model & args]
+  (apply mk-TextInput value-model
+         (concat [:input-parsing-fn #(if (number? %)
+                                       (long %)
+                                       (Long/parseLong %))]
+                 args)))
 
 
 
@@ -48,14 +68,6 @@ Note that the client-side hash halve is still transferred in clear text form fro
                                           new-value))))
                        :callback-data
                        {:new-value "' + encodeURIComponent($.sha256($(this).val())) + '"}))) ;; Hash once on client end.
-
-
-
-#_(defn mk-IntInput [model & attributes]
-  (apply mk-TextInput model
-         :type ::IntInput
-         :input-parsing-fn #(Integer/parseInt %)
-         attributes))
 
 
 
