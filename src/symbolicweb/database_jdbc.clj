@@ -80,23 +80,29 @@
 
 (defn- jdbc-pstmt [^com.jolbox.bonecp.ConnectionHandle db-conn ^String sql params]
   "Create (or fetch from cache) and execute PreparedStatement."
-  (with-open [stmt (.prepareStatement db-conn sql)] ;; TODO: I'm assuming the Pg JDBC driver caches based on SQL here.
-    (#'jdbc/set-parameters stmt params)
-    (if (.execute stmt)
-      (with-open [rs (.getResultSet stmt)]
-        ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
-        ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
-        (doall (resultset-seq rs)))
-      (.getUpdateCount stmt))))
+  (try
+    (with-open [stmt (.prepareStatement db-conn sql)] ;; TODO: I'm assuming the Pg JDBC driver caches based on SQL here.
+      (#'jdbc/set-parameters stmt params)
+      (if (.execute stmt)
+        (with-open [rs (.getResultSet stmt)]
+          ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
+          ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
+          (doall (resultset-seq rs)))
+        (.getUpdateCount stmt)))
+    (catch Throwable e
+      (throw (ex-info (str e ": " \newline sql \newline) {:exception e :db-conn db-conn :sql sql :params params})))))
 
 
 
 (defn- jdbc-stmt [^com.jolbox.bonecp.ConnectionHandle db-conn ^String sql]
   "Create and execute Statement."
-  (with-open [stmt (.createStatement db-conn)]
-    (if (.execute stmt sql)
-      (with-open [rs (.getResultSet stmt)]
-        ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
-        ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
-        (doall (resultset-seq rs)))
-      (.getUpdateCount stmt))))
+  (try
+    (with-open [stmt (.createStatement db-conn)]
+      (if (.execute stmt sql)
+        (with-open [rs (.getResultSet stmt)]
+          ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
+          ;; TODO: Could probably write an improved RESULTSET-SEQ because of this.
+          (doall (resultset-seq rs)))
+        (.getUpdateCount stmt)))
+    (catch Throwable e
+      (throw (ex-info (str e ": " \newline sql \newline) {:exception e :db-conn db-conn :sql sql})))))
