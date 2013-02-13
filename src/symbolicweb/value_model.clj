@@ -3,7 +3,10 @@
 (declare ref? observe %vm-deref)
 
 
-;;; TODO: The VALUE field should be a Fn; not a Ref. That Fn could close over a Ref -- or something else.
+;;; TODO:
+;;   * The VALUE field should be a Fn; not a Ref. That Fn could close over a Ref -- or something else.
+;;   * ENSURE is always used at the moment. Perhaps a dynamic var could be used to flip between ENSURE and DEREF.
+;;   * ..and further, perhaps the same thing colud be done with regards to REF-SET, ALTER and COMMUTE.
 
 
 
@@ -70,7 +73,8 @@ as the first argument to CALLBACK."
                         (binding [*observed-vms-ctx* observed-vms-ctx
                                   *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns*
                                                                        (:body-fn observed-vms-ctx))]
-                          ((:body-fn observed-vms-ctx))))))))))
+                          (vm-set (:retval observed-vms-ctx)
+                                  ((:body-fn observed-vms-ctx)))))))))))
 
 
 
@@ -141,14 +145,16 @@ lifetime (as long as VALUE-MODEL exists)."
 
 
 (defn %with-observed-vms [lifetime ^Fn body-fn]
-  (binding [*observed-vms-ctx* {:vms (ref #{})
-                                :lifetime lifetime
-                                :body-fn body-fn}
-            *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns* body-fn)]
-    (body-fn)))
+  (let [retval (vm nil)]
+    (binding [*observed-vms-ctx* {:vms (ref #{})
+                                  :retval retval
+                                  :lifetime lifetime
+                                  :body-fn body-fn}
+              *observed-vms-active-body-fns* (conj *observed-vms-active-body-fns* body-fn)]
+      (vm-set retval (body-fn)))
+    retval))
 
 
 
-;; TODO: RETURN-VM ..?
 (defmacro with-observed-vms [lifetime & body]
   `(%with-observed-vms ~lifetime (fn [] ~@body)))
