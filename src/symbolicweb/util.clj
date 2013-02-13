@@ -85,14 +85,14 @@
 
 
 
-(defn ^String genURL [^Ref viewport ^String path]
+(defn ^String gen-url [^Ref viewport ^String path]
   "Generates an absolute URL to resource denoted by PATH.
 Appends a timestamp to the URL based on file mtime."
   ;; TODO: Check whether the JVM caches calls to lastModified. If not, add a cache based on PATH here.
   (let [fs-path (str (:genurl-fs-path @viewport) path) ;; resources/web-design/
         mtime (.lastModified (java.io.File. fs-path))]
     (assert (not (zero? mtime))
-            (str "genURL: " fs-path " not found."))
+            (str "gen-url: " fs-path " not found."))
     (str (:genurl-scheme @viewport) ;; http
          "://"
          (:genurl-domain @viewport) ;; static.site.com

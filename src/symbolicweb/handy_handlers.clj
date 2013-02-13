@@ -144,7 +144,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       "<script src='http://code.jquery.com/jquery-migrate-git.min.js'></script>"
 
       [:script (sw-js-base-bootstrap session viewport)]
-      [:script {:src (genURL viewport "sw/js/sw-ajax.js")}]
+      [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
       (generate-rest-js @(:rest-js-entries @viewport))]
 
      [:body {:id "_body"}
