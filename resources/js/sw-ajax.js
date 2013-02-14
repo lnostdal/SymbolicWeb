@@ -60,22 +60,28 @@ function swURL(params){
 var swAjax =
   (function(){
      var queue = new Array();
-     var timer = false;
+     var spinner = false;
 
-     function displaySpinner(){
-       $("#sw-loading-spinner").css("display", "block");
+     function prepareSpinner(){
+       if(!spinner){
+         spinner = setTimeout(function(){ $("body").css("cursor", "wait"); }, 500);
+       }
      }
+
+    function cancelSpinner(){
+      if(spinner){
+        clearTimeout(spinner);
+        spinner = false;
+        $("body").css("cursor", "auto");
+      }
+    }
 
      function handleRestOfQueue(){
        queue.shift();
        if(queue.length != 0)
          queue[0]();
        else{
-         if(timer){
-           clearTimeout(timer);
-           timer = false;
-           $("#sw-loading-spinner").css("display", "none");
-         }
+         cancelSpinner();
        }
      }
 
@@ -87,15 +93,13 @@ var swAjax =
                          url: url,
                          data: callback_data,
                          dataType: "script",
-                         // TODO: 500 should be configurable.
-                         beforeSend: function(){ if(!timer){ timer = setTimeout(displaySpinner, 500); }},
-                         error: function(jq_xhr, text_status, thrown_error){
-                           handleRestOfQueue();
-                         },
-                         complete: handleRestOfQueue
-                       };
 
-                       if(after_fn) options.success = after_fn;
+                         beforeSend: prepareSpinner,
+                         complete: function(){
+                           if(after_fn) after_fn();
+                           handleRestOfQueue();
+                         }
+                       };
 
                        $.ajax(options);
                      }) == 1) // if()..
