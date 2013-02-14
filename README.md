@@ -19,9 +19,26 @@ mixed".
 
 The least stable things API-wise is probably the DB related stuff.
 
-Developed and tested on Oracle JDK 7:
+Developed and tested on Xubuntu 12.04 using Google Chrome with SW running on Oracle JDK 7:
+
   http://www.webupd8.org/2012/01/install-oracle-java-jdk-7-in-ubuntu-via.html
 
+
+..further basic testing has been done on:
+
+  * Android phones: 2.2, 2.3, 4.0, 4.1, 4.2
+  * Android tablets: 4.0, 4.1
+  * iOS phones: iOS 3 (iPhone 3GS), iOS 4 (iPhone 4)
+  * iOS tablets: iOS 3.2 (iPad), iOS 4.3.2 (iPad 2), iOS 5.0 (iPad 2 5.0)
+  * Windows 8: IE10, IE9 (via IE10), IE8 (via IE10), Firefox 18.x
+  * Windows 7: IE8, IE9, Safari 4.0, Safari 5.0, Safari 5.1
+  * Windows XP: IE7, IE8
+  * Linux (Xubuntu 12.04): Chrome 24.x, Firefox 18.x
+
+
+Things are known not to work on:
+
+  * iOS 6.x (iPhone 4S 6.0, iPhone 5)
 
 
 

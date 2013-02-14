@@ -140,13 +140,14 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       (generate-rest-css @(:rest-css-entries @viewport))
 
       ;; jQuery.
-      ;; http://www.impressivewebs.com/loading-different-jquery-version-ie6-8/
-      "<!--[if lt IE 9]>
-  <script src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
-<![endif]-->
-<!--[if (gte IE 9) | (!IE)]><!-->
-  <script src='http://code.jquery.com/jquery-2.0.0b1.js'></script>
-<!--<![endif]-->"
+      "
+      <!--[if lt IE 9]>
+        <script src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
+      <![endif]-->
+      <!--[if gte IE 9]><!-->
+        <script src='http://code.jquery.com/jquery-2.0.0b1.js'><</script>
+      <!--<![endif]-->
+      "
 
       ;; jQuery migrate.
       "<script src='http://code.jquery.com/jquery-migrate-git.min.js'></script>"
