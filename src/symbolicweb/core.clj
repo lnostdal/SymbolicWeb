@@ -80,8 +80,6 @@
 
 
 
-(set! *warn-on-reflection* true)
-
 (let [bnds (get-thread-bindings)]
   (defn handler [request]
     (swap! -request-counter- inc')
@@ -89,6 +87,7 @@
     (with-bindings bnds
       (binding [*print-level* 2]
         (try
+
           (swsync
            (let [^Ref session (find-or-create-session request)]
              (touch session)

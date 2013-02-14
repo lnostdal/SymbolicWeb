@@ -131,7 +131,7 @@ var swComet  =
          swComet("&do=ack");
        }
        else{
-         setTimeout("swComet('&do=timeout');", 250);
+         setTimeout("swComet('&do=timeout');", 1000);
        }
      }
 
@@ -150,18 +150,6 @@ var swComet  =
 
 
 
-/// swHandleEvent ///
-/////////////////////
-
-function swHandleEvent(callback_id, js_before, callback_data, js_after){
-  if(js_before())
-    swAjax("&_sw_event=dom-event&_sw_callback-id=" + callback_id,
-           callback_data,
-           js_after());
-}
-
-
-
 /// swMsg ///
 /////////////
 
@@ -170,52 +158,6 @@ function swMsg(widget_id, callback_id, js_before, callback_data, js_after){
     swAjax("&_sw_event=dom-event" + "&_sw_widget-id=" + widget_id + "&_sw_callback-id=" + callback_id,
            callback_data,
            js_after());
-}
-
-
-
-/// swTerminateSession ///
-//////////////////////////
-
-function swTerminateSession(){
-  swAjax("&_sw_event=terminate-session", "", function(){ window.location.reload(); });
-}
-
-
-
-/// swReturnValue ///
-/////////////////////
-
-function swReturnValue(code_id, func){
-  swAjax("&event=js-ack&code-id=" + code_id,
-         "&return-value=" + encodeURIComponent(func()));
-}
-
-
-
-/// swReturnFail ///
-////////////////////
-
-function swReturnFail(code_id, exception){
-  swAjax("&event=js-fail&code-id=" + code_id,
-         "&exception-str=" + encodeURIComponent(exception.toString()));
-}
-
-
-
-/// swRun ///
-/////////////
-
-function swRun(code_id, async_p, func){
-  try{
-    if(async_p)
-      func();
-    else
-      swReturnValue(code_id, func);
-  }
-  catch(exception){
-    swReturnFail(code_id, exception);
-  }
 }
 
 
@@ -229,7 +171,8 @@ if(typeof(opera) != "undefined"){
   history.navigationMode = "compatible";
 }
 
-// Eager, instead of based on timeout -- GC of the server side Viewport object and all its Widgets (and their incomming connections from the Model/DB) on page unload.
+// Eager, instead of based on timeout -- GC of the server side Viewport object and all its Widgets (and their incomming
+// connections from the Model/DB) on page unload.
 $(window).on("unload", function(){
   if(typeof(_sw_viewport_id) != "undefined")
     $.ajax({type: "POST",
