@@ -14,7 +14,7 @@
   "<input type='text' ..> type widget."
   (let [args (apply hash-map args)]
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
-                            (str "<input type='text' id='" (.id widget) "' onchange='$(this).prop(\"disabled\", true);'>"))
+                            (str "<input type='text' id='" (.id widget) "'>"))
                           args)
 
       (vm-observe value-model (.lifetime it) true
@@ -23,7 +23,6 @@
 
       (set-event-handler "change" it
                          (fn [& {:keys [new-value]}]
-                           (future (dosync (jqProp it "disabled" "false"))) ;; Regardless of any e.g. exception (TX rollback).
                            (let [new-value (if-let [f (:input-parsing-fn args)]
                                              (try
                                                (f new-value)
