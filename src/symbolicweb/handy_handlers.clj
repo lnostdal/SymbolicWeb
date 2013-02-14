@@ -63,6 +63,14 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        :body "" ;;"console.log('SymbolicWeb: Server got DOM unload notification.');"
        })
 
+    (= "error" (get (:query-params request) "do"))
+    (do
+      (log "HANDLE-IN-CHANNEL-REQUEST (JS error):" \newline
+           (json-parse (get (:params request) "msg")))
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+       :body ""})
+
     true
     (let [query-params (:query-params request)
           widget-id (get query-params "_sw_widget-id")

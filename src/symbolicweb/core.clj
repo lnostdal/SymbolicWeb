@@ -74,6 +74,7 @@
   (:require symbolicweb.garbage-collection)
 
   (:require [org.httpkit.server :as http.server])
+  (:require symbolicweb.logging)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session))
 
@@ -96,28 +97,26 @@
              (with1 ((:request-handler @session) request session)
                (when (:one-shot? @session)
                  (gc-session session)))))
+
           (catch Throwable e
-            ;; Send to REPL first..
-            ;; TODO: Let an agent handle this; or the logging system mentioned above will probably handle it
-            (println) (println)
-            (println "SymbolicWeb.core/handler (core.clj); Top Level Exception")
-            (println "--------------------------------------------------------")
-            (clojure.stacktrace/print-stack-trace e 50)
+            ;; Log first..
+            (log "Top Level Exception:" (with-out-str
+                                          (clojure.stacktrace/print-stack-trace e 50)))
 
             ;; ..then send to HTTP client.
+            ;; TODO: This doesn't check what sort of response the client expects; the "Accept" header.
             {:status 500
              :headers {"Content-Type" "text/html; charset=UTF-8"}
              :body
              (html
               [:html
+               [:head [:title "SymbolicWeb: Top Level Server Exception: HTTP 500"]]
                [:body {:style "font-family: sans-serif;"}
                 [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"]
-                 ": Top Level Server Exception (HTTP 500)"]
+                 ": Top Level Server Exception: HTTP 500"]
                 [:pre
                  \newline
-                 (with-out-str (clojure.stacktrace/print-stack-trace e 1000))
-                 \newline]
-                [:img {:src "/gfx/common/sw/stack_trace_or_gtfo.jpg"}]]])}))))))
+                 (with-out-str (clojure.stacktrace/print-stack-trace e 1000))]]])}))))))
 
 
 

@@ -128,11 +128,13 @@
                                                 false
                                                 (json-parse it)))
                                             (search-engine? request)))
-        (mk-Session cookie-value
-                    :rest-handler not-found-page-handler
-                    :mk-viewport-fn (fn [request session]
+        (do
+          (log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
+          (mk-Session cookie-value
+                      :rest-handler not-found-page-handler
+                      :mk-viewport-fn (fn [request session]
                                       (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.
-                    :one-shot? true)))))
+                      :one-shot? true))))))
 
 
 

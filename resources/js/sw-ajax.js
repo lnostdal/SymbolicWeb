@@ -5,12 +5,19 @@
 /// swHandleError ///
 /////////////////////
 
-function swHandleError(jq_xhr, text_status, error_thrown){
-  if(jq_xhr.status == 200){
-    //$.sticky("<b>SymbolicWeb</b><p>Client side error.</p><p>Check <b>console.error</b> for details.</p><p>Developers have _not_ (TODO: fix) been notified of this event.</p>");
-    console.error([error_thrown, jq_xhr.responseText, jq_xhr]);
+function swHandleError(){
+  try{
+    if(console) // Not using shitty IE browser?
+      console.error(arguments);
+    swAjax("&do=error&msg=" + encodeURIComponent(JSON.stringify(arguments, null, 2)));
   }
+  catch(e){
+    return(true); // Can't do anything reasonable here; don't let default handler run.
+  }
+  return(false); // Let default handler run.
 }
+
+window.onerror = swHandleError;
 
 
 
@@ -132,10 +139,10 @@ var swComet  =
        $.ajax({type: "POST",
                url: swURL(["&_sw_request_type=comet", params]),
                dataType: "script",
-               error: function(jq_xhr, text_status, error_thrown){
-                 swHandleError(jq_xhr, text_status, error_thrown);
-               },
-               complete: callback});
+               complete: callback})
+       .fail(function(jq_xhr, settings, exception){
+         swHandleError(exception.stack);
+       });
      }
      // Stops "throbbing of doom" and ensure we do not recurse until a stack overflow.
      return function(params){ setTimeout(function(){ doIt(params); }, 0); };
