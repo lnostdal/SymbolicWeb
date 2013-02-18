@@ -62,8 +62,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           callback-entry (get @(.callbacks ^WidgetBase widget)
                               callback-id)
           [^Fn callback-fn callback-data] callback-entry]
-      (dbg-prin1 callback-data)
-      (apply callback-fn (dbg-prin1 (default-parse-callback-data-handler request widget callback-data)))
+      (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"}
        :body ""}) ;; NOTE: Response is sent via HANDLE-OUT-CHANNEL-REQUEST.
