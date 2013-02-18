@@ -131,7 +131,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     ;; REST.
     (let [viewport ((:mk-viewport-fn @session) request session)]
       (with1 ((:rest-handler @session) request session viewport)
-        (add-response-chunk "swDoOnLoadFNs();" (:root-element @viewport))))))
+        (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))))))
 
 
 

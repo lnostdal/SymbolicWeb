@@ -96,7 +96,6 @@
   (str "$('#" (.id widget) "').bind('" event-type "', "
        "function(event){"
        "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
-       ;; V is JS code.
        (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
                                      (keys callback-data)
                                      (vals callback-data))))

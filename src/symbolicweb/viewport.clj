@@ -118,11 +118,11 @@
                                      :or {js-before "return(true);"
                                           callback-data ""
                                           js-after ""}}]
-  (alter (:callbacks @viewport) assoc event-type [callback-fn callback-data])
+  (alter (:callbacks @viewport) assoc (str selector "_" event-type) [callback-fn callback-data])
   (add-response-chunk
    (str "$(" selector ").bind('" event-type "', "
         "function(event){"
-        "swViewportEvent('" event-type"', function(){" js-before "}, '"
+        "swViewportEvent('" selector "_" event-type "', function(){" js-before "}, '"
         (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
                                       (keys callback-data)
                                       (vals callback-data))))
