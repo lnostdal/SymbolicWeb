@@ -40,6 +40,10 @@
              ;;"-XX:+PrintGCDetails"
 
 
+             ;;; Optimizations.
+             "-XX:+UseCompressedOops"
+
+
              ;; Debugging.
              "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
              "-XX:+HeapDumpOnOutOfMemoryError"
