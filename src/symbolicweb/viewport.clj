@@ -20,8 +20,8 @@
 
                              :callbacks (ref {}) ;; Viewport specific callbacks. E.g. window.onpopstate etc..
 
-                             :query-params (vm (:query-params request))
-                             :popstate-observer (vm (:query-params request)) ;; Used by history.clj.
+                             :query-params (vm (into (sorted-map) (:query-params request)))
+                             :popstate-observer (vm (into (sorted-map) (:query-params request))) ;; Used by history.clj.
 
                              ;; Comet.
                              :response-str (StringBuilder.)
