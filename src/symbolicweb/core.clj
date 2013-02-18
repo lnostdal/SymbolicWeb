@@ -76,7 +76,8 @@
   (:require [org.httpkit.server :as http.server])
   (:require symbolicweb.logging)
   (:require symbolicweb.handy-handlers)
-  (:require symbolicweb.session))
+  (:require symbolicweb.session)
+  (:require symbolicweb.history))
 
 
 

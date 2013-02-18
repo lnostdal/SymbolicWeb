@@ -38,6 +38,13 @@
 
 
 
+(defn parse-long [input]
+  (if (number? input)
+    (long input)
+    (Long/parseLong input)))
+
+
+
 (defn ^WidgetBase mk-LongInput [^ValueModel value-model & args]
   (apply mk-TextInput value-model
          (concat [:input-parsing-fn #(if (number? %)

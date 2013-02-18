@@ -17,7 +17,11 @@
                              :type ::Viewport
                              :id viewport-id
                              :last-activity-time (atom (System/currentTimeMillis))
-                             :aux-callbacks {} ;; {:name {:fit-fn .. :handler-fn ..}}
+
+                             :callbacks (ref {}) ;; Viewport specific callbacks. E.g. window.onpopstate etc..
+
+                             :query-params (vm (:query-params request))
+                             :popstate-observer (vm (:query-params request)) ;; Used by history.clj.
 
                              ;; Comet.
                              :response-str (StringBuilder.)
@@ -32,6 +36,14 @@
                              :root-element root-widget ;; TODO: Rename...
                              :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
                              args))]
+
+    ;; TODO: Don't bother with this for crappy browsers.
+    (set-viewport-event-handler "window" "popstate" viewport
+                                (fn [& {:keys [query-string]}]
+                                  (let [query-params (ring.util.codec/form-decode query-string)]
+                                    (vm-set (:popstate-observer @viewport) query-params)))
+                                :callback-data {:query-string "' + encodeURIComponent(window.location.search.slice(1)) + '"})
+
     ;; Session --> Viewport
     (alter (:viewports @session) assoc viewport-id viewport)
     ;; Widget --> Viewport.
@@ -99,3 +111,22 @@
           (when-not (= :deactivated (lifetime-state-of (.lifetime widget)))
             (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it))))))))
   new-chunk)
+
+
+(defn set-viewport-event-handler [^String selector ^String event-type ^Ref viewport ^Fn callback-fn
+                                  & {:keys [js-before callback-data js-after]
+                                     :or {js-before "return(true);"
+                                          callback-data ""
+                                          js-after ""}}]
+  (alter (:callbacks @viewport) assoc event-type [callback-fn callback-data])
+  (add-response-chunk
+   (str "$(" selector ").bind('" event-type "', "
+        "function(event){"
+        "swViewportEvent('" event-type"', function(){" js-before "}, '"
+        (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                      (keys callback-data)
+                                      (vals callback-data))))
+        "', function(){" js-after "});"
+        "});")
+   viewport)
+  viewport)
