@@ -89,18 +89,16 @@
   "Handy when testing things in the REPL.
 SESSION and VIEWPORT are bound within BODY."
   `(doseq [~'session (vals @-sessions-)]
-     (doseq [~'viewport (vals (:viewports @~'session))]
-       (dosync
-        ~@body))))
+     (doseq [~'viewport (vals @(:viewports @~'session))]
+       ~@body)))
 
 
 (defmacro with-session-viewports [session & body]
   "Run BODY in context of all Viewports of SESSION..
 SESSION and VIEWPORT are bound within BODY."
-  `(let [session# ~session]
-     (doseq [~'viewport (vals (:viewports @session#))]
-       (dosync
-        ~@body))))
+  `(let [~'session ~session]
+     (doseq [~'viewport (vals @(:viewports @~'session))]
+       ~@body)))
 
 
 (defmacro with-user-viewports [user-model & body]
