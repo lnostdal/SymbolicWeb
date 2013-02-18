@@ -95,13 +95,11 @@
                                     js-after ""}}]
   (str "$('#" (.id widget) "').bind('" event-type "', "
        "function(event){"
-       "swMsg('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
-       (reduce (fn [acc key_val] (str acc (url-encode-component (str (key key_val)))
-                                      "="
-                                      (val key_val) ;; Not URL-encoded; can be JS code.
-                                      "&"))
-               ""
-               callback-data)
+       "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
+       ;; V is JS code.
+       (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                     (keys callback-data)
+                                     (vals callback-data))))
        "', function(){" js-after "});"
        "});"))
 
@@ -120,9 +118,7 @@
 
 
 
-(defn ^WidgetBase set-event-handler [^String event-type
-                                     ^WidgetBase widget
-                                     ^Fn callback-fn
+(defn ^WidgetBase set-event-handler [^String event-type ^WidgetBase widget ^Fn callback-fn
                                      & {:keys [callback-data]}]
   "Set an event handler for WIDGET.
 Returns WIDGET."

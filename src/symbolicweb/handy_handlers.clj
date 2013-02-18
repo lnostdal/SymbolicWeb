@@ -53,9 +53,34 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (defn handle-in-channel-request [request ^Ref session ^Ref viewport]
   "Input (AJAX) channel."
-  (cond
-    ;; TODO: This stuff doesn't belong here.
-    (= "unload" (get (:query-params request) "do"))
+  (case (get (:query-params request) "do")
+    "widget-event"
+    (let [query-params (:query-params request)
+          widget-id (get query-params "_sw_widget-id")
+          callback-id (get query-params "_sw_callback-id")
+          widget (get (:widgets @viewport) widget-id)
+          callback-entry (get @(.callbacks ^WidgetBase widget)
+                              callback-id)
+          [^Fn callback-fn callback-data] callback-entry]
+      (dbg-prin1 callback-data)
+      (apply callback-fn (dbg-prin1 (default-parse-callback-data-handler request widget callback-data)))
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+       :body ""}) ;; NOTE: Response is sent via HANDLE-OUT-CHANNEL-REQUEST.
+
+
+    "viewport-event"
+    (let [query-params (:query-params request)
+          callback-id (get query-params "_sw_callback-id")
+          callback-entry (get @(:callbacks @viewport) callback-id)
+          [^Fn callback-fn callback-data] callback-entry]
+      (apply callback-fn (default-parse-callback-data-handler request viewport callback-data))
+      {:status 200
+       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+       :body ""}) ;; NOTE: Response is sent via HANDLE-OUT-CHANNEL-REQUEST.
+
+
+    "unload"
     (do
       (gc-viewport viewport)
       {:status 200
@@ -63,22 +88,11 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
        :body "" ;;"console.log('SymbolicWeb: Server got DOM unload notification.');"
        })
 
-    (= "error" (get (:query-params request) "do"))
+
+    "error"
     (do
       (log "HANDLE-IN-CHANNEL-REQUEST (JS error):" \newline
            (json-parse (get (:params request) "msg")))
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-       :body ""})
-
-    true
-    (let [query-params (:query-params request)
-          widget-id (get query-params "_sw_widget-id")
-          callback-id (get query-params "_sw_callback-id")
-          widget (get (:widgets @viewport) widget-id)
-          callback (get @(.callbacks ^WidgetBase widget) callback-id)
-          [callback-fn callback-data] callback]
-      (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
       {:status 200
        :headers {"Content-Type" "text/javascript; charset=UTF-8"}
        :body ""})))

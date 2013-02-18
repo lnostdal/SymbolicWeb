@@ -150,12 +150,24 @@ var swComet  =
 
 
 
-/// swMsg ///
-/////////////
+/// swWidgetEvent ///
+////////////////////
 
-function swMsg(widget_id, callback_id, js_before, callback_data, js_after){
+function swWidgetEvent(widget_id, callback_id, js_before, callback_data, js_after){
   if(js_before())
-    swAjax("&_sw_event=dom-event" + "&_sw_widget-id=" + widget_id + "&_sw_callback-id=" + callback_id,
+    swAjax("&do=widget-event" + "&_sw_widget-id=" + widget_id + "&_sw_callback-id=" + callback_id,
+           callback_data,
+           js_after());
+}
+
+
+
+/// swViewportEvent ///
+///////////////////////
+
+function swViewportEvent(callback_id, js_before, callback_data, js_after){
+  if(js_before())
+    swAjax("&do=viewport-event" + "&_sw_callback-id=" + callback_id,
            callback_data,
            js_after());
 }
