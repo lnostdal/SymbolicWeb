@@ -87,23 +87,6 @@
 
 
 
-(defn ^String render-event [^WidgetBase widget
-                            ^String event-type
-                            & {:keys [js-before callback-data js-after]
-                               :or {js-before "return(true);"
-                                    callback-data ""
-                                    js-after ""}}]
-  (str "$('#" (.id widget) "').bind('" event-type "', "
-       "function(event){"
-       "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
-       (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
-                                     (keys callback-data)
-                                     (vals callback-data))))
-       "', function(){" js-after "});"
-       "});"))
-
-
-
 (defn ^String render-html [^WidgetBase widget]
   "Return HTML structure which will be the basis for further initialization."
   ((.render-fn widget) widget))
@@ -118,11 +101,22 @@
 
 
 (defn ^WidgetBase set-event-handler [^String event-type ^WidgetBase widget ^Fn callback-fn
-                                     & {:keys [callback-data]}]
+                                     & {:keys [js-before callback-data js-after]
+                                        :or {js-before "return(true);"
+                                             callback-data ""
+                                             js-after ""}}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
   ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
   (alter (.callbacks widget) assoc event-type [callback-fn callback-data])
-  (add-response-chunk (render-event widget event-type :callback-data callback-data)
-                      widget)
+  (add-response-chunk
+   (str "$('#" (.id widget) "').bind('" event-type "', "
+        "function(event){"
+        "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
+        (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                      (keys callback-data)
+                                      (vals callback-data))))
+        "', function(){" js-after "});"
+        "});")
+   widget)
   widget)
