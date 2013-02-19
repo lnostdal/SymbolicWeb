@@ -8,7 +8,7 @@
 ;; TODO: Instead of using an Agent, this code could probably do the same thing DO-MTX (database_common.clj) does.
 
 
-
+(declare set-viewport-event-handler)
 (defn mk-Viewport [request ^Ref session ^WidgetBase root-widget & args]
   "This will instantiate a new Viewport and also 'register' it as a part of SESSION and the server via -VIEWPORTS-."
   (assert (= :lifetime-root @(.parent (.lifetime root-widget))))
