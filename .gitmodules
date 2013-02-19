@@ -1,6 +1,3 @@
 [submodule "resources/deps/ckeditor"]
-	path = resources/deps/ckeditor
-	url = git://github.com/ckeditor/ckeditor-dev.git
-[submodule "resources/deps/history.js"]
-	path = resources/deps/history.js
-	url = git://github.com/andreasbernhard/history.js.git
+        path = resources/deps/ckeditor
+        url = git://github.com/ckeditor/ckeditor-dev.git
