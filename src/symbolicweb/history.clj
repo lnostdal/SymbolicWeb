@@ -17,7 +17,7 @@
          (vm-alter (:query-params @viewport) assoc name @model)
          (add-response-chunk (str "window.history.replaceState(null, '', '?"
                                   (ring.util.codec/form-encode @(:query-params @viewport))
-                                  "');" \newline)
+                                  "');\n")
                              viewport)))
 
      ;; Server --> Client.
@@ -28,7 +28,7 @@
                      (vm-alter (:query-params @viewport) assoc name new-value)
                      (add-response-chunk (str "window.history.pushState(null, '', '?"
                                               (ring.util.codec/form-encode @(:query-params @viewport))
-                                              "');" \newline)
+                                              "');\n")
                                          viewport))))
 
      ;; Client --> Server.

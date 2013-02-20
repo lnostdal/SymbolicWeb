@@ -5,4 +5,4 @@
 
 (defn log [& args]
   (with-sw-io nil
-    (apply println \newline \newline "[SW]:" args)))
+    (apply println "\n\n[SW]:" args)))
