@@ -36,7 +36,12 @@
               (vm-observe chat-input-model nil false
                           (fn [inner-lifetime old-value new-value]
                             (cm-append conversation-area-model (cmn [nickname new-value]))))
-              (sw chat-input-view))])))
+              (sw chat-input-view))]
+
+           [:hr]
+           [:pre
+            [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/chat.clj"}
+             "Source code"]])))
 
       viewport)))
 

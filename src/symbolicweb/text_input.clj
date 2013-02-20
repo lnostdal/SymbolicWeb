@@ -20,6 +20,7 @@ TRIGGER-EVENT:
 
 
 ARGS:
+  :INITIAL-SYNC-SERVER?: if True the value on the client will be set to the value of VALUE-MODEL on render.
   :ONE-WAY-SYNC-CLIENT?: if True only changes originating from the client will be sent to the server; not the other way around.
   :CLEAR-ON-SUBMIT?: If True the widget will be cleared on 'submit' (:ENTERPRESS)."
   (let [args (apply hash-map args)]
@@ -28,7 +29,9 @@ ARGS:
                           args)
 
       ;; Server --> client.
-      (vm-observe value-model (.lifetime it) true
+      (vm-observe value-model (.lifetime it) (case (get args :initial-sync-server? ::not-found)
+                                               (true ::not-found) true
+                                               (false nil) false)
                   (fn [_ _ new-value]
                     (when-not (:one-way-sync-client? args)
                       (jqVal it new-value))))
@@ -38,9 +41,9 @@ ARGS:
         :change
         (set-event-handler "change" it
                            (fn [& {:keys [new-value]}]
-                             ;; TODO: Perhaps this widget should deal with input parsing at all? Dataflow via an additional VM
-                             ;; could do it instead. The benefit of that would be that several input sources could make use of
-                             ;; the same VM. If not, this code needs to be called by the :ENTEPRESS case, below, also.
+                             ;; TODO: Perhaps this widget shouldn't deal with input parsing at all? Dataflow via an additional
+                             ;; VM could do it instead. The benefit of that would be that several input sources could make use
+                             ;; of the same VM. If not, this code needs to be called by the :ENTEPRESS case, below, also.
                              (let [new-value (if-let [f (:input-parsing-fn args)]
                                                (try
                                                  (f new-value)
@@ -61,7 +64,7 @@ ARGS:
                              (vm-set value-model value))
                            :callback-data {:value "' + encodeURIComponent($(this).val()) + '"}
                            :js-before "if(event.keyCode == 10 || event.keyCode == 13) return(true); else return(false);"
-                           :js-after (if (:clear-on-submit? (dbg-prin1 args))
+                           :js-after (if (:clear-on-submit? args)
                                        (str "$('#" (.id it) "').val('');") ;; TODO: Not sure why $(this) doesn't work here.
                                        ""))
 
