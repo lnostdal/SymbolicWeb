@@ -10,47 +10,73 @@
 
 
 
-(defn ^WidgetBase mk-TextInput [^ValueModel value-model & args]
-  "<input type='text' ..> type widget."
+(defn ^WidgetBase mk-TextInput [^ValueModel value-model ^Keyword trigger-event & args]
+  "<input type='text' ..> type widget.
+
+
+TRIGGER-EVENT:
+  :CHANGE: Sync from client to server on DOM onchange event.
+  :ENTERPRESS: Sync from client to server on enterpress event.
+
+
+ARGS:
+  :ONE-WAY-SYNC-CLIENT?: if True only changes originating from the client will be sent to the server; not the other way around.
+  :CLEAR-ON-SUBMIT?: If True the widget will be cleared on 'submit' (:ENTERPRESS)."
   (let [args (apply hash-map args)]
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
                             (str "<input type='text' id='" (.id widget) "'>"))
                           args)
 
+      ;; Server --> client.
       (vm-observe value-model (.lifetime it) true
                   (fn [_ _ new-value]
-                    (jqVal it new-value)))
+                    (when-not (:one-way-sync-client? args)
+                      (jqVal it new-value))))
 
-      (set-event-handler "change" it
-                         (fn [& {:keys [new-value]}]
-                           (let [new-value (if-let [f (:input-parsing-fn args)]
-                                             (try
-                                               (f new-value)
-                                               (catch Throwable e
-                                                 (if-let [f (:input-parsing-error-fn args)]
-                                                   (f new-value)
-                                                   (throw (ex-info (str "mk-TextInput: Input parsing error for widget: " (.id it))
-                                                                   {:widget it :model value-model :new-value new-value}
-                                                                   e)))))
-                                             new-value)]
-                             (vm-set value-model new-value)))
-                         :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"}))))
+      ;; Client --> server.
+      (case trigger-event
+        :change
+        (set-event-handler "change" it
+                           (fn [& {:keys [new-value]}]
+                             ;; TODO: Perhaps this widget should deal with input parsing at all? Dataflow via an additional VM
+                             ;; could do it instead. The benefit of that would be that several input sources could make use of
+                             ;; the same VM. If not, this code needs to be called by the :ENTEPRESS case, below, also.
+                             (let [new-value (if-let [f (:input-parsing-fn args)]
+                                               (try
+                                                 (f new-value)
+                                                 (catch Throwable e
+                                                   (if-let [f (:input-parsing-error-fn args)]
+                                                     (f new-value)
+                                                     (throw
+                                                      (ex-info (str "mk-TextInput: Input parsing error for widget: " (.id it))
+                                                               {:widget it :model value-model :new-value new-value}
+                                                               e)))))
+                                               new-value)]
+                               (vm-set value-model new-value)))
+                           :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})
+
+        :enterpress
+        (set-event-handler "keydown" it
+                           (fn [& {:keys [value]}]
+                             (vm-set value-model value))
+                           :callback-data {:value "' + encodeURIComponent($(this).val()) + '"}
+                           :js-before "if(event.keyCode == 10 || event.keyCode == 13) return(true); else return(false);"
+                           :js-after (if (:clear-on-submit? (dbg-prin1 args))
+                                       (str "$('#" (.id it) "').val('');") ;; TODO: Not sure why $(this) doesn't work here.
+                                       ""))
+
+        nil
+        nil ;; Assume the user wants to assign something later.
+
+        (trigger-event))))) ;; Assume TRIGGER-EVENT is a Fn that will e.g. assign a custom event.
 
 
 
+;; TODO: Move this somewhere better.
 (defn parse-long [input]
   (if (number? input)
     (long input)
     (Long/parseLong input)))
-
-
-
-(defn ^WidgetBase mk-LongInput [^ValueModel value-model & args]
-  (apply mk-TextInput value-model
-         (concat [:input-parsing-fn #(if (number? %)
-                                       (long %)
-                                       (Long/parseLong %))]
-                 args)))
 
 
 

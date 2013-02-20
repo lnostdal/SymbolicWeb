@@ -16,9 +16,16 @@
     (jqAppend root-widget
       (whc [:div]
         (html
-         [:p (sw (mk-TextInput a-input)) " + " (sw (mk-TextInput b-input)) " = " (sw (mk-span sum))]
+         [:p
+          (sw (mk-TextInput a-input :change))
+          " + "
+          (sw (mk-TextInput b-input :change))
+          " = "
+          (sw (mk-span sum))]
+
          [:p "Random number for each page (re)load " (sw (mk-b (vm (rand-int 9000))))
           " for a visual confirmation that the page really does not reload as the URL changes."]
+
          [:hr]
          [:pre
           [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj"}

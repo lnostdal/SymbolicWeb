@@ -16,7 +16,13 @@
     (jqAppend root-widget
       (whc [:div]
         (html
-         [:p (sw (mk-LongInput a)) " + " (sw (mk-LongInput b)) " = " (sw (mk-span sum))]
+         [:p
+          (sw (mk-TextInput a :change :input-parsing-fn parse-long))
+          " + "
+          (sw (mk-TextInput b :change :input-parsing-fn parse-long))
+          " = "
+          (sw (mk-span sum))]
+
          [:hr]
          [:pre
           [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/dataflow.clj"} "Source code"]
