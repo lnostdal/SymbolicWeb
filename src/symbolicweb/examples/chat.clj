@@ -1,6 +1,7 @@
 (ns symbolicweb.examples.chat
   (:use symbolicweb.core)
-  (:use hiccup.core))
+  (:use hiccup.core)
+  (:use hiccup.util))
 
 
 
@@ -13,7 +14,8 @@
                                                      (let [[nickname-model msg] (cmn-data node)]
                                                        (whc [:div]
                                                         (html
-                                                         [:b (sw (mk-span nickname-model))] ": " msg)))))
+                                                         [:b (sw (mk-span nickname-model))] ": "
+                                                         (escape-html msg))))))
 
           viewport (mk-Viewport request session root-widget
                                 :page-title "SW: Chat example"
