@@ -29,11 +29,11 @@ ARGS:
                           args)
 
       ;; Server --> client.
-      (vm-observe value-model (.lifetime it) (case (get args :initial-sync-server? ::not-found)
-                                               (true ::not-found) true
-                                               (false nil) false)
-                  (fn [_ _ new-value]
-                    (when-not (:one-way-sync-client? args)
+      (when-not (:one-way-sync-client? args)
+        (vm-observe value-model (.lifetime it) (case (get args :initial-sync-server? ::not-found)
+                                                 (true ::not-found) true
+                                                 (false nil) false)
+                    (fn [_ _ new-value]
                       (jqVal it new-value))))
 
       ;; Client --> server.
