@@ -141,7 +141,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
    :body
    (html
     (hiccup.page/doctype :html5)
-    (str "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->" \newline)
+    "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
@@ -182,7 +182,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
    :body
    (html
     (hiccup.page/doctype :html5)
-    (str "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->" \newline)
+    "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
