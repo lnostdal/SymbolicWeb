@@ -122,3 +122,9 @@
   ([^WidgetBase widget new-value]
      (add-response-chunk (str "$('#" (.id widget) "').val(" (url-encode-wrap (.toString new-value)) ");\n")
                          widget)))
+
+
+
+(defn jqFocus [^WidgetBase widget]
+  (add-response-chunk (str "$('#" (.id widget) "').focus();\n")
+                      widget))
