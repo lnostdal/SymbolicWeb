@@ -38,8 +38,8 @@
                                 :genurl-domain "static.nostdal.org"
                                 :genurl-path "")]
 
-      (map-to-url a-input "a" (.lifetime root-widget) viewport)
-      (map-to-url b-input "b" (.lifetime root-widget) viewport)
+      (vm-map-to-url a-input "a" (.lifetime root-widget) viewport)
+      (vm-map-to-url b-input "b" (.lifetime root-widget) viewport)
 
       viewport)))
 
