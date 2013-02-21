@@ -10,42 +10,28 @@ SW was originally written in Common Lisp, and that version is still found at thi
 
 ## Features and/or goals
 
-  * Push- instead of pull-oriented architecture; http://en.wikipedia.org/wiki/Dataflow
+[Push](http://en.wikipedia.org/wiki/Dataflow)- instead of pull-oriented architecture: http://sw.nostdal.org/dataflow
 
-      http://sw.nostdal.org/dataflow
+Multi-paradigm; does not try to shoehorn everything into a single paradigm.
 
+Somewhat high-level, but does not hide, restrict or remove access to low-level stuff.
 
-  * Multi-paradigm; does not try to shoehorn everything into a single paradigm.
+Built [bottom-up](http://en.wikipedia.org/wiki/Top-down_and_bottom-up_design), but on existing software commodity
+components like [Netty](http://netty.io/), [PostgreSQL](http://www.postgresql.org/) and [more](https://github.com/lnostdal/SymbolicWeb/blob/master/project.clj).
 
+While adding in traditional web routing is possible, SW doesn't do any web routing itself. It instead provides
+two-way mapping to/from server state from/to client URL (query string) via the HTML5 History API:
+  * http://sw.nostdal.org/history?a=3&b=4 
+  * http://sw.nostdal.org/history?a=40&b=2 
 
-  * Somewhat high-level, but does not hide, restrict or remove access to low-level stuff.
-
-
-  * Built [bottom-up](http://en.wikipedia.org/wiki/Top-down_and_bottom-up_design), but on existing software commodity components
-    like:
-
-      * [Netty](http://netty.io/)
-      * [PostgreSQL](http://www.postgresql.org/)
-      * ..and more; see dependencies in [project.clj](https://github.com/lnostdal/SymbolicWeb/blob/master/project.clj)
-
-
-  * While adding in traditional web routing yourself is possible, SW doesn't do any web routing itself. It instead provides
-    two-way mapping to/from server state from/to client URL (query string) via the HTML5 History API:
-
-      http://sw.nostdal.org/history?a=3&b=4
-      http://sw.nostdal.org/history?a=40&b=2
+Does not have a strict, exclusive GUI- ([Widgets](http://en.wikipedia.org/wiki/GUI_widget)) or Web (HTML/CSS/JS) -oriented
+approach to "all things", but instead mixes or supports both ways of dealing with user interfaces at any time.
 
 
-  * Does not have a strict, exclusive GUI- ([Widgets](http://en.wikipedia.org/wiki/GUI_widget)) or Web (HTML/CSS/JS) -oriented
-    approach to "all things", but instead mixes or supports both ways of dealing with user interfaces at any time.
+Simple (DAO mapping)[http://en.wikipedia.org/wiki/Data_access_object] with a read cache, but does not pretend that anything like this is good enough for all cases.
 
 
-  * Simple (DAO mapping)[http://en.wikipedia.org/wiki/Data_access_object] with a read cache, but does not pretend that anything like this is good enough for all cases.
-
-
-  * Database and memory transactions (Clojure STM) work together via two-phase committing:
-
-      http://en.wikipedia.org/wiki/Two-phase_commit_protocol
+Database and memory transactions (Clojure STM) work together via [two-phase committing](http://en.wikipedia.org/wiki/Two-phase_commit_protocol).
 
 
 
