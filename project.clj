@@ -1,5 +1,6 @@
 (defproject symbolicweb "1.0.0-SNAPSHOT"
   :description "SymbolicWeb: WUI for Clojure"
+  :license "AGPLv3 + CLA"
   :dependencies [[org.clojure/clojure "1.5.0-master-SNAPSHOT"]
 
                  [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
@@ -10,7 +11,7 @@
 
                  [com.google.guava/guava "14.0-rc3"] ;; For soft hash cache.
 
-                 [cheshire "5.0.2-SNAPSHOT"] ;; JSON.
+                 [cheshire "5.0.2"] ;; JSON.
 
                  [clj-time/clj-time "0.4.5-SNAPSHOT"]
 
@@ -38,10 +39,6 @@
              "-XX:+UseG1GC"
              ;;"-verbose:gc"
              ;;"-XX:+PrintGCDetails"
-
-
-             ;;; Optimizations.
-             "-XX:+UseCompressedOops"
 
 
              ;; Debugging.
