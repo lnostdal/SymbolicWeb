@@ -1,6 +1,0 @@
-;;;; TODO ;;;;
-;;;;;;;;;;;;;;
-
-* ADD-RESPONSE-CHUNK shouldn't signal :RESPONSE-STR-PROMISE immediately; wrap AJAX handler in e.g. WITH-JS-BULK?
-
-* Login and long-term session management. Storage of session related data in DB.
