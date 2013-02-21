@@ -34,10 +34,6 @@ Does not have a strict, exclusive GUI- ([Widgets](http://en.wikipedia.org/wiki/G
 approach to "all things", but instead mixes or supports both ways of dealing with user interfaces at any time.
 
 
-Simple (DAO mapping)[http://en.wikipedia.org/wiki/Data_access_object] with a read cache, but does not pretend that anything like
-this is good enough for all cases.
-
-
 Database and memory transactions (Clojure STM) work together via [two-phase committing](http://en.wikipedia.org/wiki/Two-phase_commit_protocol).
 
 
