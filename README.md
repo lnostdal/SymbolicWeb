@@ -1,6 +1,6 @@
 # SymbolicWeb
 
-AJAX long poll/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI) thing written in Clojure.
+AJAX long poll/Comet/ReverseHTTP/WebSockets/whatever Web UI (WUI?) thing written in Clojure.
 
 SW was originally written in Common Lisp, and that version is still found at this location albeit unmaintained:
 
@@ -8,9 +8,55 @@ SW was originally written in Common Lisp, and that version is still found at thi
 
 
 
+## Features and/or goals
+
+  * Push- instead of pull-oriented architecture; http://en.wikipedia.org/wiki/Dataflow
+
+      http://sw.nostdal.org/dataflow
+
+
+  * Multi-paradigm; does not try to shoehorn everything into a single paradigm.
+
+
+  * Somewhat high-level, but does not hide, restrict or remove access to low-level stuff.
+
+
+  * Built [bottom-up](http://en.wikipedia.org/wiki/Top-down_and_bottom-up_design), but on existing software commodity components
+    like:
+
+      * [Netty](http://netty.io/)
+      * [PostgreSQL](http://www.postgresql.org/)
+      * ..and more; see dependencies in [project.clj](https://github.com/lnostdal/SymbolicWeb/blob/master/project.clj)
+
+
+  * While adding in traditional web routing yourself is possible, SW doesn't do any web routing itself. It instead provides
+    two-way mapping to/from server state from/to client URL (query string) via the HTML5 History API:
+
+      http://sw.nostdal.org/history?a=3&b=4
+      http://sw.nostdal.org/history?a=40&b=2
+
+
+  * Does not have a strict, exclusive GUI- ([Widgets](http://en.wikipedia.org/wiki/GUI_widget)) or Web (HTML/CSS/JS) -oriented
+    approach to "all things", but instead mixes or supports both ways of dealing with user interfaces at any time.
+
+
+  * Simple (DAO mapping)[http://en.wikipedia.org/wiki/Data_access_object] with a read cache, but does not pretend that anything like this is good enough for all cases.
+
+
+  * Database and memory transactions (Clojure STM) work together via two-phase committing:
+
+      http://en.wikipedia.org/wiki/Two-phase_commit_protocol
+
+
+
 ## Status
 
-Some interesting features, but not API stable -- and not many features yet.
+Some interesting features, but not API stable -- and not many features or very *complete* yet. The project has little
+documentation (not enough time..), but there is some example code here:
+
+  https://github.com/lnostdal/SymbolicWeb/tree/master/src/symbolicweb/examples
+
+
 It runs the work-in-progress e-commerce platform Free or Deal. Some buzzwords: "shopping, gamification and social networking
 mixed".
 
@@ -24,7 +70,7 @@ Developed and tested on Xubuntu 12.04 using Google Chrome with SW running on Ora
   http://www.webupd8.org/2012/01/install-oracle-java-jdk-7-in-ubuntu-via.html
 
 
-..further basic testing has been done on:
+..further *basic* testing has been done on:
 
   * Android phones: 2.2, 2.3, 4.0, 4.1, 4.2
   * Android tablets: 4.0, 4.1
@@ -111,14 +157,13 @@ found in jQuery. E.g., append, prepend, before and after:
 
 
 
-
 ## Terminology and abbreviations
 
-* MTX: Memory transaction; e.g. DOSYNC (STM).
-* DBTX: Database transaction; e.g. WITH-SW-DB.
-* 2PC: Two-phase transaction; database then memory transaction; e.g. SWSYNC, or WITH-SW-DB with its HOLDING-TRANSACTION callback
-  made use of. http://en.wikipedia.org/wiki/Two-phase_commit_protocol
-* CTX: Context.
+  * MTX: Memory transaction; e.g. DOSYNC (STM).
+  * DBTX: Database transaction; e.g. WITH-SW-DB.
+  * 2PC: Two-phase transaction; database then memory transaction; e.g. SWSYNC, or WITH-SW-DB with its HOLDING-TRANSACTION callback
+    made use of. http://en.wikipedia.org/wiki/Two-phase_commit_protocol
+  * CTX: Context.
 
 
 
@@ -128,9 +173,10 @@ Copyright (C) 2005 - 2011, 2012, 2013 Lars Rune Nøstdal
 
 Distributed under the GNU Affero General Public License (for now):
 
-* http://en.wikipedia.org/wiki/Affero_General_Public_License
-* http://www.gnu.org/licenses/agpl.html
+  * http://en.wikipedia.org/wiki/Affero_General_Public_License
+  * http://www.gnu.org/licenses/agpl.html
+
 
 Some sort of CLA is implied:
 
-* http://en.wikipedia.org/wiki/Contributor_License_Agreement
+  * http://en.wikipedia.org/wiki/Contributor_License_Agreement
