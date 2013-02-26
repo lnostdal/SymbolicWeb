@@ -196,6 +196,42 @@
 
 
 
+(defn al-descendants [^String table-name ^Long id]
+  "Adjacency List: Get descendants.
+Returns :ID and :PARENT columns."
+  (db-pstmt (str "WITH RECURSIVE q AS
+  (SELECT id FROM " table-name " WHERE id = ?
+   UNION ALL
+   SELECT self.id FROM q JOIN " table-name " self ON self.parent = q.id)
+SELECT id, parent FROM q")
+            id))
+
+
+
+(defn al-descendants-to-level [^String table-name ^Long id ^Long level]
+  "Adjecency List: Get descendants up to a level or limit.
+Returns :ID and :PARENT columns."
+  (db-pstmt (str "WITH RECURSIVE q AS
+  (SELECT  id, parent, ARRAY[id] AS level FROM " table-name " hc WHERE id = ?
+   UNION ALL
+   SELECT  hc.id, hc.parent, q.level || hc.id FROM q JOIN " table-name " hc ON hc.parent = q.id WHERE array_upper(level, 1) < ?)
+SELECT id, parent FROM q ORDER BY level")
+            id level))
+
+
+
+(defn al-ancestors [^String table-name ^Long id]
+  "Adacency List: Get ancestors.
+Returns :ID and :PARENT columns."
+  (db-pstmt (str "WITH RECURSIVE q AS
+  (SELECT  h.*, 1 AS level FROM " table-name " h WHERE id = ?
+   UNION ALL
+   SELECT  hp.*, level + 1 FROM q JOIN " table-name " hp ON hp.id = q.parent)
+SELECT id, parent FROM q ORDER BY level DESC")
+            id))
+
+
+
 
 
 
