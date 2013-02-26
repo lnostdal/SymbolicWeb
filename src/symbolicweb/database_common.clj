@@ -196,38 +196,42 @@
 
 
 
-(defn al-descendants [^String table-name ^Long id]
+(defn al-descendants [^String table-name ^Long id & {:keys [id-name parent-name]
+                                                     :or {id-name "id" parent-name "parent"}}]
   "Adjacency List: Get descendants.
 Returns :ID and :PARENT columns."
   (db-pstmt (str "WITH RECURSIVE q AS
-  (SELECT id FROM " table-name " WHERE id = ?
+  (SELECT " id-name ", " parent-name " FROM " table-name " WHERE " id-name " = ?
    UNION ALL
-   SELECT self.id FROM q JOIN " table-name " self ON self.parent = q.id)
-SELECT id, parent FROM q")
+   SELECT self." id-name ", self." parent-name " FROM q JOIN " table-name " self ON self." parent-name " = q." id-name ")
+SELECT " id-name ", " parent-name " FROM q")
             id))
 
 
 
-(defn al-descendants-to-level [^String table-name ^Long id ^Long level]
+(defn al-descendants-to-level [^String table-name ^Long id ^Long level & {:keys [id-name parent-name]
+                                                                          :or {id-name "id" parent-name "parent"}}]
   "Adjecency List: Get descendants up to a level or limit.
 Returns :ID and :PARENT columns."
   (db-pstmt (str "WITH RECURSIVE q AS
-  (SELECT  id, parent, ARRAY[id] AS level FROM " table-name " hc WHERE id = ?
+  (SELECT " id-name ", " parent-name ", ARRAY[id] AS level FROM " table-name " hc WHERE " id-name " = ?
    UNION ALL
-   SELECT  hc.id, hc.parent, q.level || hc.id FROM q JOIN " table-name " hc ON hc.parent = q.id WHERE array_upper(level, 1) < ?)
-SELECT id, parent FROM q ORDER BY level")
+   SELECT hc." id-name ", hc." parent-name ", q.level || hc." id-name " FROM q JOIN " table-name
+   "  hc ON hc." parent-name " = q." id-name " WHERE array_upper(level, 1) < ?)
+SELECT " id-name ", " parent-name " FROM q ORDER BY level")
             id level))
 
 
 
-(defn al-ancestors [^String table-name ^Long id]
+(defn al-ancestors [^String table-name ^Long id & {:keys [id-name parent-name]
+                                                   :or {id-name "id" parent-name "parent"}}]
   "Adacency List: Get ancestors.
 Returns :ID and :PARENT columns."
   (db-pstmt (str "WITH RECURSIVE q AS
-  (SELECT  h.*, 1 AS level FROM " table-name " h WHERE id = ?
+  (SELECT h.*, 1 AS level FROM " table-name " h WHERE " id-name " = ?
    UNION ALL
-   SELECT  hp.*, level + 1 FROM q JOIN " table-name " hp ON hp.id = q.parent)
-SELECT id, parent FROM q ORDER BY level DESC")
+   SELECT  hp.*, level + 1 FROM q JOIN " table-name " hp ON hp." id-name " = q." parent-name ")
+SELECT " id-name ", " parent-name " FROM q ORDER BY level DESC")
             id))
 
 
