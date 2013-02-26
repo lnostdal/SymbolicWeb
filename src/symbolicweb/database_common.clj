@@ -164,6 +164,53 @@
 
 
 
+(defn nsm-get [^String table-name ^Long branch-id]
+  "Nested Set Model query."
+  ;; TODO: Grab IDs only.
+  (db-pstmt (str "SELECT node.name FROM " table-name " AS node, " table-name " AS parent"
+                 " WHERE node.lft BETWEEN parent.lft AND parent.rgt"
+                 " AND parent.id = ?"
+                 " ORDER BY node.lft;")
+            branch-id))
+
+
+
+(defn nsm-insert [^String table-name ^Long right-of]
+  "Nested Set Model insert right of existing node; creating a sibling."
+  (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
+            right-of)
+  (db-pstmt (str "UPDATE " table-name " SET lft = lft + 2 WHERE lft > ?;")
+            right-of)
+  (db-insert table-name {:name "GAME CONSOLES" "lft" (inc right-of ) "rgt" (+ 2 right-of)}))
+
+
+
+;; TODO: Only works when parent doesn't already have children. In other cases, NSM-INSERT must be used.
+(defn nsm-add-child [^String table-name ^long parent-id]
+  (let [lft (:lft (first (db-pstmt (str "SELECT lft FROM " table-name " WHERE id = ? LIMIT 1;") parent-id)))]
+    (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
+              lft)
+    (db-pstmt (str "UPDATE " table-name " SET lft = lft + 2 WHERE lft > ?;")
+              lft)
+    (db-insert table-name {:name "FRS" :lft (inc lft) :rgt (+ 2 lft)})))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
