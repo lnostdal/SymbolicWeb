@@ -7,13 +7,14 @@
 ;; Features and limitations:
 ;;
 ;;   * No global sorting by user defined criteria i.e. via ORDER BY.
-;;   * Global ordering by newest or oldest entries first is supported though.
+;;   * Global ordering by newest or oldest entries first is supported though. I.e. by ID column.
 ;;   * These limitations are tradeoffs for (I hope) scalability and performance.
 ;;
 ;;
 ;; TODO:
 ;;
 ;;   * It'd perhaps be great to change to a less strict isolation level, locally, here, if that's possible.
+;;   * Since things are always ordered by ID, writes (via e.g. DAOs) know what chunks might need updating.
 
 
 
