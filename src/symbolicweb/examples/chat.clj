@@ -8,7 +8,10 @@
 (let [conversation-area-model (cm)]
   (defn mk-chat-viewport [request session]
     (let [root-widget (mk-bte :id "_body" :root-widget? true)
-          nickname (vm (str "anon-" (Long/toHexString (generate-uid))))
+          nickname (with (session-get session :nickname)
+                     (when-not @it
+                       (vm-set it (str "anon-" (Long/toHexString (generate-uid)))))
+                     it)
           conversation-area-view (mk-ContainerView conversation-area-model
                                                    (fn [container-view node]
                                                      (let [[nickname-model msg] (cmn-data node)]
@@ -16,7 +19,6 @@
                                                         (html
                                                          [:b (sw (mk-span nickname-model))] ": "
                                                          (escape-html msg))))))
-
           viewport (mk-Viewport request session root-widget
                                 :page-title "SW: Chat example"
                                 :genurl-fs-path "resources/web-design/"
@@ -32,9 +34,11 @@
             "Nick: " (sw (mk-TextInput nickname :change))
             " | "
             (let [chat-input-model (vm "")
-                  chat-input-view (mk-TextInput chat-input-model :enterpress
-                                                :clear-on-submit? true
-                                                :one-way-sync-client? true)]
+                  chat-input-view (with1 (mk-TextInput chat-input-model :enterpress
+                                                       :clear-on-submit? true
+                                                       :one-way-sync-client? true)
+                                    (jqCSS it "width" "700px"))]
+              (add-response-chunk (str "$('#" (.id chat-input-view) "').focus();") chat-input-view)
               (vm-observe chat-input-model nil false
                           (fn [inner-lifetime old-value new-value]
                             (cm-append conversation-area-model (cmn [nickname new-value]))))
