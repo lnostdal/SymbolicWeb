@@ -10,7 +10,8 @@ CREATE TABLE sessions (
     id text NOT NULL,
     created timestamp without time zone NOT NULL,
     touched timestamp without time zone NOT NULL,
-    data text DEFAULT '{}'::text NOT NULL
+    data text DEFAULT '{}'::text NOT NULL,
+    application text
 );
 ")))
 
@@ -44,6 +45,7 @@ CREATE TABLE sessions (
               (let [cookie-value (generate-uuid)
                     db-entry (db-insert :sessions (let [ts (datetime-to-sql-timestamp (time/now))]
                                                     {:id cookie-value
+                                                     :application (name (:name (:session-type @session)))
                                                      :touched ts
                                                      :created ts}))]
                 (alter session assoc
@@ -87,7 +89,7 @@ CREATE TABLE sessions (
     (when-first [session-type session-types]
       (let [session-type (val session-type)]
         (if ((:fit-fn session-type) request)
-          (:session-constructor-fn session-type)
+          session-type
           (recur (next session-types)))))))
 
 
@@ -106,19 +108,21 @@ CREATE TABLE sessions (
   (let [cookie-value (:value (get (:cookies request) -session-cookie-name-))]
     (if-let [session (get (ensure -sessions-) cookie-value)]
       session
-      (if-let [^Fn session-constructor (find-session-constructor request)]
-        (session-constructor cookie-value
-                             :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
-                                              (if (nil? it)
-                                                false
-                                                (json-parse it)))
-                                            (search-engine? request)))
+      (if-let [session-type (find-session-constructor request)]
+        ((:session-constructor-fn session-type)
+         cookie-value
+         :session-type session-type
+         :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
+                          (if (nil? it)
+                            false
+                            (json-parse it)))
+                        (search-engine? request)))
         (do
           (log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
           (mk-Session cookie-value
                       :rest-handler not-found-page-handler
                       :mk-viewport-fn (fn [request session]
-                                      (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.
+                                        (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.
                       :one-shot? true))))))
 
 
