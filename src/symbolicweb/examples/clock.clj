@@ -7,12 +7,7 @@
   (let [root-widget (mk-bte :id "_body" :root-widget? true)]
     (jqAppend root-widget
       (mk-b -now-))
-    (mk-Viewport request session root-widget
-                 :page-title "SW: Clock example"
-                 :genurl-fs-path "resources/web-design/"
-                 :genurl-scheme "http"
-                 :genurl-domain "static.nostdal.org"
-                 :genurl-path "")))
+    (mk-Viewport request session root-widget :page-title "SW: Clock example")))
 
 
 

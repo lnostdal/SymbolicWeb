@@ -29,12 +29,7 @@
           " | "
           (sw (mk-span -now-))]))) ;; -NOW- is a ValueModel updated (VM-SET) by a background thread.
 
-    (mk-Viewport request session root-widget
-                 :page-title "SW: Dataflow example"
-                 :genurl-fs-path "resources/web-design/"
-                 :genurl-scheme "http"
-                 :genurl-domain "static.nostdal.org"
-                 :genurl-path "")))
+    (mk-Viewport request session root-widget :page-title "SW: Dataflow example")))
 
 
 

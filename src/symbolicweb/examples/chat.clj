@@ -19,12 +19,7 @@
                                                         (html
                                                          [:b (sw (mk-span nickname-model))] ": "
                                                          (escape-html msg))))))
-          viewport (mk-Viewport request session root-widget
-                                :page-title "SW: Chat example"
-                                :genurl-fs-path "resources/web-design/"
-                                :genurl-scheme "http"
-                                :genurl-domain "static.nostdal.org"
-                                :genurl-path "")]
+          viewport (mk-Viewport request session root-widget :page-title "SW: Chat example")]
 
       (jqAppend root-widget
         (whc [:div]

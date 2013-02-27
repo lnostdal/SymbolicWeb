@@ -23,6 +23,14 @@
                              :query-params (vm (into (sorted-map) (:query-params request)))
                              :popstate-observer (vm (into (sorted-map) (:query-params request))) ;; Used by history.clj.
 
+                             :page-title "SW"
+
+                             ;; gen-url
+                             :genurl-fs-path "resources/web-design/"
+                             :genurl-scheme "http"
+                             :genurl-domain "static.nostdal.org"
+                             :genurl-path ""
+
                              ;; Comet.
                              :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)

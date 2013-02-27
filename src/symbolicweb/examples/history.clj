@@ -31,13 +31,7 @@
           [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj"}
            "Source code"]])))
 
-    (let [viewport (mk-Viewport request session root-widget
-                                :page-title "SW: History example"
-                                :genurl-fs-path "resources/web-design/"
-                                :genurl-scheme "http"
-                                :genurl-domain "static.nostdal.org"
-                                :genurl-path "")]
-
+    (let [viewport (mk-Viewport request session root-widget :page-title "SW: History example")]
       (vm-map-to-url a-input "a" (.lifetime root-widget) viewport)
       (vm-map-to-url b-input "b" (.lifetime root-widget) viewport)
 
