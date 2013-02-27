@@ -5,11 +5,14 @@
 (defn %mk-SessionTable []
   (with-db-conn
     (jdbc/do-commands
-     (str "CREATE TABLE sessions ("
-          "id text PRIMARY KEY"
-          ", created timestamp without time zone NOT NULL"
-          ", touched timestamp without time zone NOT NULL"
-          ");"))))
+"
+CREATE TABLE sessions (
+    id text NOT NULL,
+    created timestamp without time zone NOT NULL,
+    touched timestamp without time zone NOT NULL,
+    data text DEFAULT '{}'::text NOT NULL
+);
+")))
 
 
 
@@ -24,8 +27,6 @@
                             :last-activity-time (atom (System/currentTimeMillis))
 
                             :viewports (ref {})
-
-                            :session-data (ref {})
 
                             :mk-viewport-fn (fn [request ^Ref session]
                                               (throw (Exception. "mk-Session: No :MK-VIEWPORT-FN given.")))
@@ -46,8 +47,8 @@
                                                      :touched ts
                                                      :created ts}))]
                 (alter session assoc
-                       :db-entry db-entry
-                       :id cookie-value)))]
+                       :id cookie-value
+                       :json-store (db-json-store-get "sessions" (:id db-entry) :data))))]
 
       (when-not (:one-shot? @session)
         (if id
@@ -55,7 +56,8 @@
             (do
               (db-update :sessions {:touched (datetime-to-sql-timestamp (time/now))}
                          ["id = ?" (:id db-entry)])
-              (alter session assoc :db-entry db-entry))
+              (alter session assoc
+                     :json-store (db-json-store-get "sessions" (:id db-entry) :data)))
             (add-new-db-entry))
           (add-new-db-entry)))
 
@@ -64,36 +66,19 @@
 
       (alter -sessions- assoc (:id @session) session)
       (vm-alter -num-sessions-model- + 1)
+
       session)))
 
 
 
-(defn session-get [^Ref session key]
-  "KEY is KEYWORD."
-  (dosync
-   (when-let [res (get @(:session-data @session)
-                       key)]
-     @res)))
+(defn session-get [^Ref session ^Keyword k]
+  (db-json-get (:json-store @session) k))
 
 
 
-(defn session-set [^Ref session m]
-  (dosync
-   (doseq [map-entry m]
-     (if (contains? @(:session-data @session) (key map-entry))
-       ;; An entry with that key already exists; set its value.
-       (vm-set ((key map-entry) @(:session-data @session))
-               (val map-entry))
-       ;; An entry with that key doesn't exist; add the key and value (wrapped in a ValueModel).
-       (alter (:session-data @session)
-              assoc (key map-entry) (vm (val map-entry)))))))
-
-
-
-(defn session-del [^Ref session key]
-  (dosync
-   (alter (:session-data @session)
-          dissoc key)))
+(defn session-del [^Ref session ^Keyword k]
+  (vm-alter (:json-store @session)
+            dissoc k))
 
 
 
