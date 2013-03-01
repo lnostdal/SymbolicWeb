@@ -26,8 +26,7 @@
           (html
            [:div (sw conversation-area-view)]
            [:div
-            "Nick: " (sw (mk-TextInput nickname :change))
-            " | "
+            "Nick: " (sw (mk-TextInput nickname :change)) " | "
             (let [chat-input-model (vm "")
                   chat-input-view (with1 (mk-TextInput chat-input-model :enterpress
                                                        :clear-on-submit? true

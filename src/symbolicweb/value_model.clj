@@ -40,8 +40,8 @@
 
 
 (defn vm-observe [^ValueModel value-model lifetime ^Boolean initial-sync? ^Fn callback]
-  "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and last until it is
-deactivated. If given FALSE, observation will start at once and last forever; as long as VALUE-MODEL exists.
+  "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and lasts until it is
+deactivated. If given FALSE, observation will start at once and last forever or as long as VALUE-MODEL exists.
 
   INITIAL-SYNC?: If TRUE, CALLBACK will be triggered once as soon as observation starts.
 

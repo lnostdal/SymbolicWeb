@@ -27,7 +27,7 @@
                  [org.jumpmind.symmetric.jdbc/postgresql "9.2-1002-jdbc4"] ;; http://search.maven.org/#browse%7C-1373495709
                  [com.jolbox/bonecp "0.8.0-rc1"] ;; DB connection pooling.
 
-                 [org.clojure/tools.nrepl "0.2.2-SNAPSHOT"]]
+                 [org.clojure/tools.nrepl "0.2.3-SNAPSHOT"]]
 
   :warn-on-reflection true
 

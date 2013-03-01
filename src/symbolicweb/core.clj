@@ -10,7 +10,7 @@
   (:require [clojure.math.numeric-tower :refer (round)])
   (:require clojure.stacktrace)
   (:require [clojure.string :as str])
-  (:require [clojure.pprint :refer (cl-format)])
+  (:require [clojure.pprint :refer (cl-format pprint print-table)])
 
   (:import (com.google.common.cache CacheBuilder CacheLoader))
 
