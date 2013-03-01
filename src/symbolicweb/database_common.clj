@@ -196,16 +196,24 @@
 
 
 
-(defn al-descendants [^String table-name ^Long id & {:keys [id-name parent-name]
+(defn al-descendants [^String table-name ^Long id & {:keys [id-name parent-name
+                                                            columns
+                                                            where order-by params]
                                                      :or {id-name "id" parent-name "parent"}}]
-  "Adjacency List: Get descendants.
-Returns :ID and :PARENT columns."
-  (db-pstmt (str "WITH RECURSIVE q AS
-  (SELECT " id-name ", " parent-name " FROM " table-name " WHERE " id-name " = ?
-   UNION ALL
-   SELECT self." id-name ", self." parent-name " FROM q JOIN " table-name " self ON self." parent-name " = q." id-name ")
-SELECT " id-name ", " parent-name " FROM q")
-            id))
+  "Adjacency List: Get descendants."
+  (concat
+   [(str "WITH RECURSIVE q AS
+  ((SELECT " id-name ", " parent-name (cl-format false "~{, ~A~}" columns)
+  " FROM " table-name " WHERE " id-name " = ?"
+  (when order-by
+    (str " ORDER BY " order-by))
+  ") UNION ALL
+   SELECT self." id-name ", self." parent-name (cl-format false "~{, self.~A~}" columns)
+   " FROM q JOIN " table-name " self ON self." parent-name " = q." id-name ")
+SELECT * FROM q")
+    id]
+   params))
+
 
 
 
