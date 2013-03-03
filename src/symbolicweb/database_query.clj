@@ -7,6 +7,7 @@
 
 (defn db-query-get-chunk [relation ^Long offset ^Long limit
                           & {:keys [where order-by other params]}]
+  "  RELATION: SQL or [SQL PARAMS]"
   (let [res (apply db-pstmt (str "SELECT * FROM " (if (string? relation)
                                                     relation
                                                     (str "(" (first relation) ") AS blah")) ;; TODO: Yeah..
@@ -22,7 +23,7 @@
 
                                  " LIMIT ? OFFSET ?;")
                    (concat (when-not (string? relation)
-                             (rest relation))
+                             (second relation))
                            params
                            [limit offset]))]
     res))

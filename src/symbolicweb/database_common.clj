@@ -201,8 +201,7 @@
                                                             where order-by params]
                                                      :or {id-name "id" parent-name "parent"}}]
   "Adjacency List: Get descendants."
-  (concat
-   [(str "WITH RECURSIVE q AS
+  [(str "WITH RECURSIVE q AS
   ((SELECT " id-name ", " parent-name (cl-format false "~{, ~A~}" columns)
   " FROM " table-name " WHERE " id-name " = ?"
   (when order-by
@@ -211,9 +210,7 @@
    SELECT self." id-name ", self." parent-name (cl-format false "~{, self.~A~}" columns)
    " FROM q JOIN " table-name " self ON self." parent-name " = q." id-name ")
 SELECT * FROM q")
-    id]
-   params))
-
+   (concat [id] params)])
 
 
 
