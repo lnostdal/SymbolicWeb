@@ -1,7 +1,7 @@
 (defproject symbolicweb "1.0.0-SNAPSHOT"
   :description "SymbolicWeb: WUI for Clojure"
   :license "AGPLv3 + CLA"
-  :dependencies [[org.clojure/clojure "1.5.0-master-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
 
                  [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
 
