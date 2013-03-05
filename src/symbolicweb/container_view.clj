@@ -62,9 +62,9 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 
-(defn ^WidgetBase mk-ContainerView [^WidgetBase container-view
-                                    ^ContainerModel container-model ^Fn view-from-node-fn]
-  "  VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-node] ..)"
+(defn ^WidgetBase mk-ContainerView [^WidgetBase container-view ^ContainerModel container-model ^Fn view-from-node-fn]
+  "  CONTAINER-VIEW: The Widget things will be contained in.
+  VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-node] ..)"
   (let [views-of-nodes (ref {})]
 
     (observe (.observable container-model) (.lifetime container-view)

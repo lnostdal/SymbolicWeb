@@ -41,7 +41,9 @@
 (defn ^WidgetBase mk-HTMLTemplate [^org.jsoup.nodes.Document html-resource
                                    ^Fn content-fn
                                    & widget-base-args]
-  "  CONTENT-FN is something like:
+  "Bind Widgets to existing, static HTML.
+
+  CONTENT-FN is something like:
   (fn [html-template]
     [\".itembox\" html-template
      \".title\" (mk-p title-model)

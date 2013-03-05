@@ -137,6 +137,6 @@
                                       (keys callback-data)
                                       (vals callback-data))))
         "', function(){" js-after "});"
-        "});")
+        "});\n")
    viewport)
   viewport)
