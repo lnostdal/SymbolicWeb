@@ -12,7 +12,8 @@
                      (when-not @it
                        (vm-set it (str "anon-" (Long/toHexString (generate-uid)))))
                      it)
-          conversation-area-view (mk-ContainerView conversation-area-model
+          conversation-area-view (mk-ContainerView (mk-WB :div)
+                                                   conversation-area-model
                                                    (fn [container-view node]
                                                      (let [[nickname-model msg] (cmn-data node)]
                                                        (whc [:div]
