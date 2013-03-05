@@ -16,15 +16,20 @@
     (jqAppend root-widget
       (whc [:div]
         (html
-         [:p
-          (sw (mk-TextInput a-input :change))
-          " + "
-          (sw (mk-TextInput b-input :change))
-          " = "
-          (sw (mk-span sum))]
+         [:p (sw (mk-TextInput a-input :change)) " + " (sw (mk-TextInput b-input :change)) " = " (sw (mk-span sum))]
 
-         [:p "Random number for each page (re)load " (sw (mk-b (vm (rand-int 9000))))
-          " for a visual confirmation that the page really does not reload as the URL changes."]
+         [:p "Random number for each page (re)load, " [:b (rand-int 9000)]
+          ", for a visual confirmation that the page really does not reload as the URL changes."]
+
+
+         [:p (sw (mk-Link a-input "a" (vm-sync a (.lifetime root-widget) #(inc %3))
+                          (mk-ContainerView (mk-WB :a)
+                                            (with1 (cm) (cm-append it (cmn (vm "Increment A!"))))
+                                            #(mk-he "b" (cmn-data %2)))))]
+         [:p (sw (mk-Link b-input "b" (vm-sync b (.lifetime root-widget) #(inc %3))
+                          (mk-ContainerView (mk-WB :a)
+                                            (with1 (cm) (cm-append it (cmn (vm "Increment B!"))))
+                                            #(mk-he "b" (cmn-data %2)))))]
 
          [:hr]
          [:pre
