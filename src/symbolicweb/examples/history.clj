@@ -25,11 +25,11 @@
          [:p (sw (mk-Link a-input "a" (vm-sync a (.lifetime root-widget) #(inc %3))
                           (mk-ContainerView (mk-WB :a)
                                             (with1 (cm) (cm-append it (cmn (vm "Increment A!"))))
-                                            #(mk-he "b" (cmn-data %2)))))]
+                                            #(mk-he :b (cmn-data %2)))))]
          [:p (sw (mk-Link b-input "b" (vm-sync b (.lifetime root-widget) #(inc %3))
                           (mk-ContainerView (mk-WB :a)
                                             (with1 (cm) (cm-append it (cmn (vm "Increment B!"))))
-                                            #(mk-he "b" (cmn-data %2)))))]
+                                            #(mk-he :b (cmn-data %2)))))]
 
          [:hr]
          [:pre

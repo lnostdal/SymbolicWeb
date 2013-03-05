@@ -23,17 +23,19 @@
 
 
 
-(defn ^WidgetBase mk-he [^String html-element-type ^ValueModel value-model
+(defn ^WidgetBase mk-he [html-element-type ^ValueModel value-model
                          & {:keys [observer-fn widget-base-args]
                             :or {widget-base-args {}
                                  observer-fn (fn [^WidgetBase widget old-value new-value]
                                                (jqHTML widget (if (.escape-html? widget)
                                                                 (escape-html new-value)
                                                                 new-value)))}}]
-  (mk-HTMLElement value-model
-                  (fn [^WidgetBase widget] (str "<" html-element-type " id='" (.id widget) "'></" html-element-type ">"))
-                  observer-fn
-                  widget-base-args))
+  (let [html-element-type-str (name html-element-type)]
+    (mk-HTMLElement value-model
+                    (fn [^WidgetBase widget]
+                      (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
+                    observer-fn
+                    widget-base-args)))
 
 
 
