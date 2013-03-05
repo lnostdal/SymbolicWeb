@@ -38,9 +38,23 @@
 
 
 
-(defn ^WidgetBase mk-Link [^ValueModel value-model & widget-base-args]
-  "HTML Link (a href) element. VALUE-MODEL represents the HREF attribute."
-  (mk-he "a" value-model
-         :observer-fn (fn [^WidgetBase widget old-value new-value]
-                        (jqAttr widget "href" new-value))
-         :widget-base-args (apply hash-map widget-base-args)))
+(defn ^WidgetBase mk-Link [^ValueModel url-mapper-vm ^String url-mapper-name ^ValueModel url-mapper-mutator
+                           ^WidgetBase container-view]
+  (let [query-str-vm (vm "")]
+
+    (with-observed-vms (.lifetime container-view)
+      (when-let [viewport (viewport-of container-view)]
+        (vm-set query-str-vm (ring.util.codec/form-encode (merge @(:query-params @viewport)
+                                                                 {url-mapper-name @url-mapper-mutator})))))
+
+    (vm-observe query-str-vm (.lifetime container-view) false
+                (fn [_ _ query-str]
+                  (jqAttr container-view "href"
+                          (str "window.location.pathname + '?' + " (url-encode-wrap query-str)))))
+
+    (set-event-handler "click" container-view
+                       (fn [& _]
+                         (vm-set url-mapper-vm @url-mapper-mutator))
+                       :js-before "event.preventDefault(); return(true);"))
+
+  container-view)

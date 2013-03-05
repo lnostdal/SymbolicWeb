@@ -89,6 +89,9 @@
 
 
 
+;;; TODO: Handling of VALUE parameter in the following functions need improvement; more consistency.
+;; Perhaps a default should use URL-ENCODE-WRAP or something.
+
 (defn jqCSS
   ([^WidgetBase widget ^String property-name]
      (str "$('#" (.id widget) "').css('" property-name "');\n"))
@@ -102,7 +105,7 @@
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').attr('" attribute-name "');\n"))
   ([^WidgetBase widget ^String attribute-name value]
-     (add-response-chunk (str "$('#" (.id widget) "').attr('" attribute-name "', '" value "');\n")
+     (add-response-chunk (str "$('#" (.id widget) "').attr('" attribute-name "', " value ");\n")
                          widget)))
 
 

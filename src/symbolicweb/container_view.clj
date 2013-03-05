@@ -62,11 +62,10 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
 
 
 
-(defn ^WidgetBase mk-ContainerView [^ContainerModel container-model ^Fn view-from-node-fn & args]
-  "  VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-nodel] ..)"
-  (let [container-view (mk-WidgetBase (fn [^WidgetBase container-view] (str "<div id='" (.id container-view) "'></div>"))
-                                      (apply hash-map args))
-        views-of-nodes (ref {})]
+(defn ^WidgetBase mk-ContainerView [^WidgetBase container-view
+                                    ^ContainerModel container-model ^Fn view-from-node-fn]
+  "  VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-node] ..)"
+  (let [views-of-nodes (ref {})]
 
     (observe (.observable container-model) (.lifetime container-view)
              (fn [^Lifetime inner-lifetime event-args]
