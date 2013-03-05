@@ -50,16 +50,16 @@
 
 
 
-(defn ^WidgetBase mk-Link [^ValueModel url-mapper-vm ^String url-mapper-name ^ValueModel url-mapper-mutator
-                           ^WidgetBase container-view]
+(defn ^WidgetBase mk-Link [^WidgetBase container-view
+                           ^ValueModel url-mapper-vm ^String url-mapper-name ^ValueModel url-mapper-mutator]
   (let [query-str-vm (vm "")]
 
     (with-observed-vms (.lifetime container-view)
       (when-let [viewport (viewport-of container-view)]
-        (vm-set query-str-vm (ring.util.codec/form-encode (merge @(:query-params @viewport)
+        (vm-set query-str-vm (ring.util.codec/form-encode (merge @(:query-params @viewport) ;; Sorted Map, so result will be too.
                                                                  {url-mapper-name @url-mapper-mutator})))))
 
-    (vm-observe query-str-vm (.lifetime container-view) false
+    (vm-observe query-str-vm (.lifetime container-view) true
                 (fn [_ _ query-str]
                   (jqAttr container-view "href"
                           (str "window.location.pathname + '?' + " (url-encode-wrap query-str)))))

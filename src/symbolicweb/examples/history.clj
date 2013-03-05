@@ -22,14 +22,15 @@
           ", for a visual confirmation that the page really does not reload as the URL changes."]
 
 
-         [:p (sw (mk-Link a-input "a" (vm-sync a (.lifetime root-widget) #(inc %3))
-                          (mk-ContainerView (mk-WB :a)
-                                            (cm-append (cm) (cmn (vm "Increment A!")))
-                                            #(mk-he :b (cmn-data %2)))))]
-         [:p (sw (mk-Link b-input "b" (vm-sync b (.lifetime root-widget) #(inc %3))
-                          (mk-ContainerView (mk-WB :a)
-                                            (cm-append (cm) (cmn (vm "Increment B!")))
-                                            #(mk-he :b (cmn-data %2)))))]
+         [:p (sw (with (mk-ContainerView (mk-WB :a)
+                                         (cm-append (cm) (cmn (vm "Increment A!")))
+                                         #(mk-he :b (cmn-data %2)))
+                   (mk-Link it a-input "a" (vm-sync a (.lifetime it) #(inc %3)))))]
+         [:p (sw (with (mk-ContainerView (mk-WB :a)
+                                         (cm-append (cm) (cmn (vm "Increment B!")))
+                                         #(mk-he :b (cmn-data %2)))
+                   (mk-Link it b-input "b" (vm-sync b (.lifetime it) #(inc %3)))))]
+
 
          [:hr]
          [:pre
