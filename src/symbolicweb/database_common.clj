@@ -175,6 +175,7 @@
 
 
 
+;; TODO: Finish this..
 (defn nsm-insert [^String table-name ^Long right-of]
   "Nested Set Model insert right of existing node; creating a sibling."
   (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
@@ -186,6 +187,7 @@
 
 
 ;; TODO: Only works when parent doesn't already have children. In other cases, NSM-INSERT must be used.
+;; TODO: Finish this..
 (defn nsm-add-child [^String table-name ^long parent-id]
   (let [lft (:lft (first (db-pstmt (str "SELECT lft FROM " table-name " WHERE id = ? LIMIT 1;") parent-id)))]
     (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")

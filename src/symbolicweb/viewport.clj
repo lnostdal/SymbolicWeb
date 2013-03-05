@@ -18,8 +18,10 @@
                              :id viewport-id
                              :last-activity-time (atom (System/currentTimeMillis))
 
+                             ;; DOM events for Viewport (not Widgets).
                              :callbacks (ref {}) ;; Viewport specific callbacks. E.g. window.onpopstate etc..
 
+                             ;; HTML5 History stuff.
                              :query-params (vm (into (sorted-map) (:query-params request)))
                              :popstate-observer (vm (into (sorted-map) (:query-params request))) ;; Used by history.clj.
 

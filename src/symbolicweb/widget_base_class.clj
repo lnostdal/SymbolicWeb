@@ -117,6 +117,6 @@ Returns WIDGET."
                                       (keys callback-data)
                                       (vals callback-data))))
         "', function(){" js-after "});"
-        "});")
+        "});\n")
    widget)
   widget)

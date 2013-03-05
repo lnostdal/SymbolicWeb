@@ -113,7 +113,7 @@
 (defn jqProp
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').prop('" attribute-name "');\n"))
-  ([widget attribute-name value]
+  ([^WidgetBase widget attribute-name value]
      (add-response-chunk (str "$('#" (.id widget) "').prop('" attribute-name "', " value ");\n")
                          widget)))
 

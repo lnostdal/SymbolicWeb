@@ -1,6 +1,15 @@
 (in-ns 'symbolicweb.core)
 
 
+
+(defn mk-WB [html-element-type]
+  (let [html-element-type-str (name html-element-type)]
+    (mk-WidgetBase (fn [^WidgetBase widget]
+                     (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
+                   {})))
+
+
+
 (defn ^WidgetBase mk-HTMLElement [^ValueModel value-model
                                   ^Fn render-fn
                                   ^Fn observer-fn
@@ -28,6 +37,7 @@
 
 
 
+;; TODO: Use ContainerView similar to what mk-Link (below) does.
 (defn ^WidgetBase mk-Button [label & widget-base-args]
   "LABEL: \"Some Label\" or (vm \"Some Label\")"
   (mk-he "button"

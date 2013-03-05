@@ -1,6 +1,11 @@
 (in-ns 'symbolicweb.core)
 
 
+
+;;; HTML generation
+;;;;;;;;;;;;;;;;;;;
+
+
 (defn ^WidgetBase %mk-HTMLContainer [html-element-type ^Fn content-fn widget-base-args]
   (let [html-element-type (name html-element-type)]
     (mk-WidgetBase (fn [^WidgetBase html-container]
@@ -27,6 +32,10 @@
                             (into widget-base-args (list id :id))) ;; TODO: This seems hacky.
     (render-html it)))
 
+
+
+;;; Templating
+;;;;;;;;;;;;;;
 
 
 (defn ^WidgetBase mk-HTMLTemplate [^org.jsoup.nodes.Document html-resource
@@ -79,7 +88,7 @@
 
 
 
-(defn ^WidgetBase mk-BlankTemplateElement[& widget-base-args]
+(defn ^WidgetBase mk-BlankTemplateElement [& widget-base-args]
   "A TemplateElement which doesn't have a Model.
 This might be used to setup a target for DOM events on some static content from a template."
   (mk-WidgetBase (fn [_]) (apply hash-map widget-base-args)))
