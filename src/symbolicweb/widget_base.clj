@@ -50,9 +50,12 @@
 
 
 
-(defn ^WidgetBase mk-Link [^WidgetBase container-view
-                           ^ValueModel url-mapper-vm ^String url-mapper-name ^ValueModel url-mapper-mutator]
-  (let [query-str-vm (vm "")]
+;; TODO: Handle multiple "URL mappers".
+(defn ^WidgetBase mk-Link [^WidgetBase container-view url-mapper ^ValueModel url-mapper-mutator]
+  "  URL-MAPPER: Return value of mk-URLMapper."
+  (let [url-mapper-vm (:model url-mapper)
+        url-mapper-name (:name url-mapper)
+        query-str-vm (vm "")]
 
     (with-observed-vms (.lifetime container-view)
       (when-let [viewport (viewport-of container-view)]
