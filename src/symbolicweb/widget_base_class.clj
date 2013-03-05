@@ -46,7 +46,7 @@
 
 
   (empty-branch [widget]
-    (doseq [^Lifetime child-lifetime (.children (.lifetime widget))]
+    (doseq [^Lifetime child-lifetime (lifetime-children-of (.lifetime widget))]
       (detach-lifetime child-lifetime))))
 
 
