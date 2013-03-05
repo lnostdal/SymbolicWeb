@@ -45,7 +45,8 @@ This mirrors the jQuery `remove' function:
       (cm-set-tail-node cm (cmn-left-node node))
       (cmn-set-left-node (cmn-right-node node) (cmn-left-node node)))
 
-    (notify-observers (.observable cm) 'cmn-remove node)))
+    (notify-observers (.observable cm) 'cmn-remove node)
+    cm))
 
 
 
@@ -79,7 +80,8 @@ This mirrors the jQuery `after' function:
     ;;  node.next := newNode
     (cmn-set-right-node existing-node new-node)
 
-    (notify-observers (.observable cm) 'cmn-after existing-node new-node)))
+    (notify-observers (.observable cm) 'cmn-after existing-node new-node)
+    cm))
 
 
 
@@ -113,4 +115,5 @@ This mirrors the jQuery `before' function:
     ;; node.prev := newNode
     (cmn-set-left-node existing-node new-node)
 
-    (notify-observers (.observable cm) 'cmn-before existing-node new-node)))
+    (notify-observers (.observable cm) 'cmn-before existing-node new-node)
+    cm))

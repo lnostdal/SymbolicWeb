@@ -125,7 +125,8 @@ This mirrors the jQuery `append' function:
   (if (not (cm-tail-node cm)) ;; if list.lastNode == null
     (cm-prepend cm new-node) ;; insertBeginning(list, newNode)
   ;; else
-    (cmn-after (cm-tail-node cm) new-node))) ;; insertAfter(list, list.lastNode, newNode)
+    (cmn-after (cm-tail-node cm) new-node)) ;; insertAfter(list, list.lastNode, newNode)
+  cm)
 
 
 
@@ -152,7 +153,8 @@ This mirrors the jQuery `prepend' function:
 
       (notify-observers (.observable cm) 'cm-prepend new-node))
     ;; else
-    (cmn-before (cm-head-node cm) new-node))) ;; insertBefore(list, list.firstNode, newNode)
+    (cmn-before (cm-head-node cm) new-node)) ;; insertBefore(list, list.firstNode, newNode)
+  cm)
 
 
 
@@ -162,4 +164,5 @@ This mirrors the jQuery `prepend' function:
   (loop [node (cm-head-node cm)]
     (when node
       (cmn-remove node)
-      (recur (cm-head-node cm)))))
+      (recur (cm-head-node cm))))
+  cm)
