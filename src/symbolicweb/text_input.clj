@@ -64,9 +64,10 @@ ARGS:
                              (vm-set value-model value))
                            :callback-data {:value "' + encodeURIComponent($(this).val()) + '"}
                            :js-before "if(event.keyCode == 10 || event.keyCode == 13) return(true); else return(false);"
-                           :js-after (if (:clear-on-submit? args)
-                                       (str "$('#" (.id it) "').val('');") ;; TODO: Not sure why $(this) doesn't work here.
-                                       ""))
+                           :js-after (str
+                                      "$('#" (.id it) "').blur();"
+                                      (when (:clear-on-submit? args)
+                                        (str "$('#" (.id it) "').val('');")))) ;; TODO: Not sure why $(this) doesn't work here.
 
         nil
         nil ;; Assume the user wants to assign something later.
