@@ -161,7 +161,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         <script src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
       <![endif]-->
       <!--[if gte IE 9]><!-->
-        <script src='http://code.jquery.com/jquery-2.0.0b1.js'><</script>
+        <script src='http://code.jquery.com/jquery-2.0.0b2.js'><</script>
       <!--<![endif]-->
       "
 
