@@ -44,9 +44,11 @@
   "Bind Widgets to existing, static HTML.
 
   CONTENT-FN is something like:
+
   (fn [html-template]
     [\".itembox\" html-template
      \".title\" (mk-p title-model)
+     \".picture\" [:attr :src \"logo.png\"]
      \"#sw-js-bootstrap\" (sw-js-bootstrap)]) ;; String."
   (mk-WidgetBase
    (fn [^WidgetBase template-widget]
@@ -64,15 +66,26 @@
                                   (str "mk-HTMLTemplate: " (count it) " (i.e. not 1) elements found for for" selector
                                        "in context of" (.id template-widget)))
                           (.first it))))]
-           (if (string? content)
-             ;; NOTE: I could do (.html content) here. That would actually parse the HTML and add it to our HTML-RESOURCE
-             ;; for the next iteration to pick up for possible templating.
-             (.text element content)
-             (do
-               (.attr element "id" ^String (.id ^WidgetBase content))
-               (when-not (= content template-widget)
-                 (binding [*in-html-container?* template-widget]
-                   (attach-branch template-widget content)))))))
+           (cond
+            (= java.lang.String (class content))
+            (.text element content)
+
+            (= clojure.lang.PersistentVector (class content))
+            (let [cmd (first content)]
+              (case cmd
+                :attr
+                (let [[^Keyword attr-key ^String attr-value] (rest content)]
+                  (.attr element (name attr-key) attr-value))
+
+                :html
+                (.html element ^String (second content))))
+
+            (= symbolicweb.core.WidgetBase (class content))
+            (do
+              (.attr element "id" ^String (.id ^WidgetBase content))
+              (when-not (= content template-widget)
+                (binding [*in-html-container?* template-widget]
+                  (attach-branch template-widget content)))))))
        (.html (.select html-resource "body"))))
    (apply hash-map widget-base-args)))
 
