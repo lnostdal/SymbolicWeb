@@ -64,6 +64,7 @@
   (:require symbolicweb.container-view)
   (:require symbolicweb.container-model-filtered)
   (:require symbolicweb.html-container)
+  (:require symbolicweb.html-template)
   (:require symbolicweb.checkbox)
   (:require symbolicweb.img)
   (:require symbolicweb.dialog)
