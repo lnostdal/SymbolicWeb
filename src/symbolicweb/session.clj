@@ -50,7 +50,7 @@ CREATE TABLE sessions (
                                                      :created ts}))]
                 (alter session assoc
                        :id cookie-value
-                       :json-store (db-json-store-get "sessions" (:id db-entry) :data))))]
+                       :json-store (db-json-store-get "sessions" cookie-value :data))))]
 
       (when-not (:one-shot? @session)
         (if id
