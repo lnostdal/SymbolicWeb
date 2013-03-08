@@ -56,7 +56,8 @@ ARGS:
                                                                e)))))
                                                new-value)]
                                (vm-set value-model new-value)))
-                           :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"})
+                           :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"}
+                           :js-after (str "$('#" (.id it) "').blur();"))
 
         :enterpress
         (set-event-handler "keydown" it
