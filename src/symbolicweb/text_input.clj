@@ -22,7 +22,8 @@ TRIGGER-EVENT:
 ARGS:
   :INITIAL-SYNC-SERVER?: if True the value on the client will be set to the value of VALUE-MODEL on render.
   :ONE-WAY-SYNC-CLIENT?: if True only changes originating from the client will be sent to the server; not the other way around.
-  :CLEAR-ON-SUBMIT?: If True the widget will be cleared on 'submit' (:ENTERPRESS)."
+  :CLEAR-ON-SUBMIT?: If True the widget will be cleared on 'submit'.
+  :BLUR-ON-SUBMIT?: If True the widget will be blurred on 'submit'."
   (let [args (apply hash-map args)]
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
                             (str "<input type='text' id='" (.id widget) "'>"))
@@ -57,7 +58,8 @@ ARGS:
                                                new-value)]
                                (vm-set value-model new-value)))
                            :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"}
-                           :js-after (str "$('#" (.id it) "').blur();"))
+                           :js-after (when (:blur-on-submit? args)
+                                       (str "$('#" (.id it) "').blur();")))
 
         :enterpress
         (set-event-handler "keydown" it
@@ -66,7 +68,8 @@ ARGS:
                            :callback-data {:value "' + encodeURIComponent($(this).val()) + '"}
                            :js-before "if(event.keyCode == 10 || event.keyCode == 13) return(true); else return(false);"
                            :js-after (str
-                                      "$('#" (.id it) "').blur();"
+                                      (when (:blur-on-submit? args)
+                                        (str "$('#" (.id it) "').blur();"))
                                       (when (:clear-on-submit? args)
                                         (str "$('#" (.id it) "').val('');")))) ;; TODO: Not sure why $(this) doesn't work here.
 
