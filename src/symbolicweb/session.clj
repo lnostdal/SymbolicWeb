@@ -39,18 +39,17 @@ CREATE TABLE sessions (
 
                             :one-shot? false
                             args))]
-
     (letfn [(add-new-db-entry []
               ;; TODO: _Very_ small chance of UUID collision, but not a security problem since the DB col is UNIQUE.
               (let [cookie-value (generate-uuid)
-                    db-entry (db-insert :sessions (let [ts (datetime-to-sql-timestamp (time/now))]
-                                                    {:id cookie-value
-                                                     :application (name (:name (:session-type @session)))
-                                                     :touched ts
-                                                     :created ts}))]
+                    db-entry (first (db-insert :sessions (let [ts (datetime-to-sql-timestamp (time/now))]
+                                                           {:id cookie-value
+                                                            :application (name (:name (:session-type @session)))
+                                                            :touched ts
+                                                            :created ts})))]
                 (alter session assoc
-                       :id cookie-value
-                       :json-store (db-json-store-get "sessions" cookie-value :data))))]
+                       :id (:id db-entry)
+                       :json-store (db-json-store-get "sessions" (:id db-entry) :data))))]
 
       (when-not (:one-shot? @session)
         (if id
