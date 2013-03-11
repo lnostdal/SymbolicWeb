@@ -16,7 +16,7 @@
 (defn gc-session [^Ref session]
   (dosync
    (let [session-m (ensure session)]
-     (alter -sessions- dissoc (:id session-m))
+     (alter -sessions- dissoc (:uuid session-m))
      (vm-alter -num-sessions-model- - 1)
 
      ;; GC all Viewports in SESSION.
