@@ -53,6 +53,7 @@
    (fn [request]
      (re-find #"chat$" (:uri request)))]
 
-  (fn [id & args]
-    (apply mk-Session id :mk-viewport-fn #'mk-chat-viewport
-           args)))
+  (fn [session-skeleton]
+    (alter session-skeleton assoc
+           :mk-viewport-fn #'mk-chat-viewport)
+    session-skeleton))

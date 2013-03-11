@@ -302,7 +302,7 @@ Returns a String."
 
 (defn ^String sw-js-base-bootstrap [^Ref application ^Ref viewport]
   (str "var sw_cookie_name = '" -session-cookie-name- "'; "
-       (set-session-cookie (:id @application))
+       (set-session-cookie (:uuid @application))
        "var _sw_viewport_id = '" (:id @viewport) "'; "
        "var _sw_comet_timeout_ts = " -comet-timeout- "; "))
 

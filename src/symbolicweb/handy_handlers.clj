@@ -126,7 +126,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
                  "Refreshing page, but keeping Session (cookie).")
         {:status 200
          :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-         :body (str (set-session-cookie (:id @session)) ;; A new Session might have been started for this request.
+         :body (str (set-session-cookie (:uuid @session)) ;; A new Session might have been started for this request.
                     "window.location.href = window.location.href;")}))
     ;; REST.
     (let [viewport ((:mk-viewport-fn @session) request session)]

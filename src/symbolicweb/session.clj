@@ -17,58 +17,78 @@ CREATE TABLE sessions (
 
 
 
-(defn mk-Session [id & args]
-  "ID is session cookie value or NIL when creating new session."
+(defn session-model-clj-to-db-transformer [m]
+  "SW --> DB"
+  (-> m
+      ((fn [m]
+         (case (:key m)
+           (:type :logged-in? :last-activity-time :viewports :mk-viewport-fn
+            :request-handler :rest-handler :ajax-handler :aux-handler
+            :one-shot?)
+           (assoc m
+             :key nil)
+
+           :session-type
+           (assoc m
+             :key :application
+             :value (name (:name (:value m))))
+
+           :user-model
+           (assoc m
+             :key :user-ref
+             :value (when-let [user-model @(:value m)]
+                      @(:id @user-model)))
+
+           m)))
+      (db-default-clj-to-db-transformer)))
+
+
+
+(defn session-model-db-to-clj-transformer [m]
+  "DB --> SW"
+  (-> m
+      (db-default-db-to-clj-transformer)
+      ((fn [m]
+         (case (:key m)
+           :user-ref
+           (assoc m
+             :key :user-model
+             :value (when (:value m) (db-get (:value m) "users")))
+
+           m)))))
+
+
+
+(defn mk-Session [& args]
   (let [session (ref (apply assoc {}
+                            :id (vm nil)
                             :type ::Session
-                            :id id
-
-                            :logged-in? (vm false)
-                            :user-model (vm nil) ;; Reference to UserModel so we can remove ourself from it when we are GCed.
+                            :user-model (vm nil)
                             :last-activity-time (atom (System/currentTimeMillis))
-
                             :viewports (ref {})
-
                             :mk-viewport-fn (fn [request ^Ref session]
                                               (throw (Exception. "mk-Session: No :MK-VIEWPORT-FN given.")))
+                            :one-shot? false
+
+                            :created (datetime-to-sql-timestamp (time/now))
+                            :touched (vm (datetime-to-sql-timestamp (time/now)))
 
                             :request-handler #'default-request-handler
                             :rest-handler #'default-rest-handler
                             :ajax-handler #'default-ajax-handler
                             :aux-handler #'default-aux-handler
-
-                            :one-shot? false
                             args))]
-    (letfn [(add-new-db-entry []
-              ;; TODO: _Very_ small chance of UUID collision, but not a security problem since the DB col is UNIQUE.
-              (let [cookie-value (generate-uuid)
-                    db-entry (first (db-insert :sessions (let [ts (datetime-to-sql-timestamp (time/now))]
-                                                           {:id cookie-value
-                                                            :application (name (:name (:session-type @session)))
-                                                            :touched ts
-                                                            :created ts})))]
-                (alter session assoc
-                       :id (:id db-entry)
-                       :json-store (db-json-store-get "sessions" (:id db-entry) :data))))]
+    session))
 
-      (when-not (:one-shot? @session)
-        (if id
-          (if-let [db-entry (first (db-pstmt "SELECT * FROM sessions WHERE id = ? LIMIT 1;" id))]
-            (do
-              (db-update :sessions {:touched (datetime-to-sql-timestamp (time/now))}
-                         ["id = ?" (:id db-entry)])
-              (alter session assoc
-                     :json-store (db-json-store-get "sessions" (:id db-entry) :data)))
-            (add-new-db-entry))
-          (add-new-db-entry)))
 
-      (when-not (:id @session)
-        (alter session assoc :id (generate-uuid)))
 
-      (alter -sessions- assoc (:id @session) session)
-      (vm-alter -num-sessions-model- + 1)
-
-      session)))
+(swap! -db-cache-constructors- assoc "sessions"
+       #(mk-DBCache "sessions"
+                    (fn [db-cache id] (mk-Session))
+                    identity
+                    #'session-model-clj-to-db-transformer
+                    #'session-model-db-to-clj-transformer))
+(db-reset-cache "sessions")
 
 
 
@@ -108,17 +128,31 @@ CREATE TABLE sessions (
     (if-let [session (get (ensure -sessions-) cookie-value)]
       session
       (if-let [session-type (find-session-constructor request)]
-        ((:session-constructor-fn session-type)
-         cookie-value
-         :session-type session-type
-         :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
-                          (if (nil? it)
-                            false
-                            (json-parse it)))
-                        (search-engine? request)))
+        (let [one-shot?
+              (or (with (get (:query-params request) "_sw_session_one_shot_p")
+                    (if (nil? it)
+                      false
+                      (json-parse it)))
+                  (search-engine? request))
+
+              session-skeleton
+              (or (and cookie-value
+                       (when-let [res (first (db-pstmt "SELECT id FROM sessions WHERE uuid = ? LIMIT 1;" cookie-value))]
+                         (with1 (db-get (:id res) "sessions")
+                           (vm-set (:touched @it) (datetime-to-sql-timestamp (time/now))))))
+                  (with1 (mk-Session :uuid (generate-uuid) :session-type session-type)
+                    (when-not one-shot?
+                      (db-put it "sessions"))))]
+          (alter session-skeleton assoc
+                 :json-store (db-json-store-get "sessions" @(:id @session-skeleton) :data)
+                 :session-type session-type
+                 :one-shot? one-shot?)
+          (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
+          (vm-alter -num-sessions-model- + 1)
+          ((:session-constructor-fn session-type) session-skeleton))
         (do
           (log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
-          (mk-Session cookie-value
+          (mk-Session :uuid cookie-value
                       :rest-handler not-found-page-handler
                       :mk-viewport-fn (fn [request session]
                                         (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.

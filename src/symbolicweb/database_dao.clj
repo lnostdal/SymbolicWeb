@@ -86,14 +86,19 @@
   "DB --> SW"
   (assoc m
     :key (keyword (str/replace (name (:key m)) \_ \-)) ;; :some_field --> :some-field
-    :handler (fn [clj-key db-value]
-               (cond
-                (isa? (class db-value) java.sql.Array)
-                (assert false
-                        "DB-DEFAULT-DB-TO-CLJ-HANDLER: Can't call DB-VALUE-TO-CM-HANDLER here; REF-DB-TABLE-NAME arg missing.")
+    :handler
+    (fn [clj-key db-value]
+      (cond
+       (isa? (class db-value) java.sql.Array)
+       (assert false
+               "DB-DEFAULT-DB-TO-CLJ-HANDLER: Can't call DB-VALUE-TO-CM-HANDLER here; REF-DB-TABLE-NAME arg missing.")
 
-                true
-                (db-value-to-vm-handler (:db-cache m) (:obj m) clj-key db-value)))))
+       (and (find @(:obj m) clj-key)
+            (not (isa? (class (clj-key @(:obj m))) ValueModel)))
+       (alter (:obj m) assoc clj-key db-value)
+
+       true
+       (db-value-to-vm-handler (:db-cache m) (:obj m) clj-key db-value)))))
 
 
 
@@ -118,10 +123,7 @@
            (db-ensure-persistent-vm-field db-cache obj (:key res) it)
 
            (isa? (class it) ContainerModel)
-           (db-ensure-persistent-cm-field db-cache obj (:key res) it)
-
-           true
-           (assert false (str "DB-DB-TO-CLJ-HANDLER: Don't know how to deal with " it " (" (class it) ") here."))))))))
+           (db-ensure-persistent-cm-field db-cache obj (:key res) it)))))))
 
 
 
@@ -246,13 +248,15 @@ Returns OBJ or NIL"
            (let [res (db-clj-to-db-transformer db-cache obj clj-key clj-value)
                  ^Keyword db-key (:key res)
                  db-value (:value res)]
-             (when (and db-key
-                        (or (when (isa? (class clj-value) ValueModel)
-                              (var-alter after-insert-fns conj
-                                         (fn [] (db-ensure-persistent-vm-field db-cache obj clj-key clj-value))))
-                            (when (isa? (class clj-value) ValueModel)
-                              (var-alter after-insert-fns conj
-                                         (fn [] (db-ensure-persistent-cm-field db-cache obj clj-key clj-value true))))))
+             (when db-key
+               (cond
+                (isa? (class clj-value) ValueModel)
+                (var-alter after-insert-fns conj
+                           (fn [] (db-ensure-persistent-vm-field db-cache obj clj-key clj-value)))
+
+                (isa? (class clj-value) ContainerModel)
+                (var-alter after-insert-fns conj
+                           (fn [] (db-ensure-persistent-cm-field db-cache obj clj-key clj-value true))))
                (var-alter record-data assoc db-key db-value))))
          (let [sql (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~}) RETURNING *;"
                               (.table-name db-cache)
@@ -273,11 +277,11 @@ Returns OBJ or NIL"
                                        (do1 "?"
                                          (var-alter values-to-escape conj v))))
                                     (vals (var-get record-data))))
-               res (apply db-pstmt sql (var-get values-to-escape))]
+               res (first (apply db-pstmt sql (var-get values-to-escape)))]
            (vm-set (:id @obj) (:id res))
            (when update-cache?
              (db-cache-put db-cache (:id res) obj))
-           (doseq [^Fn f after-insert-fns] (f)) ;; TODO: Not sure where to place this.
+           (doseq [^Fn f (var-get after-insert-fns)] (f)) ;; TODO: Not sure where to place this.
            ;; TODO: The True here leads to multiple calls to DB-ENSURE-PERSISTENT.. for the same fields.
            (db-db-to-clj-entry-handler db-cache obj res true)
            ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
@@ -289,13 +293,11 @@ Returns OBJ or NIL"
 (defn ^DBCache mk-DBCache [^String table-name
                            ^Fn constructor-fn
                            ^Fn after-fn
-
                            db-clj-to-db-transformer-fn
                            db-db-to-clj-transformer-fn]
   (let [^DBCache db-cache (DBCache.
                            db-clj-to-db-transformer-fn
                            db-db-to-clj-transformer-fn
-
                            table-name
                            constructor-fn
                            after-fn

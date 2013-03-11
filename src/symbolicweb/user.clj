@@ -1,11 +1,9 @@
 (in-ns 'symbolicweb.core)
 
 
-(derive ::UserModelBase ::Model)
-(defn mk-UserModelBase [& attributes]
+(defn mk-UserModelBase [& args]
   (ref (apply assoc {}
-              :type ::UserModelBase
-
+              :id (vm nil)
               ;; A single user can have several sessions running on several computers/browsers at the same time.
-              :applications (vm #{})
-              attributes)))
+              :sessions (vm #{}) ;; NOTE: GC-SESSION depends on this field.
+              args)))
