@@ -6,6 +6,10 @@
 ;; * PostgreSQL 9.2+ supports a native JSON type; might be useful here.
 ;;
 ;; * Related perhaps: https://bitbucket.org/kotarak/lazymap ..seems interesting; haven't thought about this closely though.
+;;
+;; * If the SESSION table used BIGINT for its ID field we could use the standard cache and DAO layer for this.
+;;   Perhaps this implies that all UUIDs should live in their own UUID column in addition to the _always_ present, standard or
+;;  internally used ID column.
 
 
 

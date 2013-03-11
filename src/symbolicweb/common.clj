@@ -294,11 +294,6 @@ Returns a String."
                          widget)))
 
 
-(defn widget-id-of ^String [widget]
-  (println "WIDGET-ID-OF: Deprecated.")
-  (.id widget))
-
-
 
 (defn ^String sw-js-base-bootstrap [^Ref application ^Ref viewport]
   (str "var sw_cookie_name = '" -session-cookie-name- "'; "
