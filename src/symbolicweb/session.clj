@@ -148,7 +148,8 @@ CREATE TABLE sessions (
                  :session-type session-type
                  :one-shot? one-shot?)
           (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
-          (vm-alter -num-sessions-model- + 1)
+          (when-not one-shot?
+            (vm-alter -num-sessions-model- + 1))
           ((:session-constructor-fn session-type) session-skeleton))
         (do
           (log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
