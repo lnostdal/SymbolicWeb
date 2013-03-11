@@ -258,25 +258,27 @@ Returns OBJ or NIL"
                 (var-alter after-insert-fns conj
                            (fn [] (db-ensure-persistent-cm-field db-cache obj clj-key clj-value true))))
                (var-alter record-data assoc db-key db-value))))
-         (let [sql (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~}) RETURNING *;"
-                              (.table-name db-cache)
-                              (mapv name (keys (var-get record-data)))
-                              (mapv (fn [v]
-                                      (cond
-                                       (isa? (class v) ValueModel)
-                                       (do1 "?"
-                                         (var-alter values-to-escape conj @v))
+         (let [sql (if (pos? (count (var-get record-data)))
+                     (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~}) RETURNING *;"
+                                (.table-name db-cache)
+                                (mapv name (keys (var-get record-data)))
+                                (mapv (fn [v]
+                                        (cond
+                                         (isa? (class v) ValueModel)
+                                         (do1 "?"
+                                           (var-alter values-to-escape conj @v))
 
-                                       ;; Dummy value here so we can do our :INSERT without having to :INSERT other objects first.
-                                       ;; Doing that would be tricky since those objects might rely on this object having been
-                                       ;; :INSERTed first (:ID field).
-                                       (isa? (class v) ContainerModel)
-                                       "ARRAY[]::bigint[]" ;; TODO: Magic value.
+                                         ;; Dummy value here so we can do our :INSERT without having to :INSERT other objects
+                                         ;;first. Doing that would be tricky since those objects might rely on this object
+                                         ;; having been :INSERTed first (:ID field).
+                                         (isa? (class v) ContainerModel)
+                                         "ARRAY[]::bigint[]" ;; TODO: Magic value.
 
-                                       true
-                                       (do1 "?"
-                                         (var-alter values-to-escape conj v))))
-                                    (vals (var-get record-data))))
+                                         true
+                                         (do1 "?"
+                                           (var-alter values-to-escape conj v))))
+                                      (vals (var-get record-data))))
+                     (str "INSERT INTO " (.table-name db-cache) " DEFAULT VALUES;"))
                res (first (apply db-pstmt sql (var-get values-to-escape)))]
            (vm-set (:id @obj) (:id res))
            (when update-cache?
