@@ -25,7 +25,7 @@
 
      ;; UserModel -/-> Session
      (when-let [user-model @(:user-model session-m)]
-       (vm-alter (:sessions user-model) disj session)))))
+       (vm-alter (:sessions @user-model) disj session)))))
 
 
 
