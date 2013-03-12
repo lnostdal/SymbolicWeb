@@ -49,6 +49,7 @@
         (do-gc)
         (Thread/sleep 10000)
         (catch Throwable e
+          (println "## -GC-THREAD- ##")
           (clojure.stacktrace/print-stack-trace e 50)
           (Thread/sleep 1000)))
       (recur))))

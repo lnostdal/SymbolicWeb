@@ -149,7 +149,7 @@ CREATE TABLE sessions (
                  :one-shot? one-shot?)
           (when-not one-shot?
             (alter session-skeleton assoc
-                 :json-store (db-json-store-get "sessions" @(:id @session-skeleton) :data))
+                   :json-store (db-json-store-get "sessions" @(:id @session-skeleton) :data))
             (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
             (vm-alter -num-sessions-model- + 1))
           ((:session-constructor-fn session-type) session-skeleton))
