@@ -35,7 +35,9 @@ ARGS:
                                                  (true ::not-found) true
                                                  (false nil) false)
                     (fn [_ _ new-value]
-                      (jqVal it new-value))))
+                      (jqVal it (if new-value
+                                  new-value
+                                  "")))))
 
       ;; Client --> server.
       (case trigger-event
