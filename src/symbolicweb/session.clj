@@ -63,6 +63,7 @@ CREATE TABLE sessions (
   (let [session (ref (apply assoc {}
                             :id (vm nil)
                             :type ::Session
+                            :uuid nil
                             :user-model (vm nil)
                             :last-activity-time (atom (System/currentTimeMillis))
                             :viewports (ref {})
