@@ -47,6 +47,7 @@
                              :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
                              args))]
 
+    ;; HTML5 History stuff.
     ;; TODO: Don't bother with this for crappy browsers.
     (set-viewport-event-handler "window" "popstate" viewport
                                 (fn [& {:keys [query-string]}]
