@@ -43,6 +43,17 @@
 
 
 
+(defn url-alter-query-params [^Ref viewport ^Boolean replace? f & args]
+  "Directly alters query-params of URL for Viewport.
+
+  REPLACE?: If True, a history entry will be added at the client end."
+  (apply vm-alter (:query-params @viewport) f args)
+  (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
+                           "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
+                      viewport))
+
+
+
 (defn assoc-URLMapper
   "Assosiate URL-MAPPER with CONTEXT-WIDGET.
 The URL-MAPPER will be mapped to the Viewport (URL) of CONTEXT-WIDGET for the duration of that widgets Lifetime."
