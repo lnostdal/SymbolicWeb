@@ -41,6 +41,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
 
+(declare log)
 (deftype Lifetime [^Ref state ;; :initial --> :member-of-tree --> :activated --> :deactivated
                    ^Ref parent ;; nil, Lifetime or :lifetime-root
                    ^Ref children ;; []
@@ -64,7 +65,10 @@ If LIFETIME is active it will be deactivated with all its children.")
         (ref-set (.parent child) parent)
         (alter children conj child)
         (when (= :activated (lifetime-state-of parent))
-          (do-lifetime-activation child))))
+          (do-lifetime-activation child)))
+
+      true
+      (log "WARNING: Lifetime/ATTACH-LIFETIME Tried to attach to a PARENT in unsupported state:" (lifetime-state-of parent)))
     parent)
 
 

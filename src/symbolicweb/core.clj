@@ -40,6 +40,7 @@
   (:require symbolicweb.value_model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
+  (:require symbolicweb.logging)
 
   (:require symbolicweb.container-model)
   (:require symbolicweb.container-model-node)
@@ -73,12 +74,11 @@
   (:require symbolicweb.sticky)
   (:require symbolicweb.sortable)
   (:require symbolicweb.date-and-time)
-
   (:require symbolicweb.garbage-collection)
 
   (:require [org.httpkit.server :as http.server])
   (:require [org.httpkit.client :as http.client])
-  (:require symbolicweb.logging)
+
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session)
   (:require symbolicweb.history))
