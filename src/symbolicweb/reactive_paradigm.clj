@@ -35,6 +35,11 @@
 
 
 
+(defn clear-observers [^Observable observable]
+  (ref-set (.observers observable) #{}))
+
+
+
 (defn ^Observable mk-Observable [^Fn notify-observers-fn]
   (Observable. (ref #{}) ;; OBSERVERS
                notify-observers-fn))
