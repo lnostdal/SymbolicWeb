@@ -67,7 +67,6 @@ If LIFETIME is active it will be deactivated with all its children.")
         (when (= :activated (lifetime-state-of parent))
           (do-lifetime-activation child)))
 
-      true
       (log "WARNING: Lifetime/ATTACH-LIFETIME Tried to attach to a PARENT in unsupported state:" (lifetime-state-of parent)))
     parent)
 
