@@ -24,7 +24,7 @@ CREATE TABLE sessions (
          (case (:key m)
            (:type :logged-in? :last-activity-time :viewports :mk-viewport-fn
             :request-handler :rest-handler :ajax-handler :aux-handler
-            :one-shot?)
+            :one-shot? :temp-data)
            (assoc m
              :key nil)
 
@@ -71,6 +71,8 @@ CREATE TABLE sessions (
                                               (throw (Exception. "mk-Session: No :MK-VIEWPORT-FN given.")))
                             :one-shot? false
 
+                            :temp-data (ref {})
+
                             :created (datetime-to-sql-timestamp (time/now))
                             :touched (vm (datetime-to-sql-timestamp (time/now)))
 
@@ -93,14 +95,42 @@ CREATE TABLE sessions (
 
 
 
-(defn session-get [^Ref session ^Keyword k]
+(defn spget [^Ref session ^Keyword k]
+  "\"Session Permanent Get\"
+Session data stored in DB; permanent."
   (db-json-get (:json-store @session) k))
 
 
 
-(defn session-del [^Ref session ^Keyword k]
+(defn spdel [^Ref session ^Keyword k]
+  "\"Session Permanent Delete\"
+Session data stored in DB; permanent."
   (vm-alter (:json-store @session)
             dissoc k))
+
+
+
+(defn stput [^Ref session ^Keyword k value]
+  "\"Session Temporary Put\"
+Session data stored in memory; temporarly."
+  (alter (:temp-data @session) assoc
+         k value))
+
+
+
+(defn stget
+  "\"Session Temporary Get\"
+Session data stored in memory; temporarly."
+  ([^Ref session ^Keyword k]
+     (stget session k (vm nil)))
+
+  ([^Ref session ^Keyword k not-found]
+     (with (get @(:temp-data @session) k ::not-found)
+       (if (= it ::not-found)
+         (do
+           (stput session k not-found)
+           not-found)
+         it))))
 
 
 
