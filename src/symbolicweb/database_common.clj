@@ -200,7 +200,8 @@
 
 (defn al-descendants [^String table-name ^Long id & {:keys [id-name parent-name
                                                             columns
-                                                            where order-by params]
+                                                            where order-by
+                                                            params]
                                                      :or {id-name "id" parent-name "parent"}}]
   "Adjacency List: Get descendants."
   [(str "WITH RECURSIVE q AS
@@ -216,17 +217,18 @@ SELECT * FROM q")
 
 
 
-(defn al-descendants-to-level [^String table-name ^Long id ^Long level & {:keys [id-name parent-name]
+(defn al-descendants-to-level [^String table-name ^Long id ^Long level & {:keys [id-name parent-name
+                                                                                 params]
                                                                           :or {id-name "id" parent-name "parent"}}]
   "Adjecency List: Get descendants up to a level or limit.
 Returns :ID and :PARENT columns."
-  (db-pstmt (str "WITH RECURSIVE q AS
+  [(str "WITH RECURSIVE q AS
   (SELECT " id-name ", " parent-name ", ARRAY[id] AS level FROM " table-name " hc WHERE " id-name " = ?
    UNION ALL
    SELECT hc." id-name ", hc." parent-name ", q.level || hc." id-name " FROM q JOIN " table-name
    "  hc ON hc." parent-name " = q." id-name " WHERE array_upper(level, 1) < ?)
 SELECT " id-name ", " parent-name " FROM q ORDER BY level")
-            id level))
+   (concat [id level] params)])
 
 
 
