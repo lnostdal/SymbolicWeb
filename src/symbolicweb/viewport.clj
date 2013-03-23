@@ -25,6 +25,8 @@
                              :query-params (vm (into (sorted-map) (:query-params request)))
                              :popstate-observer (vm (into (sorted-map) (:query-params request))) ;; Used by history.clj.
 
+                             :scrolled-to-bottom-event (vm 0)
+
                              :page-title "SW"
 
                              ;; gen-url
@@ -54,6 +56,18 @@
                                   (let [query-params (ring.util.codec/form-decode query-string)]
                                     (vm-set (:popstate-observer @viewport) query-params)))
                                 :callback-data {:query-string "' + encodeURIComponent(window.location.search.slice(1)) + '"})
+
+    ;; Viewport scrolled to the bottom
+    (set-viewport-event-handler "window" "sw_scrollbottom" viewport
+                                (fn [& _]
+                                  (vm-alter (:scrolled-to-bottom-event @viewport) inc)))
+    (add-response-chunk
+     (str "$(window).scroll(function(){"
+          "  if(50 > $(document).height() - $(window).height() - $(window).scrollTop()){"
+          "    $(window).trigger('sw_scrollbottom');"
+          "  }"
+          "});")
+     viewport)
 
     ;; Session --> Viewport
     (alter (:viewports @session) assoc viewport-id viewport)
