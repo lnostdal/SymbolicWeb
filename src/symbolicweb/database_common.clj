@@ -220,28 +220,29 @@
 (defn al-descendants-to-level [^String table-name ^Long id ^Long level & {:keys [id-name parent-name
                                                                                  params]
                                                                           :or {id-name "id" parent-name "parent"}}]
-  "Adjecency List: Get descendants up to a level or limit.
+  "Adjecency List: Get descendants down to a LEVEL or limit.
 Returns :ID and :PARENT columns."
-  [(str "WITH RECURSIVE q AS
-  (SELECT " id-name ", " parent-name ", ARRAY[id] AS level FROM " table-name " hc WHERE " id-name " = ?
-   UNION ALL
-   SELECT hc." id-name ", hc." parent-name ", q.level || hc." id-name " FROM q JOIN " table-name
-   "  hc ON hc." parent-name " = q." id-name " WHERE array_upper(level, 1) < ?)
-SELECT " id-name ", " parent-name " FROM q ORDER BY level")
+  [(str "WITH RECURSIVE q AS "
+        "(SELECT " id-name ", " parent-name ", ARRAY[id] AS level FROM " table-name " hc WHERE " id-name " = ?"
+        " UNION ALL "
+        "SELECT hc." id-name ", hc." parent-name ", q.level || hc." id-name " FROM q JOIN " table-name
+        "  hc ON hc." parent-name " = q." id-name " WHERE array_upper(level, 1) < ?) "
+        "SELECT " id-name ", " parent-name " FROM q ORDER BY level")
    (concat [id level] params)])
 
 
 
-(defn al-ancestors [^String table-name ^Long id & {:keys [id-name parent-name]
+(defn al-ancestors [^String table-name ^Long id & {:keys [id-name parent-name
+                                                          columns]
                                                    :or {id-name "id" parent-name "parent"}}]
   "Adacency List: Get ancestors.
 Returns :ID and :PARENT columns."
-  (db-pstmt (str "WITH RECURSIVE q AS
-  (SELECT h.*, 1 AS level FROM " table-name " h WHERE " id-name " = ?
-   UNION ALL
-   SELECT  hp.*, level + 1 FROM q JOIN " table-name " hp ON hp." id-name " = q." parent-name ")
-SELECT " id-name ", " parent-name " FROM q ORDER BY level DESC")
-            id))
+  [(str "WITH RECURSIVE q AS "
+        "(SELECT h.*, 1 AS level FROM " table-name " h WHERE " id-name " = ?"
+        " UNION ALL "
+        "SELECT  hp.*, level + 1 FROM q JOIN " table-name " hp ON hp." id-name " = q." parent-name ") "
+        "SELECT " id-name ", " parent-name (cl-format false "~{, ~A~}" columns) " FROM q ORDER BY level DESC")
+   [id]])
 
 
 
