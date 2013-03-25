@@ -137,7 +137,7 @@ Appends a timestamp to the URL based on file mtime."
 
 
 
-(def -now- (with1 (vm (clj-time.core/now))
-             (overtone.at-at/every 1000
-                                   (fn [] (swsync (vm-set it (clj-time.core/now))))
-                                   -overtone-pool-)))
+(defonce -now- (with1 (vm (clj-time.core/now))
+                 (overtone.at-at/every 1000
+                                       (fn [] (swsync (vm-set it (clj-time.core/now))))
+                                       -overtone-pool-)))
