@@ -71,12 +71,11 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
              (fn [^Lifetime inner-lifetime event-args]
                (handle-container-view-event container-view container-model views-of-nodes view-from-node-fn event-args)))
 
-    ;; Add any already existing nodes to CONTAINER-VIEW.
-    ;; TODO: Is this really needed with the Lifetime tracking facility we have now? I guess it sort of leads to the
-    ;; same in effect, but doing it at this end (Model) instead of at the View end (ADD-RESPONSE-CHUNK) seems more correct.
-    (loop [node (cm-head-node container-model)]
-      (when node
-        (jqAppend container-view (view-of-node-in-context container-view views-of-nodes view-from-node-fn node))
-        (recur (cmn-right-node node))))
+    (add-lifetime-activation-fn (.lifetime container-view)
+                                (fn [^Lifetime lifetime]
+                                  (cm-iterate container-model node data
+                                              (jqAppend container-view
+                                                (view-of-node-in-context container-view views-of-nodes view-from-node-fn node))
+                                              false)))
 
     container-view))
