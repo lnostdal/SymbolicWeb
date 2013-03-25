@@ -125,15 +125,15 @@ lifetime (as long as VALUE-MODEL exists)."
      (vm-syncs value-models lifetime callback true))
 
   ([value-models lifetime ^Fn callback ^Boolean initial-sync?]
-     (let [^ValueModel mid (vm nil)]
-       (with-local-vars [already-synced? false] ;; We only want to trigger an initial sync once if at all.
-         (doseq [^ValueModel value-model value-models]
-           (vm-observe value-model lifetime (if (and initial-sync? (not (var-get already-synced?)))
-                                              (do
-                                                (var-set already-synced? true)
-                                                true)
-                                              false)
-                       (fn [& _] (vm-set mid (callback))))))
+     (let [^ValueModel mid (vm nil)
+           ^Atom already-synced? (atom false)] ;; We only want to trigger an initial sync once if at all.
+       (doseq [^ValueModel value-model value-models]
+         (vm-observe value-model lifetime (if (and initial-sync? (not @already-synced?))
+                                            (do
+                                              (reset! already-synced? true)
+                                              true)
+                                            false)
+                     (fn [& _] (vm-set mid (callback)))))
        mid)))
 
 
