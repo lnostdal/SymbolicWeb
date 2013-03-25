@@ -8,7 +8,7 @@
 (let [conversation-area-model (cm)]
   (defn mk-chat-viewport [request session]
     (let [root-widget (mk-bte :id "_body" :root-widget? true)
-          nickname (with (session-get session :nickname)
+          nickname (with (spget session :nickname)
                      (when-not @it
                        (vm-set it (str "anon-" (Long/toHexString (generate-uid)))))
                      it)
@@ -32,7 +32,7 @@
                   chat-input-view (with1 (mk-TextInput chat-input-model :enterpress
                                                        :clear-on-submit? true
                                                        :one-way-sync-client? true)
-                                    (jqCSS it "width" "700px"))]
+                                    (jqCSS it "width" "'700px'"))]
               (add-response-chunk (str "$('#" (.id chat-input-view) "').focus();") chat-input-view)
               (vm-observe chat-input-model nil false
                           (fn [inner-lifetime old-value new-value]

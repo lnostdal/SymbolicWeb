@@ -149,8 +149,6 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
               :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}]
       ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
       [:meta {:charset "UTF-8"}]
-      ;; TODO: Extract from VIEWPORT.
-      [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,maximum-scale=1.0"}]
       [:title (:page-title @viewport)]
 
       (generate-rest-css @(:rest-css-entries @viewport))

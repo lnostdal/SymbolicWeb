@@ -4,6 +4,7 @@
 
 
 ;;; TODO:
+;;
 ;;   * The VALUE field should be a Fn; not a Ref. That Fn could close over a Ref -- or something else.
 ;;   * ENSURE is always used at the moment. Perhaps a dynamic var could be used to flip between ENSURE and DEREF.
 ;;   * ..and further, perhaps the same thing colud be done with regards to REF-SET, ALTER and COMMUTE.
