@@ -3,16 +3,16 @@
 
 
 (defn jqHTML
-  (^String [^WidgetBase widget]
-    (str "$('#" (.id widget) "').html();\n"))
+  ([^WidgetBase widget]
+     (str "$('#" (.id widget) "').html();\n"))
 
-  (^String [^WidgetBase widget new-html]
+  ([^WidgetBase widget new-html]
      (add-response-chunk (str "$('#" (.id widget) "').html(" (url-encode-wrap (.toString new-html)) ");\n")
                          widget)))
 
 
 
-(defn jqAppend ^String [^WidgetBase parent ^WidgetBase new-widget]
+(defn jqAppend [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
   (with1 (add-response-chunk (str "$('#" (.id parent) "').append(" (url-encode-wrap (render-html new-widget)) ");\n")
                              parent)
@@ -21,7 +21,7 @@
 
 
 
-(defn jqPrepend ^String [^WidgetBase parent ^WidgetBase new-widget]
+(defn jqPrepend [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
   (with1 (add-response-chunk (str "$('#" (.id parent) "').prepend(" (url-encode-wrap (render-html new-widget)) ");\n")
                              parent)
@@ -30,7 +30,7 @@
 
 
 
-(defn jqAfter ^String [^WidgetBase widget ^WidgetBase new-widget]
+(defn jqAfter [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
   (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
@@ -41,7 +41,7 @@
 
 
 
-(defn jqBefore ^String [^WidgetBase widget ^WidgetBase new-widget]
+(defn jqBefore [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
   (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
@@ -52,7 +52,7 @@
 
 
 
-(defn jqReplaceWith ^String [^WidgetBase widget ^WidgetBase new-widget]
+(defn jqReplaceWith [^WidgetBase widget ^WidgetBase new-widget]
   (when-not *with-js?* (detach-branch widget))
   (with1 (add-response-chunk (str "$('#" (.id widget) "').replaceWith(" (url-encode-wrap (render-html new-widget) ");\n")
                                   widget))
@@ -61,14 +61,14 @@
 
 
 
-(defn jqAddClass ^String [^WidgetBase widget ^String class-name]
-  (add-response-chunk (str "$('#" (.id widget) "').addClass(" (url-encode-wrap class-name) ");\n")
+(defn jqAddClass [^WidgetBase widget ^String class-name]
+  (add-response-chunk (str "$('#" (.id widget) "').addClass('" class-name "');\n")
                       widget))
 
 
 
-(defn jqRemoveClass ^String [^WidgetBase widget ^String class-name]
-  (add-response-chunk (str "$('#" (.id widget) "').removeClass(" (url-encode-wrap class-name) ");\n")
+(defn jqRemoveClass [^WidgetBase widget ^String class-name]
+  (add-response-chunk (str "$('#" (.id widget) "').removeClass('" class-name "');\n")
                       widget))
 
 
@@ -89,14 +89,11 @@
 
 
 
-;;; TODO: Handling of VALUE parameter in the following functions need improvement; more consistency.
-;; Perhaps a default should use URL-ENCODE-WRAP or something.
-
 (defn jqCSS
   ([^WidgetBase widget ^String property-name]
      (str "$('#" (.id widget) "').css('" property-name "');\n"))
-  ([^WidgetBase widget ^String property-name value]
-     (add-response-chunk (str "$('#" (.id widget) "').css('" property-name "', '" value "');\n")
+  ([^WidgetBase widget ^String property-name ^String js-value]
+     (add-response-chunk (str "$('#" (.id widget) "').css('" property-name "', " js-value ");\n")
                          widget)))
 
 
@@ -104,8 +101,8 @@
 (defn jqAttr
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').attr('" attribute-name "');\n"))
-  ([^WidgetBase widget ^String attribute-name value]
-     (add-response-chunk (str "$('#" (.id widget) "').attr('" attribute-name "', " value ");\n")
+  ([^WidgetBase widget ^String attribute-name ^String js-value]
+     (add-response-chunk (str "$('#" (.id widget) "').attr('" attribute-name "', " js-value ");\n")
                          widget)))
 
 
@@ -113,8 +110,8 @@
 (defn jqProp
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').prop('" attribute-name "');\n"))
-  ([^WidgetBase widget attribute-name value]
-     (add-response-chunk (str "$('#" (.id widget) "').prop('" attribute-name "', " value ");\n")
+  ([^WidgetBase widget ^String attribute-name ^String js-value]
+     (add-response-chunk (str "$('#" (.id widget) "').prop('" attribute-name "', " js-value ");\n")
                          widget)))
 
 

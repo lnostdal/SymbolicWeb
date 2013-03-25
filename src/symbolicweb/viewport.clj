@@ -103,39 +103,42 @@
 
 (defn add-response-chunk ^String [^String new-chunk widget]
   "WIDGET: A WidgetBase or Viewport instance."
-  (when-not *with-js?*
-    (if (viewport? widget)
-      (let [viewport widget
-            viewport-m @widget]
-        (send (:response-agent viewport-m)
-              (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk))))
-      (letfn [(do-it []
-                (let [viewport (viewport-of widget)
-                      viewport-m @viewport]
-                  ;; TODO: M-m-m-mega hack. Why isn't REMOVE-VIEW called vs. TemplateElements and it seems some other widgets
-                  ;; held in HTMLContainers in some cases?
-                  ;; UPDATE 10/15/2012: This doesn't seem to happen any more, but I'm leaving it here a while longer.
-                  ;; Are children not added to HTMLTemplate?
-                  (if (< (* -viewport-timeout- 3) ;; NOTE: Times 3!
-                         (- (System/currentTimeMillis) @(:last-activity-time viewport-m)))
-                    (do
-                      ;; Ok, it seems :VIEWPORT is set and :PARENT is not set to :DEAD so so this means ENSURE-NON-VISIBLE
-                      ;; has _not_ been called yet -- which is strange.
-                      ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
-                      ;;(dbg-prin1 [(:type @widget) (:id @widget)])
-                      (when (not= :dead (parent-of widget))
-                        ;; This one is interesting; uncomment when working on this.
-                        (println "ADD-RESPONSE-CHUNK: Found stale widget:" (.id widget))
-                        (detach-branch widget)
-                        (def -lost-widget- widget)))
-                    (send (:response-agent viewport-m)
-                          (fn [_]
-                            (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
-        (if (viewport-of widget) ;; Visible?
-          (do-it)
-          (when-not (= :deactivated (lifetime-state-of (.lifetime widget)))
-            (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it))))))))
-  new-chunk)
+  (if *with-js?*
+    new-chunk
+    (do
+      (if (viewport? widget)
+        (let [viewport widget
+              viewport-m @widget]
+          (send (:response-agent viewport-m)
+                (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk))))
+        (letfn [(do-it []
+                  (let [viewport (viewport-of widget)
+                        viewport-m @viewport]
+                    ;; TODO: M-m-m-mega hack. Why isn't REMOVE-VIEW called vs. TemplateElements and it seems some other widgets
+                    ;; held in HTMLContainers in some cases?
+                    ;; UPDATE 10/15/2012: This doesn't seem to happen any more, but I'm leaving it here a while longer.
+                    ;; Are children not added to HTMLTemplate?
+                    (if (< (* -viewport-timeout- 3) ;; NOTE: Times 3!
+                           (- (System/currentTimeMillis) @(:last-activity-time viewport-m)))
+                      (do
+                        ;; Ok, it seems :VIEWPORT is set and :PARENT is not set to :DEAD so so this means ENSURE-NON-VISIBLE
+                        ;; has _not_ been called yet -- which is strange.
+                        ;;(remove-view (:model @widget) widget) ;; Ok, we might still leak; what about children of parent?
+                        ;;(dbg-prin1 [(:type @widget) (:id @widget)])
+                        (when (not= :dead (parent-of widget))
+                          ;; This one is interesting; uncomment when working on this.
+                          (println "ADD-RESPONSE-CHUNK: Found stale widget:" (.id widget))
+                          (detach-branch widget)
+                          (def -lost-widget- widget)))
+                      (send (:response-agent viewport-m)
+                            (fn [_]
+                              (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
+          (if (viewport-of widget) ;; Visible?
+            (do-it)
+            (when-not (= :deactivated (lifetime-state-of (.lifetime widget)))
+              (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it)))))))
+      widget)))
+
 
 
 (defn set-viewport-event-handler [^String selector ^String event-type ^Ref viewport ^Fn callback-fn
