@@ -67,15 +67,15 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
   VIEW-FROM-NODE-FN: ^WidgetBase (fn [^WidgetBase container-view ^ContainerModelNode container-model-node] ..)"
   (let [views-of-nodes (ref {})]
 
-    (observe (.observable container-model) (.lifetime container-view)
-             (fn [^Lifetime inner-lifetime event-args]
-               (handle-container-view-event container-view container-model views-of-nodes view-from-node-fn event-args)))
-
     (add-lifetime-activation-fn (.lifetime container-view)
                                 (fn [^Lifetime lifetime]
                                   (cm-iterate container-model node data
                                               (jqAppend container-view
                                                 (view-of-node-in-context container-view views-of-nodes view-from-node-fn node))
                                               false)))
+
+    (observe (.observable container-model) (.lifetime container-view)
+             (fn [^Lifetime inner-lifetime event-args]
+               (handle-container-view-event container-view container-model views-of-nodes view-from-node-fn event-args)))
 
     container-view))

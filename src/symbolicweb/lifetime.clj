@@ -67,7 +67,7 @@ If LIFETIME is active it will be deactivated with all its children.")
         (when (= :activated (lifetime-state-of parent))
           (do-lifetime-activation child)))
 
-      (log "WARNING: Lifetime/ATTACH-LIFETIME Tried to attach to a PARENT in unsupported state:" (lifetime-state-of parent)))
+      (log "WARNING: Lifetime/ATTACH-LIFETIME: Tried to attach to a PARENT in unsupported state:" (lifetime-state-of parent)))
     parent)
 
 
@@ -109,15 +109,18 @@ If LIFETIME is active it will be deactivated with all its children.")
 
 
   (do-lifetime-activation [lifetime]
-    (case (lifetime-state-of lifetime)
-      :member-of-tree
-      (do
-        (ref-set state :activated)
-        ;; Root and down to leaves (bottom).
-        (doseq [^Fn f (ensure on-lifetime-activation-fns)]
-          (f lifetime))
-        (doseq [^Lifetime child (lifetime-children-of lifetime)]
-          (do-lifetime-activation child))))
+    (with (lifetime-state-of lifetime)
+      (case it
+        ;; Including :ACTIVATED here since there are cases
+        (:member-of-tree :activated)
+        (do
+          (ref-set state :activated)
+          ;; Root and down to leaves (bottom).
+          (when-not (= it :activated)
+            (doseq [^Fn f (ensure on-lifetime-activation-fns)]
+              (f lifetime)))
+          (doseq [^Lifetime child (lifetime-children-of lifetime)]
+            (do-lifetime-activation child)))))
     lifetime)
 
 
