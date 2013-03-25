@@ -10,7 +10,7 @@
   "  RELATION: SQL or [SQL PARAMS]"
   (let [res (apply db-pstmt (str "SELECT * FROM " (if (string? relation)
                                                     relation
-                                                    (str "(" (first relation) ") AS blah")) ;; TODO: Yeah..
+                                                    (str "(" (first relation) ") AS db_query_get_chunk_rel"))
 
                                  (when where
                                    (str " WHERE " where))
@@ -83,7 +83,7 @@ result.
   :PARAMS: Params (prepared DB statement) for :WHERE and :OTHER (in that order)."
   (let [res (apply db-pstmt (str "SELECT * FROM " (if (string? relation)
                                                      relation
-                                                     (str "(" (first relation) ") AS blah")) ;; TODO: Yeah..
+                                                     (str "(" (first relation) ") AS db_ordered_query_get_chunk_rel"))
 
                                  " WHERE "
                                  (case [direction global-direction]
