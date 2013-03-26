@@ -54,7 +54,8 @@
     (set-viewport-event-handler "window" "popstate" viewport
                                 (fn [& {:keys [query-string]}]
                                   (let [query-params (ring.util.codec/form-decode query-string)]
-                                    (vm-set (:popstate-observer @viewport) query-params)))
+                                    (vm-set (:popstate-observer @viewport) query-params)
+                                    (vm-set (:popstate-observer @viewport) nil)))
                                 :callback-data {:query-string "' + encodeURIComponent(window.location.search.slice(1)) + '"})
 
     ;; Viewport scrolled to the bottom

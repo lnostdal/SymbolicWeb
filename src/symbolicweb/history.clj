@@ -35,11 +35,12 @@
 
      ;; Client --> server.
      (vm-observe (:popstate-observer @viewport) lifetime false
-                 (fn [inner-lifetime old-value new-value]
-                   (doseq [[k v] new-value]
-                     (when (= k name)
-                       (vm-alter (:query-params @viewport) assoc name v)
-                       (vm-set model v)))))))
+                 (fn [inner-lifetime _ value]
+                   (when value
+                     (doseq [[k v] value]
+                       (when (= k name)
+                         (vm-alter (:query-params @viewport) assoc name v)
+                         (vm-set model v))))))))
 
 
 
