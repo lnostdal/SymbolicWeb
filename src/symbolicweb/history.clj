@@ -28,10 +28,11 @@
                  (fn [inner-lifetime old-value new-value]
                    (when-not (= new-value (get @(:query-params @viewport) name))
                      (vm-alter (:query-params @viewport) assoc name new-value)
-                     (add-response-chunk (str "window.history.pushState(null, '', '?"
-                                              (ring.util.codec/form-encode @(:query-params @viewport))
-                                              "');\n")
-                                         viewport))))
+                     (once-only :vm-map-to-url
+                       (add-response-chunk (str "window.history.pushState(null, '', '?"
+                                                (ring.util.codec/form-encode @(:query-params @viewport))
+                                                "');\n")
+                                           viewport)))))
 
      ;; Client --> server.
      (vm-observe (:popstate-observer @viewport) lifetime false

@@ -141,3 +141,17 @@ Appends a timestamp to the URL based on file mtime."
                  (overtone.at-at/every 1000
                                        (fn [] (swsync (vm-set it (clj-time.core/now))))
                                        -overtone-pool-)))
+
+
+(def ^:dynamic *with-once-only-ctx* nil)
+
+(defmacro with-once-only-ctx [& body]
+  `(binding [*with-once-only-ctx* (ref {})]
+     (with1 ~@body
+       (doseq [^Fn cb# (vals @*with-once-only-ctx*)]
+         (cb#)))))
+
+
+
+(defmacro once-only [^Keyword k & body]
+  `(alter *with-once-only-ctx* assoc ~k (fn [] ~@body)))

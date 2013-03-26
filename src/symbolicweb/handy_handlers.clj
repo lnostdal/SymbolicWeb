@@ -114,24 +114,25 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (defn default-request-handler [request ^Ref session]
   "Default top-level request handler for both REST and AJAX/Comet type requests."
-  (if (get (:query-params request) "_sw_request_type") ;; sw-ajax.js adds this to our AJAX requests.
-    ;; AJAX.
-    (if-let [^Ref viewport (get (ensure (:viewports @session))
-                                (get (:query-params request) "_sw_viewport_id"))]
-      (do
-        (touch viewport)
-        ((:ajax-handler @session) request session viewport))
-      (do
-        #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
-                 "Refreshing page, but keeping Session (cookie).")
-        {:status 200
-         :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-         :body (str (set-session-cookie (:uuid @session)) ;; A new Session might have been started for this request.
-                    "window.location.href = window.location.href;")}))
-    ;; REST.
-    (let [viewport ((:mk-viewport-fn @session) request session)]
-      (with1 ((:rest-handler @session) request session viewport)
-        (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))))))
+  (with-once-only-ctx
+    (if (get (:query-params request) "_sw_request_type") ;; sw-ajax.js adds this to our AJAX requests.
+      ;; AJAX.
+      (if-let [^Ref viewport (get (ensure (:viewports @session))
+                                  (get (:query-params request) "_sw_viewport_id"))]
+        (do
+          (touch viewport)
+          ((:ajax-handler @session) request session viewport))
+        (do
+          #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
+                     "Refreshing page, but keeping Session (cookie).")
+          {:status 200
+           :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+           :body (str (set-session-cookie (:uuid @session)) ;; A new Session might have been started for this request.
+                      "window.location.href = window.location.href;")}))
+      ;; REST.
+      (let [viewport ((:mk-viewport-fn @session) request session)]
+        (with1 ((:rest-handler @session) request session viewport)
+          (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport)))))))
 
 
 
