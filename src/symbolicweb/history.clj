@@ -16,7 +16,7 @@
        ;; Client --> server.
        (vm-set model value)
        ;; Server --> client.
-       (do
+       (do ;; TODO: (when-let [value @model] ...) here?
          (vm-alter (:query-params @viewport) assoc name @model)
          (add-response-chunk (str "window.history.replaceState(null, '', '?"
                                   (ring.util.codec/form-encode @(:query-params @viewport))
@@ -26,6 +26,7 @@
      ;; Server --> client.
      (vm-observe model lifetime false
                  (fn [inner-lifetime old-value new-value]
+                   ;; TODO: Remove key/value pair from URL when NEW-VALUE is NIL?
                    (when-not (= new-value (get @(:query-params @viewport) name))
                      (vm-alter (:query-params @viewport) assoc name new-value)
                      (once-only :vm-map-to-url

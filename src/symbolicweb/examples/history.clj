@@ -30,14 +30,12 @@
           ", for a visual confirmation that the page really does not reload as the URL changes."]
 
 
-         [:p (sw (with (mk-ContainerView (mk-WB :a)
-                                         (cm-append (cm) (cmn (vm "Increment A!")))
-                                         #(mk-he :b (cmn-data %2)))
-                   (mk-Link it a-url-mapper (vm-sync a-model (.lifetime it) #(inc %3)))))]
-         [:p (sw (with (mk-ContainerView (mk-WB :a)
-                                         (cm-append (cm) (cmn (vm "Increment B!")))
-                                         #(mk-he :b (cmn-data %2)))
-                   (mk-Link it b-url-mapper (vm-sync b-model (.lifetime it) #(inc %3)))))]
+         [:p (sw (with (mk-WB :a)
+                   (jqHTML it "Increment A!")
+                   (mk-Link it {a-url-mapper (vm-sync a-model (.lifetime it) #(inc %3))})))]
+         [:p (sw (with (mk-WB :a)
+                   (jqHTML it "Increment B!")
+                   (mk-Link it {b-url-mapper (vm-sync b-model (.lifetime it) #(inc %3))})))]
 
          [:hr]
          [:pre
@@ -54,6 +52,7 @@
    (fn [request]
      (re-find #"history$" (:uri request)))]
 
-  (fn [id & args]
-    (apply mk-Session id :mk-viewport-fn #'mk-history-viewport
-           args)))
+  (fn [session]
+    (alter session assoc
+           :mk-viewport-fn #'mk-history-viewport)
+    session))

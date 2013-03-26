@@ -50,26 +50,27 @@
 
 
 
-;; TODO: Handle multiple "URL mappers".
-(defn ^WidgetBase mk-Link [^WidgetBase container-view url-mapper ^ValueModel url-mapper-mutator]
-  "  URL-MAPPER: Return value of mk-URLMapper."
-  (let [url-mapper-vm (:model url-mapper)
-        url-mapper-name (:name url-mapper)
-        query-str-vm (vm "")]
-
-    (with-observed-vms (.lifetime container-view)
-      (when-let [viewport (viewport-of container-view)]
-        (vm-set query-str-vm (ring.util.codec/form-encode (merge @(:query-params @viewport) ;; Sorted Map, so result will be too.
-                                                                 {url-mapper-name @url-mapper-mutator})))))
-
-    (vm-observe query-str-vm (.lifetime container-view) true
+(defn ^WidgetBase mk-Link [^WidgetBase widget url-mappers]
+  "  URL-MAPPERS: [(mk-URLMapper ..) (vm ..) ...]"
+  (let [query-str-vm (vm "")
+        query-params (vm nil)]
+    (vm-observe query-str-vm (.lifetime widget) false
                 (fn [_ _ query-str]
-                  (jqAttr container-view "href"
+                  (jqAttr widget "href"
                           (str "window.location.pathname + '?' + " (url-encode-wrap query-str)))))
-
-    (set-event-handler "click" container-view
+    (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
+      (with-observed-vms (.lifetime widget)
+        (when-let [viewport (viewport-of widget)]
+          (when-not @query-params
+            (vm-set query-params @(:query-params @viewport)))
+          (vm-set query-str-vm (ring.util.codec/form-encode
+                                @(with1 query-params
+                                   ;; QUERY-PARAMS is a Sorted Map, and result of MERGE will be too.
+                                   (vm-set it (merge @it {(:name url-mapper) @url-mapper-mutator-vm}))))))))
+    (set-event-handler "click" widget
                        (fn [& _]
-                         (vm-set url-mapper-vm @url-mapper-mutator))
-                       :js-before "event.preventDefault(); return(true);"))
-
-  container-view)
+                         ;; TODO: This causes multiple client side History entries; one for each iteration..
+                         (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
+                           (vm-set (:model url-mapper) @url-mapper-mutator-vm)))
+                       :js-before "event.preventDefault(); return(true);")
+    widget))
