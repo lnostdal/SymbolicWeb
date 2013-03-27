@@ -99,15 +99,15 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 
 (defn default-ajax-handler [request ^Ref session ^Ref viewport]
-  (if-let [sw-request-type-str (get (:query-params request) "_sw_request_type")]
-    (case sw-request-type-str
+  (if-let [sw-request-type (get (:query-params request) "_sw_request_type")]
+    (case sw-request-type
       "comet"
       (http.server/async-response respond-fn (handle-out-channel-request respond-fn request session viewport))
 
       "ajax"
       (handle-in-channel-request request session viewport)
 
-      (throw (Exception. (str "DEFAULT-AJAX-HANDLER: Unknown _sw_request_type \"" sw-request-type-str "\" given."))))
+      (throw (Exception. (str "DEFAULT-AJAX-HANDLER: Unknown _sw_request_type \"" sw-request-type "\" given."))))
     ((:aux-handler @session) request session viewport)))
 
 
@@ -168,7 +168,6 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
       ;; jQuery migrate.
       "<script src='http://code.jquery.com/jquery-migrate-git.min.js'></script>"
-
       [:script (sw-js-base-bootstrap session viewport)]
       [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
       (generate-rest-js @(:rest-js-entries @viewport))]

@@ -81,7 +81,9 @@
 
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session)
-  (:require symbolicweb.history))
+  (:require symbolicweb.history)
+
+  (:require symbolicweb.examples.nostdal-org))
 
 
 

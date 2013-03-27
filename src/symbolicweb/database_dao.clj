@@ -226,6 +226,11 @@ Returns the ContainerModel"
 
 
 
+(defn db-backend-remove [^DBCache db-cache ^Long id]
+  (db-stmt (str "DELETE FROM " (.table-name db-cache) " WHERE id = " id " LIMIT 1;")))
+
+
+
 (defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "Used by DB-GET; see DB-GET.
 Returns OBJ or NIL"
@@ -382,8 +387,9 @@ Blocking."
 
 
 
-;; TODO:
-(defn db-remove [^Long id ^String table-name]
+(defn db-remove [^Ref obj ^String table-name]
   "SQL `DELETE FROM ...'."
-  (assert false "DB-REMOVE: TODO!")
-  #_(db-backend-remove id table-name))
+  (let [id (long @(:id @obj)) ;; Because (.equals (int 261) 261) => false
+        ^DBCache db-cache (db-get-cache table-name)]
+    (db-backend-remove id table-name)
+    (db-cache-remove db-cache id)))

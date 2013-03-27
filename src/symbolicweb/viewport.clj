@@ -50,7 +50,7 @@
                              args))]
 
     ;; HTML5 History stuff.
-    ;; TODO: Don't bother with this for crappy browsers.
+    ;; TODO: Don't bother with this for crappy browsers – mk-Link also needs a fallback in this regard.
     (set-viewport-event-handler "window" "popstate" viewport
                                 (fn [& {:keys [query-string]}]
                                   (let [query-params (ring.util.codec/form-decode query-string)]
