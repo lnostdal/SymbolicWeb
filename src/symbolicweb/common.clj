@@ -181,11 +181,12 @@ Returns a String."
 
 
 
-(defn ^String set-document-cookie [& {:keys [path domain? name value]
+(defn ^String set-document-cookie [& {:keys [path domain? name value permanent?]
                                       :or {domain? true
                                            path "\" + window.location.pathname + \""
                                            name "name"
-                                           value "value"}}]
+                                           value "value"
+                                           permanent? true}}]
   (str "document.cookie = \""
        name "=" (if value value "") "; "
        (when domain?
@@ -193,16 +194,19 @@ Returns a String."
            "domain=\" + window.location.hostname + \"; "
            (str "domain=" domain? "; ")))
        (if value
-         (str "expires=\""
-              " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear() + 42); return date.toUTCString(); })()"
-              " + \"; ")
+         (if-not permanent?
+           "expires=;"
+           (str "expires=\""
+                " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear() + 42); return date.toUTCString(); })()"
+                " + \"; "))
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=" path "; "
        "\";\n"))
 
 
-(defn ^String set-session-cookie [value]
-  (set-document-cookie :name -session-cookie-name- :value value :domain? false))
+
+(defn ^String set-session-cookie [value permanent?]
+  (set-document-cookie :name -session-cookie-name- :value value :domain? false :permanent? permanent?))
 
 
 
@@ -295,9 +299,10 @@ Returns a String."
 
 
 
-(defn ^String sw-js-base-bootstrap [^Ref application ^Ref viewport]
+(defn ^String sw-js-base-bootstrap [^Ref session ^Ref viewport]
   (str "var sw_cookie_name = '" -session-cookie-name- "'; "
-       (set-session-cookie (:uuid @application))
+       (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
+
        "var _sw_viewport_id = '" (:id @viewport) "'; "
        "var _sw_comet_timeout_ts = " -comet-timeout- "; "))
 

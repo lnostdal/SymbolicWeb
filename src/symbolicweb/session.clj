@@ -153,10 +153,19 @@ Session data stored in memory; temporarly."
 
 
 
+(defn create-session [session-type one-shot?]
+  (with1 (mk-Session :uuid (generate-uuid) :session-type session-type)
+    (when-not one-shot?
+      (db-put it "sessions"))))
+
+
+
 (declare json-parse)
 (defn find-or-create-session [request]
-  (let [cookie-value (:value (get (:cookies request) -session-cookie-name-))]
-    (if-let [session (get (ensure -sessions-) cookie-value)]
+  (let [;; Someone might know our Session cookie on e.g. a public computer; if LOGGING-IN? then force new Session.
+        logging-in? (get (:query-params request) "_sw_login_p")
+        cookie-value (:value (get (:cookies request) -session-cookie-name-))]
+    (if-let [session (when-not logging-in? (get (ensure -sessions-) cookie-value))]
       session
       (if-let [session-type (find-session-constructor request)]
         (let [one-shot?
@@ -167,13 +176,12 @@ Session data stored in memory; temporarly."
                   (search-engine? request))
 
               session-skeleton
-              (or (and cookie-value
+              (or (and (not logging-in?)
+                       cookie-value
                        (when-let [res (first (db-pstmt "SELECT id FROM sessions WHERE uuid = ? LIMIT 1;" cookie-value))]
                          (with1 (db-get (:id res) "sessions")
                            (vm-set (:touched @it) (datetime-to-sql-timestamp (time/now))))))
-                  (with1 (mk-Session :uuid (generate-uuid) :session-type session-type)
-                    (when-not one-shot?
-                      (db-put it "sessions"))))]
+                  (create-session session-type one-shot?))]
           (alter session-skeleton assoc
                  :session-type session-type
                  :one-shot? one-shot?)
