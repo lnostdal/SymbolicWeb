@@ -46,8 +46,21 @@
 
 
 
+(def ^:dynamic *with-delayed-reactions-ctx* nil)
+
+(defmacro with-delayed-reactions [& body]
+  "Don't \"do anything\" (Observers) based on changes to VMs in BODY until after BODY."
+  `(binding [*with-delayed-reactions-ctx* (ref [])]
+     (with1 ~@body
+       (doseq [^Fn cb# @*with-delayed-reactions-ctx*]
+         (cb#)))))
+
+
+
 (defn notify-observers [^Observable observable & args]
-  (apply (.notify-observers-fn observable) observable args))
+  (if-let [it *with-delayed-reactions-ctx*]
+    (alter it conj (fn [] (apply (.notify-observers-fn observable) observable args)))
+    (apply (.notify-observers-fn observable) observable args)))
 
 
 
