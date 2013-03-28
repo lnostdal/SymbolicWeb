@@ -227,7 +227,7 @@ Returns the ContainerModel"
 
 
 (defn db-backend-remove [^DBCache db-cache ^Long id]
-  (db-stmt (str "DELETE FROM " (.table-name db-cache) " WHERE id = " id " LIMIT 1;")))
+  (db-stmt (str "DELETE FROM " (.table-name db-cache) " WHERE id = " id ";")))
 
 
 
@@ -391,5 +391,5 @@ Blocking."
   "SQL `DELETE FROM ...'."
   (let [id (long @(:id @obj)) ;; Because (.equals (int 261) 261) => false
         ^DBCache db-cache (db-get-cache table-name)]
-    (db-backend-remove id table-name)
+    (db-backend-remove db-cache id)
     (db-cache-remove db-cache id)))
