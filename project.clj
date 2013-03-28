@@ -13,7 +13,7 @@
 
                  [cheshire "5.0.2"] ;; JSON.
 
-                 [clj-time/clj-time "0.4.5-SNAPSHOT"]
+                 [clj-time/clj-time "0.5.1-SNAPSHOT"]
 
                  [hiccup/hiccup "1.0.3"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.3-SNAPSHOT"] ;; HTML templating.
