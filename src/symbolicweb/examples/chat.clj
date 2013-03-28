@@ -56,4 +56,5 @@
   (fn [session-skeleton]
     (alter session-skeleton assoc
            :mk-viewport-fn #'mk-chat-viewport)
+    (vm-set (spget session-skeleton :session-type) "permanent")
     session-skeleton))
