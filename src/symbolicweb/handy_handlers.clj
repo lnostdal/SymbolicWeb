@@ -129,7 +129,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
            :headers {"Content-Type" "text/javascript; charset=UTF-8"}
            ;; A new Session might have been started for this request.
            ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
-           :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
+           :body (str (set-session-cookie (:uuid @session) (= :permanent @(spget session :session-type)))
                       "window.location.href = window.location.href;")}))
       ;; REST.
       (let [viewport ((:mk-viewport-fn @session) request session)]
