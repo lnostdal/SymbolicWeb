@@ -16,9 +16,8 @@
          "↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓"
          [:br] [:br]
          [:div {:style "border: 1px solid grey; display: inline-block; padding: 5px; margin: 10px;"}
-          [:pre "1PAPy82AheWGyGcUpMGrk7wyzUsM5APAdb"]
-          [:img {:src "https://blockchain.info/qr?data=1PAPy82AheWGyGcUpMGrk7wyzUsM5APAdb&size=250"}]]
-         )))
+          [:pre "1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"]
+          [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=250"}]])))
     viewport))
 
 

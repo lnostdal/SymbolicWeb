@@ -298,7 +298,7 @@ Returns a String."
                          widget)))
 
 
-
+(declare spget)
 (defn ^String sw-js-base-bootstrap [^Ref session ^Ref viewport]
   (str "var sw_cookie_name = '" -session-cookie-name- "'; "
        (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
