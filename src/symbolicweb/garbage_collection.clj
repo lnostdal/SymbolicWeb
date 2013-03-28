@@ -17,7 +17,8 @@
   (dosync
    (let [session-m (ensure session)]
      (alter -sessions- dissoc (:uuid session-m))
-     (when-not (= "permanent" @(spget session :session-type))
+     (when-not (or (:one-shot? @session)
+                   (= "permanent" @(spget session :session-type)))
        (with-sw-io nil
          (swsync
           (db-remove session "sessions"))))
