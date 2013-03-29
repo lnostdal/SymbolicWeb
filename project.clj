@@ -5,7 +5,7 @@
 
                  [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
 
-                 [http-kit/http-kit "2.0.0-SNAPSHOT"] ;; HTTP stuff.
+                 [http-kit/http-kit "2.1.0-SNAPSHOT"] ;; HTTP stuff.
 
                  [overtone/at-at "1.1.1"] ;; Scheduling; timers etc..
 
