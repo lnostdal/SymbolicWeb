@@ -111,7 +111,7 @@ If LIFETIME is active it will be deactivated with all its children.")
   (do-lifetime-activation [lifetime]
     (with (lifetime-state-of lifetime)
       (case it
-        ;; Including :ACTIVATED here since there are cases
+        ;; TODO: Including :ACTIVATED here seems strange; see issue #24.
         (:member-of-tree :activated)
         (do
           (ref-set state :activated)

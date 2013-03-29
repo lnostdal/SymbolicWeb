@@ -138,10 +138,11 @@
 
 (defn start-server [^Long port]
   (stop-server)
-  (def -server- (http.server/run-server (ring.middleware.cookies/wrap-cookies
-                                         (ring.middleware.params/wrap-params
-                                          handler))
-                                        {:port port
-                                         :thread (. (Runtime/getRuntime) availableProcessors)
-                                         :worker-name-prefix "http-worker-"
-                                         :max-body 1048576}))) ;; Max 1M request body (e.g. POST).
+  (def -server-
+    (http.server/run-server (ring.middleware.cookies/wrap-cookies
+                             (ring.middleware.params/wrap-params
+                              handler))
+                            {:port port
+                             :thread (. (Runtime/getRuntime) availableProcessors)
+                             :worker-name-prefix "http-worker-"
+                             :max-body 1048576}))) ;; Max 1M request body (e.g. POST).
