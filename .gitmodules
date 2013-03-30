@@ -1,3 +1,6 @@
 [submodule "resources/deps/ckeditor"]
         path = resources/deps/ckeditor
         url = git://github.com/ckeditor/ckeditor-dev.git
+[submodule "resources/deps/jquery-ui"]
+	path = resources/deps/jquery-ui
+	url = git://github.com/jquery/jquery-ui.git
