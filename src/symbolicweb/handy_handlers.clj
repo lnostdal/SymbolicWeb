@@ -145,7 +145,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->\n\n"
+    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       ;; TODO: Extract from VIEWPORT.
@@ -186,7 +186,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: #" @-request-counter- " λ -->\n\n"
+    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.

@@ -71,7 +71,7 @@ var swAjax =
 
      function prepareSpinner(){
        if(!spinner){
-         spinner = setTimeout(function(){ $("body").css("cursor", "wait"); }, 500);
+         spinner = setTimeout(function(){ $("body").css("cursor", "wait"); }, 100);
        }
      }
 

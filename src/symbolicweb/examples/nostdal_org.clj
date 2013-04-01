@@ -12,17 +12,15 @@
       (whc [:div]
         (html
          [:img {:src "http://1.media.collegehumor.cvcdn.com/36/21/977be9afe4fb0797136c16077364711d.gif"}]
-         [:br] [:br]
+         [:br]
          "↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓"
-         [:br] [:br]
+         [:br]
          [:div {:style "border: 1px solid grey; display: inline-block; padding: 5px; margin: 10px;"}
-          [:pre "1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"]
-          [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=250"}]]
-
-         [:br] [:br]
-         [:iframe {:width 640 :height 360 :frameborder 0 :allowfullscreen 1
-                   :src "http://www.youtube.com/embed/OMAI-OIxLPo?autoplay=1"}]
-         )))
+          [:pre [:a {:href "https://blockchain.info/address/1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"}
+                 "1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"]]
+          [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=200"}]]
+         [:br]
+         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " We Trust&quot;"])))
     viewport))
 
 
