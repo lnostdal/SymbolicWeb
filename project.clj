@@ -20,7 +20,7 @@
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "1.0.0"] ;; ring.util.codec
-                 [ring/ring-core "1.2.0-beta1"] ;; ring.middleware.params, ring.middleware.cookies
+                 [ring/ring-core "1.2.0-beta2"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 
