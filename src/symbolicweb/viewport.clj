@@ -31,9 +31,9 @@
 
                              ;; gen-url
                              :genurl-fs-path "resources/web-design/"
-                             :genurl-scheme "http"
-                             :genurl-domain "static.nostdal.org"
-                             :genurl-path ""
+                             :genurl-scheme "//"
+                             :genurl-domain (:server-name request)
+                             :genurl-path "static/"
 
                              ;; Comet.
                              :response-str (StringBuilder.)

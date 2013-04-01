@@ -30,7 +30,7 @@
 (defapp
   [::Nostdal-org
    (fn [request]
-     (re-find #"nostdal.org$" (:uri request)))]
+     (= "/nostdal.org" (:uri request)))]
 
   (fn [session]
     (alter session assoc

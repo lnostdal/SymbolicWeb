@@ -160,15 +160,15 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       ;; jQuery.
       "
       <!--[if lt IE 9]>
-        <script src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
+        <script src='" (gen-url viewport "sw/js/jquery-1.9.1.min.js") "'></script>
       <![endif]-->
       <!--[if gte IE 9]><!-->
-        <script src='http://code.jquery.com/jquery-2.0.0b2.js'></script>
+        <script src='" (gen-url viewport "sw/js/jquery-1.9.1.min.js") "'></script>
       <!--<![endif]-->
       "
 
       ;; jQuery migrate.
-      "<script src='http://code.jquery.com/jquery-migrate-git.min.js'></script>"
+      "<script src='" (gen-url viewport "sw/js/jquery-migrate-1.1.1.min.js") "'></script>"
       [:script (sw-js-base-bootstrap session viewport)]
       [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
       (generate-rest-js @(:rest-js-entries @viewport))]

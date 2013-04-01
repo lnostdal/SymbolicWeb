@@ -201,6 +201,7 @@ Returns a String."
                 " + \"; "))
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=" path "; "
+       "secure=true;"
        "\";\n"))
 
 
