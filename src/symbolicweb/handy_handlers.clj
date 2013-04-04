@@ -186,7 +186,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
+    "<!-- λ SymbolicWeb: Request #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
@@ -197,7 +197,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
      [:body
       [:h1 "SW: HTTP 404: Not Found"]
-      [:p "Going " [:a {:href "javascript:history.go(-1);"} "back"] " might help."]]]])})
+      [:p "Going " [:a {:href (str "//" (:server-name request) "/")} "home"] " might help."]]]])})
 
 
 

@@ -8,6 +8,7 @@
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
         viewport (mk-Viewport request session root-widget :page-title "nostdal.org")]
     (jqCSS root-widget "text-align" "'center'")
+    (jqCSS root-widget "background-color" "'#dddddd'")
     (jqAppend root-widget
       (whc [:div]
         (html
@@ -20,7 +21,10 @@
                  "1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"]]
           [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=200"}]]
          [:br]
-         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " We Trust&quot;"])))
+         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " We Trust&quot;"]
+         [:br] [:br] [:br]
+         [:img {:src "http://i.imgur.com/fo5CtFV.gif"}]
+         )))
     viewport))
 
 

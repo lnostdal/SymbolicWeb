@@ -148,8 +148,7 @@ Session data stored in memory; temporarly."
   (let [^String user-agent (get (:headers request) "user-agent")]
     (not (or (neg? (.indexOf user-agent "bot"))
              (neg? (.indexOf user-agent "Mediapartners-Google"))
-             (neg? (.indexOf user-agent "ia_archiver"))
-             ))))
+             (neg? (.indexOf user-agent "ia_archiver"))))))
 
 
 
@@ -192,7 +191,7 @@ Session data stored in memory; temporarly."
             (vm-alter -num-sessions-model- + 1))
           ((:session-constructor-fn session-type) session-skeleton))
         (do
-          (log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
+          ;;(log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
           (mk-Session :uuid cookie-value
                       :rest-handler not-found-page-handler
                       :mk-viewport-fn (fn [request session]
