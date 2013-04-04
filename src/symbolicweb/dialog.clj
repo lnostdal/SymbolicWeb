@@ -4,7 +4,7 @@
 ;; TODO: Handle buttons. See USER-CHECK-EMAIL in fod/user.clj.
 
 
-(defn mk-Dialog [widget & {:keys [js-options on-close]}]
+(defn mk-Dialog [^WidgetBase widget & {:keys [js-options on-close]}]
   "\"Convert\" WIDGET into a jQuery UI Dialog.
 DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI Dialog docs.
 
@@ -13,18 +13,14 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
        (mk-Dialog (mk-p (vm \"test\"))
                     :js-options {:modal :true :width 800 :height 600}
                     :on-close (with-js (alert \"Dialog was closed.\")))))"
-  (let [res (add-response-chunk (str "$('#" (.id widget) "')"
-                                     ".dialog({"
-                                     (map-to-js-options js-options)
-                                     "close: function(event, ui){"
-                                     "  $('#" (.id widget) "').remove();"
-                                     on-close
-                                     "}});")
-                                widget)]
-    (if *with-js?*
-      res
-      widget)))
-
+  (add-response-chunk (str "$('#" (.id widget) "')"
+                           ".dialog({"
+                           (map-to-js-options js-options)
+                           "close: function(event, ui){"
+                           "  $('#" (.id widget) "').remove();"
+                           on-close
+                           "}});\n")
+                      widget))
 
 
 
@@ -35,9 +31,8 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
 
 (defn show-Dialog [widget viewport & options]
   ;; TODO: Yeah, (ROOT-ELEMENT) doesn't generally mean the same thing anymore when the root can be the entire document.
-  (dosync ;; TODO: This seems a bit wonky. It's needed/"handy" because jqAppend actually manipulates the Model end of things.
-   (jqAppend (:root-element @viewport)
-     (apply mk-Dialog widget options))))
+  (jqAppend (:root-element @viewport)
+    (apply mk-Dialog widget options)))
 
 
 (defn show-ModalDialog [widget viewport & options]
