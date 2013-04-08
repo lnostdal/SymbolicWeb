@@ -11,7 +11,7 @@
 
                  [com.google.guava/guava "14.0.1"] ;; For soft hash cache.
 
-                 [cheshire "5.0.2"] ;; JSON.
+                 [cheshire "5.1.1-SNAPSHOT"] ;; JSON.
 
                  [clj-time/clj-time "0.5.1-SNAPSHOT"]
 
