@@ -24,7 +24,8 @@ CREATE TABLE sessions (
          (case (:key m)
            (:type :logged-in? :last-activity-time :viewports :mk-viewport-fn
             :request-handler :rest-handler :ajax-handler :aux-handler
-            :one-shot? :temp-data)
+            :one-shot? :temp-data
+            :user-handle-login-token)
            (assoc m
              :key nil)
 
@@ -75,6 +76,9 @@ CREATE TABLE sessions (
 
                             :created (datetime-to-sql-timestamp (time/now))
                             :touched (vm (datetime-to-sql-timestamp (time/now)))
+
+                            :user-handle-login-token (fn [session type login-token user-ref]
+                                                       (throw (Exception. "mk-Session: No :USER-HANDLE-LOGIN-TOKEN method.")))
 
                             :request-handler #'default-request-handler
                             :rest-handler #'default-rest-handler

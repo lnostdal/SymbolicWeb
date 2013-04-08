@@ -116,26 +116,38 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 (defn default-request-handler [request ^Ref session]
   "Default top-level request handler for both REST and AJAX/Comet type requests."
   (with-once-only-ctx
-    (if (get (:query-params request) "_sw_request_type") ;; sw-ajax.js adds this to our AJAX requests.
-      ;; AJAX.
-      (if-let [^Ref viewport (get (ensure (:viewports @session))
-                                  (get (:query-params request) "_sw_viewport_id"))]
-        (do
-          (touch viewport)
-          ((:ajax-handler @session) request session viewport))
-        (do
-          #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
-                     "Refreshing page, but keeping Session (cookie).")
-          {:status 200
-           :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-           ;; A new Session might have been started for this request.
-           ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
-           :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
-                      "window.location.href = window.location.href;")}))
-      ;; REST.
-      (let [viewport ((:mk-viewport-fn @session) request session)]
-        (with1 ((:rest-handler @session) request session viewport)
-          (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport)))))))
+    (let [qps (:query-params request)
+          request-type (get  qps "_sw_request_type")]
+      (case request-type
+        ("ajax" "comet")
+        (if-let [^Ref viewport (get (ensure (:viewports @session))
+                                    (get (:query-params request) "_sw_viewport_id"))]
+          (do
+            (touch viewport)
+            ((:ajax-handler @session) request session viewport))
+          (do
+            #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
+                       "Refreshing page, but keeping Session (cookie).")
+            {:status 200
+             :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+             ;; A new Session might have been started for this request.
+             ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
+             :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
+                        "window.location.href = window.location.href;")}))
+
+        ;; REST.
+        (let [viewport ((:mk-viewport-fn @session) request session)]
+          (when (= "login" request-type)
+            ((:user-handle-login-token @session) session (get qps "type") (get qps "login_token") (get qps "user_ref"))
+            (url-alter-query-params viewport true
+                                    #(-> %
+                                         (dissoc "_sw_request_type")
+                                         (dissoc "type")
+                                         (dissoc "login_token")
+                                         (dissoc "user_ref")
+                                         (dissoc "_sw_login_p"))))
+          (with1 ((:rest-handler @session) request session viewport)
+            (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))))))))
 
 
 
