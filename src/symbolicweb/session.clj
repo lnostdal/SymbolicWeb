@@ -149,7 +149,7 @@ Session data stored in memory; temporarly."
 
 
 (defn search-engine? [request]
-  (let [^String user-agent (get (:headers request) "user-agent")]
+  (when-let [^String user-agent (get (:headers request) "user-agent")]
     (not (or (neg? (.indexOf user-agent "bot"))
              (neg? (.indexOf user-agent "Mediapartners-Google"))
              (neg? (.indexOf user-agent "ia_archiver"))))))

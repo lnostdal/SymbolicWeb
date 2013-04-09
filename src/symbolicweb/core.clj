@@ -78,9 +78,10 @@
 
   (:require [org.httpkit.server :as http.server])
 
+  (:require symbolicweb.history)
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session)
-  (:require symbolicweb.history)
+
 
   (:require symbolicweb.examples.nostdal-org))
 
