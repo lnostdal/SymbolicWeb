@@ -21,10 +21,7 @@
                  "1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"]]
           [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=200"}]]
          [:br]
-         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " We Trust&quot;"]
-         [:br] [:br] [:br]
-         [:img {:src "http://i.imgur.com/fo5CtFV.gif"}]
-         )))
+         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " We Trust&quot;"])))
     viewport))
 
 

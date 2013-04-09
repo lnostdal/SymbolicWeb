@@ -133,5 +133,5 @@
 
 (defn jqTooltipShow [^WidgetBase widget ^String html]
   (add-response-chunk (str "$('#" (.id widget) "').attr('title', " (url-encode-wrap html) ");\n"
-                           "$('#" (.id widget) "').tooltip().tooltip('open');\n")
+                           "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');\n")
                       widget))
