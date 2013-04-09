@@ -3,21 +3,20 @@
   (:require [clojure.string :as str])
   (:use [cheshire.core :as json])
   (:use [clojure.pprint :only (cl-format)])
-  (:require [org.httpkit.client :as http.client]))
+  (:require [clj-http.client :as http.client]))
 
 
 
 ;;; Common stuff.
 
 (defn- http-post-request [url body]
-  @(http.client/post url {:body body}))
+  (http.client/post url {:body body}))
 
 
 
 (defn mk-MailChimp [api-key]
   {:api-key api-key
-   ;; TODO: HTTPS should be used here...
-   :url "http://mandrillapp.com/api/1.0/"})
+   :url "https://mandrillapp.com/api/1.0/"})
 
 
 ;;;; Mail Chimp: Mandrill

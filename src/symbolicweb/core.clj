@@ -77,7 +77,6 @@
   (:require symbolicweb.garbage-collection)
 
   (:require [org.httpkit.server :as http.server])
-  (:require [org.httpkit.client :as http.client])
 
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session)
