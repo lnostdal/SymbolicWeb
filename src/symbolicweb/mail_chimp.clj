@@ -9,7 +9,7 @@
 
 ;;; Common stuff.
 
-(defn- http-post-request [url body]
+(defn- http-post-request [^String url body]
   (http.client/post url {:body body}))
 
 
