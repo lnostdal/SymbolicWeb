@@ -21,7 +21,7 @@
                  "1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"]]
           [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=200"}]]
          [:br]
-         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " We Trust&quot;"])))
+         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " (i.e. Crypto!) We Trust&quot;"])))
     viewport))
 
 
