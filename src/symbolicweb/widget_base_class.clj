@@ -47,15 +47,14 @@
 
   (empty-branch [widget]
     ;; TODO: This won't do since there might be child Lifetimes "outside of" the Widget hierarchy that shouldn't be removed.
+    ;; Another way to think about this is that _we_ aren't dead yet; only our child _wigets_ are.
     #_(doseq [^Lifetime child-lifetime (lifetime-children-of (.lifetime widget))]
         (detach-lifetime child-lifetime))
-    ;; ..so, a hack (i.e. can .VIEWPORT return NIL?) instead – we scan all Widgets in the Viewport of WIDGET:
-    (doseq [some-widget-entry (:widgets @(.viewport widget))]
-      (let [some-widget (val some-widget-entry)]
-        (when-let [some-widget-parent @(.parent some-widget)]
-          (when (= (.id some-widget-parent)
-                   (.id widget))
-            (detach-branch some-widget)))))))
+    ;; ..so, a hack (e.g. can .VIEWPORT return NIL?) instead – we scan all Widgets in the Viewport of WIDGET.
+    (when-let [viewport @(.viewport widget)]
+      (doseq [some-widget (vals (:widgets @viewport))]
+        (when (= widget @(.parent some-widget))
+          (detach-branch some-widget))))))
 
 
 
