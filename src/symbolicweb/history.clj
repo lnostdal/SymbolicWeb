@@ -2,6 +2,17 @@
 
 
 
+(defn url-alter-query-params [^Ref viewport ^Boolean replace? f & args]
+  "Directly alters query-params of URL for Viewport.
+
+  REPLACE?: If True, a history entry will be added at the client end."
+  (apply vm-alter (:query-params @viewport) f args)
+  (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
+                           "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
+                      viewport))
+
+
+
 (defn vm-map-to-url
   "HTML5 History support for ValueModels."
   ([^ValueModel model ^String name lifetime ^Ref viewport]
@@ -25,11 +36,11 @@
 
      ;; Server --> client.
      (vm-observe model lifetime false
-                 (fn [inner-lifetime old-value new-value]
+                 (fn [_ _ new-value]
                    ;; TODO: Remove key/value pair from URL when NEW-VALUE is NIL?
                    (when-not (= new-value (get @(:query-params @viewport) name))
                      (vm-alter (:query-params @viewport) assoc name new-value)
-                     (once-only :vm-map-to-url
+                     (once-only :vm-map-to-url-init ;; Sync all :QUERY-PARAMS of Viewport once for each response.
                        (add-response-chunk (str "window.history.pushState(null, '', '?"
                                                 (ring.util.codec/form-encode @(:query-params @viewport))
                                                 "');\n")
@@ -37,23 +48,18 @@
 
      ;; Client --> server.
      (vm-observe (:popstate-observer @viewport) lifetime false
-                 (fn [inner-lifetime _ value]
+                 (fn [_ _ value]
                    (when value
                      (doseq [[k v] value]
                        (when (= k name)
                          (vm-alter (:query-params @viewport) assoc name v)
-                         (vm-set model v))))))))
+                         (vm-set model v))))))
 
-
-
-(defn url-alter-query-params [^Ref viewport ^Boolean replace? f & args]
-  "Directly alters query-params of URL for Viewport.
-
-  REPLACE?: If True, a history entry will be added at the client end."
-  (apply vm-alter (:query-params @viewport) f args)
-  (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
-                           "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
-                      viewport))
+     ;; Destruction.
+     (when lifetime
+       (add-lifetime-deactivation-fn lifetime
+                                     (fn [^Lifetime lifetime]
+                                       (url-alter-query-params viewport true dissoc name))))))
 
 
 
