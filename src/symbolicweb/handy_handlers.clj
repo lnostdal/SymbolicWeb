@@ -139,13 +139,12 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         (let [viewport ((:mk-viewport-fn @session) request session)]
           (when (= "login" request-type)
             ;; TYPE can be "session" or "permanent". USER_REF can be a token for someone who referred us.
-            ((:user-handle-login-token @session) session (get qps "type") (get qps "login_token") (get qps "user_ref"))
-            (url-alter-query-params viewport true
-                                    #(-> %
-                                         (dissoc "_sw_request_type")
-                                         (dissoc "type")
-                                         (dissoc "login_token")
-                                         (dissoc "user_ref"))))
+            ((:user-handle-login-token @session) session viewport (get qps "type") (get qps "login_token") (get qps "user_ref"))
+            (url-alter-query-params viewport true #(-> %
+                                                       (dissoc "_sw_request_type")
+                                                       (dissoc "type")
+                                                       (dissoc "login_token")
+                                                       (dissoc "user_ref"))))
           (with1 ((:rest-handler @session) request session viewport)
             (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))))))))
 

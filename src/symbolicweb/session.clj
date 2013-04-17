@@ -77,7 +77,10 @@ CREATE TABLE sessions (
                             :created (datetime-to-sql-timestamp (time/now))
                             :touched (vm (datetime-to-sql-timestamp (time/now)))
 
-                            :user-handle-login-token (fn [session type login-token user-ref]
+                            ;; TODO: I think USER-REF here should be AUX.
+                            :user-handle-login-token (fn [^Ref session ^Ref viewport ^String type ^String login-token user-ref]
+                                                       " TYPE: \"session\" or \"permanent\".
+                                                         USER_REF: Optional ID or token for someone who referred us."
                                                        (throw (Exception. "mk-Session: No :USER-HANDLE-LOGIN-TOKEN method.")))
 
                             :request-handler #'default-request-handler
