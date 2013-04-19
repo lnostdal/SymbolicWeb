@@ -51,13 +51,13 @@
 
 
 (defn ^WidgetBase mk-Link [^WidgetBase widget url-mappers]
-  "  URL-MAPPERS: [(mk-URLMapper ..) (vm ..) ...]"
+  "  URL-MAPPERS: {(vm-sync-from-url ..) (vm ..) ...}"
   (let [query-str-vm (vm "")
         query-params (vm nil)]
+
     (vm-observe query-str-vm (.lifetime widget) false
-                (fn [_ _ query-str]
-                  (jqAttr widget "href"
-                          (str "window.location.pathname + '?' + " (url-encode-wrap query-str)))))
+                #(jqAttr widget "href" (str "window.location.pathname + '?' + " (url-encode-wrap %3))))
+
     (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
       (with-observed-vms (.lifetime widget)
         (when-let [viewport (viewport-of widget)]
@@ -67,10 +67,12 @@
                                 @(with1 query-params
                                    ;; QUERY-PARAMS is a Sorted Map, and result of MERGE will be too.
                                    (vm-set it (merge @it {(:name url-mapper) @url-mapper-mutator-vm}))))))))
+
     (set-event-handler "click" widget
                        (fn [& _]
                          (with-delayed-reactions
                            (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
                              (vm-set (:model url-mapper) @url-mapper-mutator-vm))))
                        :js-before "event.preventDefault(); return(true);")
+
     widget))

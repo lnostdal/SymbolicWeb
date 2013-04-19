@@ -13,81 +13,73 @@
 
 
 
-(defn vm-map-to-url
-  "HTML5 History support for ValueModels."
-  ([^ValueModel model ^String name lifetime ^Ref viewport]
-     (vm-map-to-url model name lifetime viewport true))
+(defn vm-sync-to-url [m]
+  "Maps :MODEL to Viewport URL based on :NAME. A one-way sync for the Lifetime of :CONTEXT-WIDGET: Server --> Client.
 
+Returns M."
+  ;; Server --> Client; via CONTEXT-WIDGET.
+  (with1 m
+    (let [name (:name m)
+          model (:model m)
+          viewport (:viewport m)
+          context-widget (:context-widget m)]
+      (vm-observe model (.lifetime context-widget) false
+                  (fn [_ _ new-value]
+                    ;; TODO: Remove key/value pair from URL when NEW-VALUE is NIL?
+                    (when-not (= new-value (get @(:query-params @viewport) name))
+                      (vm-alter (:query-params @viewport) assoc name new-value)
+                      (once-only :vm-map-to-url-init ;; Sync all :QUERY-PARAMS of Viewport once for each response.
+                        (add-response-chunk (str "window.history.pushState(null, '', '?"
+                                                 (ring.util.codec/form-encode @(:query-params @viewport))
+                                                 "');\n")
+                                            viewport)))))
 
-  ([^ValueModel model ^String name lifetime ^Ref viewport ^Boolean initial-sync-from-url?]
-
-     ;; Initialization.
-     (if-let [value (and initial-sync-from-url?
-                         (get @(:query-params @viewport) name))]
-       ;; Client --> server.
-       (vm-set model value)
-       ;; Server --> client.
-       (do ;; TODO: (when-let [value @model] ...) here?
-         (vm-alter (:query-params @viewport) assoc name @model)
-         (add-response-chunk (str "window.history.replaceState(null, '', '?"
-                                  (ring.util.codec/form-encode @(:query-params @viewport))
-                                  "');\n")
-                             viewport)))
-
-     ;; Server --> client.
-     (vm-observe model lifetime false
-                 (fn [_ _ new-value]
-                   ;; TODO: Remove key/value pair from URL when NEW-VALUE is NIL?
-                   (when-not (= new-value (get @(:query-params @viewport) name))
-                     (vm-alter (:query-params @viewport) assoc name new-value)
-                     (once-only :vm-map-to-url-init ;; Sync all :QUERY-PARAMS of Viewport once for each response.
-                       (add-response-chunk (str "window.history.pushState(null, '', '?"
-                                                (ring.util.codec/form-encode @(:query-params @viewport))
-                                                "');\n")
-                                           viewport)))))
-
-     ;; Client --> server.
-     (vm-observe (:popstate-observer @viewport) lifetime false
-                 (fn [_ _ value]
-                   (when value
-                     (doseq [[k v] value]
-                       (when (= k name)
-                         (vm-alter (:query-params @viewport) assoc name v)
-                         (vm-set model v))))))
-
-     ;; Destruction.
-     (when lifetime
-       (add-lifetime-deactivation-fn lifetime
-                                     (fn [^Lifetime lifetime]
-                                       (url-alter-query-params viewport true dissoc name))))))
+      ;; Remove URL entry when Lifetime of CONTEXT-WIDGET ends.
+      (add-lifetime-deactivation-fn (.lifetime context-widget)
+                                    (fn [_]
+                                      (url-alter-query-params viewport true dissoc name))))))
 
 
 
-(defn assoc-URLMapper
-  "Assosiate URL-MAPPER with CONTEXT-WIDGET.
-The URL-MAPPER will be mapped to the Viewport (URL) of CONTEXT-WIDGET for the duration of that widgets Lifetime."
-  ([url-mapper]
-     (assoc-URLMapper url-mapper (:view url-mapper)))
+(defn vm-sync-from-url [m]
+  "Maps Viewport URL to :MODEL based on :NAME. A one-way sync for the Lifetime of :VIEWPORT or the Viewport of
+:CONTEXT-WIDGET: Client --> Server.
 
-  ([url-mapper ^WidgetBase context-widget]
-     (vm-observe (.viewport context-widget) (.lifetime context-widget) true
-                 (fn [_ _ viewport]
-                   (when viewport
-                     (vm-map-to-url (:model url-mapper) (:name url-mapper)
-                                    (.lifetime context-widget)
-                                    viewport))))))
+If :CONTEXT-WIDGET is given, VM-SYNC-TO-URL is also called with M as argument.
 
+Returns M."
+  (with1 m
+    (let [name (:name m)
+          model (:model m)
+          viewport (:viewport m)
+          context-widget (:context-widget m)]
+      (assert (string? name))
+      (assert (isa? (class model) ValueModel))
+      (if-let [viewport (or viewport (and context-widget @(.viewport context-widget)))]
+        (do
+          ;; Initialization.
+          ;; TODO: Make init in this direction optional?
+          ;; TODO: Remove if not found?
+          (if-let [value (get @(:query-params @viewport) name)]
+            ;; Something found in URL already; sync Client --> Server.
+            (vm-set model value)
+            ;; Nothing found in URL; sync Server --> Client.    TODO: (when-let [value @model] ...) here?
+            (url-alter-query-params viewport true assoc name @model))
 
+          ;; Client --> Server; via VIEWPORT – i.e. before CONTEXT-WIDGET is active.
+          (vm-observe (:popstate-observer @viewport) (.lifetime (:root-element @viewport)) false
+                      (fn [_ _ value]
+                        (when value
+                          (doseq [[k v] value]
+                            (when (= k name)
+                              (vm-alter (:query-params @viewport) assoc name v)
+                              (vm-set model v))))))
+          (when context-widget
+            (vm-sync-to-url m)))
 
-(defn mk-URLMapper
-  "Maps MODEL to URL with NAME as key for the duration of the Lifetime of VIEW."
-  ([^String name ^ValueModel model]
-     (mk-URLMapper name model nil))
-
-  ([^String name ^ValueModel model ^WidgetBase view]
-     (assert (string? name))
-     (with1 {:name name
-             :model model
-             :view view}
-       (when view
-         (assoc-URLMapper it view)))))
+        ;; No Viewport found anywhere; observe CONTEXT-WIDGET until it has a Viewport set then try again.
+        (when context-widget
+          (vm-observe (.viewport context-widget) (.lifetime context-widget) true
+                      (fn [_ _ viewport]
+                        (when viewport
+                          (vm-sync-from-url (assoc m :viewport viewport))))))))))
