@@ -174,7 +174,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
         <script src='" (gen-url viewport "sw/js/jquery-1.9.1.min.js") "'></script>
       <![endif]-->
       <!--[if gte IE 9]><!-->
-        <script src='" (gen-url viewport "sw/js/jquery-1.9.1.min.js") "'></script>
+        <script src='" (gen-url viewport "sw/js/jquery-2.0.0.min.js") "'></script>
       <!--<![endif]-->
       "
 
