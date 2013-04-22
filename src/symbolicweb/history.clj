@@ -70,10 +70,11 @@ Returns M."
           (vm-observe (:popstate-observer @viewport) (.lifetime (:root-element @viewport)) false
                       (fn [_ _ value]
                         (when value
-                          (doseq [[k v] value]
-                            (when (= k name)
-                              (vm-alter (:query-params @viewport) assoc name v)
-                              (vm-set model v))))))
+                          (with-delayed-reactions
+                            (doseq [[k v] value]
+                              (when (= k name)
+                                (vm-alter (:query-params @viewport) assoc name v)
+                                (vm-set model v)))))))
           (when context-widget
             (vm-sync-to-url m)))
 
