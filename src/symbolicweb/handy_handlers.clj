@@ -59,13 +59,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           widget-id (get query-params "_sw_widget-id")
           callback-id (get query-params "_sw_callback-id")
           widget (get (:widgets @viewport) widget-id)
-          callback-entry (get @(.callbacks ^WidgetBase widget)
-                              callback-id)
-          [^Fn callback-fn callback-data] callback-entry]
-      (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-       :body ""}) ;; NOTE: Response is sent via HANDLE-OUT-CHANNEL-REQUEST.
+          [^Fn callback-fn callback-data] (get @(.callbacks ^WidgetBase widget) callback-id)]
+      (apply callback-fn (default-parse-callback-data-handler request widget callback-data)))
 
 
     "viewport-event"
@@ -73,28 +68,17 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
           callback-id (get query-params "_sw_callback-id")
           callback-entry (get @(:callbacks @viewport) callback-id)
           [^Fn callback-fn callback-data] callback-entry]
-      (apply callback-fn (default-parse-callback-data-handler request viewport callback-data))
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-       :body ""}) ;; NOTE: Response is sent via HANDLE-OUT-CHANNEL-REQUEST.
-
+      (apply callback-fn (default-parse-callback-data-handler request viewport callback-data)))
 
     "unload"
-    (do
-      (gc-viewport viewport)
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-       :body "" ;;"console.log('SymbolicWeb: Server got DOM unload notification.');"
-       })
-
+    (gc-viewport viewport)
 
     "error"
-    (do
-      (log "HANDLE-IN-CHANNEL-REQUEST (JS error):" \newline
-           (json-parse (get (:params request) "msg")))
-      {:status 200
-       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-       :body ""})))
+    (log "HANDLE-IN-CHANNEL-REQUEST (JS error):" \newline
+         (json-parse (get (:params request) "msg"))))
+  {:status 200
+   :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+   :body ""})
 
 
 
