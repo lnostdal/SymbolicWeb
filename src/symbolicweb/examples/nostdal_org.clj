@@ -7,6 +7,7 @@
 (defn mk-nostdal-org-viewport [request  session]
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
         viewport (mk-Viewport request session root-widget :page-title "nostdal.org")]
+    (add-rest-css viewport (mk-rest-css-entry (gen-url viewport "sw/css/common.css")))
     (jqCSS root-widget "text-align" "'center'")
     (jqCSS root-widget "background-color" "'#dddddd'")
     (jqAppend root-widget

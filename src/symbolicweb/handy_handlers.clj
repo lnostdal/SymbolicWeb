@@ -159,12 +159,11 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
+      [:meta {:charset "UTF-8"}]
+      [:title (:page-title @viewport)]
       ;; TODO: Extract from VIEWPORT.
       [:link {:rel "icon" :type "image/x-icon"
               :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}]
-      ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
-      [:meta {:charset "UTF-8"}]
-      [:title (:page-title @viewport)]
 
       (generate-rest-css @(:rest-css-entries @viewport))
 
