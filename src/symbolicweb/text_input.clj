@@ -60,8 +60,11 @@ ARGS:
                                                new-value)]
                                (vm-set value-model new-value)))
                            :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"}
-                           :js-after (when (:blur-on-submit? args)
-                                       (str "$('#" (.id it) "').blur();")))
+                           :js-after (str
+                                      (when (:blur-on-submit? args)
+                                        (str "$('#" (.id it) "').blur();"))
+                                      (when (:clear-on-submit? args)
+                                        (str "$('#" (.id it) "').val('');"))))
 
         :enterpress
         (set-event-handler "keydown" it
