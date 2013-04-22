@@ -18,8 +18,8 @@
         b-view (mk-TextInput b-input-model :change)
         sum-view (mk-span sum-model)
 
-        a-url-mapper (mk-URLMapper "a" a-input-model a-view)
-        b-url-mapper (mk-URLMapper "b" b-input-model b-view)]
+        a-url-mapper (vm-sync-from-url {:name "a" :model a-input-model :context-widget a-view})
+        b-url-mapper (vm-sync-from-url {:name "b" :model b-input-model :context-widget b-view})]
 
     (jqAppend root-widget
       (whc [:div]
