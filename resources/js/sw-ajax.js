@@ -24,16 +24,17 @@ if(!window.history.pushState){
 function swHandleError(){
   try{
     if(console) // Not using shitty IE browser?
-      console.error(arguments);
-    swAjax("&do=error&msg=" + encodeURIComponent(JSON.stringify(arguments, null, 2)));
+      console.error("swHandleError: " + arguments);
+    swAjax("&do=error", {"msg": JSON.stringify(arguments, null, 2)});
   }
   catch(e){
+    console.error("swHandleError: Total fail..");
     return(true); // Can't do anything reasonable here; don't let default handler run.
   }
   return(false); // Let default handler run.
 }
 
-window.onerror = swHandleError;
+TraceKit.report.subscribe(swHandleError);
 
 
 
@@ -54,8 +55,7 @@ var swAddOnLoadFN, swDoOnLoadFNs;
          funs[fun]();
        }
        catch(err){
-         console.error("swDoOnLoadFNs:\n" + funs[fun]);
-         console.error(err);
+         TraceKit.report(exception);
        }
      }
    };
@@ -157,7 +157,7 @@ var swComet  =
                dataType: "script",
                complete: callback})
        .fail(function(jq_xhr, settings, exception){
-         swHandleError(exception.stack);
+         TraceKit.report(exception);
        });
      }
      // Stops "throbbing of doom" and ensure we do not recurse until a stack overflow.
