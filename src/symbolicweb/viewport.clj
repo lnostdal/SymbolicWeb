@@ -102,6 +102,16 @@
 
 
 
+(defn add-resource [^Ref viewport ^Keyword type ^String url]
+  (case type
+    :css
+    (add-rest-css viewport (mk-rest-css-entry (gen-url viewport url)))
+
+    :js
+    (add-rest-js viewport (mk-rest-js-entry (gen-url viewport url)))))
+
+
+
 (defn add-response-chunk-agent-fn [viewport viewport-m ^String new-chunk]
   (with-errors-logged
     (locking viewport
