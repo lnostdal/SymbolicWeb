@@ -7,9 +7,10 @@
 
   REPLACE?: If True, a history entry will be added at the client end."
   (apply vm-alter (:query-params @viewport) f args)
-  (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
-                           "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
-                      viewport))
+  (once-only :url-alter-query-params
+    (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
+                             "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
+                        viewport)))
 
 
 

@@ -154,4 +154,6 @@ Appends a timestamp to the URL based on file mtime."
 
 
 (defmacro once-only [^Keyword k & body]
-  `(alter *with-once-only-ctx* assoc ~k (fn [] ~@body)))
+  `(if *with-once-only-ctx*
+     (alter *with-once-only-ctx* assoc ~k (fn [] ~@body))
+     (do ~@body)))
