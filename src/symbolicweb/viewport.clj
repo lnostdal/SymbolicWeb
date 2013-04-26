@@ -26,6 +26,7 @@
                              :popstate-observer (vm (into (sorted-map) (:query-params request))) ;; Used by history.clj.
 
                              :scrolled-to-bottom-event (vm 0)
+                             :after-rest? (vm false)
 
                              :page-title "SW"
 
@@ -80,14 +81,24 @@
 
 
 (defn add-rest-css [^Ref viewport rest-css-entry]
-  (alter (:rest-css-entries @viewport)
-         conj rest-css-entry))
+  (when-not (some #(= (:url %) (:url rest-css-entry))
+                  (ensure (:rest-css-entries @viewport)))
+    (alter (:rest-css-entries @viewport)
+           conj rest-css-entry)
+    (when @(:after-rest? @viewport)
+      (add-response-chunk (str "$('<link rel=\"stylesheet\" href=\"" (:url rest-css-entry) "\">').appendTo('head');\n")
+                          viewport))))
 
 
 
 (defn add-rest-js [^Ref viewport rest-js-entry]
-  (alter (:rest-js-entries @viewport)
-         conj rest-js-entry))
+  (when-not (some #(= (:url %) (:url rest-js-entry))
+                  (ensure (:rest-js-entries @viewport)))
+    (alter (:rest-js-entries @viewport)
+           conj rest-js-entry)
+    (when @(:after-rest? @viewport)
+      (add-response-chunk (str "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');\n")
+                          viewport))))
 
 
 

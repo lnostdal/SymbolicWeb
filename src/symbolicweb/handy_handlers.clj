@@ -121,6 +121,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
         ;; REST.
         (let [viewport ((:mk-viewport-fn @session) request session)]
+          (vm-set (:after-rest? @viewport) true)
           (when (= "login" request-type)
             ;; TYPE can be "session" or "permanent". USER_REF can be a token for someone who referred us.
             ((:user-handle-login-token @session) session viewport (get qps "type") (get qps "login_token") (get qps "user_ref"))
