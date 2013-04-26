@@ -40,7 +40,7 @@
                              :response-sched-fn (atom nil)
                              :response-agent (agent nil)
 
-                             ;; Resources.
+                             ;; Resources; using Vectors since order matters.
                              :rest-css-entries (ref [])
                              :rest-js-entries (ref [])
 
@@ -67,7 +67,7 @@
           "  if(50 > $(document).height() - $(window).height() - $(window).scrollTop()){"
           "    $(window).trigger('sw_scrollbottom');"
           "  }"
-          "});")
+          "});\n")
      viewport)
 
     ;; Session --> Viewport
@@ -132,8 +132,7 @@
                           (detach-branch widget)
                           (def -lost-widget- widget)))
                       (send (:response-agent viewport-m)
-                            (fn [_]
-                              (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
+                            (fn [_] (add-response-chunk-agent-fn viewport viewport-m new-chunk))))))]
           (if (viewport-of widget) ;; Visible?
             (do-it)
             (when-not (= :deactivated (lifetime-state-of (.lifetime widget)))

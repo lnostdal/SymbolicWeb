@@ -147,25 +147,29 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
       [:title (:page-title @viewport)]
       ;; TODO: Extract from VIEWPORT.
       [:link {:rel "icon" :type "image/x-icon"
-              :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}]
+              :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}] \newline
 
+      ;; User defind CSS.
       (generate-rest-css @(:rest-css-entries @viewport))
 
       ;; jQuery.
-      "
-      <!--[if lt IE 9]>
-        <script src='" (gen-url viewport "sw/js/jquery-1.9.1.min.js") "'></script>
-      <![endif]-->
-      <!--[if gte IE 9]><!-->
-        <script src='" (gen-url viewport "sw/js/jquery-2.0.0.min.js") "'></script>
-      <!--<![endif]-->
-      "
+      "<!--[if lt IE 9]>"
+      [:script {:src (gen-url viewport "sw/js/jquery-1.9.1.min.js")}]
+      "<![endif]-->"
+      "<!--[if gte IE 9]><!-->"
+      [:script {:src (gen-url viewport "sw/js/jquery-2.0.0.min.js")}]
+      "<!--<![endif]-->" \newline
 
       ;; jQuery migrate.
-      "<script src='" (gen-url viewport "sw/js/jquery-migrate-1.1.1.min.js") "'></script>"
-      [:script (sw-js-base-bootstrap session viewport)]
-      [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
-      (generate-rest-js @(:rest-js-entries @viewport))]
+      [:script {:src (gen-url viewport "sw/js/jquery-migrate-1.1.1.min.js")}] \newline
+
+      ;; SW specific.
+      [:script (sw-js-base-bootstrap session viewport)] \newline
+      [:script {:src (gen-url viewport "sw/deps/TraceKit/tracekit.js")}] \newline
+      [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}] \newline
+
+      ;; User defined JS.
+      (generate-rest-js @(:rest-js-entries @viewport))] \newline
 
      [:body {:id "_body"}
       [:noscript "SymbolicWeb: JavaScript needs to be enabled."]

@@ -26,18 +26,11 @@ Returns M."
       (vm-observe model (.lifetime context-widget) false
                   (fn [_ _ new-value]
                     ;; TODO: Remove key/value pair from URL when NEW-VALUE is NIL?
-                    (when-not (= new-value (get @(:query-params @viewport) name))
-                      (vm-alter (:query-params @viewport) assoc name new-value)
-                      (once-only :vm-map-to-url-init ;; Sync all :QUERY-PARAMS of Viewport once for each response.
-                        (add-response-chunk (str "window.history.pushState(null, '', '?"
-                                                 (ring.util.codec/form-encode @(:query-params @viewport))
-                                                 "');\n")
-                                            viewport)))))
-
+                    (when (and new-value (not= new-value (get @(:query-params @viewport) name)))
+                      (url-alter-query-params viewport false assoc name new-value))))
       ;; Remove URL entry when Lifetime of CONTEXT-WIDGET ends.
       (add-lifetime-deactivation-fn (.lifetime context-widget)
-                                    (fn [_]
-                                      (url-alter-query-params viewport true dissoc name))))))
+                                    (fn [_] (url-alter-query-params viewport true dissoc name))))))
 
 
 
