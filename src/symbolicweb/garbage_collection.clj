@@ -17,11 +17,12 @@
   (dosync
    (let [session-m (ensure session)]
      (alter -sessions- dissoc (:uuid session-m))
-     (when-not (or (:one-shot? @session)
-                   (= "permanent" @(spget session :session-type)))
+     (when-not (:one-shot? @session)
        (with-sw-io nil
          (swsync
-          (db-remove session "sessions"))))
+          (if (= "permanent" @(spget session :session-type))
+            (db-cache-remove (db-get-cache "sessions") @(:id session-m))
+            (db-remove session "sessions")))))
      (vm-alter -num-sessions-model- - 1)
 
      ;; GC all Viewports in SESSION.
