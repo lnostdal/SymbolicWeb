@@ -54,8 +54,8 @@ var swAddOnLoadFN, swDoOnLoadFNs;
        try {
          funs[fun]();
        }
-       catch(err){
-         TraceKit.report(exception);
+       catch(ex){
+         TraceKit.report(ex);
        }
      }
    };
@@ -156,8 +156,8 @@ var swComet  =
                url: swURL(["&_sw_request_type=comet", params]),
                dataType: "script",
                complete: callback})
-       .fail(function(jq_xhr, settings, exception){
-         TraceKit.report(exception);
+       .fail(function(jq_xhr, settings, ex){
+         TraceKit.report(ex);
        });
      }
      // Stops "throbbing of doom" and ensure we do not recurse until a stack overflow.
