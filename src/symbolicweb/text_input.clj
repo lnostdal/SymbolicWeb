@@ -30,7 +30,9 @@ ARGS:
                           args)
 
       ;; Server --> client.
-      (when-not (:one-way-sync-client? args)
+      (if (:one-way-sync-client? args)
+        (when (get args :initial-sync-server? true)
+          (jqVal it @value-model))
         (vm-observe value-model (.lifetime it) (case (get args :initial-sync-server? ::not-found)
                                                  (true ::not-found) true
                                                  (false nil) false)
@@ -58,25 +60,23 @@ ARGS:
                                                                {:widget it :model value-model :new-value new-value}
                                                                e)))))
                                                new-value)]
-                               (vm-set value-model new-value)))
+                               (vm-set value-model new-value)
+                               (when (:clear-on-submit? args)
+                                 (vm-set value-model nil))))
                            :callback-data {:new-value "' + encodeURIComponent($(this).val()) + '"}
-                           :js-after (str
-                                      (when (:blur-on-submit? args)
-                                        (str "$('#" (.id it) "').blur();"))
-                                      (when (:clear-on-submit? args)
-                                        (str "$('#" (.id it) "').val('');"))))
+                           :js-after (when (:blur-on-submit? args)
+                                       (str "$('#" (.id it) "').blur();")))
 
         :enterpress
         (set-event-handler "keydown" it
                            (fn [& {:keys [value]}]
-                             (vm-set value-model value))
+                             (vm-set value-model value)
+                             (when (:clear-on-submit? args)
+                               (vm-set value-model nil)))
                            :callback-data {:value "' + encodeURIComponent($(this).val()) + '"}
                            :js-before "if(event.keyCode == 10 || event.keyCode == 13) return(true); else return(false);"
-                           :js-after (str
-                                      (when (:blur-on-submit? args)
-                                        (str "$('#" (.id it) "').blur();"))
-                                      (when (:clear-on-submit? args)
-                                        (str "$('#" (.id it) "').val('');")))) ;; TODO: Not sure why $(this) doesn't work here.
+                           :js-after (when (:blur-on-submit? args)
+                                        (str "$('#" (.id it) "').blur();")))
 
         nil
         nil ;; Assume the user wants to assign something later.
