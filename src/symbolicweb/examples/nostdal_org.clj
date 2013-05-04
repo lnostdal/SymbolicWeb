@@ -13,6 +13,10 @@
     (jqAppend root-widget
       (whc [:div]
         (html
+         [:br] [:br]
+         [:p "I can never seem to figure out what content I want on this &quot;homepage&quot;, but here's some bullshit related to what I regard as one of the most amazing things I've seen come about in recent years; "
+          [:a {:href "https://en.wikipedia.org/wiki/Bitcoin"} "Bitcoin"] "."]
+         [:br]
          [:img {:src "http://1.media.collegehumor.cvcdn.com/36/21/977be9afe4fb0797136c16077364711d.gif"}]
          [:br]
          "↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓"
@@ -22,7 +26,7 @@
                  "1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3"]]
           [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=200"}]]
          [:br]
-         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " (i.e. Crypto!) We Trust&quot;"])))
+         [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " (i.e. Crypto!) I Trust&quot;"])))
     viewport))
 
 

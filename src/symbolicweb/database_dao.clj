@@ -93,10 +93,12 @@
        (assert false
                "DB-DEFAULT-DB-TO-CLJ-HANDLER: Can't call DB-VALUE-TO-CM-HANDLER here; REF-DB-TABLE-NAME arg missing.")
 
+       ;; Existing field found, but it is not a VM; store as raw DB-VALUE.
        (and (find @(:obj m) clj-key)
             (not (isa? (class (clj-key @(:obj m))) ValueModel)))
        (alter (:obj m) assoc clj-key db-value)
 
+       ;; Assume the intent is to store the value in a new or existing VM.
        true
        (db-value-to-vm-handler (:db-cache m) (:obj m) clj-key db-value)))))
 
