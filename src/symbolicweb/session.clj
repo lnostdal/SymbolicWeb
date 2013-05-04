@@ -34,6 +34,9 @@ CREATE TABLE sessions (
              :key :application
              :value (name (:name (:value m))))
 
+           :json
+           (db-json-to-db-transformer m)
+
            :user-model
            (assoc m
              :key :user-ref
@@ -55,6 +58,9 @@ CREATE TABLE sessions (
            (assoc m
              :key :user-model
              :value (when (:value m) (db-get (:value m) "users")))
+
+           :json
+           (db-db-to-json-transformer m)
 
            m)))))
 
@@ -87,6 +93,8 @@ CREATE TABLE sessions (
                             :rest-handler #'default-rest-handler
                             :ajax-handler #'default-ajax-handler
                             :aux-handler #'default-aux-handler
+
+                            :json (vm {} (constantly false))
                             args))]
     session))
 
@@ -102,18 +110,17 @@ CREATE TABLE sessions (
 
 
 
-(defn spget [^Ref session ^Keyword k]
+(defn spget [^Ref session ^Keyword k & not-found]
   "\"Session Permanent Get\"
 Session data stored in DB; permanent."
-  (db-json-get (:json-store @session) k))
+  (db-json-get (:json @session) k not-found))
 
 
 
 (defn spdel [^Ref session ^Keyword k]
   "\"Session Permanent Delete\"
 Session data stored in DB; permanent."
-  (vm-alter (:json-store @session)
-            dissoc k))
+  (vm-alter (:json @session) dissoc k))
 
 
 
@@ -192,8 +199,6 @@ Session data stored in memory; temporarly."
                  :session-type session-type
                  :one-shot? one-shot?)
           (when-not one-shot?
-            (alter session-skeleton assoc
-                   :json-store (db-json-store-get "sessions" @(:id @session-skeleton) :data))
             (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
             (vm-alter -num-sessions-model- + 1))
           ((:session-constructor-fn session-type) session-skeleton))

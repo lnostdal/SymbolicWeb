@@ -6,59 +6,42 @@
 ;; * PostgreSQL 9.2+ supports a native JSON type; might be useful here.
 ;;
 ;; * Related perhaps: https://bitbucket.org/kotarak/lazymap ..seems interesting; haven't thought about this closely though.
-;;
-;; * If the SESSION table used BIGINT for its ID field we could use the standard cache and DAO layer for this.
-;;   Perhaps this implies that all UUIDs should live in their own UUID column in addition to the _always_ present, standard or
-;;  internally used ID column.
 
 
 
-(defn db-json-update [json-store]
-  "Sync JSON-STORE to the DB."
-  (db-pstmt (str "UPDATE " (:table-name json-store) " SET " (name (:colname json-store)) " = ? WHERE id = ?;")
-            (json-generate (zipmap (keys @(:data json-store))
-                                   (map #(deref %) (vals @(:data json-store)))))
-            (:id json-store)))
+(defn db-db-to-json-transformer [m]
+  "DB --> SW"
+  (let [js (into {} (map (fn [[k v]]
+                           [k (vm v)])
+                         (json-parse (:value m))))]
+    ;; Observe each existing field in store.
+    (doseq [[k v] js]
+      (vm-observe v nil false (fn [_ _ _]
+                                ;;(db-json-update js)
+                                (vm-alter ((:key m) @(:obj m)) assoc k v))))
+    (assoc m
+      :value js)))
 
 
 
-;; TODO: The cache here is probably not the best idea, but it does avoid problems related to TX retries.
-(let [cache (-> (CacheBuilder/newBuilder)
-                (.softValues)
-                (.concurrencyLevel (.availableProcessors (Runtime/getRuntime)))
-                (.build))]
-  (defn db-json-store-get [^String table-name id ^Keyword colname]
-    (assert id)
-    (.get cache [table-name id colname]
-          (fn []
-            ;;(println "DB-JSON-STORE-GET: Creating new JSON store and putting it in the cache.")
-            (let [js-str (colname (first (db-pstmt (str "SELECT " (name colname) " FROM " table-name " WHERE id = ? LIMIT 1;")
-                                                   id)))
-                  js-m (json-parse js-str)
-                  js {:table-name table-name :id id :colname colname
-                      :data (vm (zipmap (keys js-m)
-                                        (map #(vm %) (vals js-m))))}]
-              ;; Observe the store itself; see the VM-ALTER call in DB-JSON-GET.
-              (vm-observe (:data js) nil false (fn [_ _ _] (db-json-update js)))
-              ;; Observe each existing field in the store.
-              (doseq [[k v] @(:data js)]
-                (vm-observe v nil false (fn [_ _ _] (db-json-update js))))
-              js)))))
+(defn db-json-to-db-transformer [m]
+  "SW --> DB"
+  (let [json-str (json-generate (into {} (map (fn [[k v]]
+                                                [k @v])
+                                              @(:value m))))]
+    (assoc m
+      :value json-str)))
 
 
 
-(defn db-json-store-new [^String table-name ^Keyword colname]
-  "Returns ID."
-  (:id (first (db-insert table-name {colname "{}"}))))
-
-
-
-(defn db-json-get [json-store ^Keyword k & not-found]
-  (let [res (get @(:data json-store) k ::not-found)]
+(defn db-json-get [^ValueModel json-store ^Keyword k & not-found]
+  (let [res (get @json-store k ::not-found)]
     (if (= res ::not-found)
-      (with1 (vm not-found)
-        ;; Observe new field in the store.
-        (vm-observe it nil false (fn [_ _ _] (db-json-update json-store)))
+      (with1 (vm (first not-found))
+        ;; Observe field itself.
+        (vm-observe it nil false (fn [_ _ _]
+                                   ;; Readding the field to the store will trigger an update.
+                                   (vm-alter json-store assoc k it)))
         ;; Add field to store.
-        (vm-alter (:data json-store) assoc k it))
+        (vm-alter json-store assoc k it))
       res)))
