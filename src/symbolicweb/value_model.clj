@@ -79,12 +79,16 @@ as the first argument to CALLBACK."
 
 
 
-(defn ^ValueModel vm [value]
-  (ValueModel. (ref value)
-               (mk-Observable (fn [^Observable observable old-value new-value]
-                                (when-not (= old-value new-value) ;; TODO: = is a magic value.
-                                  (doseq [^Fn observer-fn (ensure (.observers observable))]
-                                    (observer-fn old-value new-value)))))))
+(defn vm
+  (^ValueModel [value]
+     (vm value =))
+
+  (^ValueModel [value ^Fn cmp-fn]
+     (ValueModel. (ref value)
+                  (mk-Observable (fn [^Observable observable old-value new-value]
+                                   (when-not (cmp-fn old-value new-value)
+                                     (doseq [^Fn observer-fn (ensure (.observers observable))]
+                                       (observer-fn old-value new-value))))))))
 
 
 
