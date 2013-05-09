@@ -2,12 +2,22 @@
 
 
 
+(defn js-handle-value ^String [value ^Boolean as-js?]
+  (if as-js?
+    value
+    (url-encode-wrap (.toString value))))
+
+
+
 (defn jqHTML
   ([^WidgetBase widget]
      (str "$('#" (.id widget) "').html();\n"))
 
-  ([^WidgetBase widget new-html]
-     (add-response-chunk (str "$('#" (.id widget) "').html(" (url-encode-wrap (.toString new-html)) ");\n")
+  ([^WidgetBase widget ^String value]
+     (jqHTML widget value false))
+
+  ([^WidgetBase widget ^String value ^Boolean as-js?]
+     (add-response-chunk (str "$('#" (.id widget) "').html(" (js-handle-value value as-js?) ");\n")
                          widget)))
 
 
@@ -92,8 +102,12 @@
 (defn jqCSS
   ([^WidgetBase widget ^String property-name]
      (str "$('#" (.id widget) "').css('" property-name "');\n"))
-  ([^WidgetBase widget ^String property-name ^String js-value]
-     (add-response-chunk (str "$('#" (.id widget) "').css('" property-name "', " js-value ");\n")
+
+  ([^WidgetBase widget ^String property-name ^String value]
+     (jqCSS widget property-name value false))
+
+  ([^WidgetBase widget ^String property-name ^String value ^Boolean as-js?]
+     (add-response-chunk (str "$('#" (.id widget) "').css('" property-name "', " (js-handle-value value as-js?) ");\n")
                          widget)))
 
 
@@ -101,8 +115,12 @@
 (defn jqAttr
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').attr('" attribute-name "');\n"))
-  ([^WidgetBase widget ^String attribute-name ^String js-value]
-     (add-response-chunk (str "$('#" (.id widget) "').attr('" attribute-name "', " js-value ");\n")
+
+  ([^WidgetBase widget ^String attribute-name ^String value]
+     (jqAttr widget attribute-name value false))
+
+  ([^WidgetBase widget ^String attribute-name ^String value ^Boolean as-js?]
+     (add-response-chunk (str "$('#" (.id widget) "').attr('" attribute-name "', " (js-handle-value value as-js?) ");\n")
                          widget)))
 
 
@@ -110,8 +128,12 @@
 (defn jqProp
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').prop('" attribute-name "');\n"))
-  ([^WidgetBase widget ^String attribute-name ^String js-value]
-     (add-response-chunk (str "$('#" (.id widget) "').prop('" attribute-name "', " js-value ");\n")
+
+  ([^WidgetBase widget ^String attribute-name ^String value]
+     (jqProp widget attribute-name value false))
+
+  ([^WidgetBase widget ^String attribute-name ^String value ^Boolean as-js?]
+     (add-response-chunk (str "$('#" (.id widget) "').prop('" attribute-name "', " (js-handle-value value as-js?) ");\n")
                          widget)))
 
 
@@ -119,8 +141,12 @@
 (defn jqVal
   ([^WidgetBase widget]
      (str "$('#" (.id widget) "').val();\n"))
-  ([^WidgetBase widget new-value]
-     (add-response-chunk (str "$('#" (.id widget) "').val(" (url-encode-wrap (.toString new-value)) ");\n")
+
+  ([^WidgetBase widget ^String value]
+     (jqVal widget value false))
+
+  ([^WidgetBase widget ^String value ^Boolean as-js?]
+     (add-response-chunk (str "$('#" (.id widget) "').val(" (js-handle-value value as-js?) ");\n")
                          widget)))
 
 
@@ -131,7 +157,11 @@
 
 
 
-(defn jqTooltipShow [^WidgetBase widget ^String html]
-  (add-response-chunk (str "$('#" (.id widget) "').attr('title', " (url-encode-wrap html) ");\n"
-                           "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');\n")
-                      widget))
+(defn jqTooltipShow
+  ([^WidgetBase widget ^String value]
+     (jqTooltipShow widget value false))
+
+  ([^WidgetBase widget ^String value ^Boolean as-js?]
+     (add-response-chunk (str "$('#" (.id widget) "').attr('title', " (js-handle-value value as-js?) ");\n"
+                              "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');\n")
+                         widget)))
