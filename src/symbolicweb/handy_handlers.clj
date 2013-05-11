@@ -137,7 +137,9 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (defn default-rest-handler [request ^Ref session ^Ref viewport]
   {:status 200
-   :headers {"Content-Type" "text/html; charset=UTF-8"}
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Cache-Control" "no-cache"}
+
    :body
    (html
     (hiccup.page/doctype :html5)
@@ -180,7 +182,8 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
 (defn not-found-page-handler [request ^Ref session ^Ref viewport]
   {:status 404
-   :headers {"Content-Type" "text/html; charset=UTF-8"}
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Cache-Control" "no-cache"}
 
    :body
    (html
@@ -205,5 +208,5 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
   (fn []
     {:status 200
      :headers {"Content-Type" "text/javascript; charset=UTF-8"
-               "Server" -http-server-string-}
+               "Cache-Control" "no-cache"}
      :body (fn-to-wrap)}))
