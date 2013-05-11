@@ -75,3 +75,9 @@
                        :js-before "event.preventDefault(); return(true);")
 
     widget))
+
+
+
+(defn ^WidgetBase mk-Img [^ValueModel value-model]
+  (mk-he :img value-model :observer-fn (fn [^WidgetBase widget old-value new-value]
+                                         (jqAttr widget "src" new-value))))
