@@ -89,40 +89,49 @@
 
 (let [bnds (get-thread-bindings)]
   (defn handler [request]
-    (swap! -request-counter- inc')
-    ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
-    (with-bindings bnds
-      (binding [*print-level* 2]
-        (try
+    (let [http-request-id (swap! -request-counter- inc')]
+      ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
+      (with-bindings bnds
+        (binding [*print-level* 2]
+          (try
+            (swsync
+             (let [^Ref session (find-or-create-session request)]
+               (touch session)
+               ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
+               ;; TODO: Production / development modes needed here too. Logging, etc. etc...
+               (with1 ((:request-handler @session) request session)
+                 (when (:one-shot? @session)
+                   (gc-session session)))))
 
-          (swsync
-           (let [^Ref session (find-or-create-session request)]
-             (touch session)
-             ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
-             ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-             (with1 ((:request-handler @session) request session)
-               (when (:one-shot? @session)
-                 (gc-session session)))))
+            (catch Throwable e
+              ;; Log first..
+              (log "Top Level Exception:"
+                   (with-out-str
+                     (println "HTTP-REQUEST-ID:" http-request-id)
+                     (println e)
+                     (println request)
+                     (clojure.stacktrace/print-stack-trace e 50)))
 
-          (catch Throwable e
-            ;; Log first..
-            (log "Top Level Exception:" (with-out-str
-                                          (clojure.stacktrace/print-stack-trace e 50)))
+              ;; ..then send to HTTP client.
+              ;; TODO: This doesn't check what sort of response the client expects; the "Accept" header.
+              {:status 500
+               :headers {"Content-Type" "text/html; charset=UTF-8"
+                         "Cache-Control" "no-cache"}
 
-            ;; ..then send to HTTP client.
-            ;; TODO: This doesn't check what sort of response the client expects; the "Accept" header.
-            {:status 500
-             :headers {"Content-Type" "text/html; charset=UTF-8"}
-             :body
-             (html
-              [:html
-               [:head [:title "SymbolicWeb: Top Level Server Exception: HTTP 500"]]
-               [:body {:style "font-family: sans-serif;"}
-                [:h3 [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"]
-                 ": Top Level Server Exception: HTTP 500"]
-                [:pre
-                 \newline
-                 (with-out-str (clojure.stacktrace/print-stack-trace e 1000))]]])}))))))
+               :body
+               (html
+                [:html
+                 [:head [:title "SymbolicWeb: Top Level Server Exception: HTTP 500"]]
+                 [:body {:style "font-family: sans-serif;"}
+                  [:p {:style "color: red;"} [:b (str e)]]
+                  [:p "This incident has been logged (ID: " http-request-id "), but feel free to "
+                   [:a {:href (str "mailto:larsnostdal@gmail.com?subject=" (url-encode-component (str "SW incident #"
+                                                                                                      http-request-id)))}
+                    "contact the admin"]
+                   " if you have additional information!"]
+                  [:p [:pre (with-out-str (clojure.stacktrace/print-stack-trace e 1000))]]
+                  [:p "HTTP 500: Top level server exception caught by " [:a {:href "https://github.com/lnostdal/SymbolicWeb"}
+                                                                         "SymbolicWeb"] "."]]])})))))))
 
 
 
