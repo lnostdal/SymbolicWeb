@@ -56,7 +56,7 @@
         query-params (vm nil)]
 
     (vm-observe query-str-vm (.lifetime widget) false
-                #(jqAttr widget "href" (str "window.location.pathname + '?' + " (url-encode-wrap %3))))
+                #(jqAttr widget "href" (str "window.location.pathname + '?' + " (url-encode-wrap %3)) true))
 
     (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
       (with-observed-vms (.lifetime widget)

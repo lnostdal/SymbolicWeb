@@ -8,8 +8,8 @@
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
         viewport (mk-Viewport request session root-widget :page-title "nostdal.org")]
     (add-resource viewport :css "sw/css/common.css")
-    (jqCSS root-widget "text-align" "'center'")
-    (jqCSS root-widget "background-color" "'#dddddd'")
+    (jqCSS root-widget "text-align" "center")
+    (jqCSS root-widget "background-color" "#dddddd")
     (jqAppend root-widget
       (whc [:div]
         (html

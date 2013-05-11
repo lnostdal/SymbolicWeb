@@ -20,14 +20,14 @@
                      ^Fn notify-observers-fn]
   IObservable
   (add-observer [_ observer]
-    (if (get (ensure observers) observer)
+    (if (contains? (ensure observers) observer)
       false
       (do
         (alter observers conj observer)
         observer)))
 
   (remove-observer [_ observer]
-    (if (get (ensure observers) observer)
+    (if (contains? (ensure observers) observer)
       (do
         (alter observers disj observer)
         observer)

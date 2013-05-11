@@ -109,7 +109,7 @@ See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
   "Returns a new ValueModel which is kept in one-way sync from VALUE-MODEL via CALLBACK.
 
   CALLBACK: (fn [inner-lifetime old-value new-value] ..)
-            Return value of CALLBACK will be the continious value of the returned ValueModel.
+            Return value of CALLBACK will be the continuous value of the returned ValueModel.
 
   LIFETIME: The lifetime of this connection is governed by LIFETIME and can be an instance of Lifetime or NIL for 'infinite'
 lifetime (as long as VALUE-MODEL exists)."

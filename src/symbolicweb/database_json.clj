@@ -17,7 +17,7 @@
     ;; Observe each existing field in store.
     (doseq [[k v] js]
       (vm-observe v nil false (fn [_ _ _]
-                                ;;(db-json-update js)
+                                ;; Readding the field to the store will trigger an update.
                                 (vm-alter ((:key m) @(:obj m)) assoc k v))))
     (assoc m
       :value js)))
@@ -39,6 +39,7 @@
     (if (= res ::not-found)
       (with1 (vm (first not-found))
         ;; Observe field itself.
+        ;; TODO: Perhaps we could/should(?) use the Lifetime of SESSION here – if it had one; see #28.
         (vm-observe it nil false (fn [_ _ _]
                                    ;; Readding the field to the store will trigger an update.
                                    (vm-alter json-store assoc k it)))
