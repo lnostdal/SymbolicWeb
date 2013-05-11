@@ -157,7 +157,12 @@ Appends a timestamp to the URL based on file mtime."
          (cb#)))))
 
 
+(defn once-only-get [^Keyword k]
+  (when *with-once-only-ctx*
+    (get @*with-once-only-ctx* k)))
 
+
+;; TODO: Possible idea for improvement: see the note in URL-ALTER-QUERY-PARAMS.
 (defmacro once-only [^Keyword k & body]
   `(if *with-once-only-ctx*
      (alter *with-once-only-ctx* assoc ~k (fn [] ~@body))

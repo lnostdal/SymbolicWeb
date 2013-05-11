@@ -7,10 +7,15 @@
 
   REPLACE?: If True, a history entry will be added at the client end."
   (apply vm-alter (:query-params @viewport) f args)
-  (once-only :url-alter-query-params
-    (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
-                             "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
-                        viewport)))
+  ;; The strange WHEN here is here to handle cases where we'll be passed both True and False for REPLACE?... so, yeah – only one
+  ;; of them win out and we'd like the False case to always win regardless of order.
+  (when (or (not (once-only-get :url-alter-query-params))
+            (not replace?))
+    (once-only :url-alter-query-params
+      (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
+                               "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
+                          viewport))))
+
 
 
 
