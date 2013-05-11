@@ -29,14 +29,26 @@ Returns M."
           model (:model m)
           viewport (:viewport m)
           context-widget (:context-widget m)]
-      (vm-observe model (.lifetime context-widget) false
-                  (fn [_ _ new-value]
-                    ;; TODO: Remove key/value pair from URL when NEW-VALUE is NIL?
-                    (when (and new-value (not= new-value (get @(:query-params @viewport) name)))
-                      (url-alter-query-params viewport false assoc name new-value))))
-      ;; Remove URL entry when Lifetime of CONTEXT-WIDGET ends.
-      (add-lifetime-deactivation-fn (.lifetime context-widget)
-                                    (fn [_] (url-alter-query-params viewport true dissoc name))))))
+      (if-let [viewport (or viewport (and context-widget @(.viewport context-widget)))]
+        (do
+          ;; Initial sync; add entry to URL if not already present.
+          (when-not (get @(:query-params @viewport) name)
+            (url-alter-query-params viewport true assoc name @model))
+          ;; Continuous sync.
+          (vm-observe model (.lifetime context-widget) false
+                      (fn [_ _ new-value]
+                        (when (and new-value (not= new-value (get @(:query-params @viewport) name)))
+                          (url-alter-query-params viewport false assoc name new-value))))
+          ;; Remove URL entry when Lifetime of CONTEXT-WIDGET ends.
+          (add-lifetime-deactivation-fn (.lifetime context-widget)
+                                        (fn [_] (url-alter-query-params viewport true dissoc name))))
+
+        ;; No Viewport found anywhere; observe CONTEXT-WIDGET until it has a Viewport set then try again.
+        (when context-widget
+          (vm-observe (.viewport context-widget) (.lifetime context-widget) true
+                      (fn [_ _ viewport]
+                        (when viewport
+                          (vm-sync-to-url (assoc m :viewport viewport))))))))))
 
 
 
@@ -56,24 +68,17 @@ Returns M."
       (assert (isa? (class model) ValueModel))
       (if-let [viewport (or viewport (and context-widget @(.viewport context-widget)))]
         (do
-          ;; Initialization.
-          ;; TODO: Make init in this direction optional?
-          ;; TODO: Remove if not found?
-          (if-let [value (get @(:query-params @viewport) name)]
-            ;; Something found in URL already; sync Client --> Server.
-            (vm-set model value)
-            ;; Nothing found in URL; sync Server --> Client.    TODO: (when-let [value @model] ...) here?
-            (url-alter-query-params viewport true assoc name @model))
-
-          ;; Client --> Server; via VIEWPORT – i.e. before CONTEXT-WIDGET is active.
+          ;; Initial sync; if already present in URL.
+          (when-let [value (get @(:query-params @viewport) name)]
+            (vm-set model value))
+          ;; Continuous sync.
           (vm-observe (:popstate-observer @viewport) (.lifetime (:root-element @viewport)) false
-                      (fn [_ _ value]
-                        (when value
-                          (with-delayed-reactions
-                            (doseq [[k v] value]
-                              (when (= k name)
-                                (vm-alter (:query-params @viewport) assoc name v)
-                                (vm-set model v)))))))
+                      (fn [_ _ query-params]
+                        (when query-params
+                          (doseq [[k v] query-params]
+                            (when (= k name)
+                              (vm-alter (:query-params @viewport) assoc name v)
+                              (vm-set model v))))))
           (when context-widget
             (vm-sync-to-url m)))
 
