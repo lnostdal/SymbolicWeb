@@ -46,24 +46,8 @@
 
 
 
-(def ^:dynamic *with-delayed-reactions-ctx* nil)
-
-(defmacro with-delayed-reactions [& body]
-  "Don't \"do anything\" (Observers) based on changes to VMs in BODY until after BODY."
-  `(binding [*with-delayed-reactions-ctx* (or *with-delayed-reactions-ctx* (ref []))]
-     (with1 ~@body
-       ;; TODO: Here an interesting thing could be implemented; reactions only fire after each level of VM mutations have happened.
-       (let [cbs# @*with-delayed-reactions-ctx*]
-         (binding [*with-delayed-reactions-ctx* nil]
-           (doseq [^Fn cb# cbs#]
-             (cb#)))))))
-
-
-
 (defn notify-observers [^Observable observable & args]
-  (if-let [it *with-delayed-reactions-ctx*]
-    (alter it conj (fn [] (apply (.notify-observers-fn observable) observable args)))
-    (apply (.notify-observers-fn observable) observable args)))
+  (apply (.notify-observers-fn observable) observable args))
 
 
 

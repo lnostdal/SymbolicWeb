@@ -70,9 +70,8 @@
 
     (set-event-handler "click" widget
                        (fn [& _]
-                         (with-delayed-reactions
-                           (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
-                             (vm-set (:model url-mapper) @url-mapper-mutator-vm))))
+                         (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
+                           (vm-set (:model url-mapper) @url-mapper-mutator-vm)))
                        :js-before "event.preventDefault(); return(true);")
 
     widget))
