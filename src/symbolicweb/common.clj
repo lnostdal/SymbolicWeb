@@ -346,14 +346,16 @@ Returns a String."
 ;; TODO: Yes, this is all quite horrible. The binding propagation thing in Clojure is not a good thing IMHO.
 
 
-(def -sw-io-agent-error-handler-
-  (fn [the-agent exception]
-    (try
-      (println "-SW-IO-AGENT-ERROR-HANDLER-, thrown:")
-      (clojure.stacktrace/print-stack-trace exception 1000)
-      (catch Throwable inner-exception
-        (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
-        (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
+(let [bnds (get-thread-bindings)]
+  (def -sw-io-agent-error-handler-
+    (fn [the-agent exception]
+      (with-bindings bnds
+        (try
+          (println "-SW-IO-AGENT-ERROR-HANDLER-, thrown:")
+          (clojure.stacktrace/print-stack-trace exception 1000)
+          (catch Throwable inner-exception
+            (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
+            (Thread/sleep 1000))))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
 
 (defn mk-sw-agent [binding-whitelist]

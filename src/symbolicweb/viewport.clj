@@ -5,8 +5,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;; TODO: Instead of using an Agent, this code could probably do the same thing DO-MTX (database_common.clj) does.
-
 
 (declare set-viewport-event-handler)
 (defn mk-Viewport [request ^Ref session ^WidgetBase root-widget & args]

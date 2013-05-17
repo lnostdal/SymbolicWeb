@@ -1,3 +1,3 @@
 (in-ns 'symbolicweb.core)
 
-(defonce -initial-bindings- (get-thread-bindings))
+(def -initial-bindings- (get-thread-bindings))

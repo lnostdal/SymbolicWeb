@@ -18,8 +18,6 @@
 ;; TODO: ContainerModel based abstraction for SQL queries? This probably belongs in a different file; it's a different concept.
 ;; TODO: Prefixing everything here with DB- is retarded; use a namespace.
 
-;; NOTE: :ID fields should only be read within SWDBOPs. This means a small DOSYNC is needed for this.
-
 
 
 (defn db-db-array-to-clj-vector [^java.sql.Array db-array]
