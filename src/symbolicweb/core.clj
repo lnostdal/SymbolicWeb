@@ -123,13 +123,13 @@
                 [:html
                  [:head [:title "SymbolicWeb: Top Level Server Exception: HTTP 500"]]
                  [:body {:style "font-family: sans-serif;"}
-                  [:p {:style "color: red;"} [:b (str e)]]
+                  [:p {:style "color: red;"} [:b (escape-html (str e))]]
                   [:p "This incident has been logged (ID: " http-request-id "), but feel free to "
                    [:a {:href (str "mailto:larsnostdal@gmail.com?subject=" (url-encode-component (str "SW incident #"
                                                                                                       http-request-id)))}
                     "contact the admin"]
                    " if you have additional information!"]
-                  [:p [:pre (with-out-str (clojure.stacktrace/print-stack-trace e 1000))]]
+                  [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]
                   [:p "HTTP 500: Top level server exception caught by " [:a {:href "https://github.com/lnostdal/SymbolicWeb"}
                                                                          "SymbolicWeb"] "."]]])})))))))
 
