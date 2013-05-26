@@ -12,16 +12,16 @@
 
                  [com.google.guava/guava "14.0.1"] ;; For soft hash cache.
 
-                 [cheshire "5.1.2-SNAPSHOT"] ;; JSON.
+                 [cheshire "5.1.3-SNAPSHOT"] ;; JSON.
 
-                 [clj-time/clj-time "0.5.1-SNAPSHOT"]
+                 [clj-time/clj-time "0.5.2-SNAPSHOT"]
 
                  [hiccup/hiccup "1.0.3"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.3-SNAPSHOT"] ;; HTML templating.
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "1.0.0"] ;; ring.util.codec
-                 [ring/ring-core "1.2.0-beta2"] ;; ring.middleware.params, ring.middleware.cookies
+                 [ring/ring-core "1.2.0-beta3"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 

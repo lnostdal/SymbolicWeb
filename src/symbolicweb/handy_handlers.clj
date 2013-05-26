@@ -157,14 +157,14 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
       ;; jQuery.
       "<!--[if lt IE 9]>"
-      [:script {:src (gen-url viewport "sw/js/jquery-1.9.1.min.js")}]
+      [:script {:src (gen-url viewport "sw/js/jquery-1.10.0.min.js")}]
       "<![endif]-->"
       "<!--[if gte IE 9]><!-->"
-      [:script {:src (gen-url viewport "sw/js/jquery-2.0.0.min.js")}]
+      [:script {:src (gen-url viewport "sw/js/jquery-2.0.1.min.js")}]
       "<!--<![endif]-->" \newline
 
       ;; jQuery migrate.
-      [:script {:src (gen-url viewport "sw/js/jquery-migrate-1.1.1.min.js")}] \newline
+      [:script {:src (gen-url viewport "sw/js/jquery-migrate-1.2.1.min.js")}] \newline
 
       ;; SW specific.
       [:script (sw-js-base-bootstrap session viewport)] \newline
