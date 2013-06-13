@@ -26,7 +26,7 @@ ARGS:
   :BLUR-ON-SUBMIT?: If True the widget will be blurred on 'submit'."
   (let [args (apply hash-map args)]
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
-                            (str "<input type='text' id='" (.id widget) "'>"))
+                            (str "<input type='" (or (name (:type args)) "text") "' id='" (.id widget) "'>"))
                           args)
 
       ;; Server --> client.
