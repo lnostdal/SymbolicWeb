@@ -1,14 +1,15 @@
 (in-ns 'symbolicweb.core)
 
-(derive ::CheckBox ::HTMLElement)
-(defn mk-CheckBox [model & attributes]
-  (with1 (apply mk-HTMLElement "input" model
-                :type ::CheckBox
-                :static-attributes {:type "checkbox"}
-                :handle-model-event-fn (fn [widget old-state new-state]
-                                         (jqProp widget "checked" new-state))
-                attributes)
+
+
+(defn mk-Checkbox [^ValueModel model & args]
+  ;; TODO: Merge in ARGS without overwriting :html-attrs -> :type here.
+  (with1 (mk-WB :input {:html-attrs {:type :checkbox}})
+    (vm-observe model (.lifetime it) true
+                (fn [^Lifetime lifetime old-value new-value]
+                  (dbg-prin1 new-value)
+                  (jqProp it "checked" (if new-value "true" ""))))
     (set-event-handler "change" it
                        (fn [& {:keys [new-state]}]
-                         (vm-set model (= "true" new-state)))
+                         (vm-set model (= new-state "true")))
                        :callback-data {:new-state (str "' + encodeURIComponent($(this).prop('checked')) + '")})))
