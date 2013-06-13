@@ -3,7 +3,10 @@
 
 
 (defn bs-show-dialog [^Ref viewport ^String title ^WidgetBase content ^WidgetBase footer]
-  (with (whc [:div {:html-attrs {:style "display: none;"}}]
+  (with (whc [:div {:html-attrs {:style "display: none;"
+                                 :class "modal hide fade"
+                                 :role "dialog"
+                                 :tabindex "-1"}}]
           (html
            [:div {:class "modal-header"}
             [:button {:type "button" :class "close" :data-dismiss "modal" :aria-hidden "true"} "&times;"]
@@ -12,8 +15,6 @@
              (sw content)]
             (sw footer)]))
     (jqAddClass footer "modal-footer")
-    (dorun (map (partial jqAddClass it) ["modal" "hide" "fade"]))
-    (jqAttr it "role" "dialog") (jqAttr it "tabindex" "-1")
     (set-event-handler "hidden" it (fn [& _] (jqRemove it)))
     (jqAppend (:root-element @viewport) it)
     (add-response-chunk (str "$('#" (.id it) "').modal('show');") viewport)))
