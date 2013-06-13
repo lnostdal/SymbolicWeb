@@ -42,11 +42,13 @@
                              ;; Resources; using Vectors since order matters.
                              :rest-css-entries (ref [])
                              :rest-js-entries (ref [])
+                             :rest-head-entries (ref [])
 
                              :session session
                              :root-element root-widget ;; TODO: Rename...
                              :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
                              args))]
+
 
     ;; HTML5 History stuff.
     ;; TODO: Don't bother with this for crappy browsers – mk-Link also needs a fallback in this regard.
@@ -98,6 +100,10 @@
     (when @(:after-rest? @viewport)
       (add-response-chunk (str "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');\n")
                           viewport))))
+
+
+(defn add-rest-head [^Ref viewport rest-head-entry]
+  (alter (:rest-head-entries @viewport) conj rest-head-entry))
 
 
 

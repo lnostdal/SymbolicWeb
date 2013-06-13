@@ -147,6 +147,7 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
     [:html
      [:head
       [:meta {:charset "UTF-8"}]
+      (generate-rest-head @(:rest-head-entries @viewport))
       [:title (:page-title @viewport)]
 
       ;; TODO: Extract from VIEWPORT.

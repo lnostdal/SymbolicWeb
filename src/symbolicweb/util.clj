@@ -136,6 +136,13 @@ Appends a timestamp to the URL based on file mtime."
 
 
 
+(defn ^String generate-rest-head [rest-head-entries]
+  (with-out-str
+    (doseq [rest-entry rest-head-entries]
+      (println rest-entry))))
+
+
+
 (defn ^java.sql.Timestamp datetime-to-sql-timestamp [^org.joda.time.DateTime datetime]
   (java.sql.Timestamp. (clj-time.coerce/to-long datetime)))
 
