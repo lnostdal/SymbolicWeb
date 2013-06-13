@@ -94,11 +94,9 @@ ARGS:
 
 
 ;; TODO: Switch to something like bcrypt or scrypt. http://crackstation.net/hashing-security.htm
-#_(defn mk-HashedInput [model salt & attributes]
-  "<input type='password' ..> type widget using SHA256 hashing on the client and server end. It is salted on the server end.
-Note that the client-side hash halve is still transferred in clear text form from the client to the server. This is what happens:
-
-  (sha (str salt (sha hash)))"
+#_(defn mk-HashedInput [model server-salt & attributes]
+  "<input type='password' ..> type widget using SHA256 hashing on the client and server end. It is salted on the client and server
+ end: (sha (str server-salt (sha hash)))"
   (with1 (apply mk-HTMLElement "input" model
                 :static-attributes {:type "password"}
                 :handle-model-event-fn (fn [_ _ _])

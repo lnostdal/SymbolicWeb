@@ -61,6 +61,7 @@
     (set-viewport-event-handler "window" "sw_scrollbottom" viewport
                                 (fn [& _]
                                   (vm-alter (:scrolled-to-bottom-event @viewport) inc)))
+    ;; TODO: Reduce spammy event rate.
     (add-response-chunk
      (str "$(window).scroll(function(){"
           "  if(50 > $(document).height() - $(window).height() - $(window).scrollTop()){"
