@@ -3,20 +3,7 @@
 
 
 (defn default-aux-handler [request ^Ref session ^Ref viewport]
-  "Attempt to handle auxiliary callbacks or events; AJAX requests that do not follow the SW protocol. These might come from 3rd
-party code or plugins or similar running on the browser end.
-Returns TRUE if the event was handled or FALSE if no callback was found for the event."
-  (assert false "TODO: DEFAULT-AUX-HANDLER")
-  (with-local-vars [handled? false]
-    (loop [aux-callbacks (:aux-callbacks @viewport)]
-      (when-first [aux-callback aux-callbacks]
-        (let [aux-callback (val aux-callback)]
-          (if ((:fit-fn aux-callback))
-            (do
-              ((:handler-fn aux-callback))
-              (var-set handled? true))
-            (recur (next aux-callbacks))))))
-    (var-get handled?)))
+  (assert false "TODO: DEFAULT-AUX-HANDLER..??"))
 
 
 
@@ -121,15 +108,13 @@ Returns TRUE if the event was handled or FALSE if no callback was found for the 
 
         ;; REST.
         (let [viewport ((:mk-viewport-fn @session) request session)]
+          ;; TODO: The name here seems counter intuitive since :REST-HANDLER is actually called below. Change or document this?
           (vm-set (:after-rest? @viewport) true)
-          (when (= "login" request-type)
-            ;; TYPE can be "session" or "permanent". USER_REF can be a token for someone who referred us.
-            ((:user-handle-login-token @session) session viewport (get qps "type") (get qps "login_token") (get qps "user_ref"))
-            (url-alter-query-params viewport true #(-> %
-                                                       (dissoc "_sw_request_type")
-                                                       (dissoc "type")
-                                                       (dissoc "login_token")
-                                                       (dissoc "user_ref"))))
+
+          (when (= request-type "aux")
+            ((:aux-handler @session) request session viewport)
+            (url-alter-query-params viewport true (fn [qp] (dissoc qp "_sw_request_type"))))
+
           (with1 ((:rest-handler @session) request session viewport)
             (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))))))))
 
