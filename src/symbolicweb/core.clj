@@ -82,6 +82,8 @@
   (:require symbolicweb.handy-handlers)
   (:require symbolicweb.session)
 
+  (:require symbolicweb.bs-alert)
+  (:require symbolicweb.bs-dialog)
 
   (:require symbolicweb.examples.nostdal-org))
 
