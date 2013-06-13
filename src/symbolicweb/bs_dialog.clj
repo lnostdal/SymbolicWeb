@@ -9,7 +9,7 @@
                                  :tabindex "-1"}}]
           (html
            [:div {:class "modal-header"}
-            [:button {:type "button" :class "close" :data-dismiss "modal" :aria-hidden "true"} "&times;"]
+            [:button {:type "button" :class "close" :data-dismiss "modal"} "&times;"]
             [:h3  title]
             [:div {:class "modal-body"}
              (sw content)]
