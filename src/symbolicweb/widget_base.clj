@@ -2,11 +2,23 @@
 
 
 
-(defn mk-WB [html-element-type]
-  (let [html-element-type-str (name html-element-type)]
-    (mk-WidgetBase (fn [^WidgetBase widget]
-                     (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
-                   {})))
+(defn mk-WB
+  ([^Keyword html-element-type]
+     (mk-WB html-element-type {}))
+
+  ([^Keyword html-element-type args]
+     (mk-WidgetBase (fn [^WidgetBase widget]
+                      (if (empty? args)
+                        (let [html-element-type-str (name html-element-type)]
+                          (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
+                        (html [html-element-type
+                               (let [attrs (:html-attrs args)]
+                                 (if (:id attrs)
+                                   attrs
+                                   (assoc attrs :id (.id widget))))])))
+                    (if-let [id (:id (:html-attrs args))]
+                      (assoc args :id id)
+                      args))))
 
 
 
