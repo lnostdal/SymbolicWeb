@@ -7,7 +7,6 @@
   (with1 (mk-WB :input {:html-attrs {:type :checkbox}})
     (vm-observe model (.lifetime it) true
                 (fn [^Lifetime lifetime old-value new-value]
-                  (dbg-prin1 new-value)
                   (jqProp it "checked" (if new-value "true" ""))))
     (set-event-handler "change" it
                        (fn [& {:keys [new-state]}]
