@@ -97,8 +97,8 @@
             (touch viewport)
             ((:ajax-handler @session) request session viewport))
           (do
-            #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport."
-                       "Refreshing page, but keeping Session (cookie).")
+            (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport (" (get (:query-params request) "_sw_viewport_id") ")."
+                     "Refreshing page, but keeping Session (cookie).")
             {:status 200
              :headers {"Content-Type" "text/javascript; charset=UTF-8"}
              ;; A new Session might have been started for this request.

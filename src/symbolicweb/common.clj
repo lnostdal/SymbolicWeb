@@ -195,7 +195,7 @@ Returns a String."
            (str "domain=" domain? "; ")))
        (if value
          (if-not permanent?
-           "expires=;"
+           ""
            (str "expires=\""
                 " + (function(){ var date = new Date(); date.setFullYear(date.getFullYear() + 42); return date.toUTCString(); })()"
                 " + \"; "))
@@ -301,11 +301,10 @@ Returns a String."
 
 (declare spget)
 (defn ^String sw-js-base-bootstrap [^Ref session ^Ref viewport]
-  (str "var sw_cookie_name = '" -session-cookie-name- "'; "
+  (str "var sw_cookie_name = '" -session-cookie-name- "';\n"
        (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
-
-       "var _sw_viewport_id = '" (:id @viewport) "'; "
-       "var _sw_comet_timeout_ts = " -comet-timeout- "; "))
+       "var _sw_viewport_id = '" (:id @viewport) "';\n"
+       "var _sw_comet_timeout_ts = " -comet-timeout- ";\n"))
 
 
 

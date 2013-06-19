@@ -214,7 +214,7 @@ $(window).on("unload", function(){
 /////////////
 
 function swBoot(){
-  if(true){ // TODO: Windows 8 and IE10 is buggy as hell.. //document.cookie.indexOf(sw_cookie_name) != -1){
+  if(document.cookie.indexOf(sw_cookie_name) != -1){
     // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
     swComet("&do=boot");
     // ..and set up something that'll ensure the channel stays alive
