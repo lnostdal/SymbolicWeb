@@ -125,6 +125,12 @@
 
 
 
+(defn jqAttrRemove [^WidgetBase widget ^String attribute-name]
+  (add-response-chunk (str "$('#" (.id widget) "').removeAttr('" attribute-name "');\n")
+                      widget))
+
+
+
 (defn jqProp
   ([^WidgetBase widget ^String attribute-name]
      (str "$('#" (.id widget) "').prop('" attribute-name "');\n"))
