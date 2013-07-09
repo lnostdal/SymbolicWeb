@@ -117,7 +117,9 @@ Returns WIDGET."
   ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
   (alter (.callbacks widget) assoc event-type [callback-fn callback-data])
   (add-response-chunk
-   (str "$('#" (.id widget) "').bind('" event-type "', "
+   (str "$('#" (.id widget) "')"
+        ".off('" event-type "')"
+        ".on('" event-type "', "
         "function(event){"
         "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
         (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
