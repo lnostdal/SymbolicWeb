@@ -10,6 +10,7 @@
 
 
 
+;; TODO: Add support for :HTML-ATTRS.
 (defn ^WidgetBase mk-TextInput [^ValueModel value-model ^Keyword trigger-event & args]
   "<input type='text' ..> type widget.
 

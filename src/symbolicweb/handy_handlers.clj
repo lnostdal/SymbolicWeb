@@ -87,8 +87,7 @@
 (defn default-request-handler [request ^Ref session]
   "Default top-level request handler for both REST and AJAX/Comet type requests."
   (with-once-only-ctx
-    (let [qps (:query-params request)
-          request-type (get  qps "_sw_request_type")]
+    (let [request-type (get (:query-params request) "_sw_request_type")]
       (case request-type
         ("ajax" "comet")
         (if-let [^Ref viewport (get (ensure (:viewports @session))
@@ -97,7 +96,8 @@
             (touch viewport)
             ((:ajax-handler @session) request session viewport))
           (do
-            (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport (" (get (:query-params request) "_sw_viewport_id") ")."
+            (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport ("
+                     (get (:query-params request) "_sw_viewport_id") ")."
                      "Refreshing page, but keeping Session (cookie).")
             {:status 200
              :headers {"Content-Type" "text/javascript; charset=UTF-8"}
@@ -124,7 +124,6 @@
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
              "Cache-Control" "no-cache"}
-
    :body
    (html
     (hiccup.page/doctype :html5)
@@ -132,10 +131,10 @@
     [:html
      [:head
       [:meta {:charset "UTF-8"}]
-      (generate-rest-head @(:rest-head-entries @viewport))
       [:title (:page-title @viewport)]
 
-      ;; TODO: Extract from VIEWPORT.
+      (generate-rest-head @(:rest-head-entries @viewport))
+
       [:link {:rel "icon" :type "image/x-icon"
               :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}]
 
@@ -190,7 +189,7 @@
 
 
 
-(defn simple-aux-handler [fn-to-wrap]
+(defn simple-aux-handler [^Fn fn-to-wrap]
   (assert false "SIMPLE-AUX-HANDLER: Does this thing still work?")
   (fn []
     {:status 200

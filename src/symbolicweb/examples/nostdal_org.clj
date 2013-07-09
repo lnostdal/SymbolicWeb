@@ -23,7 +23,7 @@
           [:img {:src "https://blockchain.info/qr?data=1GuiA3jcVSYTgmewtEZhJ5hC1B2is4bAf3&size=200"}]]
          [:br]
          [:p [:em "&quot;In " [:a {:href "https://duckduckgo.com/?q=vote+for+nobody"} "No One"] " (i.e. Crypto!) I Trust.&quot; -- Lars"]]
-         [:p [:em "&quot;While others look for meaning, I create meaning.&quot; -- Lars"]]
+         ;;[:p [:em "&quot;While others look for meaning, I create meaning.&quot; -- Lars"]]
          [:br] [:br]
          )))
     viewport))

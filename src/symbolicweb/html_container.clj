@@ -6,7 +6,7 @@
 (defn ^WidgetBase %mk-HTMLContainer [^Keyword html-element-type args ^Fn content-fn]
   (mk-WidgetBase (fn [^WidgetBase html-container]
                    (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
-                     (if (empty? args)
+                     (if (empty? args) ;; TODO: Check :HTML-ATTRS instead?
                        (let [html-element-type (name html-element-type)]
                          (str "<" html-element-type " id='" (.id html-container) "'>"
                               (content-fn html-container)

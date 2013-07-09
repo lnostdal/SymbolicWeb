@@ -61,8 +61,7 @@
 
     ;; Viewport scrolled to the bottom
     (set-viewport-event-handler "window" "sw_scrollbottom" viewport
-                                (fn [& _]
-                                  (vm-alter (:scrolled-to-bottom-event @viewport) inc)))
+                                (fn [& _] (vm-alter (:scrolled-to-bottom-event @viewport) inc)))
     ;; TODO: Reduce spammy event rate.
     (add-response-chunk
      (str "$(window).scroll(function(){"
@@ -77,6 +76,7 @@
     ;; Widget --> Viewport.
     (vm-set (.viewport root-widget) viewport)
     (do-lifetime-activation (.lifetime root-widget))
+
     viewport))
 
 
