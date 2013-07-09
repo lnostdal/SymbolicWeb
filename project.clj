@@ -21,12 +21,13 @@
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "1.0.0"] ;; ring.util.codec
-                 [ring/ring-core "1.2.0-beta3"] ;; ring.middleware.params, ring.middleware.cookies
+                 [ring/ring-core "1.2.0-RC1"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 
-                 [org.jumpmind.symmetric.jdbc/postgresql "9.2-1002-jdbc4"] ;; http://search.maven.org/#browse%7C-1373495709
+                 [org.postgresql/postgresql "9.2-1003-jdbc4"]
                  [com.jolbox/bonecp "0.8.0-rc1"] ;; DB connection pooling.
+                 ;;[com.mchange/c3p0 "0.9.5-pre3"] ;; DB connection pooling.
 
                  [org.clojure/tools.nrepl "0.2.4-SNAPSHOT"]]
 
