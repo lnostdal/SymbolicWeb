@@ -111,12 +111,10 @@
           ;; TODO: The name here seems counter intuitive since :REST-HANDLER is actually called below. Change or document this?
           (vm-set (:after-rest? @viewport) true)
 
-          (when (= request-type "aux")
+          (if (= request-type "aux")
             ((:aux-handler @session) request session viewport)
-            (url-alter-query-params viewport true (fn [qp] (dissoc qp "_sw_request_type"))))
-
-          (with1 ((:rest-handler @session) request session viewport)
-            (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))))))))
+            (with1 ((:rest-handler @session) request session viewport)
+              (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport)))))))))
 
 
 
