@@ -27,7 +27,7 @@
   "WITH-HTML-CONTAINER."
   `(%mk-HTMLContainer ~html-element-type
                       ~args
-                      (fn [_#] ~@body)))
+                      (fn [~'html-container] ~@body)))
 
 
 
