@@ -62,7 +62,7 @@
 
 
 
-(defn ^WidgetBase mk-Link [^WidgetBase widget url-mappers]
+(defn ^WidgetBase mk-Link [^WidgetBase widget url-mappers & click-cb-fn]
   "  URL-MAPPERS: {(vm-sync-from-url ..) (vm ..) ...}"
   (let [query-str-vm (vm "")
         query-params (vm nil)]
@@ -82,9 +82,13 @@
 
     (set-event-handler "click" widget
                        (fn [& _]
-                         (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
-                           (vm-set (:model url-mapper) @url-mapper-mutator-vm)))
-                       :js-before "event.preventDefault(); return(true);")
+                         (doseq [[url-mapper ^ValueModel url-mapper-mutator-vm] url-mappers]
+                           (vm-set (:model url-mapper) @url-mapper-mutator-vm))
+                         ;; TODO: mk-Link should probably accept a Map by now – so the user can pass :scroll-to-top? false via it
+                         ;; – because I think this should be the default behaviour.
+                         ;;(add-response-chunk "window.scrollTo(0, 0);\n" widget)
+                         (when-let [f (first click-cb-fn)] (f)))
+                       :js-after "event.preventDefault(); return(false);")
 
     widget))
 
