@@ -4,28 +4,8 @@
            clojure.lang.Fn)
   (:require [clojure.string :as str])
   (:use [clojure.pprint :only (cl-format)])
-  (:use symbolicweb.core))
-
-
-;;; Common stuff.
-
-(defonce -fb-agent- (mk-sw-agent nil))
-
-
-(defn http-get-request [url]
-  (aleph.http/sync-http-request
-   {:auto-transform true
-    :request-method :get
-    :url url}))
-
-
-
-(defn http-post-request [url body]
-  (aleph.http/sync-http-request
-   {:auto-transform true
-    :request-method :post
-    :url url
-    :body body}))
+  (:use symbolicweb.core)
+  (:require [clj-http.client :as http.client]))
 
 
 
@@ -66,27 +46,28 @@
                                      ^String app-secret
                                      ^String code
                                      ^String redirect-uri]
-  (second (str/split (:body (http-get-request (user-access-token-url app-id app-secret code redirect-uri)))
+  (second (str/split (:body (http.client/get (user-access-token-url app-id app-secret code redirect-uri)))
                      #"=|&")))
 
 
+
 (defn user-get-info [^String user-access-token]
-  (let [http-response (http-get-request (str "https://graph.facebook.com/me"
+  (let [http-response (http.client/get (str "https://graph.facebook.com/me"
                                              "?access_token=" (url-encode-component user-access-token)))]
     (json-parse (:body http-response))))
 
 (defn user-get-info-by-id [fb-uid]
-  (let [http-response (http-get-request (str "https://graph.facebook.com/" fb-uid))]
+  (let [http-response (http.client/get (str "https://graph.facebook.com/" fb-uid))]
     (json-parse (:body http-response))))
 
 (defn user-get-likes [^String user-access-token]
-  (let [http-response (http-get-request (str "https://graph.facebook.com/me/likes?access_token="
+  (let [http-response (http.client/get (str "https://graph.facebook.com/me/likes?access_token="
                                              (url-encode-component user-access-token)))]
     (json-parse (:body http-response))))
 
 
 (defn user-get-profile-picture ^String [^String user-id]
-  (let [http-response (http-get-request (str "https://graph.facebook.com/" user-id "/picture"))]
+  (let [http-response (http.client/get (str "https://graph.facebook.com/" user-id "/picture"))]
     http-response))
 
 
@@ -103,12 +84,12 @@
 
 
 (defn app-get-access-token ^String [^String app-id ^String app-secret]
-  (second (str/split (:body (http-get-request (app-access-token-url app-id app-secret)))
+  (second (str/split (:body (http.client/get (app-access-token-url app-id app-secret)))
                      #"=")))
 
 (defn app-get-metadata ^String [^String app-access-token]
   (let [url (str "https://graph.facebook.com/app?access_token=" app-access-token)
-        http-response (http-get-request url)]
+        http-response (http.client/get url)]
     (json-parse (:body http-response))))
 
 
@@ -130,8 +111,8 @@
 (defn app-do-publish-feed [^String app-access-token
                            ^String profile-id
                            method-args]
-  (let [http-response (http-post-request (app-publish-feed-url profile-id)
-                                         (app-publish-feed-args app-access-token method-args))]
+  (let [http-response (http.client/post {:url (app-publish-feed-url profile-id)
+                                         :body (app-publish-feed-args app-access-token method-args)})]
     (json-parse (:body http-response))))
 
 
@@ -140,7 +121,8 @@
 ;;;;;
 
 
-(defn http-oauth-handler [request application
+(defn http-oauth-handler [request
+                          ^Ref session
                           ^String response-uri
                           ^String app-id
                           ^String app-secret
@@ -151,10 +133,10 @@
                           ^Fn authorization-declined-fn
                           ^Fn user-data-updated-fn]
   "Example of use from JS:
-  window.open('http://lrn.freeordeal.no/sw?page=facebook-api&do=init&' + new Date().getTime(), 'blah', 'width=640,height=340');"
+  window.open('?_sw_request_type=aux&ns=fb&do=login_init=&_=' + new Date().getTime(), 'Facebook login', 'width=640,height=340');"
   (case (get (:query-params request) "do")
-    "realtime-update"
-    (if (and ;; test if this is a subscription verification
+    ;;"realtime-update" ;; TODO: Fix this; not using Aleph anymore – and this stuff is not related to auth anyway (move it).
+    #_(if (and ;; test if this is a subscription verification
          (= (get (:query-params request) "hub.mode") "subscribe")
          (= (get (:query-params request) "hub.verify_token") realtime-verify-token))
       (http-html-response (get (:query-params request) "hub.challenge"))
@@ -168,35 +150,40 @@
               (user-data-updated-fn (get entry :changed_fields)
                                     (user-get-info-by-id (get entry :uid))))))))
 
-    "init"
+    "login_init"
     ;; FB: 1. Redirect the user to the OAuth Dialog
     (let [csrf-check (generate-uuid)]
-      (session-set application {:facebook-csrf-check csrf-check})
+      ;; TODO: This no longer makes sense using page-redirects given that Sessions might time out.
+      (stput session :facebook-csrf-check csrf-check)
       (let [location (user-authenticate-url app-id permission-names csrf-check user-authenticate-display response-uri)]
         (http-replace-response location)))
 
     ;; We'll end up here after the redirect above.
     ;; FB: 4. Exchange the code for a user access token
+    "login_redirect"
     (cond
-      ;; Authorization accepted?
-      (get (:query-params request) "code")
-      (let [code (get (:query-params request) "code")
-            csrf-check (get (:query-params request) "state")]
-        ;;(assert (= csrf-check (session-get application :facebook-csrf-check)))
-        (when-not (= csrf-check (session-get application :facebook-csrf-check))
-          ;; TODO: Ignoring this for now; just logging it instead because I cannot reproduce it and I do not care anymore.
-          (println (str "HTTP-OAUTH-HANDLER: CSRF-CHECK failed; got \"" csrf-check
-                        "\" while expected \"" (session-get application :facebook-csrf-check) "\"")))
-        (session-del application :facebook-csrf-check)
-        (let [access-token (user-get-access-token app-id app-secret code response-uri)]
-          (with-sw-io -fb-agent- (authorization-accepted-fn (user-get-info access-token) access-token))
-          (http-html-response "<script type='text/javascript'> window.close(); </script>")))
+     ;; Authorization accepted?
+     (get (:query-params request) "code")
+     (let [code (get (:query-params request) "code")
+           csrf-check (get (:query-params request) "state")]
+       ;;(assert (= csrf-check (stget session :facebook-csrf-check)))
+       (when-not (= csrf-check (stget session :facebook-csrf-check))
+         ;; TODO: Ignoring this for now; just logging it instead because I cannot reproduce it and I do not care anymore.
+         (println (str "HTTP-OAUTH-HANDLER: CSRF-CHECK failed; got \"" csrf-check
+                       "\" while expected \"" (stget session :facebook-csrf-check) "\"")))
+       ;;(session-del application :facebook-csrf-check) ;; TODO: Needed?
+       (let [access-token (user-get-access-token app-id app-secret code response-uri)]
+         (authorization-accepted-fn (user-get-info access-token) access-token)
+         ;;(http-html-response "<script> history.back(); </script>") ;; FF pukes on this for some reason.
+         (http-html-response (str "<script> window.location.replace('" (get (:query-params request) "return_uri") "'); </script>"))
+         ))
 
-      ;; Authorization declined?
-      (get (:query-params request) "error")
-      (do
-        (with-sw-io -fb-agent- (authorization-declined-fn (:query-params request)))
-        (http-html-response "<script type='text/javascript'> window.close(); </script>")))))
+     ;; Authorization declined?
+     (get (:query-params request) "error")
+     (do
+       (authorization-declined-fn (:query-params request))
+       (http-html-response (str "<script> window.location.replace('" (get (:query-params request) "return_uri") "'); </script>"))
+       ))))
 
 
 
@@ -210,7 +197,8 @@
                   ^Keyword object
                   ^String object-url]
   (let [url (str "https://graph.facebook.com/" fb-id "/" app-namespace ":" action)]
-    (with (http-post-request url (ring.util.codec/form-encode {:access_token app-access-token
-                                                               object object-url}))
+    (with (http.client/post {:url url
+                             :body (ring.util.codec/form-encode {:access_token app-access-token
+                                                                 object object-url})})
       (when-not (= 200 (:status it))
         (println "symbolicweb.facebook/og-publish: " it)))))
