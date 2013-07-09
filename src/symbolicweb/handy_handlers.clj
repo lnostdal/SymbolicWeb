@@ -141,10 +141,10 @@
 
       ;; jQuery.
       "<!--[if lt IE 9]>"
-      [:script {:src (gen-url viewport "sw/js/jquery-1.10.0.min.js")}]
+      [:script {:src (gen-url viewport "sw/js/jquery-1.10.2.min.js")}]
       "<![endif]-->"
       "<!--[if gte IE 9]><!-->"
-      [:script {:src (gen-url viewport "sw/js/jquery-2.0.1.min.js")}]
+      [:script {:src (gen-url viewport "sw/js/jquery-2.0.3.min.js")}]
       "<!--<![endif]-->"
 
       ;; jQuery migrate.
