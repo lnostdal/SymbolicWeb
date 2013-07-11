@@ -62,35 +62,42 @@
 
 
 
-(defn ^WidgetBase mk-Link [^WidgetBase widget url-mappers & click-cb-fn]
-  "  URL-MAPPERS: {(vm-sync-from-url ..) (vm ..) ...}"
-  (let [query-str-vm (vm "")
-        query-params (vm nil)]
 
-    (vm-observe query-str-vm (.lifetime widget) false
-                #(jqAttr widget "href" (str "window.location.pathname + '?' + " (url-encode-wrap %3)) true))
+(defn ^WidgetBase mk-Link
+  "  URL-MAPPERS: {(vm-sync-from-url ..) (vm ..) ...}
+  M: :SCROLL-TO-TOP?, :ON-CLICK-FN"
+  ([^WidgetBase widget url-mappers]
+     (mk-Link widget url-mappers nil))
 
-    (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
-      (with-observed-vms (.lifetime widget)
-        (when-let [viewport (viewport-of widget)]
-          (when-not @query-params
-            (vm-set query-params @(:query-params @viewport)))
-          (vm-set query-str-vm (ring.util.codec/form-encode
-                                @(with1 query-params
-                                   ;; QUERY-PARAMS is a Sorted Map, and result of MERGE will be too.
-                                   (vm-set it (merge @it {(:name url-mapper) @url-mapper-mutator-vm}))))))))
+  ([^WidgetBase widget url-mappers m]
+     (let [query-str-vm (vm "")
+           query-params (vm nil)]
 
-    (set-event-handler "click" widget
-                       (fn [& _]
-                         (doseq [[url-mapper ^ValueModel url-mapper-mutator-vm] url-mappers]
-                           (vm-set (:model url-mapper) @url-mapper-mutator-vm))
-                         ;; TODO: mk-Link should probably accept a Map by now – so the user can pass :scroll-to-top? false via it
-                         ;; – because I think this should be the default behaviour.
-                         ;;(add-response-chunk "window.scrollTo(0, 0);\n" widget)
-                         (when-let [f (first click-cb-fn)] (f)))
-                       :js-after "event.preventDefault(); return(false);")
+       (vm-observe query-str-vm (.lifetime widget) false
+                   #(jqAttr widget "href" (str "window.location.pathname + '?' + " (url-encode-wrap %3)) true))
 
-    widget))
+       (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
+         (with-observed-vms (.lifetime widget)
+           (when-let [viewport (viewport-of widget)]
+             (when-not @query-params
+               (vm-set query-params @(:query-params @viewport)))
+             (vm-set query-str-vm (ring.util.codec/form-encode
+                                   @(with1 query-params
+                                      ;; QUERY-PARAMS is a Sorted Map, and result of MERGE will be too.
+                                      (vm-set it (merge @it {(:name url-mapper) @url-mapper-mutator-vm}))))))))
+
+       (set-event-handler "click" widget
+                          (fn [& _]
+                            (doseq [[url-mapper ^ValueModel url-mapper-mutator-vm] url-mappers]
+                              (vm-set (:model url-mapper) @url-mapper-mutator-vm))
+                            (when (or (not (find m :scroll-to-top?))
+                                      (:scroll-to-top? m))
+                              (add-response-chunk "$('html, body').scrollTop(0);\n" widget)) ;; TODO: scrollLeft?
+                            (when-let [f (:on-click-fn m)]
+                              (f widget)))
+                          :js-after "event.preventDefault(); return(false);")
+
+       widget)))
 
 
 
