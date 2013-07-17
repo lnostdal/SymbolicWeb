@@ -123,6 +123,7 @@
 
 (defn http-oauth-handler [request
                           ^Ref session
+                          ^Ref viewport
                           ^String response-uri
                           ^String app-id
                           ^String app-secret
@@ -174,16 +175,22 @@
        ;;(session-del application :facebook-csrf-check) ;; TODO: Needed?
        (let [access-token (user-get-access-token app-id app-secret code response-uri)]
          (authorization-accepted-fn (user-get-info access-token) access-token)
-         ;;(http-html-response "<script> history.back(); </script>") ;; FF pukes on this for some reason.
-         (http-html-response (str "<script> window.location.replace('" (get (:query-params request) "return_uri") "'); </script>"))
-         ))
+         (dorun (map (partial url-alter-query-params viewport true dissoc) [ "_sw_request_type"
+                                                                             "return_uri" "do" "ns"
+                                                                             ;; Added by FB:
+                                                                             "code" "state"]))
+         ((:rest-handler @session) request session viewport)))
 
      ;; Authorization declined?
      (get (:query-params request) "error")
      (do
        (authorization-declined-fn (:query-params request))
-       (http-html-response (str "<script> window.location.replace('" (get (:query-params request) "return_uri") "'); </script>"))
-       ))))
+       (dorun (map (partial url-alter-query-params viewport true dissoc) ["_sw_request_type"
+                                                                          "return_uri" "do" "ns"
+                                                                          ;; Added by FB:
+                                                                          "code" "state" "error_reason"
+                                                                          "error" "error_code" "error_description"]))
+       ((:rest-handler @session) request session viewport)))))
 
 
 
