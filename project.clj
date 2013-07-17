@@ -6,7 +6,7 @@
                  [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
 
                  [http-kit/http-kit "2.2.0-SNAPSHOT"] ;; HTTP (server) stuff.
-                 [clj-http "0.7.3-SNAPSHOT"] ;; HTTP(S) (client) stuff.
+                 [clj-http "0.7.6-SNAPSHOT"] ;; HTTP(S) (client) stuff.
 
                  [overtone/at-at "1.2.0"] ;; Scheduling; timers etc..
 
@@ -21,7 +21,7 @@
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "1.0.0"] ;; ring.util.codec
-                 [ring/ring-core "1.2.0-RC1"] ;; ring.middleware.params, ring.middleware.cookies
+                 [ring/ring-core "1.2.0"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 
