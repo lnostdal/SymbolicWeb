@@ -7,12 +7,16 @@
 
 if(!window.history.replaceState) {
     window.history.replaceState = function(x, y, url_search){
-        window.location.replace("//" + window.location.host + window.location.pathname + url_search);
+        if(url_search != window.location.search){
+            window.location.replace("//" + window.location.host + window.location.pathname + url_search);
+        }
     }
 }
 if(!window.history.pushState){
     window.history.pushState = function(x, y, url_search){
-        window.location.assign("//" + window.location.host + window.location.pathname + url_search);
+        if(url_search != window.location.search){
+            window.location.assign("//" + window.location.host + window.location.pathname + url_search);
+        }
     }
 }
 
