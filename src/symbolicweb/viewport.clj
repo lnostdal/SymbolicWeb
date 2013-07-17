@@ -50,8 +50,7 @@
                              args))]
 
 
-    ;; HTML5 History stuff.
-    ;; TODO: Don't bother with this for crappy browsers – mk-Link also needs a fallback in this regard.
+    ;; HTML5 History handler.
     (set-viewport-event-handler "window" "popstate" viewport
                                 (fn [& {:keys [query-string]}]
                                   (let [query-params (ring.util.codec/form-decode query-string)]
@@ -100,6 +99,7 @@
     (when @(:after-rest? @viewport)
       (add-response-chunk (str "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');\n")
                           viewport))))
+
 
 
 (defn add-rest-head [^Ref viewport rest-head-entry]

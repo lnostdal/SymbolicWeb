@@ -70,7 +70,7 @@
 
 
 (defn default-ajax-handler [request ^Ref session ^Ref viewport]
-  (if-let [sw-request-type (get (:query-params request) "_sw_request_type")]
+  (let [sw-request-type (get (:query-params request) "_sw_request_type")]
     (case sw-request-type
       "comet"
       (http.server/with-channel request channel
@@ -79,8 +79,7 @@
       "ajax"
       (handle-in-channel-request request session viewport)
 
-      (throw (Exception. (str "DEFAULT-AJAX-HANDLER: Unknown _sw_request_type \"" sw-request-type "\" given."))))
-    ((:aux-handler @session) request session viewport)))
+      (throw (Exception. (str "DEFAULT-AJAX-HANDLER: Unknown _sw_request_type \"" sw-request-type "\" given."))))))
 
 
 
