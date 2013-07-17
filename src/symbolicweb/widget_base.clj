@@ -88,13 +88,19 @@
 
        (set-event-handler "click" widget
                           (fn [& _]
-                            (doseq [[url-mapper ^ValueModel url-mapper-mutator-vm] url-mappers]
-                              (vm-set (:model url-mapper) @url-mapper-mutator-vm))
-                            (when (or (not (find m :scroll-to-top?))
-                                      (:scroll-to-top? m))
-                              (add-response-chunk "$('html, body').scrollTop(0);\n" widget)) ;; TODO: scrollLeft?
-                            (when-let [f (:on-click-fn m)]
-                              (f widget)))
+                            ;; Extract this here before the VM-SET as that might lead to NIL for the VIEWPORT field in WIDGET.
+                            (let [viewport (viewport-of widget)]
+                              (doseq [[url-mapper ^ValueModel url-mapper-mutator-vm] url-mappers]
+                                (vm-set (:model url-mapper) @url-mapper-mutator-vm))
+                              (when (or (not (find m :scroll-to-top?))
+                                        (:scroll-to-top? m))
+                                ;; TODO: scrollLeft?
+                                (add-response-chunk "$('html, body').scrollTop(0);\n" viewport))
+                              (when-let [f (:on-click-fn m)]
+                                (f widget))))
+                          ;; NOTE: Super, mega, hack for IE 9. :(. We clear the page while (before) re-rendering it to avoid some
+                          ;; flickering the user isn't used to seeing. MS needs to just go away.
+                          :js-before "if(navigator.userAgent.search('MSIE 9') != -1) { $(body).empty(); } return(true);"
                           :js-after "event.preventDefault(); return(false);")
 
        widget)))
