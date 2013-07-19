@@ -45,9 +45,8 @@ Returns M."
         ;; No Viewport found anywhere; observe CONTEXT-WIDGET until it has a Viewport set then try again.
         (when context-widget
           (vm-observe (.viewport context-widget) (.lifetime context-widget) true
-                      (fn [_ _ viewport]
-                        (when viewport
-                          (vm-sync-to-url (assoc m :viewport viewport))))))))))
+                      #(when %3 (vm-sync-to-url (assoc m :viewport %3)))))))))
+
 
 
 
@@ -84,6 +83,4 @@ Returns M."
         ;; No Viewport found anywhere; observe CONTEXT-WIDGET until it has a Viewport set then try again.
         (when context-widget
           (vm-observe (.viewport context-widget) (.lifetime context-widget) true
-                      (fn [_ _ viewport]
-                        (when viewport
-                          (vm-sync-from-url (assoc m :viewport viewport))))))))))
+                      #(when %3 (vm-sync-from-url (assoc m :viewport %3)))))))))
