@@ -98,9 +98,10 @@
                                 (add-response-chunk "$('html, body').scrollTop(0);\n" viewport))
                               (when-let [f (:on-click-fn m)]
                                 (f widget))))
+                          ;; TODO: Remove this when IE9 is gone.
                           ;; NOTE: Super, mega, hack for IE 9. :(. We clear the page while (before) re-rendering it to avoid some
                           ;; flickering the user isn't used to seeing. MS needs to just go away.
-                          :js-before "if(navigator.userAgent.search('MSIE 9') != -1) { $(body).empty(); } return(true);"
+                          :js-before "if(navigator.userAgent.search('MSIE 9') != -1) { $('#_body').css('display', 'none'); } return(true);"
                           :js-after "event.preventDefault(); return(false);")
 
        widget)))

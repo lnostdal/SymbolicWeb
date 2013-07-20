@@ -120,7 +120,8 @@
 (defn default-rest-handler [request ^Ref session ^Ref viewport]
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Cache-Control" "no-cache"}
+             "Cache-Control" "no-cache, no-store"
+             "Expires" "-1"}
    :body
    (html
     (hiccup.page/doctype :html5)
