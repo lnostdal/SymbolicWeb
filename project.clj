@@ -6,7 +6,7 @@
                  [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
 
                  [http-kit/http-kit "2.2.0-SNAPSHOT"] ;; HTTP (server) stuff.
-                 [clj-http "0.7.6-SNAPSHOT"] ;; HTTP(S) (client) stuff.
+                 [clj-http "0.7.7-SNAPSHOT"] ;; HTTP(S) (client) stuff.
 
                  [overtone/at-at "1.2.0"] ;; Scheduling; timers etc..
 
@@ -16,7 +16,7 @@
 
                  [clj-time/clj-time "0.5.2-SNAPSHOT"]
 
-                 [hiccup/hiccup "1.0.3"] ;; HTML generation.
+                 [hiccup/hiccup "1.0.4"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.3-SNAPSHOT"] ;; HTML templating.
 
                  ;; HTTP protocol handling.
@@ -26,7 +26,7 @@
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 
                  [org.postgresql/postgresql "9.2-1003-jdbc4"]
-                 [com.jolbox/bonecp "0.8.0-rc1"] ;; DB connection pooling.
+                 [com.jolbox/bonecp "0.8.0-rc2-SNAPSHOT"] ;; DB connection pooling.
                  ;;[com.mchange/c3p0 "0.9.5-pre3"] ;; DB connection pooling.
 
                  [org.clojure/tools.nrepl "0.2.4-SNAPSHOT"]]
