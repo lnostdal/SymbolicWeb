@@ -379,7 +379,7 @@ Blocking."
                    (after-construction-fn ((.after-fn db-cache) new-obj))
                    new-obj)))
          (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
-           (println "DB-GET: Object with ID" id "not found in" (.table-name db-cache))
+           (throw (Exception. (str "DB-GET: Object with ID " id " not found in " (.table-name db-cache))))
            false)
          (catch com.google.common.util.concurrent.UncheckedExecutionException e
            (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
