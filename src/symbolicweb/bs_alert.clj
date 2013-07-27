@@ -10,8 +10,7 @@
      (let [close-button (mk-Button "&times;")]
        (jqAttr close-button "data-dismiss" "alert")
        (jqAddClass close-button "close")
-       (with1 (mk-WB :div)
-         (dorun (map (partial jqAddClass it) ["alert" "fade" "in"]))
+       (with1 (mk-WB :div {:html-attrs {:class "alert fade in"}})
          (jqAppend it close-button)
          (jqAppend it msg)
          (jqPrepend container it)
