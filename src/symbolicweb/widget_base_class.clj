@@ -114,18 +114,24 @@
                                              js-after ""}}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
-  ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
-  (alter (.callbacks widget) assoc event-type [callback-fn callback-data])
-  (add-response-chunk
-   (str "$('#" (.id widget) "')"
-        ".off('" event-type "')"
-        ".on('" event-type "', "
-        "function(event){"
-        "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
-        (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
-                                      (keys callback-data)
-                                      (vals callback-data))))
-        "', function(){" js-after "});"
-        "});\n")
-   widget)
-  widget)
+  (if callback-fn
+    (do
+      ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
+      (alter (.callbacks widget) assoc event-type [callback-fn callback-data])
+      (add-response-chunk
+       (str "$('#" (.id widget) "')"
+            ".off('" event-type "')"
+            ".on('" event-type "', "
+            "function(event){"
+            "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
+            (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                          (keys callback-data)
+                                          (vals callback-data))))
+            "', function(){" js-after "});"
+            "});\n")
+       widget)
+      widget)
+    (do
+      (alter (.callbacks widget) dissoc event-type)
+      (add-response-chunk (str "$('#" (.id widget) "').off('" event-type "');\n")
+                          widget))))
