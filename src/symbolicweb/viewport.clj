@@ -122,8 +122,7 @@
     (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
       (.append ^StringBuilder (:response-str viewport-m) new-chunk)
       (when @response-sched-fn
-        (.run ^java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask
-              (.job ^overtone.at_at.ScheduledJob @response-sched-fn))))
+        (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn)))
     (ref-set (:response-dummy-ref viewport-m) 42)))
 
 

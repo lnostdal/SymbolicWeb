@@ -26,15 +26,16 @@
           (if @response-sched-fn
             (do
               ;;(println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN for request: " request)
-              (.run (.job @response-sched-fn)))
+              (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn))
             (reset! response-sched-fn
-                    (overtone.at-at/at (+ (overtone.at-at/now) -comet-timeout-)
-                                       #(locking viewport
-                                          (when @response-sched-fn
-                                            (reset! response-sched-fn nil)
-                                            (do-it response-str))
-                                          nil)
-                                       -overtone-pool-))))))))
+                    (org.httpkit.timer/schedule-task -comet-timeout-
+                                                     (locking viewport
+                                                       (when @response-sched-fn
+                                                         (reset! response-sched-fn nil)
+                                                         (do-it response-str))
+                                                       nil)))))))))
+
+
 
 
 

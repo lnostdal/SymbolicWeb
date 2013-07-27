@@ -32,8 +32,6 @@
   (:require [clj-time.core :as time])
   (:require [clj-time.coerce :as time.coerce])
 
-  (:require overtone.at-at)
-
   (:require symbolicweb.macros)
   (:require symbolicweb.lifetime)
   (:require symbolicweb.reactive-paradigm)

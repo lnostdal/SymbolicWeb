@@ -8,8 +8,6 @@
                  [http-kit/http-kit "2.2.0-SNAPSHOT"] ;; HTTP (server) stuff.
                  [clj-http "0.7.7-SNAPSHOT"] ;; HTTP(S) (client) stuff.
 
-                 [overtone/at-at "1.2.0"] ;; Scheduling; timers etc..
-
                  [com.google.guava/guava "14.0.1"] ;; For soft hash cache.
 
                  [cheshire "5.1.3-SNAPSHOT"] ;; JSON.
