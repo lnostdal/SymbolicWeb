@@ -58,7 +58,10 @@ If FIND-ONLY? is true no new View will be constructed if an existing one was not
           (do
             (jqRemove view)
             (alter views-of-nodes dissoc node))
-          (println "ContainerView: Tried to remove Node, but no existing View of that Node was found."))))))
+          (println "ContainerView: Tried to remove Node, but no existing View of that Node was found.")))
+
+      cm-clear
+      (jqEmpty container-view))))
 
 
 

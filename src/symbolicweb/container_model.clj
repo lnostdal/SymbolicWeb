@@ -158,11 +158,13 @@ This mirrors the jQuery `prepend' function:
 
 
 
-(declare cmn-remove)
 (defn cm-clear [^ContainerModel cm]
-  ;; Remove head node of CM until trying to access the head node of CM returns NIL.
-  (loop [node (cm-head-node cm)]
-    (when node
-      (cmn-remove node)
-      (recur (cm-head-node cm))))
+  "Empty the ContainerModel; calls jqEmpty at the client (View) end."
+  (cm-set-count cm 0)
+  (cm-iterate cm node _
+              (detach-lifetime (.lifetime ^ContainerModelNode node))
+              nil)
+  (cm-set-head-node cm nil)
+  (cm-set-tail-node cm nil)
+  (notify-observers (.observable cm) 'cm-clear)
   cm)
