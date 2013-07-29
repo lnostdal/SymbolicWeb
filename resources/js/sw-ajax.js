@@ -2,6 +2,23 @@
 
 
 
+var sw_spinner = false;
+
+function swPrepareSpinner(){
+  sw_spinner = setTimeout(function(){ $("html, body").css("cursor", "wait"); },
+                          100);
+}
+
+function swCancelSpinner(){
+  if(sw_spinner){
+    clearTimeout(sw_spinner);
+    sw_spinner = false;
+    $("html, body").css("cursor", "auto");
+  }
+}
+
+
+
 /// HTML5 History shim for crappy browsers ///
 //////////////////////////////////////////////
 
@@ -84,55 +101,36 @@ function swURL(params){
 /// swAjax ///
 //////////////
 
-var swAjax =
-  (function(){
-     var queue = new Array();
-     var spinner = false;
+var swAjax = (function(){
+  var queue = new Array();
 
-     function prepareSpinner(){
-       if(!spinner){
-         spinner = setTimeout(function(){ $("body").css("cursor", "wait"); }, 100);
-       }
-     }
+  function handleRestOfQueue(){
+    queue.shift();
+    if(queue.length != 0)
+      queue[0]();
+  }
 
-    function cancelSpinner(){
-      if(spinner){
-        clearTimeout(spinner);
-        spinner = false;
-        $("body").css("cursor", "auto");
-      }
-    }
+  return function(params, callback_data, after_fn){
+    if(queue.push(function(){
+      var url = swURL(["&_sw_request_type=ajax", params]);
+      var options = {
+        type: "POST",
+        url: url,
+        data: callback_data,
+        dataType: "script",
 
-     function handleRestOfQueue(){
-       queue.shift();
-       if(queue.length != 0)
-         queue[0]();
-       else{
-         cancelSpinner();
-       }
-     }
+        beforeSend: swPrepareSpinner,
+        complete: function(){
+          if(after_fn) after_fn();
+          handleRestOfQueue();
+        }
+      };
 
-     return function(params, callback_data, after_fn){
-       if(queue.push(function(){
-                       var url = swURL(["&_sw_request_type=ajax", params]);
-                       var options = {
-                         type: "POST",
-                         url: url,
-                         data: callback_data,
-                         dataType: "script",
-
-                         beforeSend: prepareSpinner,
-                         complete: function(){
-                           if(after_fn) after_fn();
-                           handleRestOfQueue();
-                         }
-                       };
-
-                       $.ajax(options);
-                     }) == 1) // if()..
-         queue[0]();
-     };
-   })();
+      $.ajax(options);
+    }) == 1) // if()..
+      queue[0]();
+  };
+})();
 
 
 

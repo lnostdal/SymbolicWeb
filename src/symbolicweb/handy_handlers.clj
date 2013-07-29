@@ -67,6 +67,7 @@
     "error"
     (log "HANDLE-IN-CHANNEL-REQUEST (JS error):"
          (json-parse (get (:params request) "msg"))))
+  (add-response-chunk "swCancelSpinner();\n" viewport)
   {:status 200
    :headers {"Content-Type" "text/javascript; charset=UTF-8"}
    :body ""})
