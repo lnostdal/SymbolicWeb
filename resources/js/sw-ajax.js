@@ -220,24 +220,20 @@ $(window).on("unload", function(){
 
 function swBoot(){
   if(document.cookie.indexOf(sw_cookie_name) != -1){
-    // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel..
+    // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel.
     swComet("&do=boot");
-    // ..and set up something that'll ensure the channel stays alive
-    // when faced with JS dying after computer waking up from suspend etc..
-    var sw_mouse_poll_ts = new Date().getTime();
-    var sw_mouse_poll_interval_ms = 5000;
-    var sw_comet_timeout_window_ms = 5000; // Response time window after long poll timeout.
-    // TODO: onfocus too?
-    $(document).on("mousemove", function(e){
+
+    // Make sure things stay connected.
+    setInterval(function(){
       var ts = new Date().getTime();
-      if((ts - sw_mouse_poll_ts) > sw_mouse_poll_interval_ms){
-        sw_mouse_poll_ts = ts;
-        if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ts + sw_comet_timeout_window_ms)){
-          console.log("SymbolicWeb: Client connection JS-loop has died: rebooting...");
-          window.location.href = window.location.href;
-        }
+      if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ms + 5000)){
+        console.log("SW: JS keep-alive reboot!");
+        swComet("&do=reboot");
+        // Nope, there's no nice way to do this – so just refresh the page:
+        //window.location.href = window.location.href;
       }
-    });
+    }, 1000);
+
   }
   else{
     console.error("SymbolicWeb: Cookies must be enabled.");

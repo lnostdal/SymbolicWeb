@@ -299,7 +299,7 @@ Returns a String."
   (str "var sw_cookie_name = '" -session-cookie-name- "';\n"
        (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
        "var _sw_viewport_id = '" (:id @viewport) "';\n"
-       "var _sw_comet_timeout_ts = " -comet-timeout- ";\n"))
+       "var _sw_comet_timeout_ms = " -comet-timeout- ";\n"))
 
 
 
