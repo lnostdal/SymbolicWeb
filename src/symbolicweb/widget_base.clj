@@ -62,10 +62,9 @@
 
 
 
-
 (defn ^WidgetBase mk-Link
   "  URL-MAPPERS: {(vm-sync-from-url ..) (vm ..) ...}
-  M: :SCROLL-TO-TOP?, :ON-CLICK-FN"
+  M: :SCROLL-TO-TOP?, :ON-CLICK-FN, :EVENT-STOP-PROPAGATION?"
   ([^WidgetBase widget url-mappers]
      (mk-Link widget url-mappers nil))
 
@@ -102,11 +101,8 @@
                           ;; NOTE: Super, mega, hack for IE 9. :(. We clear the page while (before) re-rendering it to avoid some
                           ;; flickering the user isn't used to seeing. MS needs to just go away.
                           :js-before "if(navigator.userAgent.search('MSIE 9') != -1) { $('#_body').css('display', 'none'); } return(true);"
-                          :js-after (str
-                                     (if (:event-stop-propagation? m)
-                                       "event.stopPropagation(); "
-                                       "")
-                                     "event.preventDefault(); return(false);"))
+                          :js-after (str (when (:event-stop-propagation? m) "event.stopPropagation(); ")
+                                         "event.preventDefault(); return(false);"))
 
        widget)))
 

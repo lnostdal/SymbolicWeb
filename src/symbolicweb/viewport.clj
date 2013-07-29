@@ -119,8 +119,8 @@
 
 (defn add-response-chunk-ref-fn [^Ref viewport viewport-m ^String new-chunk]
   (locking viewport
+    (.append ^StringBuilder (:response-str viewport-m) new-chunk)
     (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
-      (.append ^StringBuilder (:response-str viewport-m) new-chunk)
       (when @response-sched-fn
         (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn)))
     (ref-set (:response-dummy-ref viewport-m) 42)))
@@ -142,8 +142,8 @@
                     (add-response-chunk-ref-fn viewport viewport-m new-chunk)))]
           (if (viewport-of widget) ;; Visible?
             (do-it)
-            (when-not (= :deactivated (lifetime-state-of (.lifetime widget)))
-              (add-lifetime-activation-fn (.lifetime widget) (fn [_] (do-it)))))))
+            (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
+              (add-lifetime-activation-fn (.lifetime ^WidgetBase widget) (fn [_] (do-it)))))))
       widget)))
 
 

@@ -7,7 +7,7 @@
 
 
 
-(defn handle-out-channel-request [channel request ^Ref session ^Ref viewport]
+(defn handle-out-channel-request [^org.httpkit.server.AsyncChannel channel request ^Ref session ^Ref viewport]
   "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [^StringBuilder response-str]
             (http.server/send! channel
@@ -70,7 +70,13 @@
   (add-response-chunk "swCancelSpinner();\n" viewport)
   {:status 200
    :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-   :body ""})
+   :body (do
+           ;; For this to work the call to .runTask in ADD-RESPONSE-CHUNK-REF-FN shouldn't happen.
+           #_(locking viewport
+               (let [^StringBuilder response-str (:response-str @viewport)]
+                 (with1 (.toString response-str)
+                   (.setLength response-str 0))))
+           "")})
 
 
 

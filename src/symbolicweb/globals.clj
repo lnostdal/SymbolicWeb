@@ -36,7 +36,3 @@
 (def -sessions-
   "SESSION-COOKIE-VALUE -> APPLICATION"
   (ref {}))
-
-
-
-(defonce -overtone-pool- (overtone.at-at/mk-pool))
