@@ -146,31 +146,28 @@ var swAjax = (function(){
 var _sw_comet_response = false;
 var _sw_comet_last_response_ts = new Date().getTime();
 
-var swComet  =
-  (function(){
-     function callback(){
-       if(_sw_comet_response){
-         _sw_comet_last_response_ts = new Date().getTime();
-         _sw_comet_response = false;
-         swComet("&do=ack");
-       }
-       else{
-         setTimeout("swComet('&do=timeout');", 1000);
-       }
-     }
+var swComet  = (function(){
 
-     function doIt(params){
-       $.ajax({type: "POST",
-               url: swURL(["&_sw_request_type=comet", params]),
-               dataType: "script",
-               complete: callback})
-       .fail(function(jq_xhr, settings, ex){
-         TraceKit.report(ex);
-       });
-     }
-     // Stops "throbbing of doom" and ensure we do not recurse until a stack overflow.
-     return function(params){ setTimeout(function(){ doIt(params); }, 0); };
-   })();
+  function doIt(params){
+    $.ajax({type: "POST",
+            url: swURL(["&_sw_request_type=comet", params]),
+            dataType: "script"})
+      .always(function(){
+        _sw_comet_last_response_ts = new Date().getTime();
+        if(_sw_comet_response){ // Got response from server?
+          _sw_comet_response = false;
+          swComet("&do=ack");
+        }
+        else{
+          console.log("swComet: reboot!");
+          setTimeout("swComet('&do=reboot');", 1000);
+        }
+      });
+  }
+
+  // Stops "throbbing of doom" and ensure we do not recurse until a stack overflow.
+  return function(params){ setTimeout(function(){ doIt(params); }, 0); };
+})();
 
 
 
