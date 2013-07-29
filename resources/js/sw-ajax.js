@@ -112,21 +112,27 @@ var swAjax = (function(){
 
   return function(params, callback_data, after_fn){
     if(queue.push(function(){
-      var url = swURL(["&_sw_request_type=ajax", params]);
-      var options = {
-        type: "POST",
-        url: url,
-        data: callback_data,
-        dataType: "script",
-
-        beforeSend: swPrepareSpinner,
-        complete: function(){
-          if(after_fn) after_fn();
-          handleRestOfQueue();
-        }
+      function doIt(){
+        $.ajax({
+          type: "POST",
+          url: swURL(["&_sw_request_type=ajax", params]),
+          data: callback_data,
+          dataType: "script",
+          beforeSend: swPrepareSpinner
+        })
+          .fail(function(jq_xhr, text_status, error_thrown){
+            console.log("swAjax, fail: Trying again!");
+            setTimeout(function(){ doIt(); }, 1000);
+          })
+          .done(function(){
+            if(after_fn) after_fn();
+            queue.shift();
+            if(queue.length != 0) queue[0]();
+          });
       };
 
-      $.ajax(options);
+      doIt();
+
     }) == 1) // if()..
       queue[0]();
   };
