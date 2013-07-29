@@ -143,8 +143,8 @@ var swAjax = (function(){
 /// swComet ///
 ///////////////
 
-var _sw_comet_response = false;
-var _sw_comet_last_response_ts = new Date().getTime();
+var _sw_comet_response_p = false;
+var _sw_comet_last_activity_ts = new Date().getTime();
 
 var swComet  = (function(){
 
@@ -153,9 +153,9 @@ var swComet  = (function(){
             url: swURL(["&_sw_request_type=comet", params]),
             dataType: "script"})
       .always(function(){
-        _sw_comet_last_response_ts = new Date().getTime();
-        if(_sw_comet_response){ // Got response from server?
-          _sw_comet_response = false;
+        _sw_comet_last_activity_ts = new Date().getTime();
+        if(_sw_comet_response_p){ // Got response from server?
+          _sw_comet_response_p = false;
           swComet("&do=ack");
         }
         else{
@@ -226,11 +226,10 @@ function swBoot(){
     // Make sure things stay connected.
     setInterval(function(){
       var ts = new Date().getTime();
-      if((ts - _sw_comet_last_response_ts) > (_sw_comet_timeout_ms + 5000)){
+      if((ts - _sw_comet_last_activity_ts) // Time elapsed since last swComet activity...
+         > (_sw_comet_timeout_ms + 5000)){ // ..with a 5 second latency window.
         console.log("SW: JS keep-alive reboot!");
         swComet("&do=reboot");
-        // Nope, there's no nice way to do this – so just refresh the page:
-        //window.location.href = window.location.href;
       }
     }, 1000);
 

@@ -14,7 +14,7 @@
                                {:status 200
                                 :headers {"Content-Type" "text/javascript; charset=UTF-8"}
                                 :body (do
-                                        (.append response-str "_sw_comet_response = true;")
+                                        (.append response-str "_sw_comet_response_p = true;")
                                         (with1 (.toString response-str)
                                           (.setLength response-str 0)))}))]
     (locking viewport
