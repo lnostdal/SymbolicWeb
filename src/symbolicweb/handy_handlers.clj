@@ -37,8 +37,6 @@
 
 
 
-
-
 (defn handle-in-channel-request [request ^Ref session ^Ref viewport]
   "Input (AJAX) channel."
   (case (get (:query-params request) "do")

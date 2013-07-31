@@ -64,23 +64,23 @@ TraceKit.report.subscribe(swHandleError);
 
 var swAddOnLoadFN, swDoOnLoadFNs;
 (function (){
-   var funs = new Array();
+  var funs = new Array();
 
-   swAddOnLoadFN = function(fun){
-     funs.push(fun);
-   };
+  swAddOnLoadFN = function(fun){
+    funs.push(fun);
+  };
 
-   swDoOnLoadFNs = function(){
-     for(var fun in funs){
-       try {
-         funs[fun]();
-       }
-       catch(ex){
-         TraceKit.report(ex);
-       }
-     }
-   };
- })();
+  swDoOnLoadFNs = function(){
+    for(var fun in funs){
+      try {
+        funs[fun]();
+      }
+      catch(ex){
+        TraceKit.report(ex);
+      }
+    }
+  };
+})();
 
 
 
@@ -227,7 +227,7 @@ function swBoot(){
     setInterval(function(){
       var ts = new Date().getTime();
       if((ts - _sw_comet_last_activity_ts) // Time elapsed since last swComet activity...
-         > (_sw_comet_timeout_ms + 5000)){ // ..with a 5 second latency window.
+         > (_sw_comet_timeout_ms + 5000)){ // ..long poll timeout + 5 second latency or window for transfer of data.
         console.log("SW: JS keep-alive reboot!");
         swComet("&do=reboot");
       }

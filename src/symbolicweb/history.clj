@@ -2,13 +2,14 @@
 
 
 
-(defn url-alter-query-params [^Ref viewport ^Boolean replace? f & args]
+(defn url-alter-query-params [^Ref viewport ^Boolean replace? ^Fn f & args]
   "Directly alters query-params of URL for Viewport.
 
-  REPLACE?: If True, a history entry will be added at the client end."
+  REPLACE?: If True, a history entry will not be added at the client end."
   (apply vm-alter (:query-params @viewport) f args)
-  ;; The strange WHEN here is here to handle cases where we'll be passed both True and False for REPLACE?... so, yeah – only one
-  ;; of them win out and we'd like the False case to always win regardless of order.
+  ;; The strange WHEN here is here to handle cases where we'll be passed both True and False for REPLACE? when this function
+  ;; is called many times within a WITH-ONCE-ONLY-CTX. So, yeah – only one of them win out and we'd like the False case to always
+  ;; win regardless of order.
   (when (or (not (once-only-get :url-alter-query-params))
             (not replace?))
     (once-only :url-alter-query-params
@@ -46,7 +47,6 @@ Returns M."
         (when context-widget
           (vm-observe (.viewport context-widget) (.lifetime context-widget) true
                       #(when %3 (vm-sync-to-url (assoc m :viewport %3)))))))))
-
 
 
 
