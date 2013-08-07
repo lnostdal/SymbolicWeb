@@ -61,6 +61,7 @@
                   (when on-serialization-failure-fn
                     (on-serialization-failure-fn))
                   (do
+                    (println "\n%WITH-JDBC-CONN: getSQLState:" (.getSQLState ^java.sql.SQLException e))
                     (jdbc/print-sql-exception-chain e) ;; TODO: Improve; consider using jdbc/throw-non-rte.
                     (throw e)))
                 (throw e)))
@@ -90,7 +91,11 @@
           (doall (resultset-seq rs)))
         (.getUpdateCount stmt)))
     (catch Throwable e
-      (throw (ex-info (str e ": " \newline sql \newline) {:exception e :db-conn db-conn :sql sql :params params})))))
+      (when (and (isa? (class e) java.sql.SQLException)
+                 (not= "40001" (.getSQLState ^java.sql.SQLException e)))
+        (println "\nJDBC-PSTMT\nSQL:" sql "\nPARAMS:" params)
+        (println "getSQLState:" (.getSQLState ^java.sql.SQLException e)))
+      (throw e))))
 
 
 
@@ -105,4 +110,8 @@
           (doall (resultset-seq rs)))
         (.getUpdateCount stmt)))
     (catch Throwable e
-      (throw (ex-info (str e ": " \newline sql \newline) {:exception e :db-conn db-conn :sql sql})))))
+      (when (and (isa? (class e) java.sql.SQLException)
+                 (not= "40001" (.getSQLState ^java.sql.SQLException e)))
+        (println "\nJDBC-STMT\nSQL:" sql)
+        (println "getSQLState:" (.getSQLState ^java.sql.SQLException e)))
+      (throw e))))
