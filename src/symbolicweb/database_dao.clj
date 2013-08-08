@@ -234,6 +234,7 @@ Returns the ContainerModel"
 (defn ^Ref db-backend-get [^DBCache db-cache ^Long id ^Ref obj]
   "Used by DB-GET; see DB-GET.
 Returns OBJ or NIL"
+  ;;(println "DB-BACKEND-GET:" id "(" (.table-name db-cache) ")")
   (let [res (db-stmt (str "SELECT * FROM " (.table-name db-cache) " WHERE id = " id " LIMIT 1;"))]
     (when-let [db-row (first res)]
       (db-db-to-clj-entry-handler db-cache obj db-row true)
@@ -370,20 +371,37 @@ Blocking."
      (db-get id table-name identity))
 
   ([^Long id ^String table-name ^Fn after-construction-fn]
+     ;;(println "DB-GET:" id table-name)
      (let [id (long id) ;; Because (.equals (int 261) 261) => false
-           ^DBCache db-cache (db-get-cache table-name)]
-       (try
-         (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
-               (fn []
-                 (when-let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
-                   (after-construction-fn ((.after-fn db-cache) new-obj))
-                   new-obj)))
-         (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
-           (throw (Exception. (str "DB-GET: Object with ID " id " not found in " (.table-name db-cache))))
-           false)
-         (catch com.google.common.util.concurrent.UncheckedExecutionException e
-           (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
-           (throw (.getCause e)))))))
+           ^DBCache db-cache (db-get-cache table-name)
+           retval (atom false)]
+       (letfn [(grab-it []
+                 (with (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
+                             (fn []
+                               (when-let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
+                                 (after-construction-fn ((.after-fn db-cache) new-obj))
+                                 new-obj)))
+                   (when (and it (:id @it) @(:id @it)) ;; If the object has a set :ID field, it's complete.
+                     (reset! retval it))))]
+         (try
+           ;; Doing (swsync (db-get 42 "users") (/ 42 0)) will actually add an "unfinished" object to the cache – hence all this.
+           (while (not @retval)
+             (grab-it)
+             (when-not @retval
+               (locking db-cache
+                 ;;(println (str "DB-GET [" id " " table-name "]: Recovering corrupted cache entry!"))
+                 ;; Will either instantly return the same corrupted object or a proper one created by another thread before lock.
+                 (grab-it)
+                 (when-not @retval
+                   (db-cache-remove db-cache id) ;; Get rid of corrupted object..
+                   (grab-it))))) ;; ..and try again.
+           @retval
+
+           (catch com.google.common.cache.CacheLoader$InvalidCacheLoadException e
+             (throw (Exception. (str "DB-GET: Object with ID " id " not found in " (.table-name db-cache)))))
+           (catch com.google.common.util.concurrent.UncheckedExecutionException e
+             (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
+             (throw (.getCause e))))))))
 
 
 
