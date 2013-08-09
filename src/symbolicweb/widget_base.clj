@@ -3,10 +3,10 @@
 
 
 (defn mk-WB
-  ([^Keyword html-element-type]
+  (^WidgetBase [^Keyword html-element-type]
      (mk-WB html-element-type {}))
 
-  ([^Keyword html-element-type args]
+  (^WidgetBase [^Keyword html-element-type args]
      (mk-WidgetBase (fn [^WidgetBase widget]
                       (if (empty? args) ;; TODO: Check :HTML-ATTRS instead?
                         (let [html-element-type-str (name html-element-type)]

@@ -73,7 +73,7 @@
 
 
 (defn sha ^String [^String input-str]
-  (let [md (java.security.MessageDigest/getInstance "SHA-256")]
+  (let [md (java.security.MessageDigest/getInstance "SHA-512")]
     (. md update (.getBytes input-str))
     (let [digest (.digest md)]
       (apply str (map #(format "%02x" (bit-and % 0xff)) digest)))))
