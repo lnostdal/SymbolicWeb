@@ -5,7 +5,7 @@
 (defn gc-viewport [^Ref viewport]
   (let [viewport-m (ensure viewport)]
     ;; This will call the DO-LIFETIME-DEACTIVATION CBs which will disconnect the widgets from their models (Observables).
-    (detach-lifetime (.lifetime (:root-element viewport-m)))
+    (detach-lifetime (.lifetime ^WidgetBase (:root-element viewport-m)))
     ;; Session -/-> Viewport.
     (alter (:viewports (ensure (:session viewport-m)))
            dissoc (:id viewport-m))))

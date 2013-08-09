@@ -49,7 +49,8 @@
       (if widget
         (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
         ;; TODO: Would it be sensible to send a reload page JS snippet here?
-        (println "HANDLE-IN-CHANNEL-REQUEST (widget-event): Widget for event" callback-id "not found.")))
+        (do
+          #_(println "HANDLE-IN-CHANNEL-REQUEST (widget-event): Widget for event" callback-id "not found."))))
 
 
     "viewport-event"
@@ -104,7 +105,7 @@
             (touch viewport)
             ((:ajax-handler @session) request session viewport))
           (do
-            (println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport ("
+            #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport ("
                      (get (:query-params request) "_sw_viewport_id") ")."
                      "Refreshing page, but keeping Session (cookie).")
             {:status 200
@@ -134,7 +135,7 @@
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
+    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " | http://nostdal.org/ λ -->\n\n"
     [:html
      [:head
       [:meta {:charset "UTF-8"}]

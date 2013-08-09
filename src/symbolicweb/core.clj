@@ -75,6 +75,7 @@
   (:require symbolicweb.garbage-collection)
 
   (:require [org.httpkit.server :as http.server])
+  (:require org.httpkit.timer)
 
   (:require symbolicweb.history)
   (:require symbolicweb.handy-handlers)
@@ -107,7 +108,7 @@
               ;; Log first..
               (log "Top Level Exception:"
                    (with-out-str
-                     (println "HTTP-REQUEST-ID:" http-request-id)
+                     (println "\n\nHTTP-REQUEST-ID:" http-request-id)
                      (println e)
                      (println request)
                      (clojure.stacktrace/print-stack-trace e 50)))
@@ -124,11 +125,7 @@
                  [:head [:title "SymbolicWeb: Top Level Server Exception: HTTP 500"]]
                  [:body {:style "font-family: sans-serif;"}
                   [:p {:style "color: red;"} [:b (escape-html (str e))]]
-                  [:p "This incident has been logged (ID: " http-request-id "), but feel free to "
-                   [:a {:href (str "mailto:larsnostdal@gmail.com?subject=" (url-encode-component (str "SW incident #"
-                                                                                                      http-request-id)))}
-                    "contact the admin"]
-                   " if you have additional information!"]
+                  [:p "This incident has been logged (ID: " http-request-id ")."]
                   [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]
                   [:p "HTTP 500: Top level server exception caught by " [:a {:href "https://github.com/lnostdal/SymbolicWeb"}
                                                                          "SymbolicWeb"] "."]]])})))))))
