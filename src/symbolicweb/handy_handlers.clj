@@ -45,7 +45,7 @@
           widget-id (get query-params "_sw_widget-id")
           callback-id (get query-params "_sw_callback-id")
           widget (get (:widgets @viewport) widget-id)
-          [^Fn callback-fn callback-data] (when widget (get @(.callbacks ^WidgetBase widget) callback-id))]
+          [^Fn callback-fn callback-data] (when widget (get (ensure (.callbacks ^WidgetBase widget)) callback-id))]
       (if widget
         (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
         ;; TODO: Would it be sensible to send a reload page JS snippet here?
