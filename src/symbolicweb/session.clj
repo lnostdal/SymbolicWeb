@@ -100,7 +100,6 @@ CREATE TABLE sessions (
                     identity
                     #'session-model-clj-to-db-transformer
                     #'session-model-db-to-clj-transformer))
-(db-reset-cache "sessions")
 
 
 

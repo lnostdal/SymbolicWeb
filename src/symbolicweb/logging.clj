@@ -6,4 +6,5 @@
 (defn log [& args]
   (with-sw-io nil
     (binding [*print-level* 5]
-      (apply println "\n\n[SW]:" args))))
+      (apply println "\n\n[SW]:" args)
+      (flush))))
