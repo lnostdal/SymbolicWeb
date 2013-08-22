@@ -1,5 +1,5 @@
 (ns symbolicweb.core
-  (:require symbolicweb.init)
+  ;;(:require symbolicweb.init)
 
   (:import clojure.lang.Ref
            clojure.lang.Keyword

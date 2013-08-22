@@ -46,11 +46,11 @@
           callback-id (get query-params "_sw_callback-id")
           widget (get (:widgets @viewport) widget-id)
           [^Fn callback-fn callback-data] (when widget (get (ensure (.callbacks ^WidgetBase widget)) callback-id))]
-      (if widget
+      (if (and widget callback-fn)
         (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
         ;; TODO: Would it be sensible to send a reload page JS snippet here?
         (do
-          #_(println "HANDLE-IN-CHANNEL-REQUEST (widget-event): Widget for event" callback-id "not found."))))
+          (println "HANDLE-IN-CHANNEL-REQUEST (widget-event): Widget or callback-fn for event" callback-id "not found."))))
 
 
     "viewport-event"

@@ -148,13 +148,6 @@ Appends a timestamp to the URL based on file mtime."
 
 
 
-(defonce -now- (with1 (vm (clj-time.core/now))
-                 (overtone.at-at/every 1000
-                                       (fn [] (swsync (vm-set it (clj-time.core/now))))
-                                       -overtone-pool-)))
-
-
-
 (def ^:dynamic *with-once-only-ctx* nil)
 
 

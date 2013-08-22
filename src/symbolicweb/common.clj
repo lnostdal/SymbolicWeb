@@ -340,28 +340,29 @@ Returns a String."
 ;; TODO: Yes, this is all quite horrible. The binding propagation thing in Clojure is not a good thing IMHO.
 
 
-(let [bnds (get-thread-bindings)]
-  (def -sw-io-agent-error-handler-
-    (fn [the-agent exception]
-      (with-bindings bnds
-        (try
-          (println "-SW-IO-AGENT-ERROR-HANDLER-, thrown:")
-          (clojure.stacktrace/print-stack-trace exception 1000)
-          (catch Throwable inner-exception
-            (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(")
-            (Thread/sleep 1000))))))) ;; Make sure we aren't flooded in case some loop gets stuck.
+(def -sw-io-agent-error-handler-
+  (fn [the-agent exception]
+    (try
+      (flush)
+      (println "-SW-IO-AGENT-ERROR-HANDLER- (" the-agent "), thrown:") (flush)
+      (clojure.stacktrace/print-stack-trace exception 1000) (flush)
+      (catch Throwable inner-exception
+        (println "-SW-IO-AGENT-ERROR-HANDLER-: Dodge überfail... :(") (flush)
+        (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
 
 (defn mk-sw-agent [binding-whitelist]
-  {:agent (agent :initial-state :error-handler #'-sw-io-agent-error-handler-)
-
-   :binding-whitelist (into (keys -initial-bindings-) binding-whitelist)})
-
-
-(defonce -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
+  {:agent (agent :initial-state)
+   :binding-whitelist (into (keys (get-thread-bindings))
+                            binding-whitelist)})
 
 
-(defn with-sw-io* [the-agent ^Fn body-fn]
+(def -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
+
+
+(defn with-sw-io* [the-agent
+                   ^Fn exception-handler-fn
+                   ^Fn body-fn]
   (let [the-agent (if the-agent the-agent -sw-io-agent-)
         ^clojure.lang.Agent a (:agent the-agent)]
     (.dispatch a
@@ -369,11 +370,29 @@ Returns a String."
                  (fn [& _]
                    (with-bindings (merge (select-keys bnds (:binding-whitelist the-agent))
                                          {#'clojure.core/*agent* a})
-                     (body-fn))))
+                     (try
+                       (body-fn) (flush)
+                       (catch Throwable e
+                         (try
+                           (if exception-handler-fn
+                             (exception-handler-fn the-agent e)
+                             (-sw-io-agent-error-handler- the-agent e))
+                           (catch Throwable ne
+                             (println "WITH-SW-IO*: Exception while handling exception!") (flush)
+                             (println "\nOriginal exception:") (flush)
+                             (clojure.stacktrace/print-stack-trace e 1000)
+                             (println "\nNested exception:") (flush)
+                             (clojure.stacktrace/print-stack-trace ne 1000) (flush)
+                             (Thread/sleep 2000)))))))) ;; Dodge potential flood from a loop or similar.
                nil
                clojure.lang.Agent/soloExecutor))) ;; "SEND-OFF"
 
 
-(defmacro with-sw-io [the-agent & body]
+(defmacro with-sw-io [[the-agent & exception-handler-fn] & body]
   "Runs BODY in an Agent."
-  `(with-sw-io* ~the-agent (fn [] ~@body)))
+  `(with-sw-io*
+     ~the-agent
+     ~(if exception-handler-fn
+        (first exception-handler-fn)
+        nil)
+     (fn [] ~@body)))

@@ -407,7 +407,9 @@ Blocking."
 
 (defn db-remove [^Ref obj ^String table-name]
   "SQL `DELETE FROM ...'."
-  (when-let [id @(:id @obj)]
+  (when-let [id (if (ref? obj)
+                  @(:id @obj)
+                  obj)]
     (let [id (long id) ;; Because (.equals (int 261) 261) => false
           ^DBCache db-cache (db-get-cache table-name)]
       (db-backend-remove db-cache id)

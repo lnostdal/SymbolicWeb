@@ -168,6 +168,7 @@
      (let [code (get (:query-params request) "code")
            csrf-check (get (:query-params request) "state")]
        ;;(assert (= csrf-check (stget session :facebook-csrf-check)))
+
        (when-not (= csrf-check (stget session :facebook-csrf-check))
          ;; TODO: Ignoring this for now; just logging it instead because I cannot reproduce it and I do not care anymore.
          (println (str "HTTP-OAUTH-HANDLER: CSRF-CHECK failed; got \"" csrf-check
