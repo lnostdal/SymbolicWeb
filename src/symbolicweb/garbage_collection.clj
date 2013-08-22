@@ -48,10 +48,9 @@
   (future
     (loop []
       (try
-        (do-gc)
         (Thread/sleep 10000)
+        (do-gc)
         (catch Throwable e
           (println "## -GC-THREAD- ##")
-          (clojure.stacktrace/print-stack-trace e 50)
-          (Thread/sleep 1000)))
+          (clojure.stacktrace/print-stack-trace e 50)))
       (recur))))
