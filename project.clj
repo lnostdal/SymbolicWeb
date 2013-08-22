@@ -10,9 +10,9 @@
 
                  [com.google.guava/guava "14.0.1"] ;; For soft hash cache.
 
-                 [cheshire "5.1.3-SNAPSHOT"] ;; JSON.
+                 [cheshire "5.2.1-SNAPSHOT"] ;; JSON.
 
-                 [clj-time/clj-time "0.5.2-SNAPSHOT"]
+                 [clj-time/clj-time "0.6.1-SNAPSHOT"]
 
                  [hiccup/hiccup "1.0.4"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.3-SNAPSHOT"] ;; HTML templating.
