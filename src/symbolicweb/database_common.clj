@@ -118,7 +118,7 @@
        (retry-2pctx "DO-MTX: Retry.")
        (do
          (reset! mtx-phase 1)
-         (ref-set dummy 42)
+         (commute dummy (fn [_] 42))
          (do1 (body-fn)
            (when (.isRealized ^Delay *db*)
              (prepare-fn))))))))
