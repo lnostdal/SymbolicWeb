@@ -37,7 +37,7 @@
                              ;; Comet.
                              :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)
-                             :response-dummy-ref (ref nil)
+                             :response-agent (agent nil)
 
                              ;; Resources; using Vectors since order matters.
                              :rest-css-entries (ref [])
@@ -117,13 +117,14 @@
 
 
 
-(defn add-response-chunk-ref-fn [^Ref viewport viewport-m ^String new-chunk]
-  (locking viewport
-    (.append ^StringBuilder (:response-str viewport-m) new-chunk)
-    (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
-      (when @response-sched-fn
-        (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn)))
-    (ref-set (:response-dummy-ref viewport-m) 42)))
+(defn add-response-chunk-agent-fn [^Ref viewport viewport-m ^String new-chunk]
+  (send (:response-agent viewport-m)
+        (fn [_]
+          (locking viewport
+            (.append ^StringBuilder (:response-str viewport-m) new-chunk)
+            (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
+              (when @response-sched-fn
+                (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn)))))))
 
 
 
@@ -135,11 +136,11 @@
       (if (viewport? widget)
         (let [viewport widget
               viewport-m @widget]
-          (add-response-chunk-ref-fn viewport viewport-m new-chunk))
+          (add-response-chunk-agent-fn viewport viewport-m new-chunk))
         (letfn [(do-it []
                   (let [viewport (viewport-of widget)
                         viewport-m @viewport]
-                    (add-response-chunk-ref-fn viewport viewport-m new-chunk)))]
+                    (add-response-chunk-agent-fn viewport viewport-m new-chunk)))]
           (if (viewport-of widget) ;; Visible?
             (do-it)
             (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
