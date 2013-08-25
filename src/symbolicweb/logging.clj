@@ -4,7 +4,7 @@
 
 
 (defn log [& args]
-  (with-sw-io [nil]
+  (with-sw-agent nil
     (binding [*print-level* 5]
       (apply println "\n\n[SW]:" args)
       (flush))))
