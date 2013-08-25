@@ -37,7 +37,7 @@
                              ;; Comet.
                              :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)
-                             :response-agent (agent nil)
+                             :response-agent (mk-sw-agent {:executor clojure.lang.Agent/pooledExecutor} nil)
 
                              ;; Resources; using Vectors since order matters.
                              :rest-css-entries (ref [])
@@ -118,13 +118,12 @@
 
 
 (defn add-response-chunk-agent-fn [^Ref viewport viewport-m ^String new-chunk]
-  (send (:response-agent viewport-m)
-        (fn [_]
-          (locking viewport
-            (.append ^StringBuilder (:response-str viewport-m) new-chunk)
-            (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
-              (when @response-sched-fn
-                (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn)))))))
+  (with-sw-agent (:response-agent viewport-m)
+    (locking viewport
+      (.append ^StringBuilder (:response-str viewport-m) new-chunk)
+      (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
+        (when @response-sched-fn
+          (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn))))))
 
 
 

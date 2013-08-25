@@ -351,32 +351,35 @@ Returns a String."
         (Thread/sleep 1000))))) ;; Make sure we aren't flooded in case some loop gets stuck.
 
 
-(defn mk-sw-agent [binding-whitelist]
-  {:agent (agent :initial-state)
-   :binding-whitelist (into (keys (get-thread-bindings))
-                            binding-whitelist)})
+
+(defn mk-sw-agent [m binding-whitelist]
+  (merge {:clj-agent (agent :initial-state)
+          :binding-whitelist (into (keys (get-thread-bindings))
+                                   binding-whitelist)
+          :executor clojure.lang.Agent/soloExecutor} ;; This is SEND-OFF, and pooledExecutor is SEND.
+         m))
 
 
-(def -sw-io-agent- (mk-sw-agent nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
+
+(def -sw-io-agent- (mk-sw-agent {} nil)) ;; Generic fallback Agent. TODO: Perhaps a bad idea?
 
 
-(defn with-sw-io* [the-agent
-                   ^Fn exception-handler-fn
-                   ^Fn body-fn]
-  (let [the-agent (if the-agent the-agent -sw-io-agent-)
-        ^clojure.lang.Agent a (:agent the-agent)]
-    (.dispatch a
+
+(defn with-sw-agent* [m ^Fn body-fn]
+  (let [sw-agent (if m (merge -sw-io-agent- m) -sw-io-agent-)
+        ^clojure.lang.Agent clj-agent (:clj-agent sw-agent)]
+    (.dispatch clj-agent
                (let [bnds (get-thread-bindings)]
                  (fn [& _]
-                   (with-bindings (merge (select-keys bnds (:binding-whitelist the-agent))
-                                         {#'clojure.core/*agent* a})
+                   (with-bindings (merge (select-keys bnds (:binding-whitelist sw-agent))
+                                         {#'clojure.core/*agent* clj-agent})
                      (try
                        (body-fn) (flush)
                        (catch Throwable e
                          (try
-                           (if exception-handler-fn
-                             (exception-handler-fn the-agent e)
-                             (-sw-io-agent-error-handler- the-agent e))
+                           (if-let [^Fn f (:exception-handler-fn sw-agent)]
+                             (f sw-agent e)
+                             (-sw-io-agent-error-handler- sw-agent e))
                            (catch Throwable ne
                              (println "WITH-SW-IO*: Exception while handling exception!") (flush)
                              (println "\nOriginal exception:") (flush)
@@ -385,14 +388,9 @@ Returns a String."
                              (clojure.stacktrace/print-stack-trace ne 1000) (flush)
                              (Thread/sleep 2000)))))))) ;; Dodge potential flood from a loop or similar.
                nil
-               clojure.lang.Agent/soloExecutor))) ;; "SEND-OFF"
+               (:executor sw-agent))))
 
 
-(defmacro with-sw-io [[the-agent & exception-handler-fn] & body]
-  "Runs BODY in an Agent."
-  `(with-sw-io*
-     ~the-agent
-     ~(if exception-handler-fn
-        (first exception-handler-fn)
-        nil)
-     (fn [] ~@body)))
+
+(defmacro with-sw-agent [m & body]
+  `(with-sw-agent* ~m (fn [] ~@body)))
