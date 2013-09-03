@@ -199,7 +199,7 @@ Session data stored in memory; temporarly."
           ;;(log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
           (mk-Session :uuid cookie-value
                       :rest-handler not-found-page-handler
-                      :mk-viewport-fn (fn [request session]
+                      :mk-viewport-fn (fn [request ^Ref session]
                                         (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.
                       :one-shot? true))))))
 
