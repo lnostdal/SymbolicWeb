@@ -19,7 +19,7 @@
                                           (.setLength response-str 0)))}))]
     (locking viewport
       (let [viewport-m @viewport
-            response-sched-fn (:response-sched-fn viewport-m)
+            response-sched-fn ^Atom (:response-sched-fn viewport-m)
             ^StringBuilder response-str (:response-str viewport-m)]
         (if (pos? (.length response-str))
           (do-it response-str)
@@ -32,8 +32,7 @@
                                                      (locking viewport
                                                        (when @response-sched-fn
                                                          (reset! response-sched-fn nil)
-                                                         (do-it response-str))
-                                                       nil)))))))))
+                                                         (do-it response-str)))))))))))
 
 
 
@@ -51,7 +50,6 @@
         ;; TODO: Would it be sensible to send a reload page JS snippet here?
         (do
           (println "HANDLE-IN-CHANNEL-REQUEST (widget-event): Widget or callback-fn for event" callback-id "not found."))))
-
 
     "viewport-event"
     (let [query-params (:query-params request)

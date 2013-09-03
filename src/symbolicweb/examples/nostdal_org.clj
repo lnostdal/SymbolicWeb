@@ -13,24 +13,24 @@
         viewport (mk-Viewport request session root-widget :page-title "nostdal.org")]
     (add-resource viewport :css "sw/css/common.css")
     (add-rest-head viewport "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0' />")
-    (add-rest-head viewport "<style>a { color: black; }</style>")
+    (add-rest-head viewport "<style>a { color: black; } li { padding-bottom: 0.5em; }</style>")
     (jqAppend root-widget
       (whc [:div]
         (html
          [:h3 "Lars Rune Nøstdal"]
 
          [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
-          [:li "Email: " [:a {:href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"] "."]
+          [:li "Email: " [:a {:href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
           [:li "Phone: Sometimes; email me first."]
-          [:li "Mumble: Sometimes; email me first."]
+          [:li "Mumble / Jitsi: Sometimes; email me first."]
           [:li "Source code: " [:a {:href "https://github.com/lnostdal/"} "GitHub"] "."]
-          [:li "Facebook: No."]
-          [:li "Twitter: No."]
-          [:li "Google+: No."]
-          [:li "Skype: No."]
-          [:li "Location: The Internet; I " [:a {:href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"] "."]
+          [:li "Facebook, Twitter, LinkedIn, Google+, Skype: No."]
+          [:li "Location: The Internet; I " [:a {:href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
+           ". I also very much like sailing and so I spend much of my time "
+           [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "living on/in a sailboat"] "."]
           [:li "Currency: " [:a {:href "https://en.wikipedia.org/wiki/Bitcoin"} "Bitcoin"] "."]
-          [:li "Politics: " [:a {:href "https://en.wikipedia.org/wiki/Non-politics"} "No"] "."]
+          [:li "Politics: " [:a {:href "https://en.wikipedia.org/wiki/Non-politics"} "No"]
+           ". I only vote with my wallet."]
           [:li "Religion: " [:a {:href "https://en.wikipedia.org/wiki/Antireligion"} "No"] "."]
           [:li "Personality: " [:a {:href "http://tvtropes.org/pmwiki/pmwiki.php/Main/ChaoticNeutral"} "Chaotic Neutral"] "."]
           ]

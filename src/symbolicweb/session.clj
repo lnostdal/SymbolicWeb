@@ -167,11 +167,14 @@ Session data stored in memory; temporarly."
 
 
 (declare json-parse)
+;; NOTE: COOKIE-VALUE is stored in the :UUID field of Session.
 (defn find-or-create-session [request]
   (let [;; Someone might know our Session cookie on e.g. a public computer; if LOGGING-IN? then force new Session.
         logging-in? (get (:query-params request) "_sw_login_p")
         cookie-value (:value (get (:cookies request) -session-cookie-name-))]
-    (if-let [session (when-not logging-in? (get (ensure -sessions-) cookie-value))]
+    (if-let [session (and cookie-value ;; Don't bother trying if this isn't given.
+                          (not logging-in?)
+                          (get (ensure -sessions-) cookie-value))]
       session
       (if-let [session-type (find-session-constructor request)]
         (let [one-shot?
@@ -192,6 +195,7 @@ Session data stored in memory; temporarly."
                  :session-type session-type
                  :one-shot? one-shot?)
           (when-not one-shot?
+            (assert (:uuid @session-skeleton))
             (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
             (vm-alter -num-sessions-model- + 1))
           ((:session-constructor-fn session-type) session-skeleton))
@@ -199,7 +203,7 @@ Session data stored in memory; temporarly."
           ;;(log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
           (mk-Session :uuid cookie-value
                       :rest-handler not-found-page-handler
-                      :mk-viewport-fn (fn [request session]
+                      :mk-viewport-fn (fn [request ^Ref session]
                                         (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.
                       :one-shot? true))))))
 
