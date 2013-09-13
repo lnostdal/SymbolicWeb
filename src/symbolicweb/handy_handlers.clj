@@ -160,7 +160,6 @@
 
       ;; SW specific.
       [:script (sw-js-base-bootstrap session viewport)]
-      [:script {:src (gen-url viewport "sw/deps/TraceKit/tracekit.js")}]
       [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
 
       ;; User defined JS.
