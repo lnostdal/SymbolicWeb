@@ -8,7 +8,7 @@
                  [http-kit/http-kit "2.2.0-SNAPSHOT"] ;; HTTP (server) stuff.
                  [clj-http "0.7.7-SNAPSHOT"] ;; HTTP(S) (client) stuff.
 
-                 [com.google.guava/guava "14.0.1"] ;; For soft hash cache.
+                 [com.google.guava/guava "15.0"] ;; For soft hash cache.
 
                  [cheshire "5.2.1-SNAPSHOT"] ;; JSON.
 
