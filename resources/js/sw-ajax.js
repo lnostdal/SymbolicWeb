@@ -49,13 +49,12 @@ function swHandleError(){
     swAjax("&do=error", {"msg": JSON.stringify(arguments, null, 2)});
   }
   catch(e){
-    console.error("swHandleError: Total fail..");
+    if(console)
+      console.error("swHandleError: Total fail..");
     return(true); // Can't do anything reasonable here; don't let default handler run.
   }
   return(false); // Let default handler run.
 }
-
-TraceKit.report.subscribe(swHandleError);
 
 
 
@@ -76,7 +75,7 @@ var swAddOnLoadFN, swDoOnLoadFNs;
         funs[fun]();
       }
       catch(ex){
-        TraceKit.report(ex);
+        swHandleError(ex);
       }
     }
   };
