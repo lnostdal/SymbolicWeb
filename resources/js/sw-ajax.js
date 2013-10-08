@@ -120,8 +120,16 @@ var swAjax = (function(){
           beforeSend: swPrepareSpinner
         })
           .fail(function(jq_xhr, text_status, error_thrown){
-            console.log("swAjax, fail: Trying again!");
-            setTimeout(function(){ doIt(); }, 1000);
+            switch(jq_xhr.status){
+            case 500:
+              console.log("swAjax, server failure: Reloading page!");
+              console.log(jq_xhr.responseText);
+              window.location.href = window.location.href;
+              break;
+            default:
+              console.log("swAjax, failure (network?): " + error_thrown + ", " + text_status + ". Trying again!");
+              setTimeout(function(){ doIt(); }, 500);
+            }
           })
           .done(function(){
             if(after_fn) after_fn();
