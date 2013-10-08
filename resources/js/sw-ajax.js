@@ -116,19 +116,24 @@ var swAjax = (function(){
           type: "POST",
           url: swURL(["&_sw_request_type=ajax", params]),
           data: callback_data,
+          timeout: 1000,
           dataType: "script",
           beforeSend: swPrepareSpinner
         })
           .fail(function(jq_xhr, text_status, error_thrown){
             switch(jq_xhr.status){
             case 500:
-              console.log("swAjax, server failure: Reloading page!");
+              console.log("swAjax, server exception: Reloading page!");
               console.log(jq_xhr.responseText);
               window.location.href = window.location.href;
               break;
             default:
-              console.log("swAjax, failure (network?): " + error_thrown + ", " + text_status + ". Trying again!");
-              setTimeout(function(){ doIt(); }, 500);
+              console.log("swAjax, other failure (network?): " + error_thrown + ", " + text_status + ". Trying again!");
+              if(error_thrown == "timeout"){
+                doIt();
+              } else {
+                setTimeout(function(){ doIt(); }, 500);
+              }
             }
           })
           .done(function(){
