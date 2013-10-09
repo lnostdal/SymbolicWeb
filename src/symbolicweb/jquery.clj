@@ -4,8 +4,10 @@
 
 (defn js-handle-value ^String [value ^Boolean as-js?]
   (if as-js?
-    value
-    (url-encode-wrap (.toString value))))
+    (or value "")
+    (if value
+      (url-encode-wrap (.toString value))
+      "''")))
 
 
 

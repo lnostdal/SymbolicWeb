@@ -10,23 +10,23 @@
 (defn handle-out-channel-request [^org.httpkit.server.AsyncChannel channel request ^Ref session ^Ref viewport]
   "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [^StringBuilder response-str]
-            (http.server/send! channel
-                               {:status 200
-                                :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-                                :body (do
-                                        (.append response-str "_sw_comet_response_p = true;")
-                                        (with1 (.toString response-str)
-                                          (.setLength response-str 0)))}))]
+            (when (http.server/send! channel
+                                     {:status 200
+                                      :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+                                      :body (do
+                                              (.append response-str "_sw_comet_response_p = true;")
+                                              (.toString response-str))})
+              (.setLength response-str 0)))]
     (locking viewport
       (let [viewport-m @viewport
             response-sched-fn ^Atom (:response-sched-fn viewport-m)
             ^StringBuilder response-str (:response-str viewport-m)]
         (if (pos? (.length response-str))
           (do-it response-str)
-          (if @response-sched-fn
-            (do
-              ;;(println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN for request: " request)
-              (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn))
+          (do
+            (when @response-sched-fn
+              ;;(println "HANDLE-OUT-CHANNEL-REQUEST: Hm, found existing RESPONSE-SCHED-FN for request; removing it.")
+              (org.httpkit.timer/cancel @response-sched-fn))
             (reset! response-sched-fn
                     (org.httpkit.timer/schedule-task -comet-timeout-
                                                      (locking viewport
@@ -133,7 +133,7 @@
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " | http://nostdal.org/ λ -->\n\n"
+    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       [:meta {:charset "UTF-8"}]

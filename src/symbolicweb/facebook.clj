@@ -175,10 +175,10 @@
        ;;(session-del application :facebook-csrf-check) ;; TODO: Needed?
        (let [access-token (user-get-access-token app-id app-secret code response-uri)]
          (authorization-accepted-fn (user-get-info access-token) access-token)
-         (dorun (map (partial url-alter-query-params viewport true dissoc) [ "_sw_request_type"
-                                                                             "return_uri" "do" "ns"
-                                                                             ;; Added by FB:
-                                                                             "code" "state"]))
+         (dorun (map (partial url-alter-query-params viewport true dissoc) ["_sw_request_type"
+                                                                            "return_uri" "do" "ns"
+                                                                            ;; Added by FB:
+                                                                            "code" "state"]))
          ((:rest-handler @session) request session viewport)))
 
      ;; Authorization declined?
