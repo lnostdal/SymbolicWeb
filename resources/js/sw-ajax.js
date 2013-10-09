@@ -163,6 +163,7 @@ var swComet  = (function(){
   function doIt(params){
     $.ajax({type: "POST",
             url: swURL(["&_sw_request_type=comet", params]),
+            timeout: _sw_comet_timeout_ms + 5000, // Long poll + 5 second timeout.
             dataType: "script"})
       .always(function(){
         _sw_comet_last_activity_ts = new Date().getTime();
@@ -234,17 +235,6 @@ function swBoot(){
   if(document.cookie.indexOf(sw_cookie_name) != -1){
     // At this point pre-boot and all context (variables etc) is good to go so we connect our background channel.
     swComet("&do=boot");
-
-    // Make sure things stay connected.
-    setInterval(function(){
-      var ts = new Date().getTime();
-      if((ts - _sw_comet_last_activity_ts) // Time elapsed since last swComet activity...
-         > (_sw_comet_timeout_ms + 5000)){ // ..long poll timeout + 5 second latency or window for transfer of data.
-        console.log("SW: JS keep-alive reboot!");
-        swComet("&do=reboot");
-      }
-    }, 1000);
-
   }
   else{
     console.error("SymbolicWeb: Cookies must be enabled.");
