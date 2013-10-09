@@ -10,13 +10,13 @@
 (defn handle-out-channel-request [^org.httpkit.server.AsyncChannel channel request ^Ref session ^Ref viewport]
   "Output (hanging AJAX; Comet) channel."
   (letfn [(do-it [^StringBuilder response-str]
-            (http.server/send! channel
-                               {:status 200
-                                :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-                                :body (do
-                                        (.append response-str "_sw_comet_response_p = true;")
-                                        (with1 (.toString response-str)
-                                          (.setLength response-str 0)))}))]
+            (when (http.server/send! channel
+                                     {:status 200
+                                      :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+                                      :body (do
+                                              (.append response-str "_sw_comet_response_p = true;")
+                                              (.toString response-str))})
+              (.setLength response-str 0)))]
     (locking viewport
       (let [viewport-m @viewport
             response-sched-fn ^Atom (:response-sched-fn viewport-m)
