@@ -133,7 +133,7 @@
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " | http://nostdal.org/ λ -->\n\n"
+    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       [:meta {:charset "UTF-8"}]

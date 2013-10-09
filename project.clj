@@ -29,8 +29,6 @@
 
                  [org.clojure/tools.nrepl "0.2.4-SNAPSHOT"]]
 
-  :warn-on-reflection true
-
   :jvm-opts [;; General.
              "-server" "-XX:+TieredCompilation"
 
