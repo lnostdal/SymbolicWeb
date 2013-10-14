@@ -161,12 +161,17 @@
       ;; SW specific.
       [:script (sw-js-base-bootstrap session viewport)]
       [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
+      [:script "swAddOnLoadFN(function(){ $('#page-is-loading-msg').remove(); });"]
 
       ;; User defined JS.
       (generate-rest-js @(:rest-js-entries @viewport))]
 
      [:body {:id "_body"}
-      [:noscript "SymbolicWeb: JavaScript needs to be enabled."]
+      [:noscript
+       [:h3 "JavaScript needs to be enabled in your browser"]
+       [:p [:a {:href "https://encrypted.google.com/search?hl=en&q=how%20to%20enable%20javascript"}
+            "Click here"] " to see how you can enable JavaScript in your browser."]]
+      [:p {:id "page-is-loading-msg" :style "padding: 1em;"} "Loading..."]
       [:script "$(function(){ swBoot(); });"]]])})
 
 
