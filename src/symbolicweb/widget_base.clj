@@ -2,6 +2,46 @@
 
 
 
+(defn ^WidgetBase set-event-handler [^String event-type ^WidgetBase widget ^Fn callback-fn
+                                     & {:keys [js-before callback-data js-after once?]
+                                        :or {js-before "return(true);"
+                                             callback-data ""
+                                             js-after ""}}]
+  "Set an event handler for WIDGET.
+Returns WIDGET."
+  (if callback-fn
+    (do
+      ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
+      (alter (.callbacks widget) assoc event-type
+             [(if once?
+                (comp callback-fn
+                      (fn [& args]
+                        (alter (.callbacks widget) dissoc event-type)
+                        args))
+                callback-fn)
+              callback-data])
+      (add-response-chunk
+       (str "$('#" (.id widget) "')"
+            ".off('" event-type "')"
+            (if once?
+              (str ".one('" event-type "', ")
+              (str ".on('" event-type "', "))
+            "function(event){"
+            "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
+            (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                          (keys callback-data)
+                                          (vals callback-data))))
+            "', function(){" js-after "});"
+            "});\n")
+       widget)
+      widget)
+    (do
+      (alter (.callbacks widget) dissoc event-type)
+      (add-response-chunk (str "$('#" (.id widget) "').off('" event-type "');\n")
+                          widget))))
+
+
+
 (defn mk-WB
   (^WidgetBase [^Keyword html-element-type]
      (mk-WB html-element-type {}))
@@ -95,12 +135,17 @@
                                         (:scroll-to-top? m))
                                 ;; TODO: scrollLeft?
                                 (add-response-chunk "$('html, body').scrollTop(0);\n" viewport))
-                              (when-let [f (:on-click-fn m)]
+                              (when-let [f (with (:on-click-fn m)
+                                             (when (fn? it) it))]
                                 (f widget))))
                           ;; TODO: Remove this when IE9 is gone.
                           ;; NOTE: Super, mega, hack for IE 9. :(. We clear the page while (before) re-rendering it to avoid some
                           ;; flickering the user isn't used to seeing. MS needs to just go away.
-                          :js-before "if(navigator.userAgent.search('MSIE 9') != -1) { $('#_body').css('display', 'none'); } return(true);"
+                          :js-before
+                          (str (with (:on-click-fn m)
+                                 (when (string? it)
+                                   it))
+                               " if(navigator.userAgent.search('MSIE 9') != -1) { $('#_body').css('display', 'none'); } return(true);")
                           :js-after (str (when (:event-stop-propagation? m) "event.stopPropagation(); ")
                                          "event.preventDefault(); return(false);"))
 
