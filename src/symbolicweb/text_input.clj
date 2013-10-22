@@ -92,14 +92,6 @@ ARGS:
 
 
 
-;; TODO: Move this somewhere better.
-(defn parse-long [input]
-  (if (number? input)
-    (long input)
-    (Long/parseLong input)))
-
-
-
 ;; TODO: Switch to something like bcrypt or scrypt. http://crackstation.net/hashing-security.htm
 #_(defn mk-HashedInput [model server-salt & attributes]
   "<input type='password' ..> type widget using SHA256 hashing on the client and server end. It is salted on the client and server

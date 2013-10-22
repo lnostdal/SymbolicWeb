@@ -22,8 +22,7 @@
 
           [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
            [:li "Email: " [:a {:href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
-           [:li "Phone: Sometimes; email me first."]
-           [:li "Mumble, XMPP (e.g. "
+           [:li "Phone, Mumble, XMPP (e.g. "
             [:a {:href "https://en.wikipedia.org/wiki/Off-the-Record_Messaging"} "OTR"]
             " chat): Sometimes; email me first."]
            [:li "Source code: " [:a {:href "https://github.com/lnostdal/"} "GitHub"] "."]
@@ -34,8 +33,9 @@
            [:li "Currency: " [:a {:href "https://en.wikipedia.org/wiki/Bitcoin"} "Bitcoin"]
             "; the " [:a {:href "https://www.youtube.com/results?search_query=honey+badger+vs"} "honey badger"] " of money."
             " Here's one of my BTC addresses: 1GsDQHZU4TiwbVpFXeq3eEfwhHDha4Jnfg (for " [:a {:href "https://en.wikipedia.org/wiki/Digital_signature"} "signatures"] ")."]
-           [:li "Politics: " [:a {:href "https://en.wikipedia.org/wiki/Non-politics"} "Honey badger don't care about politics."]]
-           [:li "Religion: " [:a {:href "https://en.wikipedia.org/wiki/Antireligion"} "No"] "."]
+           [:li "Politics: " [:a {:href "https://en.wikipedia.org/wiki/Non-politics"} "Honey badger don't care about politics"]
+            ". Freedom is the " [:a {:href "http://www.goodreads.com/quotes/297074-but-i-don-t-want-comfort-i-want-god-i-want"} "right to be unhappy"] "."]
+           [:li "Religion: " [:a {:href "https://en.wikipedia.org/wiki/Atheism"} "No"] ". The meaning of life is to create meaning."]
            [:li "Personality: " [:a {:href "http://tvtropes.org/pmwiki/pmwiki.php/Main/ChaoticNeutral"} "Chaotic Neutral"] "."]
            ]]
 
@@ -101,7 +101,7 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
 -----END PGP PUBLIC KEY BLOCK-----
 "]
 
-         [:a {:href "https:/en.wikipedia.org/wiki/Anarcho-capitalism" :target "_blank"}
+         [:a {:href "https://en.wikipedia.org/wiki/Anarcho-capitalism" :target "_blank"}
           [:img {:alt "" :src "http://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Ancapflag.svg/200px-Ancapflag.svg.png"}]]
          [:hr]
          [:p {:style "float: right; font-family: monospace;"}

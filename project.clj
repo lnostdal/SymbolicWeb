@@ -5,7 +5,7 @@
 
                  [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
 
-                 [http-kit/http-kit "2.2.0-SNAPSHOT"] ;; HTTP (server) stuff.
+                 [http-kit/http-kit "2.1.12"] ;; HTTP (server) stuff.
                  [clj-http "0.7.8-SNAPSHOT"] ;; HTTP(S) (client) stuff.
 
                  [com.google.guava/guava "15.0"] ;; For soft hash cache.
