@@ -1,6 +1,14 @@
 (in-ns 'symbolicweb.core)
 
 
+
+(defn ^Long parse-long [input]
+  (if (number? input)
+    (long input)
+    (Long/parseLong input)))
+
+
+
 (defn boolean? [x]
   (= java.lang.Boolean (class x)))
 
