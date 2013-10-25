@@ -101,7 +101,7 @@ Appends a timestamp to the URL based on file mtime."
         mtime (.lastModified (java.io.File. fs-path))]
     (assert (not (zero? mtime))
             (str "gen-url: " fs-path " not found."))
-    (str (:genurl-scheme @viewport) ;; http:// https:// or just //
+    (str "//"
          (:genurl-domain @viewport) ;; static.site.com
          "/"
          (:genurl-path @viewport) ;; some-common-path/      (note trailing slash)
