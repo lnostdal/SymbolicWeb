@@ -30,7 +30,6 @@
 
                              ;; gen-url
                              :genurl-fs-path "resources/web-design/"
-                             :genurl-scheme "//"
                              :genurl-domain (:server-name request)
                              :genurl-path "static/"
 

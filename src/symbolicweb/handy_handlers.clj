@@ -124,54 +124,64 @@
 
 
 (defn default-rest-handler [request ^Ref session ^Ref viewport]
-  (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))
-  {:status 200
-   :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Cache-Control" "no-cache, no-store"
-             "Expires" "-1"}
-   :body
-   (html
-    (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
-    [:html
-     [:head
-      [:meta {:charset "UTF-8"}]
-      [:title (:page-title @viewport)]
+  (if (= "http" (get (:headers request) "x-forwarded-protocol"))
+    {:status 301
+     :headers {"Content-Type" "text/html; charset=UTF-8"
+               "Cache-Control" "no-cache, no-store"
+               "Expires" "-1"
+               "Location" (str "https://" (:server-name request)
+                               (:uri request)
+                               (when-let [qs (:query-string request)]
+                                 (str "?" qs)))}}
+    (do
+      (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))
+      {:status 200
+       :headers {"Content-Type" "text/html; charset=UTF-8"
+                 "Cache-Control" "no-cache, no-store"
+                 "Expires" "-1"}
+       :body
+       (html
+        (hiccup.page/doctype :html5)
+        "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
+        [:html
+         [:head
+          [:meta {:charset "UTF-8"}]
+          [:title (:page-title @viewport)]
 
-      (generate-rest-head @(:rest-head-entries @viewport))
+          (generate-rest-head @(:rest-head-entries @viewport))
 
-      [:link {:rel "icon" :type "image/x-icon"
-              :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}]
+          [:link {:rel "icon" :type "image/x-icon"
+                  :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}]
 
-      ;; User defind CSS.
-      (generate-rest-css @(:rest-css-entries @viewport))
+          ;; User defind CSS.
+          (generate-rest-css @(:rest-css-entries @viewport))
 
-      ;; jQuery.
-      "<!--[if lt IE 9]>"
-      [:script {:src (gen-url viewport "sw/js/jquery-1.10.2.min.js")}]
-      "<![endif]-->"
-      "<!--[if gte IE 9]><!-->"
-      [:script {:src (gen-url viewport "sw/js/jquery-2.0.3.min.js")}]
-      "<!--<![endif]-->"
+          ;; jQuery.
+          "<!--[if lt IE 9]>"
+          [:script {:src (gen-url viewport "sw/js/jquery-1.10.2.min.js")}]
+          "<![endif]-->"
+          "<!--[if gte IE 9]><!-->"
+          [:script {:src (gen-url viewport "sw/js/jquery-2.0.3.min.js")}]
+          "<!--<![endif]-->"
 
-      ;; jQuery migrate.
-      [:script {:src (gen-url viewport "sw/js/jquery-migrate-1.2.1.min.js")}]
+          ;; jQuery migrate.
+          [:script {:src (gen-url viewport "sw/js/jquery-migrate-1.2.1.min.js")}]
 
-      ;; SW specific.
-      [:script (sw-js-base-bootstrap session viewport)]
-      [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
-      [:script "swAddOnLoadFN(function(){ $('#page-is-loading-msg').remove(); });"]
+          ;; SW specific.
+          [:script (sw-js-base-bootstrap session viewport)]
+          [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
+          [:script "swAddOnLoadFN(function(){ $('#page-is-loading-msg').remove(); });"]
 
-      ;; User defined JS.
-      (generate-rest-js @(:rest-js-entries @viewport))]
+          ;; User defined JS.
+          (generate-rest-js @(:rest-js-entries @viewport))]
 
-     [:body {:id "_body"}
-      [:noscript
-       [:h3 "JavaScript needs to be enabled in your browser"]
-       [:p [:a {:href "https://encrypted.google.com/search?hl=en&q=how%20to%20enable%20javascript"}
-            "Click here"] " to see how you can enable JavaScript in your browser."]]
-      [:p {:id "page-is-loading-msg" :style "padding: 1em;"} "Loading..."]
-      [:script "$(function(){ swBoot(); });"]]])})
+         [:body {:id "_body"}
+          [:noscript
+           [:h3 "JavaScript needs to be enabled in your browser"]
+           [:p [:a {:href "https://encrypted.google.com/search?hl=en&q=how%20to%20enable%20javascript"}
+                "Click here"] " to see how you can enable JavaScript in your browser."]]
+          [:p {:id "page-is-loading-msg" :style "padding: 1em;"} "Loading..."]
+          [:script "$(function(){ swBoot(); });"]]])})))
 
 
 
