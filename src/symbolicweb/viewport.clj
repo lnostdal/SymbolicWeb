@@ -21,7 +21,7 @@
 
                              ;; HTML5 History stuff.
                              :query-params (vm (into (sorted-map) (:query-params request)))
-                             :popstate-observer (vm (into (sorted-map) (:query-params request))) ;; Used by history.clj.
+                             :popstate-observer (vm {})
 
                              :scrolled-to-bottom-event (vm 0)
                              :after-rest? (vm false)
@@ -52,7 +52,8 @@
     ;; HTML5 History handler.
     (set-viewport-event-handler "window" "popstate" viewport
                                 (fn [& {:keys [query-string]}]
-                                  (let [query-params (ring.util.codec/form-decode query-string)]
+                                  (let [query-params (into (sorted-map) (ring.util.codec/form-decode query-string))]
+                                    (vm-set (:query-params @viewport) query-params)
                                     (vm-set (:popstate-observer @viewport) query-params)
                                     (vm-set (:popstate-observer @viewport) nil)))
                                 :callback-data {:query-string "' + encodeURIComponent(window.location.search.slice(1)) + '"})
