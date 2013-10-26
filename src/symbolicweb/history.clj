@@ -66,16 +66,15 @@ Returns M."
       (assert (isa? (class model) ValueModel))
       (if-let [viewport (or viewport (and context-widget @(.viewport context-widget)))]
         (do
-          ;; Initial sync; if already present in URL.
+          ;; Initial client->server sync if already present in URL.
           (when-let [value (get @(:query-params @viewport) name)]
             (vm-set model value))
-          ;; Continuous sync.
+          ;; Continuous sync client->server based on HTML5 popstate event.
           (vm-observe (:popstate-observer @viewport) (.lifetime (:root-element @viewport)) false
                       (fn [_ _ query-params]
                         (when query-params
-                          (doseq [[k v] query-params]
+                          (doseq [[^String k ^String v] query-params]
                             (when (= k name)
-                              (vm-alter (:query-params @viewport) assoc name v)
                               (vm-set model v))))))
           (when context-widget
             (vm-sync-to-url m)))
