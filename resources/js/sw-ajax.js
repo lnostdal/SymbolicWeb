@@ -237,6 +237,6 @@ function swBoot(){
     swComet("&do=boot");
   }
   else{
-    console.error("SymbolicWeb: Cookies must be enabled.");
+    console.error("Cookies must be enabled.");
   }
 }

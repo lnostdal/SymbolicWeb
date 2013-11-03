@@ -4,7 +4,7 @@
 
 
 
-(defn mk-nostdal-org-viewport [request  session]
+(defn homepage [request session]
   (let [root-widget (with1 (mk-bte :id "_body" :root-widget? true)
                       (jqCSS it "background-color" "rgb(171,191,181)")
                       (jqCSS it "color" "black")
@@ -17,34 +17,38 @@
     (jqAppend root-widget
       (whc [:div]
         (html
-         [:div {:style "display: inline-block; max-width: 1000px; vertical-align: top;"}
-          [:h3 "Lars Rune Nøstdal"]
+         [:h3 "Lars Rune Nøstdal"]
 
-          [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
-           [:li "Email: " [:a {:href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
-           [:li "Phone, Mumble, XMPP (e.g. "
-            [:a {:href "https://en.wikipedia.org/wiki/Off-the-Record_Messaging"} "OTR"]
-            " chat): Sometimes; email me first."]
-           [:li "Source code: " [:a {:href "https://github.com/lnostdal/"} "GitHub"] "."]
-           [:li "Facebook, Twitter, LinkedIn, Google+, Skype, etc.: No."]
-           [:li "Location: The Internet; I " [:a {:href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
-            ". I also very much like sailing and so I spend much of my time "
-            [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "living on/in a sailboat"] "."]
-           [:li "Currency: " [:a {:href "https://en.wikipedia.org/wiki/Bitcoin"} "Bitcoin"]
-            "; the " [:a {:href "https://www.youtube.com/results?search_query=honey+badger+vs"} "honey badger"] " of money."
-            " Here's one of my BTC addresses: 1GsDQHZU4TiwbVpFXeq3eEfwhHDha4Jnfg (for " [:a {:href "https://en.wikipedia.org/wiki/Digital_signature"} "signatures"] ")."]
-           [:li "Politics: " [:a {:href "https://en.wikipedia.org/wiki/Non-politics"} "Honey badger don't care about politics"]
-            ". Freedom is the " [:a {:href "http://www.goodreads.com/quotes/297074-but-i-don-t-want-comfort-i-want-god-i-want"} "right to be unhappy"] "."]
-           [:li "Religion: " [:a {:href "https://en.wikipedia.org/wiki/Atheism"} "No"] ". The meaning of life is to create meaning."]
-           [:li "Personality: " [:a {:href "http://tvtropes.org/pmwiki/pmwiki.php/Main/ChaoticNeutral"} "Chaotic Neutral"] "."]
-           ]]
+         [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
+          [:li "Email: " [:a {:target "_blank" :href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
+          [:li "Phone, Mumble, XMPP (e.g. "
+           [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Off-the-Record_Messaging"} "OTR"]
+           " chat): Sometimes; email me first."]
+          [:li "Source code: " [:a {:target "_blank" :href "https://github.com/lnostdal/"} "GitHub"] "."]
+          [:li "Facebook, Twitter, LinkedIn, Google+, Skype, etc.: No."]
+          [:li "Location: The " [:a {:target "_blank" :href "https://startshop.no/static/other/uten_fast_bosted.png"} "Internet"] "; I " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
+           " and travel a lot. I also very much like sailing and so I spend some time "
+           [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "living on/in an old sailboat"] "."]
+          [:li
+           "Currency: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Bitcoin"} "Bitcoin"]
+           "; the " [:a {:target "_blank" :href "https://www.youtube.com/results?search_query=honey+badger+vs"} "honey badger"] " of money." [:br]
+           [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Bitcoin"}
+            [:img { :alt "" :style "padding: 0.5em;"
+                   :src "https://en.bitcoin.it/w/images/en/f/fd/BC_nBG_64px.png"}]]]
+          [:li "Politics: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Non-politics"} "No"]
+           ". Freedom is the " [:a {:target "_blank" :href "https://www.goodreads.com/quotes/297074-but-i-don-t-want-comfort-i-want-god-i-want"} "right to be unhappy"] "." [:br]
+           [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Anarcho-capitalism"}
+            [:img {:alt "" :style "padding: 0.5em; width: 10em;"
+                   :src "https://nostdal.org/static/other/bcanarcy-500x500.png?_42"}]]]
+          [:li "Religion: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Atheism"} "No"] ". The meaning of life is to create meaning."]
+          [:li "Personality: " [:a {:target "_blank" :href "http://tvtropes.org/pmwiki/pmwiki.php/Main/ChaoticNeutral"} "Chaotic Neutral"] "."]
+          ]
 
-
-         [:div {:style "display: inline-block; margin-left: 2em;"}
+         [:div {:style "padding: 1em;"}
           [:a {:href "/static/other/IMG_5004_cropped.png"}
            [:img {:alt "" :src "/static/other/lars.png"
                   :style "display: block; width: 15em; "}]]
-          [:em {:style "font-size: smaller;"} "&quot;Not quite Facebook, but here's my face..&quot;"]]
+          [:em {:style "font-size: smaller;"} "&quot;My face..&quot;"]]
 
          [:pre
           "-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -101,14 +105,21 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
 -----END PGP PUBLIC KEY BLOCK-----
 "]
 
-         [:a {:href "https://en.wikipedia.org/wiki/Anarcho-capitalism" :target "_blank"}
-          [:img {:alt "" :src "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Ancapflag.svg/200px-Ancapflag.svg.png"}]]
          [:hr]
          [:p {:style "float: right; font-family: monospace;"}
-          "This page was generated by " [:a {:href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": "
-          [:a {:href "https://en.wikipedia.org/wiki/Homoiconicity"} "data &#8596; code"] "."]
+          "This page was generated by " [:a {:target "_blank" :href "https://github.com/lnostdal/SymbolicWeb"} "SymbolicWeb"] ": "
+          [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Homoiconicity"} "data &#8596; code"] "."]
          )))
     viewport))
+
+
+
+(defn mk-nostdal-org-viewport [request session]
+  (case (:uri request)
+    "/history"
+    (symbolicweb.examples.history/mk-history-viewport request session)
+
+    (homepage request session)))
 
 
 
@@ -116,7 +127,6 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
   [::Nostdal-org
    (fn [request]
      (= (:server-name request) "nostdal.org"))]
-
 
   (fn [session]
     (alter session assoc
