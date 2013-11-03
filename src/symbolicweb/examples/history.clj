@@ -1,4 +1,5 @@
 (ns symbolicweb.examples.history
+  (:import symbolicweb.core.WidgetBase)
   (:use symbolicweb.core)
   (:use hiccup.core))
 
@@ -38,20 +39,7 @@
 
          [:hr]
          [:pre
-          [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj"}
+          [:a {:target "_blank" :href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj"}
            "Source code"]])))
 
     (mk-Viewport request session root-widget :page-title "SW: History example")))
-
-
-
-
-(defapp
-  [::History
-   (fn [request]
-     (re-find #"history$" (:uri request)))]
-
-  (fn [session]
-    (alter session assoc
-           :mk-viewport-fn #'mk-history-viewport)
-    session))

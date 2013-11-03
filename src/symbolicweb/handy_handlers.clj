@@ -142,7 +142,6 @@
        :body
        (html
         (hiccup.page/doctype :html5)
-        "<!-- λ SymbolicWeb: " (name (:name (:session-type @session))) " | Request #" @-request-counter- " λ -->\n\n"
         [:html
          [:head
           [:meta {:charset "UTF-8"}]
@@ -193,7 +192,6 @@
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- λ SymbolicWeb: Request #" @-request-counter- " λ -->\n\n"
     [:html
      [:head
       ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
