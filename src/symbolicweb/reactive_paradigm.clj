@@ -65,7 +65,9 @@ Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or
 as the first argument to CALLBACK."
   (let [callback (fn [& args]
                    (if (contains? *observables-stack* observable)
-                     (throw (Exception. "OBSERVE: Possible infinite recursion; bailed out."))
+                     (do
+                       (clojure.stacktrace/print-stack-trace (Exception. "OBSERVE: Possible infinite recursion, but continuing..."))
+                       (apply callback args))
                      (binding [*observables-stack* (conj *observables-stack* observable)]
                        (apply callback args))))]
     (if lifetime
