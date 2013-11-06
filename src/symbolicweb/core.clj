@@ -34,6 +34,7 @@
 
   (:require symbolicweb.macros)
   (:require symbolicweb.lifetime)
+  (:require symbolicweb.reactive-paradigm-types)
   (:require symbolicweb.reactive-paradigm)
   (:require symbolicweb.value_model)
   (:require symbolicweb.globals)
