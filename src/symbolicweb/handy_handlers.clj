@@ -115,8 +115,6 @@
 
         ;; REST.
         (let [viewport ((:mk-viewport-fn @session) request session)]
-          ;; TODO: The name here seems counter intuitive since :REST-HANDLER is actually called below. Change or document this?
-          (vm-set (:after-rest? @viewport) true)
           (if (= request-type "aux")
             ((:aux-handler @session) request session viewport)
             ((:rest-handler @session) request session viewport)))))))

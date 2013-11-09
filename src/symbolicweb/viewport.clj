@@ -24,7 +24,6 @@
                              :popstate-observer (vm {})
 
                              :scrolled-to-bottom-event (vm 0)
-                             :after-rest? (vm false)
 
                              :page-title "SW"
 
@@ -85,9 +84,11 @@
                   (ensure (:rest-css-entries @viewport)))
     (alter (:rest-css-entries @viewport)
            conj rest-css-entry)
-    (when @(:after-rest? @viewport)
-      (add-response-chunk (str "$('<link rel=\"stylesheet\" href=\"" (:url rest-css-entry) "\">').appendTo('head');\n")
-                          viewport))))
+    (add-lifetime-activation-fn (.lifetime (:root-element @viewport))
+                                (fn [_]
+                                  (add-response-chunk
+                                   (str "$('<link rel=\"stylesheet\" href=\"" (:url rest-css-entry) "\">').appendTo('head');\n")
+                                   viewport)))))
 
 
 
@@ -96,9 +97,11 @@
                   (ensure (:rest-js-entries @viewport)))
     (alter (:rest-js-entries @viewport)
            conj rest-js-entry)
-    (when @(:after-rest? @viewport)
-      (add-response-chunk (str "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');\n")
-                          viewport))))
+    (add-lifetime-activation-fn (.lifetime (:root-element @viewport))
+                                (fn [_]
+                                  (add-response-chunk
+                                   (str "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');\n")
+                                   viewport)))))
 
 
 
