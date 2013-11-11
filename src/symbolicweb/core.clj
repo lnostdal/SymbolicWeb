@@ -122,13 +122,11 @@
                :body
                (html
                 [:html
-                 [:head [:title "SymbolicWeb: Top Level Server Exception: HTTP 500"]]
+                 [:head [:title "Top Level Server Exception: HTTP 500"]]
                  [:body {:style "font-family: sans-serif;"}
                   [:p {:style "color: red;"} [:b (escape-html (str e))]]
                   [:p "This incident has been logged (ID: " http-request-id ")."]
-                  [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]
-                  [:p "HTTP 500: Top level server exception caught by " [:a {:href "https://github.com/lnostdal/SymbolicWeb"}
-                                                                         "SymbolicWeb"] "."]]])})))))))
+                  [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]]])})))))))
 
 
 
@@ -147,7 +145,7 @@
   (def -server-
     (http.server/run-server (ring.middleware.cookies/wrap-cookies
                              (ring.middleware.params/wrap-params
-                              handler))
+                              #'handler))
                             {:port port
                              :thread (. (Runtime/getRuntime) availableProcessors)
                              :worker-name-prefix "http-worker-"

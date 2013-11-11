@@ -14,6 +14,7 @@ Returns WIDGET."
       ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
       (alter (.callbacks widget) assoc event-type
              [(if once?
+                ;; Unbind event handler on server side before executing it (once).
                 (comp callback-fn
                       (fn [& args]
                         (alter (.callbacks widget) dissoc event-type)

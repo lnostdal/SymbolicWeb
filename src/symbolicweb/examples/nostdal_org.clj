@@ -30,9 +30,9 @@
            " and travel a lot. I also very much like sailing and so I spend some time "
            [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "living on/in an old sailboat"] "."]
           [:li
-           "Currency: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Bitcoin"} "Bitcoin"]
+           "Currency: " [:a {:target "_blank" :href "https://en.bitcoin.it/wiki/Main_Page"} "Bitcoin"]
            "; the " [:a {:target "_blank" :href "https://www.youtube.com/results?search_query=honey+badger+vs"} "honey badger"] " of money." [:br]
-           [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Bitcoin"}
+           [:a {:target "_blank" :href "https://en.bitcoin.it/wiki/Main_Page"}
             [:img { :alt "" :style "padding: 0.5em;"
                    :src "https://en.bitcoin.it/w/images/en/f/fd/BC_nBG_64px.png"}]]]
           [:li "Politics: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Non-politics"} "No"]
@@ -41,6 +41,7 @@
             [:img {:alt "" :style "padding: 0.5em; width: 10em;"
                    :src "https://nostdal.org/static/other/bcanarcy-500x500.png?_42"}]]]
           [:li "Religion: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Atheism"} "No"] ". The meaning of life is to create meaning."]
+          [:li "Music: Is " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Music_and_mathematics"} "math"] "."]
           [:li "Personality: " [:a {:target "_blank" :href "http://tvtropes.org/pmwiki/pmwiki.php/Main/ChaoticNeutral"} "Chaotic Neutral"] "."]
           ]
 
