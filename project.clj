@@ -19,12 +19,12 @@
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "1.0.0"] ;; ring.util.codec
-                 [ring/ring-core "1.2.0"] ;; ring.middleware.params, ring.middleware.cookies
+                 [ring/ring-core "1.2.1"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 
-                 [org.postgresql/postgresql "9.2-1003-jdbc4"]
-                 [com.jolbox/bonecp "0.8.0-rc4-SNAPSHOT"] ;; DB connection pooling.
+                 [org.postgresql/postgresql "9.2-1004-jdbc4"]
+                 [com.jolbox/bonecp "0.8.1-SNAPSHOT"] ;; DB connection pooling.
                  ;;[com.mchange/c3p0 "0.9.5-pre3"] ;; DB connection pooling.
 
                  [org.clojure/tools.nrepl "0.2.4-SNAPSHOT"]]
