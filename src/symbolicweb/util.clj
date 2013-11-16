@@ -115,13 +115,6 @@ Appends a timestamp to the URL based on file mtime."
 
 
 
-(defn ^String generate-rest-css [rest-css-entries]
-  (with-out-str
-    (doseq [css-entry rest-css-entries]
-      (println (str "<link rel='stylesheet' href='" (:url css-entry) "'>")))))
-
-
-
 (defn mk-rest-js-entry
   ([^String url]
      (mk-rest-js-entry url false false))
@@ -129,18 +122,6 @@ Appends a timestamp to the URL based on file mtime."
      (mk-rest-js-entry url defer? false))
   ([^String url ^Boolean defer? ^Boolean async?]
      {:url url :defer? defer? :async? async?}))
-
-
-
-(defn ^String generate-rest-js [rest-js-entries]
-  (with-out-str
-    (doseq [js-entry rest-js-entries]
-      (println (str "<script src='" (:url js-entry) "'"
-                  (when (:defer? js-entry)
-                    " defer ")
-                  (when (:async? js-entry)
-                    " async ")
-                  "></script>")))))
 
 
 

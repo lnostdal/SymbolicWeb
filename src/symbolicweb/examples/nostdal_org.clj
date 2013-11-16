@@ -17,22 +17,23 @@
     (jqAppend root-widget
       (whc [:div]
         (html
-         [:h3 "Lars Rune Nøstdal"]
+         [:h2 "Lars Rune Nøstdal"]
+         [:p [:em [:b "Clojure, PostgreSQL, nginx and other no-nonsense type tech web developer. Send me an email for details!"]]]
 
          [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
-          [:li "Email: " [:a {:target "_blank" :href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
+          [:li "Email: " [:a {:target "_blank" :href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"] " (public key is at the bottom of this page)"]
           [:li "Phone, Mumble, XMPP (e.g. "
            [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Off-the-Record_Messaging"} "OTR"]
            " chat): Sometimes; email me first."]
           [:li "Source code: " [:a {:target "_blank" :href "https://github.com/lnostdal/"} "GitHub"] "."]
           [:li "Facebook, Twitter, LinkedIn, Google+, Skype, etc.: No."]
-          [:li "Location: The " [:a {:target "_blank" :href "https://startshop.no/static/other/uten_fast_bosted.png"} "Internet"] "; I " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
+          [:li "Location: The " [:a {:target "_blank" :href "https://nostdal.org/static/other/uten_fast_bosted.png"} "Internet"] "; I " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
            " and travel a lot. I also very much like sailing and so I spend some time "
            [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "living on/in an old sailboat"] "."]
           [:li
-           "Currency: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Bitcoin"} "Bitcoin"]
+           "Currency: " [:a {:target "_blank" :href "https://en.bitcoin.it/wiki/Main_Page"} "Bitcoin"]
            "; the " [:a {:target "_blank" :href "https://www.youtube.com/results?search_query=honey+badger+vs"} "honey badger"] " of money." [:br]
-           [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Bitcoin"}
+           [:a {:target "_blank" :href "https://en.bitcoin.it/wiki/Main_Page"}
             [:img { :alt "" :style "padding: 0.5em;"
                    :src "https://en.bitcoin.it/w/images/en/f/fd/BC_nBG_64px.png"}]]]
           [:li "Politics: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Non-politics"} "No"]
@@ -41,6 +42,7 @@
             [:img {:alt "" :style "padding: 0.5em; width: 10em;"
                    :src "https://nostdal.org/static/other/bcanarcy-500x500.png?_42"}]]]
           [:li "Religion: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Atheism"} "No"] ". The meaning of life is to create meaning."]
+          [:li "Music: Is " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Music_and_mathematics"} "math"] "."]
           [:li "Personality: " [:a {:target "_blank" :href "http://tvtropes.org/pmwiki/pmwiki.php/Main/ChaoticNeutral"} "Chaotic Neutral"] "."]
           ]
 
