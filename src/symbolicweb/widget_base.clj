@@ -154,6 +154,27 @@ Returns WIDGET."
 
 
 
-(defn ^WidgetBase mk-Img [^ValueModel value-model]
-  (mk-he :img value-model :observer-fn (fn [^WidgetBase widget old-value new-value]
-                                         (jqAttr widget "src" new-value))))
+(defn ^WidgetBase mk-Img [^ValueModel src]
+  (mk-he :img src :observer-fn (fn [^WidgetBase widget _ new-value]
+                                 (jqAttr widget "src" new-value))))
+
+
+
+(defn ^WidgetBase assoc-Stylesheet [^String href m]
+  "Adds CSS stylesheet (HREF) to Viewport of :CONTEXT-WIDGET for the Lifetime of :CONTEXT-WIDGET or :VIEWPORT (root widget
+really)."
+  (let [context-widget (or (and (:viewport m) (:root-element @(:viewport m)))
+                           (:context-widget m))]
+    (add-lifetime-activation-fn
+     (.lifetime context-widget)
+     (fn [_]
+       (let [id (generate-uid)
+             viewport (viewport-of context-widget)]
+         (add-response-chunk
+          (str "$('<link id=\"sw-" id "\" rel=\"stylesheet\" href=\"" (gen-url viewport href) "\">').appendTo('head');\n")
+          context-widget)
+         (add-lifetime-deactivation-fn
+          (.lifetime context-widget)
+          (fn [_]
+            (add-response-chunk (str "$('#sw-" id "').remove();\n")
+                                viewport))))))))
