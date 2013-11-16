@@ -1,33 +1,34 @@
 (defproject symbolicweb "1.0.0-SNAPSHOT"
   :description "SymbolicWeb: WUI for Clojure"
   :license "AGPLv3 + CLA"
-  :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure "LATEST"]
 
-                 [org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"] ;; ROUND etc.
+                 [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
-                 [http-kit/http-kit "2.1.12"] ;; HTTP (server) stuff.
-                 [clj-http "0.7.8-SNAPSHOT"] ;; HTTP(S) (client) stuff.
+                 [http-kit/http-kit "LATEST"] ;; HTTP (server) stuff.
+                 [clj-http "LATEST"] ;; HTTP(S) (client) stuff.
 
-                 [com.google.guava/guava "15.0"] ;; For soft hash cache.
+                 [com.google.guava/guava "LATEST"] ;; For soft hash cache.
 
-                 [cheshire "5.2.1-SNAPSHOT"] ;; JSON.
+                 [cheshire "LATEST"] ;; JSON.
 
-                 [clj-time/clj-time "0.6.1-SNAPSHOT"]
+                 [clj-time/clj-time "LATEST"]
 
-                 [hiccup/hiccup "1.0.4"] ;; HTML generation.
-                 [org.jsoup/jsoup "1.7.3-SNAPSHOT"] ;; HTML templating.
+                 [hiccup/hiccup "LATEST"] ;; HTML generation.
+                 [org.jsoup/jsoup "LATEST"] ;; HTML templating.
 
                  ;; HTTP protocol handling.
-                 [ring/ring-codec "1.0.0"] ;; ring.util.codec
-                 [ring/ring-core "1.2.1"] ;; ring.middleware.params, ring.middleware.cookies
+                 [ring/ring-codec "LATEST"] ;; ring.util.codec
+                 [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
 
+                 ;; TODO: Fix java.jdbc dep. :(
                  [org.clojure/java.jdbc "0.2.4-SNAPSHOT"] ;; SQL/DB handling.
 
-                 [org.postgresql/postgresql "9.2-1004-jdbc4"]
-                 [com.jolbox/bonecp "0.8.1-SNAPSHOT"] ;; DB connection pooling.
-                 ;;[com.mchange/c3p0 "0.9.5-pre3"] ;; DB connection pooling.
+                 [org.postgresql/postgresql "LATEST"]
+                 [com.jolbox/bonecp "LATEST"] ;; DB connection pooling.
 
-                 [org.clojure/tools.nrepl "0.2.4-SNAPSHOT"]]
+                 [org.clojure/tools.nrepl "LATEST"]
+                 ]
 
   :jvm-opts [;; General.
              "-server" "-XX:+TieredCompilation"
