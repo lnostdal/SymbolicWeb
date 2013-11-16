@@ -17,16 +17,17 @@
     (jqAppend root-widget
       (whc [:div]
         (html
-         [:h3 "Lars Rune Nøstdal"]
+         [:h2 "Lars Rune Nøstdal"]
+         [:p [:em [:b "Clojure, PostgreSQL, nginx and other no-nonsense type tech web developer. Send me an email for details!"]]]
 
          [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
-          [:li "Email: " [:a {:target "_blank" :href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
+          [:li "Email: " [:a {:target "_blank" :href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"] " (public key is at the bottom of this page)"]
           [:li "Phone, Mumble, XMPP (e.g. "
            [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Off-the-Record_Messaging"} "OTR"]
            " chat): Sometimes; email me first."]
           [:li "Source code: " [:a {:target "_blank" :href "https://github.com/lnostdal/"} "GitHub"] "."]
           [:li "Facebook, Twitter, LinkedIn, Google+, Skype, etc.: No."]
-          [:li "Location: The " [:a {:target "_blank" :href "https://startshop.no/static/other/uten_fast_bosted.png"} "Internet"] "; I " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
+          [:li "Location: The " [:a {:target "_blank" :href "https://nostdal.org/static/other/uten_fast_bosted.png"} "Internet"] "; I " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
            " and travel a lot. I also very much like sailing and so I spend some time "
            [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "living on/in an old sailboat"] "."]
           [:li
