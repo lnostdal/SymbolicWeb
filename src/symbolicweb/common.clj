@@ -218,36 +218,46 @@ Returns a String."
 
 (defn http-js-response [body]
   {:status 200
-   :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+   :headers {"Content-Type" "text/javascript; charset=UTF-8"
+             "Cache-Control" "no-cache, no-store"
+             "Expires" "-1"}
    :body body})
 
 
 (defn http-html-response [body]
   {:status 200
-   :headers {"Content-Type" "text/html; charset=UTF-8"}
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Cache-Control" "no-cache, no-store"
+             "Expires" "-1"}
    :body body})
 
 
 (defn http-text-response [body]
   {:status 200
-   :headers {"Content-Type" "text/plain; charset=UTF-8"}
+   :headers {"Content-Type" "text/plain; charset=UTF-8"
+             "Cache-Control" "no-cache, no-store"
+             "Expires" "-1"}
    :body body})
 
 
-(defn http-replace-response [location]
+(defn http-replace-response [^String location]
   {:status 200
-   :headers {"Content-Type" "text/html; charset=UTF-8"}
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Cache-Control" "no-cache, no-store"
+             "Expires" "-1"}
    :body (str "<script> window.location.replace(" (url-encode-wrap location) "); </script>")})
 
 
-(defn http-redirect-response [location]
+(defn http-redirect-response [^String location]
   {:status 200
-   :headers {"Content-Type" "text/html; charset=UTF-8"}
+   :headers {"Content-Type" "text/html; charset=UTF-8"
+             "Cache-Control" "no-cache, no-store"
+             "Expires" "-1"}
    :body (str "<script> window.location = " (url-encode-wrap location) "; </script>")})
 
 
 (defn reload-page
-  ([viewport rel-url]
+  ([viewport ^String rel-url]
      (add-response-chunk (str "window.location = " (url-encode-wrap rel-url) ";")
                          viewport))
   ([viewport]
@@ -297,6 +307,7 @@ Returns a String."
 (declare spget)
 (defn ^String sw-js-base-bootstrap [^Ref session ^Ref viewport]
   (str "var sw_cookie_name = '" -session-cookie-name- "';\n"
+       (set-document-cookie :name -session-cookie-name- :value nil :domain? false :path "/")
        (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
        "var _sw_viewport_id = '" (:id @viewport) "';\n"
        "var _sw_comet_timeout_ms = " -comet-timeout- ";\n"))

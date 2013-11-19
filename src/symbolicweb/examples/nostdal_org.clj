@@ -14,11 +14,12 @@
     (add-resource viewport :css "sw/css/common.css")
     (add-rest-head viewport "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0' />")
     (add-rest-head viewport "<style>a { color: black; } li { padding-bottom: 0.5em; }</style>")
+    (add-rest-head viewport "<link href='data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA' rel='icon' type='image/x-icon' />")
     (jqAppend root-widget
       (whc [:div]
         (html
          [:h2 "Lars Rune Nøstdal"]
-         [:p [:em [:b "Clojure, PostgreSQL, nginx and other no-nonsense type tech web developer. Send me an email for details!"]]]
+         [:p [:em [:b "Web developer: Clojure, PostgreSQL, JavaScript, nginx and other no-nonsense type tech. Send me an email for details!"]]]
 
          [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
           [:li "Email: " [:a {:target "_blank" :href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"] " (public key is at the bottom of this page)"]
@@ -121,6 +122,10 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
     "/history"
     (symbolicweb.examples.history/mk-history-viewport request session)
 
+    "/bitcoin"
+    (symbolicweb.examples.bitcoin/mk-bitcoin-viewport request session)
+
+    ;; E.g. "/nostdal.org"
     (homepage request session)))
 
 
@@ -130,7 +135,14 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
    (fn [request]
      (= (:server-name request) "nostdal.org"))]
 
-  (fn [session]
-    (alter session assoc
-           :mk-viewport-fn #'mk-nostdal-org-viewport)
+  (fn [request session]
+    (case (:uri request)
+      "/" ;; Can't set a cookie here as it will become global for all paths; redirect instead.
+      (alter session assoc
+             :rest-handler (fn [request session viewport]
+                             (http-redirect-response "/nostdal.org"))
+             :one-shot? true)
+
+      (alter session assoc
+             :mk-viewport-fn #'mk-nostdal-org-viewport))
     session))

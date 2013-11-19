@@ -75,7 +75,7 @@ CREATE TABLE sessions (
                             :last-activity-time (atom (System/currentTimeMillis))
                             :viewports (ref {})
                             :mk-viewport-fn (fn [request ^Ref session]
-                                              (throw (Exception. "mk-Session: No :MK-VIEWPORT-FN given.")))
+                                              (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.
                             :one-shot? false
 
                             :temp-data (ref {})
@@ -198,13 +198,11 @@ Session data stored in memory; temporarly."
             (assert (:uuid @session-skeleton))
             (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
             (vm-alter -num-sessions-model- + 1))
-          ((:session-constructor-fn session-type) session-skeleton))
+          ((:session-constructor-fn session-type) request session-skeleton))
         (do
           ;;(log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
           (mk-Session :uuid cookie-value
-                      :rest-handler not-found-page-handler
-                      :mk-viewport-fn (fn [request ^Ref session]
-                                        (mk-Viewport request session (mk-bte :root-widget? true))) ;; Dummy.
+                      :rest-handler #'not-found-page-handler
                       :one-shot? true))))))
 
 

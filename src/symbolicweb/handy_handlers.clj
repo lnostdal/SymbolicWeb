@@ -96,6 +96,7 @@
   (with-once-only-ctx
     (let [request-type (get (:query-params request) "_sw_request_type")]
       (case request-type
+        ;; XHR.
         ("ajax" "comet")
         (if-let [^Ref viewport (get (ensure (:viewports @session))
                                     (get (:query-params request) "_sw_viewport_id"))]
@@ -104,11 +105,11 @@
             ((:ajax-handler @session) request session viewport))
           (do
             #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport ("
-                     (get (:query-params request) "_sw_viewport_id") ")."
-                     "Refreshing page, but keeping Session (cookie).")
+                       (get (:query-params request) "_sw_viewport_id") ")."
+                       "Refreshing page, but keeping Session (cookie).")
             {:status 200
              :headers {"Content-Type" "text/javascript; charset=UTF-8"}
-             ;; A new Session might have been started for this request.
+             ;; A new Session _might_ have been started for this request, so we reset the cookie just in case before reloading.
              ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
              :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
                         "window.location.href = window.location.href;")}))
@@ -117,11 +118,12 @@
         (let [viewport ((:mk-viewport-fn @session) request session)]
           (if (= request-type "aux")
             ((:aux-handler @session) request session viewport)
-            ((:rest-handler @session) request session viewport)))))))
+            ((:rest-handler @session) request session viewport))))))) ;; E.g. DEFAULT-REST-HANDLER, below.
 
 
 
 (defn default-rest-handler [request ^Ref session ^Ref viewport]
+  ;; HTTP --301--> HTTPS.
   (if (= "http" (get (:headers request) "x-forwarded-protocol"))
     {:status 301
      :headers {"Content-Type" "text/html; charset=UTF-8"
@@ -147,9 +149,6 @@
 
           (generate-rest-head @(:rest-head-entries @viewport))
 
-          [:link {:rel "icon" :type "image/x-icon"
-                  :href "data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA"}]
-
           ;; jQuery.
           "<!--[if lt IE 9]>"
           [:script {:src (gen-url viewport "sw/js/jquery-1.10.2.min.js")}]
@@ -158,20 +157,17 @@
           [:script {:src (gen-url viewport "sw/js/jquery-2.0.3.min.js")}]
           "<!--<![endif]-->"
 
-          ;; jQuery migrate.
-          [:script {:src (gen-url viewport "sw/js/jquery-migrate-1.2.1.min.js")}]
-
           ;; SW specific.
           [:script (sw-js-base-bootstrap session viewport)]
           [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
-          [:script "swAddOnLoadFN(function(){ $('#page-is-loading-msg').remove(); });"]]
+          [:script "swAddOnLoadFN(function(){ $('#sw-page-is-loading-msg').remove(); });"]]
 
          [:body {:id "_body"}
           [:noscript
            [:h3 "JavaScript needs to be enabled in your browser"]
            [:p [:a {:href "https://encrypted.google.com/search?hl=en&q=how%20to%20enable%20javascript"}
                 "Click here"] " to see how you can enable JavaScript in your browser."]]
-          [:p {:id "page-is-loading-msg" :style "padding: 1em;"} "Loading..."]
+          [:p {:id "sw-page-is-loading-msg" :style "padding: 1em;"} "Loading..."]
           [:script "$(function(){ swBoot(); });"]]])})))
 
 
@@ -180,16 +176,13 @@
   {:status 404
    :headers {"Content-Type" "text/html; charset=UTF-8"
              "Cache-Control" "no-cache"}
-
    :body
    (html
     (hiccup.page/doctype :html5)
     [:html
      [:head
-      ;; Already set via HTTP header above, but perhaps useful in case the user wants to save a snapshot of the page.
       [:meta {:charset "UTF-8"}]
-      ;; TODO: Extract from VIEWPORT.
-      [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,maximum-scale=1.0"}]
+      [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"}]
       [:title "SW: 404 Page Not Found"]
 
      [:body
