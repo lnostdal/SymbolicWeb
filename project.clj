@@ -1,6 +1,29 @@
 (defproject symbolicweb "1.0.0-SNAPSHOT"
   :description "SymbolicWeb: WUI for Clojure"
-  :license "AGPLv3 + CLA"
+
+  :license "
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+AGPLv3 + CLA
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.20 (GNU/Linux)
+
+iQIcBAEBCgAGBQJSkRjBAAoJEKCKx3p7KBrtum0QAJzbztYaglmwcNFksJF6ZNBd
+nxmU/d/ZlHsmBRCflE/vP7HEjKjDLIA96ntBG7W3ufIx0fPJR3F68gsdmPB5HJqO
+HSnDuWTX3DOsb8295GQYf/Ludjr4QaFplIJdOSpCeKxy71ufFVcfGd0EeBVF7dhL
+V3skBIEje0/DFidjVBQywShwAbrfZ/0QzyMo5NPyIElqQZEn6tBqFgenE+lTCj9T
+DZXfOYPg7+/Q89W9NbCXY05xQ/IH7UIphMUt3+5hkntbTCi4ZjhF9PEwvwjy+Pq0
+gmKbXVROeh8IRpO2i5TGkyip8z+mYZ9Qv30wZKgvXC5XftbFJEAIeGx/c27GF4nr
+vyeH38jQr6lkReQVv2qZSuwRS8+rpSQlbZQFtAmXScEl2c1+QMVzB2r+SgCsopIY
+dFw/TNDGJ6tzYumR408hHF9AopIu7QwT3zXlfdblCtzs/jPZiZ8KftYm7t43JkET
+IALIJHt0yWZTvcoptKvWS0yFzCjlyXTbJb/s0fZc+9u70aOE/k0rgxQL5zk+bldc
+OUAH8oV3ui4qe3gzZz9Wo1q9e47RS9s9A+0nUH2PS2AfuG2W5BqxWY0R+H/vD036
+DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
+7P2hj9gOYoKRsXNpAG8r
+=gRrr
+-----END PGP SIGNATURE-----
+"
   :dependencies [[org.clojure/clojure "LATEST"]
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
