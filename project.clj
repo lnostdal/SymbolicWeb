@@ -1,6 +1,5 @@
 (defproject symbolicweb "1.0.0-SNAPSHOT"
   :description "SymbolicWeb: WUI for Clojure"
-
   :license "
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA512
@@ -24,21 +23,22 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 =gRrr
 -----END PGP SIGNATURE-----
 "
-  :dependencies [[org.clojure/clojure "LATEST"]
+  :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
-                 [http-kit/http-kit "LATEST"] ;; HTTP (server) stuff.
-                 [clj-http "LATEST"] ;; HTTP(S) (client) stuff.
+                 [http-kit/http-kit "2.1.13-SNAPSHOT"] ;; HTTP (server) stuff.
+                 [clj-http "LATEST"] ;; HTTP (client) stuff.
 
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache.
 
                  [cheshire "LATEST"] ;; JSON.
 
-                 [clj-time/clj-time "LATEST"]
+                 [clj-time/clj-time "0.6.1-SNAPSHOT"]
 
                  [hiccup/hiccup "LATEST"] ;; HTML generation.
-                 [org.jsoup/jsoup "LATEST"] ;; HTML templating.
+                 [org.jsoup/jsoup "1.7.4-SNAPSHOT"] ;; HTML templating.
+                 ;;[org.jsoup/jsoup "LATEST"] ;; HTML templating.
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "LATEST"] ;; ring.util.codec

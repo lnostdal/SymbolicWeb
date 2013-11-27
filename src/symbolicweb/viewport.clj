@@ -58,10 +58,10 @@
                                 :callback-data {:query-string "' + encodeURIComponent(window.location.search.slice(1)) + '"})
 
     ;; Viewport scrolled to the bottom
-    (set-viewport-event-handler "window" "sw_scrollbottom" viewport
+    #_(set-viewport-event-handler "window" "sw_scrollbottom" viewport
                                 (fn [& _] (vm-alter (:scrolled-to-bottom-event @viewport) inc)))
-    ;; TODO: Reduce spammy event rate.
-    (add-response-chunk
+    ;; TODO: Reduce spammy event rate: http://underscorejs.org/#throttle
+    #_(add-response-chunk
      (str "$(window).scroll(function(){"
           "  if(50 > $(document).height() - $(window).height() - $(window).scrollTop()){"
           "    $(window).trigger('sw_scrollbottom');"
@@ -156,7 +156,8 @@
                                      :or {js-before "return(true);"
                                           callback-data ""
                                           js-after ""}}]
-  (alter (:callbacks @viewport) assoc (str selector "_" event-type) [callback-fn callback-data])
+  (alter (:callbacks @viewport) assoc (str selector "_" event-type)
+         [callback-fn callback-data])
   (add-response-chunk
    (str "$(" selector ").bind('" event-type "', "
         "function(event){"
