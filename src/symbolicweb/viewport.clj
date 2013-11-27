@@ -156,7 +156,8 @@
                                      :or {js-before "return(true);"
                                           callback-data ""
                                           js-after ""}}]
-  (alter (:callbacks @viewport) assoc (str selector "_" event-type) [callback-fn callback-data])
+  (alter (:callbacks @viewport) assoc (str selector "_" event-type)
+         [callback-fn callback-data])
   (add-response-chunk
    (str "$(" selector ").bind('" event-type "', "
         "function(event){"

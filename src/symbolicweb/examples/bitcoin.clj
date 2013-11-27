@@ -31,7 +31,7 @@
 
 
 (let [last-sync-ts (atom (time/now))]
-  (defn do-bitcoin2 [request ^Ref session]
+  (defn do-bitcoin [request ^Ref session]
     (Thread/sleep 1000)
     (let [now (time/now)]
       (when (> (time/in-seconds (time/interval @last-sync-ts now))
@@ -52,7 +52,7 @@
       (loop []
         (with-bindings -bitcoin-bindings-
           (try
-            (do-bitcoin2 request session)
+            (do-bitcoin request session)
             (catch Throwable e
               (println "## -DO-BITCOIN- ##")
               (clojure.stacktrace/print-stack-trace e 50)

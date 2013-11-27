@@ -44,7 +44,9 @@
           widget-id (get query-params "_sw_widget-id")
           callback-id (get query-params "_sw_callback-id")
           widget (get (:widgets @viewport) widget-id)
-          [^Fn callback-fn callback-data] (when widget (get (ensure (.callbacks ^WidgetBase widget)) callback-id))]
+          [^Fn callback-fn callback-data] (when widget
+                                            (get (ensure (.callbacks ^WidgetBase widget))
+                                                 callback-id))]
       (if (and widget callback-fn)
         (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
         ;; TODO: Would it be sensible to send a reload page JS snippet here?
@@ -68,7 +70,8 @@
   {:status 200
    :headers {"Content-Type" "text/javascript; charset=UTF-8"}
    :body (do
-           ;; For this to work the call to .runTask in ADD-RESPONSE-CHUNK-REF-FN shouldn't happen.
+           ;; For this to work the call to .runTask in ADD-RESPONSE-CHUNK-REF-FN shouldn't happen in context of AJAX requests;
+           ;; only Comet requests.
            #_(locking viewport
                (let [^StringBuilder response-str (:response-str @viewport)]
                  (with1 (.toString response-str)
@@ -108,7 +111,9 @@
                        (get (:query-params request) "_sw_viewport_id") ")."
                        "Refreshing page, but keeping Session (cookie).")
             {:status 200
-             :headers {"Content-Type" "text/javascript; charset=UTF-8"}
+             :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                       "Cache-Control" "no-cache, no-store"
+                       "Expires" "-1"}
              ;; A new Session _might_ have been started for this request, so we reset the cookie just in case before reloading.
              ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
              :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))

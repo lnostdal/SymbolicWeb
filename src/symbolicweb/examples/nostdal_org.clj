@@ -19,7 +19,7 @@
       (whc [:div]
         (html
          [:h2 "Lars Rune Nøstdal"]
-         [:p [:em [:b "Web developer: Clojure, PostgreSQL, JavaScript, nginx and other no-nonsense type tech. Send me an email for details!"]]]
+         [:p [:em [:b "Web developer: Clojure, PostgreSQL, JavaScript, nginx, Linux etc.. Send me an email for details!"]]]
 
          [:ul {:style "display: inline-block; vertical-align: top; margin-top: 0; line-height: 1.4em;"}
           [:li "Email: " [:a {:target "_blank" :href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"] " (public key is at the bottom of this page)"]
@@ -29,8 +29,8 @@
           [:li "Source code: " [:a {:target "_blank" :href "https://github.com/lnostdal/"} "GitHub"] "."]
           [:li "Facebook, Twitter, LinkedIn, Google+, Skype, etc.: No."]
           [:li "Location: The " [:a {:target "_blank" :href "https://nostdal.org/static/other/uten_fast_bosted.png"} "Internet"] "; I " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
-           " and travel a lot. I also very much like sailing and so I spend some time "
-           [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "living on/in an old sailboat"] "."]
+           " and travel a lot. I also very much like sailing and sometimes I "
+           [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "live on/in an old sailboat"] ". I don't pretend to own anything; I just rent e.g. " [:a {:href "https://www.airbnb.com/users/show/3977190"} "https://www.airbnb.com/users/show/3977190"] "."]
           [:li
            "Currency: " [:a {:target "_blank" :href "https://en.bitcoin.it/wiki/Main_Page"} "Bitcoin"]
            "; the " [:a {:target "_blank" :href "https://www.youtube.com/results?search_query=honey+badger+vs"} "honey badger"] " of money." [:br]
@@ -42,8 +42,9 @@
            [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Anarcho-capitalism"}
             [:img {:alt "" :style "padding: 0.5em; width: 10em;"
                    :src "https://nostdal.org/static/other/bcanarcy-500x500.png?_42"}]]]
+          ;;[:li "Cattle serial number: 24068039394. Used by the Norwegian mafia who pretend and tell me this is &quot;my number&quot;, but I never agreed to that (still don't) when I was born.."]
           [:li "Religion: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Atheism"} "No"] ". The meaning of life is to create meaning."]
-          [:li "Music: Is " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Music_and_mathematics"} "math"] "."]
+          [:li "Music: " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Music_and_mathematics"} "Is math"] "."]
           [:li "Personality: " [:a {:target "_blank" :href "http://tvtropes.org/pmwiki/pmwiki.php/Main/ChaoticNeutral"} "Chaotic Neutral"] "."]
           ]
 
@@ -53,6 +54,15 @@
                   :style "display: block; width: 15em; "}]]
           [:em {:style "font-size: smaller;"} "&quot;My face..&quot;"]]
 
+         [:br]
+         [:pre
+          "pub   4096R/7B281AED 2013-01-24
+      Key fingerprint = 5029 6FDD 199C 2A69 898B  40B0 A08A C77A 7B28 1AED
+uid                  Lars Rune Nøstdal (PGP (RSA)) <larsnostdal@gmail.com>
+sub   4096R/F53DFC31 2013-01-24
+"]
+
+         [:br]
          [:pre
           "-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v2.0.20 (GNU/Linux)
@@ -107,6 +117,10 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
 =LKmf
 -----END PGP PUBLIC KEY BLOCK-----
 "]
+
+         [:blockquote
+          [:em "Great spirits have always encountered violent opposition from mediocre minds. The mediocre mind is incapable of understanding the man who refuses to bow blindly to conventional prejudices and chooses instead to express his opinions courageously and honestly."] [:br]
+          "-- A. E., 1940"]
 
          [:hr]
          [:p {:style "float: right; font-family: monospace;"}
