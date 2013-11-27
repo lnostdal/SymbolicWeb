@@ -141,6 +141,33 @@ Session data stored in memory; temporarly."
 
 
 
+(defn session-logout [^Ref session]
+  (vm-set (spget session :logged-in?) false)
+  (vm-set (:user-model @session) nil))
+
+
+
+(defn session-login [^Ref session ^Ref user-model ^Ref viewport ^String login-type ^Fn after-login-fn]
+  (let [old-cookie-value (:uuid @session)
+        new-cookie-value (generate-uuid)]
+    (alter session assoc :uuid new-cookie-value)
+    (db-update :sessions {:uuid new-cookie-value} ["id = ?" @(:id @session)])
+    (alter -sessions- assoc new-cookie-value session) ;; Two cookies now point to SESSION.
+    (set-viewport-event-handler "window" "sw_login" viewport
+                                (fn [& {:keys [id]}]
+                                  (alter -sessions- dissoc id) ;; ..one cookie now point to SESSION.
+                                  (vm-set (:user-model @session) user-model)
+                                  (vm-set (spget session :session-type) login-type)
+                                  (vm-set (spget session :logged-in?) true)
+                                  (after-login-fn))
+                                :callback-data {:id "42"})
+    (add-response-chunk (str (set-session-cookie new-cookie-value (= "permanent" login-type))
+                             "swViewportEvent('window_sw_login', function(){ return(true); }, "
+                             "'%3Aid=" (url-encode-component old-cookie-value) "', function(){});\n")
+                        viewport))) ;; Only sent to VIEWPORT (i.e. not entire SESSION!) doing the actual login.
+
+
+
 (defn find-session-constructor [request]
   (loop [session-types @-session-types-]
     (when-first [session-type session-types]
@@ -169,11 +196,8 @@ Session data stored in memory; temporarly."
 (declare json-parse)
 ;; NOTE: COOKIE-VALUE is stored in the :UUID field of Session.
 (defn find-or-create-session [request]
-  (let [;; Someone might know our Session cookie on e.g. a public computer; if LOGGING-IN? then force new Session.
-        logging-in? (get (:query-params request) "_sw_login_p")
-        cookie-value (:value (get (:cookies request) -session-cookie-name-))]
+  (let [cookie-value (:value (get (:cookies request) -session-cookie-name-))]
     (if-let [session (and cookie-value ;; Don't bother trying if this isn't given.
-                          (not logging-in?)
                           (get (ensure -sessions-) cookie-value))]
       session
       (if-let [session-type (find-session-constructor request)]
@@ -185,8 +209,7 @@ Session data stored in memory; temporarly."
                   (search-engine? request))
 
               session-skeleton
-              (or (and (not logging-in?)
-                       cookie-value
+              (or (and cookie-value
                        (when-let [res (first (db-pstmt "SELECT id FROM sessions WHERE uuid = ? LIMIT 1;" cookie-value))]
                          (with1 (db-get (:id res) "sessions")
                            (vm-set (:touched @it) (datetime-to-sql-timestamp (time/now))))))
