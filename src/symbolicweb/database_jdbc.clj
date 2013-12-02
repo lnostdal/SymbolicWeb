@@ -19,17 +19,13 @@
 
 
 
-(defonce -pooled-db-spec- nil)
-#_(mk-db-pool (let [db-host  "localhost"
-                    db-port  5432
-                    db-name  "temp"
-                    user     "temp"
-                    password "temp"]
-                {:classname "org.postgresql.Driver"
-                 :subprotocol "postgresql"
-                 :subname (str "//" db-host ":" db-port "/" db-name)
-                 :user user
-                 :password password}))
+(def -pooled-db-spec-
+  (mk-db-pool
+   {:classname "org.postgresql.Driver"
+    :subprotocol "postgresql"
+    :subname "test"
+    :user "test"
+    :password "test"}))
 
 
 

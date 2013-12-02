@@ -29,10 +29,9 @@
      (db-insert table-name m true))
 
   ([table-name m ^Boolean return-result?]
-     (let [res (first (sql/insert table-name m))
-           sql (if return-result?
-                 (str (first res) " RETURNING *")
-                 (first res))
+     (let [res (sql/sql (sql/insert table-name [] (sql/values m)
+                                    (when return-result? (sql/returning :*))))
+           ^String sql (first res)
            params (rest res)]
        (apply db-pstmt sql params))))
 
@@ -40,7 +39,7 @@
 
 (defn db-update [table-name m where]
   "E.g. (db-update :testing {:value 42} [\"id = ?\" 100])"
-  (let [res (sql/update table-name m where)
+  (let [res (sql/sql (sql/update table-name m (sql/where where)))
         ^String sql (first res)
         params (rest res)]
     (apply db-pstmt sql params)))
@@ -49,7 +48,7 @@
 
 (defn db-delete [table-name where]
   "E.g. (db-delete :testing [\"id = ?\" 100])"
-  (let [res (sql/delete table-name where)
+  (let [res (sql/sql (sql/delete table-name (sql/where where)))
         ^String sql (first res)
         params (rest res)]
     (apply db-pstmt sql params)))
@@ -176,7 +175,7 @@
 
 
 ;; TODO: Finish this..
-(defn nsm-insert [^String table-name ^Long right-of]
+#_(defn nsm-insert [^String table-name ^Long right-of]
   "Nested Set Model insert right of existing node; creating a sibling."
   (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
             right-of)
@@ -188,7 +187,7 @@
 
 ;; TODO: Only works when parent doesn't already have children. In other cases, NSM-INSERT must be used.
 ;; TODO: Finish this..
-(defn nsm-add-child [^String table-name ^long parent-id]
+#_(defn nsm-add-child [^String table-name ^long parent-id]
   (let [lft (:lft (first (db-pstmt (str "SELECT lft FROM " table-name " WHERE id = ? LIMIT 1;") parent-id)))]
     (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
               lft)
@@ -288,7 +287,7 @@ Returns :ID and :PARENT columns."
 
 
 
-(defn db-common-test []
+#_(defn db-common-test []
   (let [r (ref 0)
         f1 (future
              (swsync
