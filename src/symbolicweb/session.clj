@@ -4,7 +4,7 @@
 
 (defn %mk-SessionTable []
   (with-db-conn
-    (jdbc/do-commands
+    (db-stmt
 "
 CREATE TABLE sessions (
     id text NOT NULL,
