@@ -142,9 +142,8 @@
                 (let [res (db-clj-to-db-transformer db-cache obj clj-key value-model)
                       ^Keyword db-key (:key res)
                       db-value (:value res)]
-                  (db-update (.table-name db-cache)
-                             {db-key db-value}
-                             ["id = ?" @(:id @obj)])))))
+                  (db-update (.table-name db-cache) {db-key db-value}
+                             '(= :id @(:id @obj)))))))
 
 
 
@@ -405,6 +404,7 @@ Blocking."
 
 
 
+;; TODO: This is so similar to DB-DELETE it's not even funny. Perhaps I should use a different prefix here e.g. "dao-".
 (defn db-remove [^Ref obj ^String table-name]
   "SQL `DELETE FROM ...'."
   (when-let [id (if (ref? obj)
