@@ -44,7 +44,6 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [ring/ring-codec "LATEST"] ;; ring.util.codec
                  [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
 
-                 [org.clojure/java.jdbc "0.3.0-SNAPSHOT"] ;; JDBC (DB) handling.
                  [sqlingvo "0.5.11-SNAPSHOT"] ;; SQL DSL.
 
                  [org.postgresql/postgresql "LATEST"]

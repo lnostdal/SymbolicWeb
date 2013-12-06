@@ -26,7 +26,6 @@
   (:require ring.middleware.params)
   (:require ring.middleware.cookies)
 
-  (:require [clojure.java.jdbc :as jdbc])
   (:require [sqlingvo.core :as sql])
 
   (:require [clj-time.core :as time])

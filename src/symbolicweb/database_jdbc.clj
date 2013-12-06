@@ -58,7 +58,6 @@
                     (on-serialization-failure-fn))
                   (do
                     (println "\n%WITH-JDBC-CONN: getSQLState:" (.getSQLState ^java.sql.SQLException e))
-                    (jdbc/print-sql-exception-chain e) ;; TODO: Improve; consider using jdbc/throw-non-rte.
                     (throw e)))
                 (throw e)))
 
@@ -79,7 +78,9 @@
   "Create (or fetch from cache) and execute PreparedStatement."
   (try
     (with-open [stmt (.prepareStatement db-conn sql)] ;; TODO: I'm assuming the Pg JDBC driver caches based on SQL here.
-      (#'jdbc/set-parameters stmt params)
+      (dorun (map-indexed (fn [ix value]
+                            (.setObject stmt (inc ix) value))
+                          params))
       (if (.execute stmt)
         (with-open [rs (.getResultSet stmt)]
           ;; Being lazy is worse than pointless when "non-lazy design" (WITH-OPEN) is enforced from the underlying source anyway.
