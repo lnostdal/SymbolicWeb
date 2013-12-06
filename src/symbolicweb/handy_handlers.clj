@@ -147,6 +147,7 @@
        :body
        (html
         (hiccup.page/doctype :html5)
+        "<!-- https://github.com/lnostdal/SymbolicWeb -->\n"
         [:html
          [:head
           [:meta {:charset "UTF-8"}]

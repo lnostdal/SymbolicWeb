@@ -143,7 +143,7 @@
                       ^Keyword db-key (:key res)
                       db-value (:value res)]
                   (db-update (.table-name db-cache) {db-key db-value}
-                             '(= :id @(:id @obj)))))))
+                             `(= :id ~(deref (:id @obj))))))))
 
 
 

@@ -152,7 +152,7 @@ Session data stored in memory; temporarly."
         new-cookie-value (generate-uuid)]
     (alter session assoc :uuid new-cookie-value)
     (db-update :sessions {:uuid new-cookie-value}
-               '(= :id @(:id @session)))
+               `(= :id ~(deref (:id @session))))
     (alter -sessions- assoc new-cookie-value session) ;; Two cookies now point to SESSION.
     (set-viewport-event-handler "window" "sw_login" viewport
                                 (fn [& {:keys [id]}]
