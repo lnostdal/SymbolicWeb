@@ -1,3 +1,6 @@
+(set! *warn-on-reflection* true)
+
+
 (ns symbolicweb.core
   ;;(:require symbolicweb.init)
 
@@ -106,7 +109,6 @@
                (with1 ((:request-handler @session) request session)
                  (when (:one-shot? @session)
                    (gc-session session)))))
-
             (catch Throwable e
               ;; Log first..
               (log "Top Level Exception:"

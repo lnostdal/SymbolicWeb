@@ -30,7 +30,7 @@
           [:li "Facebook, Twitter, LinkedIn, Google+, Skype, etc.: No."]
           [:li "Location: The " [:a {:target "_blank" :href "https://nostdal.org/static/other/uten_fast_bosted.png"} "Internet"] "; I " [:a {:target "_blank" :href "https://en.wikipedia.org/wiki/Telecommuting"} "telecommute"]
            " and travel a lot. I also very much like sailing and sometimes I "
-           [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "live on/in an old sailboat"] ". I don't pretend to own anything; I just rent e.g. " [:a {:href "https://www.airbnb.com/users/show/3977190"} "https://www.airbnb.com/users/show/3977190"] "."]
+           [:a {:href "http://i.imgur.com/ZdJKhh9.jpg"} "live on/in an old sailboat"] "."]
           [:li
            "Currency: " [:a {:target "_blank" :href "https://en.bitcoin.it/wiki/Main_Page"} "Bitcoin"]
            "; the " [:a {:target "_blank" :href "https://www.youtube.com/results?search_query=honey+badger+vs"} "honey badger"] " of money." [:br]
@@ -134,6 +134,9 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
 (defn mk-nostdal-org-viewport [request session]
   (case (:uri request)
     "/history"
+    (symbolicweb.examples.history/mk-history-viewport request session)
+
+    "/dev/history"
     (symbolicweb.examples.history/mk-history-viewport request session)
 
     "/bitcoin"

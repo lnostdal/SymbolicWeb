@@ -27,9 +27,9 @@ Returns M."
   (with1 m
     (let [name (:name m)
           model (:model m)
-          viewport (:viewport m)
-          context-widget (:context-widget m)]
-      (if-let [viewport (or viewport (and context-widget @(.viewport context-widget)))]
+          ^Ref viewport (:viewport m)
+          ^WidgetBase context-widget (:context-widget m)]
+      (if-let [^Ref viewport (or viewport (and context-widget @(.viewport context-widget)))]
         (do
           ;; Initial sync; add entry to URL if not already present.
           (when-not (get @(:query-params @viewport) name)

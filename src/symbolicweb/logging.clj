@@ -6,5 +6,6 @@
 (defn log [& args]
   (with-sw-agent nil
     (binding [*print-level* 5]
+      (flush)
       (apply println "\n\n[SW]:" args)
       (flush))))
