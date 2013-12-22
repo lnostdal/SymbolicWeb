@@ -48,7 +48,11 @@
                                             (get (ensure (.callbacks ^WidgetBase widget))
                                                  callback-id))]
       (if (and widget callback-fn)
-        (apply callback-fn (default-parse-callback-data-handler request widget callback-data))
+        (let [parsed-callback-data (default-parse-callback-data-handler request widget callback-data)]
+          (assert (= (:sw-token callback-data)
+                     (:sw-token (apply hash-map parsed-callback-data)))
+                  "CSRF security check failed.")
+          (apply callback-fn parsed-callback-data))
         ;; TODO: Would it be sensible to send a reload page JS snippet here?
         (do
           (println "HANDLE-IN-CHANNEL-REQUEST (widget-event): Widget or callback-fn for event" callback-id "not found."))))

@@ -5,41 +5,44 @@
 (defn ^WidgetBase set-event-handler [^String event-type ^WidgetBase widget ^Fn callback-fn
                                      & {:keys [js-before callback-data js-after once?]
                                         :or {js-before "return(true);"
-                                             callback-data ""
+                                             callback-data {}
                                              js-after ""}}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
-  (if callback-fn
-    (do
-      ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
-      (alter (.callbacks widget) assoc event-type
-             [(if once?
-                ;; Unbind event handler on server side before executing it (once).
-                (comp callback-fn
-                      (fn [& args]
-                        (alter (.callbacks widget) dissoc event-type)
-                        args))
-                callback-fn)
-              callback-data])
-      (add-response-chunk
-       (str "$('#" (.id widget) "')"
-            ".off('" event-type "')"
-            (if once?
-              (str ".one('" event-type "', ")
-              (str ".on('" event-type "', "))
-            "function(event){"
-            "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
-            (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
-                                          (keys callback-data)
-                                          (vals callback-data))))
-            "', function(){" js-after "});"
-            "});\n")
-       widget)
-      widget)
-    (do
-      (alter (.callbacks widget) dissoc event-type)
-      (add-response-chunk (str "$('#" (.id widget) "').off('" event-type "');\n")
-                          widget))))
+  (let [sw-token (generate-uuid)
+        ;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
+        callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
+    (if callback-fn
+      (do
+        ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
+        (alter (.callbacks widget) assoc event-type
+               [(if once?
+                  ;; Unbind event handler on server side before executing it once.
+                  (comp callback-fn
+                        (fn [& args]
+                          (alter (.callbacks widget) dissoc event-type)
+                          args))
+                  callback-fn)
+                callback-data])
+        (add-response-chunk
+         (str "$('#" (.id widget) "')"
+              ".off('" event-type "')"
+              (if once?
+                (str ".one('" event-type "', ")
+                (str ".on('" event-type "', "))
+              "function(event){"
+              "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
+              (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                            (keys callback-data)
+                                            (vals callback-data))))
+              "', function(){" js-after "});"
+              "});\n")
+         widget)
+        widget)
+      (do
+        (alter (.callbacks widget) dissoc event-type)
+        (add-response-chunk (str "$('#" (.id widget) "').off('" event-type "');\n")
+                            widget)))))
 
 
 
