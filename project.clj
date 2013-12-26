@@ -27,7 +27,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
-                 [http-kit/http-kit "2.1.13-SNAPSHOT"] ;; HTTP (server) stuff.
+                 [http-kit/http-kit "LATEST"] ;; HTTP (server) stuff.
                  [clj-http "LATEST"] ;; HTTP (client) stuff.
 
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache.
@@ -44,7 +44,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [ring/ring-codec "LATEST"] ;; ring.util.codec
                  [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
 
-                 [sqlingvo "0.5.13-SNAPSHOT"] ;; SQL DSL.
+                 [sqlingvo "0.5.14-SNAPSHOT"] ;; SQL DSL.
 
                  [org.postgresql/postgresql "LATEST"]
                  [com.jolbox/bonecp "LATEST"] ;; DB connection pooling.
