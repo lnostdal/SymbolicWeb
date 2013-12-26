@@ -9,8 +9,7 @@
                                              js-after ""}}]
   "Set an event handler for WIDGET.
 Returns WIDGET."
-  (let [sw-token (generate-uuid)
-        ;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
+  (let [;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
         callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
     (if callback-fn
       (do

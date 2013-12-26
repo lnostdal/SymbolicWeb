@@ -154,18 +154,19 @@
 (defn set-viewport-event-handler [^String selector ^String event-type ^Ref viewport ^Fn callback-fn
                                   & {:keys [js-before callback-data js-after]
                                      :or {js-before "return(true);"
-                                          callback-data ""
+                                          callback-data {}
                                           js-after ""}}]
-  (alter (:callbacks @viewport) assoc (str selector "_" event-type)
-         [callback-fn callback-data])
-  (add-response-chunk
-   (str "$(" selector ").bind('" event-type "', "
-        "function(event){"
-        "swViewportEvent('" selector "_" event-type "', function(){" js-before "}, '"
-        (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
-                                      (keys callback-data)
-                                      (vals callback-data))))
-        "', function(){" js-after "});"
-        "});\n")
-   viewport)
-  viewport)
+  (let [callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
+    (alter (:callbacks @viewport) assoc (str selector "_" event-type)
+           [callback-fn callback-data])
+    (add-response-chunk
+     (str "$(" selector ").bind('" event-type "', "
+          "function(event){"
+          "swViewportEvent('" selector "_" event-type "', function(){" js-before "}, '"
+          (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                        (keys callback-data)
+                                        (vals callback-data))))
+          "', function(){" js-after "});"
+          "});\n")
+     viewport)
+    viewport))

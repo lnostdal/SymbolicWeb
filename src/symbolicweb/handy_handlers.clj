@@ -61,8 +61,12 @@
     (let [query-params (:query-params request)
           callback-id (get query-params "_sw_callback-id")
           callback-entry (get @(:callbacks @viewport) callback-id)
-          [^Fn callback-fn callback-data] callback-entry]
-      (apply callback-fn (default-parse-callback-data-handler request viewport callback-data)))
+          [^Fn callback-fn callback-data] callback-entry
+          parsed-callback-data (default-parse-callback-data-handler request viewport callback-data)]
+      (assert (= (:sw-token callback-data)
+                 (:sw-token (apply hash-map parsed-callback-data)))
+              "CRSF security check failed.")
+      (apply callback-fn parsed-callback-data))
 
     "unload"
     (gc-viewport viewport)
