@@ -158,15 +158,14 @@ Session data stored in memory; temporarly."
     (alter -sessions- assoc new-cookie-value session) ;; Two cookies now point to SESSION.
     (set-viewport-event-handler "window" "sw_login" viewport
                                 (fn [& {:keys [id]}]
-                                  (alter -sessions- dissoc id) ;; ..one cookie now point to SESSION.
+                                  (alter -sessions- dissoc id) ;; ..one cookie now points to SESSION.
                                   (vm-set (:user-model @session) user-model)
                                   (vm-set (spget session :session-type) login-type)
                                   (vm-set (spget session :logged-in?) true)
                                   (after-login-fn))
-                                :callback-data {:id "42"})
+                                :callback-data {:id old-cookie-value})
     (add-response-chunk (str (set-session-cookie new-cookie-value (= "permanent" login-type))
-                             "swViewportEvent('window_sw_login', function(){ return(true); }, "
-                             "'%3Aid=" (url-encode-component old-cookie-value) "', function(){});\n")
+                             "$(window).trigger('sw_login');\n")
                         viewport))) ;; Only sent to VIEWPORT (i.e. not entire SESSION!) doing the actual login.
 
 
