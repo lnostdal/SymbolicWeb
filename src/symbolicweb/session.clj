@@ -3,15 +3,17 @@
 
 
 (defn %mk-SessionTable []
-  (with-db-conn
+  (swsync
     (db-stmt
 "
 CREATE TABLE sessions (
-    id text NOT NULL,
+    id bigserial NOT NULL,
     created timestamp without time zone NOT NULL,
     touched timestamp without time zone NOT NULL,
-    data text DEFAULT '{}'::text NOT NULL,
-    application text
+    json text DEFAULT '{}'::text NOT NULL,
+    application text NOT NULL,
+    uuid text NOT NULL,
+    user_ref bigint
 );
 ")))
 
