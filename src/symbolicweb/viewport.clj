@@ -160,7 +160,7 @@
     (alter (:callbacks @viewport) assoc (str selector "_" event-type)
            [callback-fn callback-data])
     (add-response-chunk
-     (str "$(" selector ").bind('" event-type "', "
+     (str "$(" selector ").off('" event-type "').on('" event-type"', "
           "function(event){"
           "swViewportEvent('" selector "_" event-type "', function(){" js-before "}, '"
           (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
