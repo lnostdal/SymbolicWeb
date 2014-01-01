@@ -12,9 +12,9 @@
 
 
 
-(defn gc-session [^Ref session]
+(defn gc-session [^String session-uuid ^Ref session]
   (let [session-m (ensure session)]
-    (alter -sessions- dissoc (:uuid session-m))
+    (alter -sessions- dissoc session-uuid)
     (when-not (:one-shot? @session)
       (if (= "permanent" @(spget session :session-type))
         (db-cache-remove (db-get-cache "sessions") @(:id session-m))
@@ -34,9 +34,9 @@
 (defn do-gc []
   (swsync
    (let [now (System/currentTimeMillis)]
-     (doseq [[session-id session] (ensure -sessions-)]
+     (doseq [[^String session-uuid ^Ref session] (ensure -sessions-)]
        (if (< -session-timeout- (- now @(:last-activity-time @session)))
-         (gc-session session)
+         (gc-session session-uuid session)
          ;; The Session hasn't timed out, but perhaps some of the Viewports in the Session has?
          (doseq [[viewport-id viewport] (ensure (:viewports @session))]
            (when (< -viewport-timeout- (- now @(:last-activity-time @viewport)))

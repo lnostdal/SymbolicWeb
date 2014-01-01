@@ -108,7 +108,7 @@
                ;; TODO: Production / development modes needed here too. Logging, etc. etc...
                (with1 ((:request-handler @session) request session)
                  (when (:one-shot? @session)
-                   (gc-session session)))))
+                   (gc-session (:uuid @session) session)))))
             (catch Throwable e
               ;; Log first..
               (log "Top Level Exception:"
