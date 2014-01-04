@@ -1,5 +1,6 @@
 (defproject symbolicweb "1.0.0-SNAPSHOT"
   :description "SymbolicWeb: WUI for Clojure"
+
   :license "
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA512
@@ -23,7 +24,9 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 =gRrr
 -----END PGP SIGNATURE-----
 "
+
   :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
+                 [org.clojure/tools.nrepl "LATEST"]
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
@@ -38,22 +41,19 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  [hiccup/hiccup "LATEST"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.4-SNAPSHOT"] ;; HTML templating.
-                 ;;[org.jsoup/jsoup "LATEST"] ;; HTML templating.
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "LATEST"] ;; ring.util.codec
                  [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
 
-                 [sqlingvo "LATEST"] ;; SQL DSL.
-
-                 [org.postgresql/postgresql "LATEST"]
+                 [sqlingvo "0.5.13"] ;; SQL DSL.
+                 [org.postgresql/postgresql "LATEST"] ;; JDBC driver.
                  [com.jolbox/bonecp "LATEST"] ;; DB connection pooling.
-
-                 [org.clojure/tools.nrepl "LATEST"]
                  ]
 
   :jvm-opts [;; General.
              "-server" "-XX:+TieredCompilation"
+             "-XX:+UseCompressedOops"
 
 
              ;;; Garbage Collection
