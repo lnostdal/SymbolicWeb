@@ -88,7 +88,7 @@
                                     (let [viewport (viewport-of it)]
                                       ;; Viewport -/-> Widget (DOM events).
                                       (alter viewport update-in [:widgets]
-                                             dissoc (.id it) it)
+                                             dissoc (.id it))
                                       ;; Widget -/-> Viewport.
                                       (vm-set (.viewport it) nil))))))
 
