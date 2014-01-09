@@ -13,7 +13,6 @@ Returns WIDGET."
         callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
     (if callback-fn
       (do
-        ;; TODO: Check if EVENT-TYPE is already bound? Think about this ..
         (alter (.callbacks widget) assoc event-type
                [(if once?
                   ;; Unbind event handler on server side before executing it once.
@@ -59,6 +58,7 @@ Returns WIDGET."
                                  (if (:id attrs)
                                    attrs
                                    (assoc attrs :id (.id widget))))])))
+                    ;; :ID from :HTML-ATTRS (if supplied) should be used as ID server side also.
                     (if-let [id (:id (:html-attrs args))]
                       (assoc args :id id)
                       args))))

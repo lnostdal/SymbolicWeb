@@ -156,7 +156,8 @@
                                      :or {js-before "return(true);"
                                           callback-data {}
                                           js-after ""}}]
-  (let [callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
+  (let [;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
+        callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
     (alter (:callbacks @viewport) assoc (str selector "_" event-type)
            [callback-fn callback-data])
     (add-response-chunk
