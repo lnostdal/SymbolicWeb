@@ -24,7 +24,8 @@
 
 
 
-(def ^:dynamic *observables-stack* #{}) ;; Using a set instead of a vector since we don't care about order.
+(def ^:dynamic *observables-stack* {})
+(def -observables-max-num-iterations- 10)
 
 
 
@@ -37,11 +38,12 @@ deactivated. If given FALSE, observation will start at once and last forever; as
 Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
 as the first argument to CALLBACK."
   (let [callback (fn [& args]
-                   (if (contains? *observables-stack* observable)
-                     (do
-                       (clojure.stacktrace/print-stack-trace (Exception. "OBSERVE: Possible infinite recursion, but continuing..."))
-                       (apply callback args))
-                     (binding [*observables-stack* (conj *observables-stack* observable)]
+                   (let [n (or (get *observables-stack* observable)
+                               0)]
+                     (when (= n -observables-max-num-iterations-)
+                       (throw (Exception. (str "OBSERVE: Possible infinite recursion after "
+                                               -observables-max-num-iterations- " iterations. Bailing out!"))))
+                     (binding [*observables-stack* (assoc *observables-stack* observable (inc n))]
                        (apply callback args))))]
     (if lifetime
       (let [inner-lifetime (mk-Lifetime)
