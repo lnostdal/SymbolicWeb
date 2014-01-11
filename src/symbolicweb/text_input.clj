@@ -11,8 +11,11 @@
 
 
 ;; TODO: Add support for :HTML-ATTRS.
-(defn ^WidgetBase mk-TextInput [^ValueModel value-model ^Keyword trigger-event & args]
+(defn ^WidgetBase mk-TextInput [^ValueModel input-vm ^Keyword trigger-event & args]
   "<input type='text' ..> type widget.
+
+INPUT-VM:
+  Takes a ValueModel that is two-way synced server <--> client unless :OUTPUT-VM is also given (see below).
 
 
 TRIGGER-EVENT:
@@ -21,30 +24,30 @@ TRIGGER-EVENT:
 
 
 ARGS:
-  :INITIAL-SYNC-SERVER?: if True the value on the client will be set to the value of VALUE-MODEL on render.
+  :INITIAL-SYNC-SERVER?: if True the value on the client will be set to the value of INPUT-VM on render.
   :ONE-WAY-SYNC-CLIENT?: if True only changes originating from the client will be sent to the server; not the other way around.
   :CLEAR-ON-SUBMIT?: If True the widget will be cleared on 'submit'.
   :BLUR-ON-SUBMIT?: If True the widget will be blurred on 'submit'.
-  :CALLBACK-DATA: Can be used to change data sent from client to server on the client end – before actual send."
+  :CALLBACK-DATA: Can be used to change data sent from client to server on the client end – before actual send.
+  :OUTPUT-VM: Takes a ValueModel that will be synced one way: server --> client.
+              This will also cause INPUT-VM to be synced only one way: client --> server."
   (let [args (apply hash-map args)]
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
                             (str "<input type='" (or (and (:type args) (name (:type args))) "text")
                                  "' id='" (.id widget) "'>"))
                           args)
 
-      ;; Server --> client.
-      (if (:one-way-sync-client? args)
+      ;; INPUT-VM: Server --> client.
+      (if (or (:one-way-sync-client? args)
+              (:output-vm args))
         (when (get args :initial-sync-server? true)
-          (jqVal it @value-model))
-        (vm-observe value-model (.lifetime it) (case (get args :initial-sync-server? ::not-found)
+          (jqVal it @input-vm))
+        (vm-observe input-vm (.lifetime it) (case (get args :initial-sync-server? ::not-found)
                                                  (true ::not-found) true
                                                  (false nil) false)
-                    (fn [_ _ new-value]
-                      (jqVal it (if new-value
-                                  new-value
-                                  "")))))
+                    #(jqVal it (or %3 ""))))
 
-      ;; Client --> server.
+      ;; INPUT-VM: Client --> server.
       (case trigger-event
         :change
         (set-event-handler "change" it
@@ -60,12 +63,12 @@ ARGS:
                                                      (f value)
                                                      (throw
                                                       (ex-info (str "mk-TextInput: Input parsing error for widget: " (.id it))
-                                                               {:widget it :model value-model :value value}
+                                                               {:widget it :model input-vm :value value}
                                                                e)))))
                                                value)]
-                               (vm-set value-model value)
+                               (vm-set input-vm value)
                                (when (:clear-on-submit? args)
-                                 (vm-set value-model nil))))
+                                 (vm-set input-vm nil))))
                            :callback-data (if-let [cd (:callback-data args)]
                                             cd
                                             {:value "' + encodeURIComponent($(this).val()) + '"})
@@ -75,9 +78,9 @@ ARGS:
         :enterpress
         (set-event-handler "keydown" it
                            (fn [& {:keys [value]}]
-                             (vm-set value-model value)
+                             (vm-set input-vm value)
                              (when (:clear-on-submit? args)
-                               (vm-set value-model nil)))
+                               (vm-set input-vm nil)))
                            :callback-data (if-let [cd (:callback-data args)]
                                             cd
                                             {:value "' + encodeURIComponent($(this).val()) + '"})
@@ -88,7 +91,12 @@ ARGS:
         nil
         nil ;; Assume the user wants to assign something later.
 
-        (trigger-event))))) ;; Assume TRIGGER-EVENT is a Fn that will e.g. assign a custom event.
+        (trigger-event)) ;; Assume TRIGGER-EVENT is a Fn that will e.g. assign a custom event.
+
+      ;; OUTPUT-VM: Server --> client.
+      (when-let [output-vm (:output-vm args)]
+        (vm-observe output-vm (.lifetime it) false
+                    #(jqVal it (or %3 "")))))))
 
 
 
