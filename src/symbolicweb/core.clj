@@ -87,6 +87,8 @@
   (:require symbolicweb.bs-alert)
   (:require symbolicweb.bs-dialog)
 
+  (:require symbolicweb.bitcoin)
+
   (:require symbolicweb.examples.history)
   (:require symbolicweb.examples.bitcoin)
   (:require symbolicweb.examples.nostdal-org)
