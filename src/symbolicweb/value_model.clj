@@ -63,6 +63,7 @@ as the first argument to CALLBACK."
 
 (defn %vm-deref [^ValueModel value-model ^Ref value]
   (do1 (ensure value)
+    ;; In context of WITH-OBSERVABLE-VMS?
     (when (and *observed-vms-ctx*
                (not (get (ensure (:vms *observed-vms-ctx*)) value-model))) ;; Not already observed?
       (alter (:vms *observed-vms-ctx*) conj value-model)

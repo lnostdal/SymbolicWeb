@@ -40,11 +40,11 @@ as the first argument to CALLBACK."
   (let [callback (fn [& args]
                    (let [n (or (get *observables-stack* observable)
                                0)]
-                     (when (= n -observables-max-num-iterations-)
+                     (if (> n -observables-max-num-iterations-)
                        (throw (Exception. (str "OBSERVE: Possible infinite recursion after "
-                                               -observables-max-num-iterations- " iterations. Bailing out!"))))
-                     (binding [*observables-stack* (assoc *observables-stack* observable (inc n))]
-                       (apply callback args))))]
+                                               -observables-max-num-iterations- " iterations. Bailing out!")))
+                       (binding [*observables-stack* (assoc *observables-stack* observable (inc n))]
+                         (apply callback args)))))]
     (if lifetime
       (let [inner-lifetime (mk-Lifetime)
             callback (partial callback inner-lifetime)]
