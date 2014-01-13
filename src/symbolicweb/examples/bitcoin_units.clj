@@ -21,12 +21,12 @@
 (defn mk-btc-unit-viewport [request session]
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
 
-        btc-io-vm (vm "0" (constantly false)) ;; 4.123
-        dbtc-io-vm (vm "0" (constantly false)) ;; 23.0002300
-        cbtc-io-vm (vm "0" (constantly false))
-        mbtc-io-vm (vm "0" (constantly false))
-        ubtc-io-vm (vm "0" (constantly false))
-        satoshi-io-vm (vm "0" (constantly false))
+        btc-io-vm (vm "0")
+        dbtc-io-vm (vm "0")
+        cbtc-io-vm (vm "0")
+        mbtc-io-vm (vm "0")
+        ubtc-io-vm (vm "0")
+        satoshi-io-vm (vm "0")
 
         satoshi-vm (vm 0)]
 
@@ -76,21 +76,4 @@
          [:p "μBTC (microbitcoin): " (sw (mk-TextInput ubtc-io-vm :change))]
          [:p "satoshi: " (sw (mk-TextInput satoshi-io-vm :change))])))
 
-
     (mk-Viewport request session root-widget :page-title "Bitcoin units")))
-
-
-
-
-(defapp
-  [::BTC-unit
-   (fn [request]
-     (and (= (:server-name request) "nostdal.org")
-          (with (:uri request)
-            (or (= it "/btc-units")
-                (= it "/dev/btc-units")))))]
-
-  (fn [request session]
-    (alter session assoc
-           :mk-viewport-fn #'mk-btc-unit-viewport)
-    session))

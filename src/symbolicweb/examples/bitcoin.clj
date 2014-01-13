@@ -47,7 +47,7 @@
 
 
 (defn mk-bitcoin-viewport [request ^Ref session]
-  (defonce -bitcoin-thread-
+  #_(defonce -bitcoin-thread-
     (future
       (loop []
         (with-bindings -bitcoin-bindings-

@@ -136,11 +136,11 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
     "/history"
     (symbolicweb.examples.history/mk-history-viewport request session)
 
-    "/dev/history"
-    (symbolicweb.examples.history/mk-history-viewport request session)
-
     "/bitcoin"
     (symbolicweb.examples.bitcoin/mk-bitcoin-viewport request session)
+
+    "/bitcoin-units"
+    (symbolicweb.examples.bitcoin-units/mk-btc-unit-viewport request session)
 
     ;; E.g. "/nostdal.org"
     (homepage request session)))
@@ -153,13 +153,11 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
      (= (:server-name request) "nostdal.org"))]
 
   (fn [request session]
-    (case (:uri request)
-      "/" ;; Can't set a cookie here as it will become global for all paths; redirect instead.
+    (if (= (:uri request) "/") ;; Can't set a cookie here as it will become global for all paths; redirect instead.
       (alter session assoc
              :rest-handler (fn [request session viewport]
                              (http-redirect-response "/nostdal.org"))
              :one-shot? true)
-
       (alter session assoc
              :mk-viewport-fn #'mk-nostdal-org-viewport))
     session))
