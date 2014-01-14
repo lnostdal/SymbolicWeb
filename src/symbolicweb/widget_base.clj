@@ -105,12 +105,6 @@ Returns WIDGET."
 
 
 
-(defn ^WidgetBase mk-Img [^ValueModel src]
-  (mk-he :img src :observer-fn (fn [^WidgetBase widget _ new-value]
-                                 (jqAttr widget "src" new-value))))
-
-
-
 (defn ^WidgetBase assoc-Stylesheet [^String href m]
   "Adds CSS stylesheet (HREF) to Viewport of :CONTEXT-WIDGET for the Lifetime of :CONTEXT-WIDGET or :VIEWPORT (root widget
 really)."
