@@ -94,7 +94,7 @@ Returns WIDGET."
 
 
 
-;; TODO: Use ContainerView similar to what mk-Link (below) does.
+;; TODO: Use ContainerView similar to what mk-Link does.
 (defn ^WidgetBase mk-Button [label & widget-base-args]
   "LABEL: \"Some Label\" or (vm \"Some Label\")"
   (mk-he "button"
@@ -102,58 +102,6 @@ Returns WIDGET."
            label
            (vm label))
          :widget-base-args (merge {:escape-html? false} (apply hash-map widget-base-args))))
-
-
-
-(defn ^WidgetBase mk-Link
-  "  URL-MAPPERS: {(vm-sync-from-url ..) (vm ..) ...}
-
-  M: :SCROLL-TO-TOP?, :ON-CLICK-FN, :EVENT-STOP-PROPAGATION?"
-  ([url-mappers ^WidgetBase widget]
-     (mk-Link url-mappers nil widget))
-
-  ([url-mappers m ^WidgetBase widget]
-     (let [query-str-vm (vm "")
-           query-params (vm nil)]
-
-       (vm-observe query-str-vm (.lifetime widget) false
-                   #(jqAttr widget "href" (str "window.location.pathname + '?' + " (url-encode-wrap %3)) true))
-
-       (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
-         (with-observed-vms (.lifetime widget)
-           (when-let [viewport (viewport-of widget)]
-             (when-not @query-params
-               (vm-set query-params @(:query-params @viewport)))
-             (vm-set query-str-vm (ring.util.codec/form-encode
-                                   @(with1 query-params
-                                      ;; QUERY-PARAMS is a Sorted Map, and result of MERGE will be too.
-                                      (vm-set it (merge @it {(:name url-mapper) @url-mapper-mutator-vm}))))))))
-
-       (set-event-handler "click" widget
-                          (fn [& _]
-                            ;; Extract this here before the VM-SET as that might lead to NIL for the VIEWPORT field in WIDGET.
-                            (let [viewport (viewport-of widget)]
-                              (doseq [[url-mapper ^ValueModel url-mapper-mutator-vm] url-mappers]
-                                (vm-set (:model url-mapper) @url-mapper-mutator-vm))
-                              (when (or (not (find m :scroll-to-top?))
-                                        (:scroll-to-top? m))
-                                ;; TODO: scrollLeft?
-                                (add-response-chunk "$('html, body').scrollTop(0);\n" viewport))
-                              (when-let [f (with (:on-click-fn m)
-                                             (when (fn? it) it))]
-                                (f widget))))
-                          ;; TODO: Remove this when IE9 is gone.
-                          ;; NOTE: Super, mega, hack for IE 9. :(. We clear the page while (before) re-rendering it to avoid some
-                          ;; flickering the user isn't used to seeing. MS needs to just go away.
-                          :js-before
-                          (str (with (:on-click-fn m)
-                                 (when (string? it)
-                                   it))
-                               " if(navigator.userAgent.search('MSIE 9') != -1) { $('#_body').css('display', 'none'); } return(true);")
-                          :js-after (str (when (:event-stop-propagation? m) "event.stopPropagation(); ")
-                                         "event.preventDefault(); return(false);"))
-
-       widget)))
 
 
 
