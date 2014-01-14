@@ -158,7 +158,11 @@ Session data stored in memory; temporarly."
     (alter -sessions- assoc new-cookie-value session) ;; Two cookies now point to SESSION.
     (set-viewport-event-handler "window" "sw_login" viewport
                                 (fn [& _]
-                                  (alter -sessions- dissoc old-cookie-value) ;; ..one cookie now points to SESSION.
+                                  ;; Ensure only one cookie (i.e. the "last one" when something goes wrong) points to SESSION.
+                                  (doseq [[^String some-cookie-value ^Ref some-session] (ensure -sessions-)]
+                                    (when (and (= some-session session)
+                                               (not= new-cookie-value some-cookie-value))
+                                      (alter -sessions- dissoc some-cookie-value)))
                                   (vm-set (:user-model @session) user-model)
                                   (vm-set (spget session :session-type) login-type)
                                   (vm-set (spget session :logged-in?) true)
