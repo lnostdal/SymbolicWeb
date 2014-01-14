@@ -107,11 +107,12 @@ Returns WIDGET."
 
 (defn ^WidgetBase mk-Link
   "  URL-MAPPERS: {(vm-sync-from-url ..) (vm ..) ...}
-  M: :SCROLL-TO-TOP?, :ON-CLICK-FN, :EVENT-STOP-PROPAGATION?"
-  ([^WidgetBase widget url-mappers]
-     (mk-Link widget url-mappers nil))
 
-  ([^WidgetBase widget url-mappers m]
+  M: :SCROLL-TO-TOP?, :ON-CLICK-FN, :EVENT-STOP-PROPAGATION?"
+  ([url-mappers ^WidgetBase widget]
+     (mk-Link url-mappers nil widget))
+
+  ([url-mappers m ^WidgetBase widget]
      (let [query-str-vm (vm "")
            query-params (vm nil)]
 

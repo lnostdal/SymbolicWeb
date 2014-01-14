@@ -30,12 +30,10 @@
          [:p "Random number for each page (re)load, " [:b (rand-int 9000)]
           ", for a visual confirmation that the page really does not reload as the URL changes."]
 
-         [:p (sw (with (mk-WB :a)
-                   (jqHTML it "Increment A!")
-                   (mk-Link it {a-url-mapper (vm-sync a-model (.lifetime it) #(inc %3))})))]
-         [:p (sw (with (mk-WB :a)
-                   (jqHTML it "Increment B!")
-                   (mk-Link it {b-url-mapper (vm-sync b-model (.lifetime it) #(inc %3))})))]
+         [:p (sw (mk-Link {a-url-mapper (vm-sync a-model (.lifetime a-view) #(inc %3))}
+                   (whc [:a] "Increment A!")))]
+         [:p (sw (mk-Link {b-url-mapper (vm-sync b-model (.lifetime b-view) #(inc %3))}
+                   (whc [:a] "Increment B!")))]
 
          [:hr]
          [:pre
