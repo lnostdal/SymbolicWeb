@@ -8,7 +8,7 @@
   (let [root-widget (with1 (mk-bte :id "_body" :root-widget? true)
                       (jqCSS it "background-color" "rgb(171,191,181)")
                       (jqCSS it "color" "black")
-                      (jqCSS it "font-family" "sans-serif"))
+                      (jqCSS it "font-family" "'DejaVu Sans', sans-serif"))
 
         viewport (mk-Viewport request session root-widget :page-title "nostdal.org")]
     (add-resource viewport :css "sw/css/common.css")

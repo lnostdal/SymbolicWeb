@@ -161,7 +161,7 @@ Session data stored in memory; temporarly."
                                   ;; Ensure only one cookie (i.e. the "last one" when something goes wrong) points to SESSION.
                                   (doseq [[^String some-cookie-value ^Ref some-session] (ensure -sessions-)]
                                     (when (and (= some-session session)
-                                               (not= new-cookie-value some-cookie-value))
+                                               (not= some-cookie-value new-cookie-value))
                                       (alter -sessions- dissoc some-cookie-value)))
                                   (vm-set (:user-model @session) user-model)
                                   (vm-set (spget session :session-type) login-type)

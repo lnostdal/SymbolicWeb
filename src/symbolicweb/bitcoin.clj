@@ -4,11 +4,11 @@
 
 (defn handle-btc-value [value ^Keyword from-unit ^Keyword to-unit]
   (with (case from-unit
-          :btc  (long (* value 100000000))
-          :dbtc (long (* value 10000000))
-          :cbtc (long (* value 1000000))
-          :mbtc (long (* value 100000))
-          :ubtc (long (* value 10000))
+          :btc  (* value 100000000)
+          :dbtc (* value 10000000)
+          :cbtc (* value 1000000)
+          :mbtc (* value 100000)
+          :ubtc (* value 10000)
           :satoshi value)
     (case to-unit
       :btc  (/ it 100000000)
