@@ -131,19 +131,23 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
 
 
 
-(defn mk-nostdal-org-viewport [request session]
-  (case (:uri request)
-    "/history"
-    (symbolicweb.examples.history/mk-history-viewport request session)
 
-    "/bitcoin"
-    (symbolicweb.examples.bitcoin/mk-bitcoin-viewport request session)
+(defmulti mk-nostdal-org-viewport (fn [& args] (first args)))
 
-    "/bitcoin-units"
-    (symbolicweb.examples.bitcoin-units/mk-btc-unit-viewport request session)
+(defmethod mk-nostdal-org-viewport :default [^String uri request session]
+  (mk-Viewport request session (mk-bte :root-widget? true) :page-title "SW: :default"))
 
-    ;; E.g. "/nostdal.org"
-    (homepage request session)))
+(defmethod mk-nostdal-org-viewport "/history" [^String uri request session]
+  (symbolicweb.examples.history/mk-history-viewport request session))
+
+(defmethod mk-nostdal-org-viewport "/bitcoin" [^String uri request session]
+  (symbolicweb.examples.bitcoin/mk-bitcoin-viewport request session))
+
+(defmethod mk-nostdal-org-viewport "/bitcoin-units" [^String uri request session]
+  (symbolicweb.examples.bitcoin-units/mk-btc-unit-viewport request session))
+
+(defmethod mk-nostdal-org-viewport "/nostdal.org" [^String uri request session]
+  (homepage request session))
 
 
 
@@ -159,5 +163,6 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
                              (http-redirect-response "/nostdal.org"))
              :one-shot? true)
       (alter session assoc
-             :mk-viewport-fn #'mk-nostdal-org-viewport))
+             :mk-viewport-fn (fn [request session]
+                               (mk-nostdal-org-viewport (:uri request) request session))))
     session))
