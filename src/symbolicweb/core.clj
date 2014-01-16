@@ -44,6 +44,7 @@
   (:require symbolicweb.value_model)
   (:require symbolicweb.globals)
   (:require symbolicweb.common)
+  (:require symbolicweb.agent)
   (:require symbolicweb.logging)
 
   (:require symbolicweb.container-model)
