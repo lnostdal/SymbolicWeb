@@ -25,7 +25,6 @@ of this function (call to MK-SW-AGENT).
           (clojure.set/difference (or binding-whitelist
                                       (into #{} (keys (get-thread-bindings))))
                                   binding-blacklist)
-          :agent-bindings (get-thread-bindings)
           :executor clojure.lang.Agent/soloExecutor} ;; This is SEND-OFF, and pooledExecutor is SEND.
          m))
 
@@ -41,8 +40,7 @@ of this function (call to MK-SW-AGENT).
     (.dispatch clj-agent
                (let [outer-bindings (get-thread-bindings)] ;; The ones setup by WITH-BINDINGS will be the inner ones.
                  (fn [& _]
-                   (with-bindings (merge (:agent-bindings sw-agent)
-                                         (select-keys outer-bindings (:binding-whitelist sw-agent))
+                   (with-bindings (merge (select-keys outer-bindings (:binding-whitelist sw-agent))
                                          {#'clojure.core/*agent* clj-agent})
                      (try
                        (body-fn) (flush)
