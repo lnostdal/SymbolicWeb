@@ -2,6 +2,26 @@
 
 
 
+/// Deal with IE insanity ref. http://stackoverflow.com/a/13817235
+
+(function() {
+  if (!window.console) {
+    window.console = {};
+  }
+  var m = [
+    "log", "info", "warn", "error", "debug", "trace", "dir", "group",
+    "groupCollapsed", "groupEnd", "time", "timeEnd", "profile", "profileEnd",
+    "dirxml", "assert", "count", "markTimeline", "timeStamp", "clear"
+  ];
+  for (var i = 0; i < m.length; i++) {
+    if (!window.console[m[i]]) {
+      window.console[m[i]] = function() {};
+    }
+  }
+})();
+
+
+
 var sw_spinner = false;
 
 function swPrepareSpinner(){
@@ -44,17 +64,16 @@ if(!window.history.pushState){
 
 function swHandleError(){
   try{
-    if(console) // Not using shitty IE browser?
-      console.error("swHandleError: " + arguments);
     swAjax("&do=error", {"msg": JSON.stringify(arguments, null, 2)});
   }
   catch(e){
-    if(console)
-      console.error("swHandleError: Total fail..");
+    console.error("swHandleError: Total fail..");
     return(true); // Can't do anything reasonable here; don't let default handler run.
   }
   return(false); // Let default handler run.
 }
+
+window.onerror = swHandleError;
 
 
 
