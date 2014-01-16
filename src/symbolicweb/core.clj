@@ -1,4 +1,7 @@
 (set! *warn-on-reflection* true)
+(set! *print-length* 30)
+(set! *print-level* 1)
+
 
 
 (ns symbolicweb.core
@@ -100,40 +103,38 @@
 
 (defn handler [request]
   (swap! -request-counter- inc')
-  ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
-  (binding [*print-level* 2]
-    (try
-      (swsync
-       (let [^Ref session (find-or-create-session request)]
-         (touch session)
-         ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
-         ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-         (with1 ((:request-handler @session) request session)
-           (when (:one-shot? @session)
-             (gc-session (:uuid @session) session)))))
+  (try
+    (swsync
+     (let [^Ref session (find-or-create-session request)]
+       (touch session)
+       ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
+       ;; TODO: Production / development modes needed here too. Logging, etc. etc...
+       (with1 ((:request-handler @session) request session)
+         (when (:one-shot? @session)
+           (gc-session (:uuid @session) session)))))
 
-      (catch Throwable e
-        (let [ex-id (generate-uuid)]
-          (log "Top Level Exception:"
-               (with-out-str
-                 (println "\n\nREQUEST-ID:" ex-id)
-                 (println e)
-                 (println request)
-                 (clojure.stacktrace/print-stack-trace e 50)))
+    (catch Throwable e
+      (let [ex-id (generate-uuid)]
+        (log "Top Level Exception:"
+             (with-out-str
+               (println "\n\nREQUEST-ID:" ex-id)
+               (println e)
+               (println request)
+               (clojure.stacktrace/print-stack-trace e 50)))
 
-          ;; TODO: This doesn't check what sort of response the client expects; the "Accept" header, but the client
-          ;; (sw-ajax.js) currently handles this by checking for 500 status.
-          {:status 500
-           :headers {"Content-Type" "text/html; charset=UTF-8"
-                     "Cache-Control" "no-cache"}
-           :body
-           (html
-            [:html
-             [:head [:title "Top Level Server Exception: HTTP 500"]]
-             [:body {:style "font-family: sans-serif;"}
-              [:p {:style "color: red;"} [:b (escape-html (str e))]]
-              [:p "This incident has been logged (ID: " ex-id ")."]
-              [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]]])})))))
+        ;; TODO: This doesn't check what sort of response the client expects; the "Accept" header, but the client
+        ;; (sw-ajax.js) currently handles this by checking for 500 status.
+        {:status 500
+         :headers {"Content-Type" "text/html; charset=UTF-8"
+                   "Cache-Control" "no-cache"}
+         :body
+         (html
+          [:html
+           [:head [:title "Top Level Server Exception: HTTP 500"]]
+           [:body {:style "font-family: sans-serif;"}
+            [:p {:style "color: red;"} [:b (escape-html (str e))]]
+            [:p "This incident has been logged (ID: " ex-id ")."]
+            [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]]])}))))
 
 
 
@@ -149,6 +150,7 @@
 
 (defn start-server [^Long port]
   (stop-server)
+  ;; Back-end Java code from HTTP-KIT spawning threads has no idea what Clojure bindings are, so we forward them here.
   (let [bnds (get-thread-bindings)]
     (def -server-
       (http.server/run-server (ring.middleware.cookies/wrap-cookies

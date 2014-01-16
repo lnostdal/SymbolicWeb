@@ -2,9 +2,6 @@
 
 (declare add-response-chunk ref?)
 
-(set! *print-length* 30)
-(set! *print-level* 10)
-
 
 (defn var-alter [^clojure.lang.Var var ^Fn fun & args]
   (var-set var (apply fun (var-get var) args)))
