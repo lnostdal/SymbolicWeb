@@ -45,6 +45,7 @@ Returns WIDGET."
 
 
 (defn mk-WB
+  "Creates a simple, static widget."
   (^WidgetBase [^Keyword html-element-type]
      (mk-WB html-element-type {}))
 
@@ -85,23 +86,13 @@ Returns WIDGET."
                                                (jqHTML widget (if (.escape-html? widget)
                                                                 (escape-html new-value)
                                                                 new-value)))}}]
+  "  :OBSERVER-FN: (fn [widget old-value new-value] ..)"
   (let [html-element-type-str (name html-element-type)]
     (mk-HTMLElement value-model
                     (fn [^WidgetBase widget]
                       (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
                     observer-fn
                     widget-base-args)))
-
-
-
-;; TODO: Use ContainerView similar to what mk-Link does.
-(defn ^WidgetBase mk-Button [label & widget-base-args]
-  "LABEL: \"Some Label\" or (vm \"Some Label\")"
-  (mk-he "button"
-         (if (= ValueModel (class label))
-           label
-           (vm label))
-         :widget-base-args (merge {:escape-html? false} (apply hash-map widget-base-args))))
 
 
 

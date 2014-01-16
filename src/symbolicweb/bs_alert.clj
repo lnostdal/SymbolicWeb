@@ -7,9 +7,8 @@
      (bs-alert container msg nil))
 
   ([^WidgetBase container ^WidgetBase msg delay]
-     (let [close-button (mk-Button "&times;")]
-       (jqAttr close-button "data-dismiss" "alert")
-       (jqAddClass close-button "close")
+     (let [close-button (whc [:button {:html-attrs {:data-dismiss "alert" :class "close"}}]
+                          "&times;")]
        (with1 (mk-WB :div {:html-attrs {:class "alert fade in"}})
          (jqAppend it close-button)
          (jqAppend it msg)

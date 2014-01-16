@@ -17,6 +17,7 @@
                                                attrs
                                                (assoc attrs :id (.id html-container))))
                          (content-fn html-container)]))))
+                 ;; :ID from :HTML-ATTRS (if supplied) should be used as ID server side also.
                  (if-let [id (:id (:html-attrs args))]
                    (assoc args :id id)
                    args)))
@@ -27,7 +28,8 @@
   "WITH-HTML-CONTAINER."
   `(%mk-HTMLContainer ~html-element-type
                       ~args
-                      (fn [~'html-container] ~@body)))
+                      (fn [^WidgetBase ~'html-container]
+                        ~@body)))
 
 
 

@@ -98,43 +98,42 @@
 
 
 
-(let [bnds (get-thread-bindings)]
-  (defn handler [request]
-    (let [http-request-id (swap! -request-counter- inc')]
-      ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
-      (with-bindings bnds
-        (binding [*print-level* 2]
-          (try
-            (swsync
-             (let [^Ref session (find-or-create-session request)]
-               (touch session)
-               ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
-               ;; TODO: Production / development modes needed here too. Logging, etc. etc...
-               (with1 ((:request-handler @session) request session)
-                 (when (:one-shot? @session)
-                   (gc-session (:uuid @session) session)))))
-            (catch Throwable e
-              ;; Log first..
-              (log "Top Level Exception:"
-                   (with-out-str
-                     (println "\n\nHTTP-REQUEST-ID:" http-request-id)
-                     (println e)
-                     (println request)
-                     (clojure.stacktrace/print-stack-trace e 50)))
+(defn handler [request]
+  (swap! -request-counter- inc')
+  ;; TODO: Clojure printing isn't very solid; pretty printing with circular checks is needed!
+  (binding [*print-level* 2]
+    (try
+      (swsync
+       (let [^Ref session (find-or-create-session request)]
+         (touch session)
+         ;; TODO: Session level try/catch here: ((:exception-handler-fn @session) e).
+         ;; TODO: Production / development modes needed here too. Logging, etc. etc...
+         (with1 ((:request-handler @session) request session)
+           (when (:one-shot? @session)
+             (gc-session (:uuid @session) session)))))
 
-              ;; ..then send to HTTP client.
-              ;; TODO: This doesn't check what sort of response the client expects; the "Accept" header.
-              {:status 500
-               :headers {"Content-Type" "text/html; charset=UTF-8"
-                         "Cache-Control" "no-cache"}
-               :body
-               (html
-                [:html
-                 [:head [:title "Top Level Server Exception: HTTP 500"]]
-                 [:body {:style "font-family: sans-serif;"}
-                  [:p {:style "color: red;"} [:b (escape-html (str e))]]
-                  [:p "This incident has been logged (ID: " http-request-id ")."]
-                  [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]]])})))))))
+      (catch Throwable e
+        (let [ex-id (generate-uuid)]
+          (log "Top Level Exception:"
+               (with-out-str
+                 (println "\n\nREQUEST-ID:" ex-id)
+                 (println e)
+                 (println request)
+                 (clojure.stacktrace/print-stack-trace e 50)))
+
+          ;; TODO: This doesn't check what sort of response the client expects; the "Accept" header, but the client
+          ;; (sw-ajax.js) currently handles this by checking for 500 status.
+          {:status 500
+           :headers {"Content-Type" "text/html; charset=UTF-8"
+                     "Cache-Control" "no-cache"}
+           :body
+           (html
+            [:html
+             [:head [:title "Top Level Server Exception: HTTP 500"]]
+             [:body {:style "font-family: sans-serif;"}
+              [:p {:style "color: red;"} [:b (escape-html (str e))]]
+              [:p "This incident has been logged (ID: " ex-id ")."]
+              [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]]])})))))
 
 
 
@@ -150,11 +149,13 @@
 
 (defn start-server [^Long port]
   (stop-server)
-  (def -server-
-    (http.server/run-server (ring.middleware.cookies/wrap-cookies
-                             (ring.middleware.params/wrap-params
-                              #'handler))
-                            {:port port
-                             :thread (. (Runtime/getRuntime) availableProcessors)
-                             :worker-name-prefix "http-worker-"
-                             :max-body 1048576}))) ;; Max 1M request body (e.g. POST).
+  (let [bnds (get-thread-bindings)]
+    (def -server-
+      (http.server/run-server (ring.middleware.cookies/wrap-cookies
+                               (ring.middleware.params/wrap-params
+                                #(with-bindings bnds
+                                   (handler %1))))
+                              {:port port
+                               :thread (. (Runtime/getRuntime) availableProcessors)
+                               :worker-name-prefix "http-worker-"
+                               :max-body 1048576})))) ;; Max 1M request body (e.g. POST).
