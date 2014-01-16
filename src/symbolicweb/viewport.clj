@@ -35,7 +35,7 @@
                              ;; Comet.
                              :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)
-                             :response-agent (mk-sw-agent {:executor clojure.lang.Agent/pooledExecutor} nil)
+                             :response-agent (mk-sw-agent {:executor clojure.lang.Agent/pooledExecutor} nil nil)
 
                              ;; Resources; using Vectors since order matters.
                              :rest-css-entries (ref [])
