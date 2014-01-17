@@ -144,6 +144,7 @@ Session data stored in memory; temporarly."
 
 
 (defn session-logout [^Ref session]
+  (vm-alter (:sessions @@(:user-model @session)) disj session)
   (vm-set (spget session :logged-in?) false)
   (vm-set (:user-model @session) nil))
 
@@ -163,6 +164,7 @@ Session data stored in memory; temporarly."
                                     (when (and (= some-session session)
                                                (not= some-cookie-value new-cookie-value))
                                       (alter -sessions- dissoc some-cookie-value)))
+                                  (vm-alter (:sessions @user-model) conj session)
                                   (vm-set (:user-model @session) user-model)
                                   (vm-set (spget session :session-type) login-type)
                                   (vm-set (spget session :logged-in?) true)
