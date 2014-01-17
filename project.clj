@@ -46,7 +46,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [ring/ring-codec "LATEST"] ;; ring.util.codec
                  [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
 
-                 [sqlingvo "0.5.13"] ;; SQL DSL.
+                 [sqlingvo "0.5.14"] ;; SQL DSL.
                  [org.postgresql/postgresql "LATEST"] ;; JDBC driver.
                  [com.jolbox/bonecp "LATEST"] ;; DB connection pooling.
                  ]

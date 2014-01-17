@@ -132,7 +132,7 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
 
 
 
-(defmulti mk-nostdal-org-viewport (fn [& args] (first args)))
+(defmulti mk-nostdal-org-viewport #(first %&))
 
 (defmethod mk-nostdal-org-viewport :default [^String uri request session]
   (mk-Viewport request session (mk-bte :root-widget? true) :page-title "SW: :default"))

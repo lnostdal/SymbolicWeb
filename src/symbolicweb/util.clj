@@ -102,9 +102,9 @@ Appends a timestamp to the URL based on file mtime."
     (assert (not (zero? mtime))
             (str "gen-url: " fs-path " not found."))
     (str "//"
-         (:genurl-domain @viewport) ;; static.site.com
+         (:genurl-domain @viewport)
          "/"
-         (:genurl-path @viewport) ;; some-common-path/      (note trailing slash)
+         (:genurl-path @viewport) ;; static/
          path ;; js/ajax.js
          "?_=" mtime)))
 
