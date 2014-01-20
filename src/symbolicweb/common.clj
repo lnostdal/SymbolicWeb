@@ -198,8 +198,8 @@ Returns a String."
                 " + \"; "))
          "expires=Fri, 27 Jul 2001 02:47:11 UTC; ")
        "path=" path "; "
-       "secure=true;"
-       "\";\n"))
+       "\" + (function(){ if(window.location.protocol == 'https:') return('secure=true; '); else return(''); })();"
+       "\n"))
 
 
 
