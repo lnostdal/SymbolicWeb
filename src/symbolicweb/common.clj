@@ -265,7 +265,7 @@ Returns a String."
                          viewport)))
 
 
-(defn replace-page [rel-url viewport]
+(defn replace-page [viewport ^String rel-url]
   (add-response-chunk (str "window.location.replace(" (url-encode-wrap rel-url) ");")
                       viewport))
 
