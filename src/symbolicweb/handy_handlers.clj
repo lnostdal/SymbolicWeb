@@ -139,7 +139,8 @@
   (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Cache-Control" "no-cache, no-store"
+             "Cache-Control" "no-cache, no-store, must-revalidate"
+             "Pragma" "no-cache"
              "Expires" "-1"}
    :body
    (html
