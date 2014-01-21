@@ -152,8 +152,9 @@ Appends a timestamp to the URL based on file mtime."
     (get @*with-once-only-ctx* k)))
 
 
-;; TODO: Possible idea for improvement: see the note in URL-ALTER-QUERY-PARAMS.
 (defmacro once-only [^Keyword k & body]
+  "  K: Some Keyword to ID the block. See URL-ALTER-QUERY-PARAMS for an example where this can be useful in combination with
+ONCE-ONLY-GET."
   `(if *with-once-only-ctx*
      (alter *with-once-only-ctx* assoc ~k (fn [] ~@body))
      (do ~@body)))
