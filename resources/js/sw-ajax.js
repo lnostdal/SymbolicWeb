@@ -135,7 +135,6 @@ var swAjax = (function(){
           type: "POST",
           url: swURL(["&_sw_request_type=ajax", params]),
           data: callback_data,
-          timeout: 1000,
           dataType: "script",
           beforeSend: swPrepareSpinner
         })
@@ -181,7 +180,6 @@ var swComet  = (function(){
   function doIt(params){
     $.ajax({type: "POST",
             url: swURL(["&_sw_request_type=comet", params]),
-            timeout: _sw_comet_timeout_ms + 5000, // Long poll + 5 second timeout.
             dataType: "script"})
       .always(function(){
         if(_sw_comet_response_p){ // Got response from server?
