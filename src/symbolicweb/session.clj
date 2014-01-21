@@ -208,27 +208,23 @@ Session data stored in memory; temporarly."
                           (get (ensure -sessions-) cookie-value))]
       session
       (if-let [session-type (find-session-constructor request)]
-        (let [one-shot?
-              (or (with (get (:query-params request) "_sw_session_one_shot_p")
-                    (if (nil? it)
-                      false
-                      (json-parse it)))
-                  (search-engine? request))
-
-              session-skeleton
+        (let [session-skeleton
               (or (and cookie-value
                        (when-let [res (first (db-pstmt "SELECT id FROM sessions WHERE uuid = ? LIMIT 1;" cookie-value))]
                          (with1 (db-get (:id res) "sessions")
                            (vm-set (:touched @it) (datetime-to-sql-timestamp (time/now))))))
-                  (create-session session-type one-shot?))]
-          (alter session-skeleton assoc
-                 :session-type session-type
-                 :one-shot? one-shot?)
-          (when-not one-shot?
-            (assert (:uuid @session-skeleton))
-            (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
-            (vm-alter -num-sessions-model- + 1))
-          ((:session-constructor-fn session-type) request session-skeleton))
+                  (mk-Session :uuid (generate-uuid)
+                              :session-type session-type
+                              :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
+                                               (if (nil? it)
+                                                 false ;; Not supplied so we assume false.
+                                                 (json-parse it)))
+                                             (search-engine? request))))]
+          (vm-alter -num-sessions-model- inc)
+          (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
+          (with1 ((:session-constructor-fn session-type) request session-skeleton)
+            (when-not (:one-shot? @it)
+              (db-put it "sessions"))))
         (do
           ;;(log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
           (mk-Session :uuid cookie-value
