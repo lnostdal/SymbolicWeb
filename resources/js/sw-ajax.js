@@ -175,7 +175,6 @@ var swAjax = (function(){
 ///////////////
 
 var _sw_comet_response_p = false;
-var _sw_comet_last_activity_ts = new Date().getTime();
 
 var swComet  = (function(){
 
@@ -185,7 +184,6 @@ var swComet  = (function(){
             timeout: _sw_comet_timeout_ms + 5000, // Long poll + 5 second timeout.
             dataType: "script"})
       .always(function(){
-        _sw_comet_last_activity_ts = new Date().getTime();
         if(_sw_comet_response_p){ // Got response from server?
           _sw_comet_response_p = false;
           swComet("&do=ack");
