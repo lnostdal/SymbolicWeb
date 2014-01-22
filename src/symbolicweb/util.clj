@@ -143,7 +143,7 @@ Appends a timestamp to the URL based on file mtime."
 (defmacro with-once-only-ctx [& body]
   `(binding [*with-once-only-ctx* (ref {})]
      (with1 ~@body
-       (doseq [^Fn cb# (vals @*with-once-only-ctx*)]
+       (doseq [^Fn cb# (reverse (vals @*with-once-only-ctx*))]
          (cb#)))))
 
 
@@ -154,7 +154,20 @@ Appends a timestamp to the URL based on file mtime."
 
 (defmacro once-only [^Keyword k & body]
   "  K: Some Keyword to ID the block. See URL-ALTER-QUERY-PARAMS for an example where this can be useful in combination with
-ONCE-ONLY-GET."
+ONCE-ONLY-GET.
+
+Ex:
+(swsync
+ (with-once-only-ctx
+  (dotimes [i 10]
+    (once-only :hello
+     (println \"Hello!\"))
+    (once-only :bye
+     (println \"Goodbye!\")))))
+==>
+Hello!
+Goodbye!
+"
   `(if *with-once-only-ctx*
      (alter *with-once-only-ctx* assoc ~k (fn [] ~@body))
      (do ~@body)))
