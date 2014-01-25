@@ -154,7 +154,10 @@ eJlxkPnxbDLIMdmx9aZcxFPb+Y41
 (defapp
   [::Nostdal-org
    (fn [request]
-     (= (:server-name request) "nostdal.org"))]
+     (or (= (:server-name request) "nostdal.org")
+         (= (:server-name request) "localhost.nostdal.org")
+         (= (:server-name request) "localhost")
+         (= (:server-name request) "127.0.0.1")))]
 
   (fn [request session]
     (if (= (:uri request) "/") ;; Can't set a cookie here as it will become global for all paths; redirect instead.
