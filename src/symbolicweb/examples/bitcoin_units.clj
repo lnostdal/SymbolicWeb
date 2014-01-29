@@ -48,6 +48,8 @@
                                              input-unit
                                              :satoshi))))
 
+    (vm-sync-from-url {:name "satoshi" :model satoshi-io-vm :context-widget root-widget})
+
     (vm-observe satoshi-vm (.lifetime root-widget) true
                 #(doseq [[output-vm output-unit] [[btc-io-vm :btc]
                                                   [dbtc-io-vm :dbtc]
