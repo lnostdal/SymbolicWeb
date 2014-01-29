@@ -5,7 +5,7 @@ WUI for Clojure.
 Some examples:
 
 
-### HTML5 History
+#### HTML5 History
 
 Running here: https://nostdal.org/history
 
@@ -14,7 +14,7 @@ Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb
 YouTube: https://www.youtube.com/watch?v=GHKGCFPVbbc
 
 
-### Dataflow; reactive programming    
+#### Dataflow; reactive programming    
     
 Running here: https://nostdal.org/bitcoin-units
 
@@ -27,4 +27,11 @@ YouTube: https://www.youtube.com/watch?v=5W_gYla0UsY
 
 ## Status
 
-Works, but only for brave people interested in a work in progress.
+Works, but only for brave people interested in a work in progress. 
+
+
+
+
+## License
+
+AGPLv3 + CLA. Email larsnostdal@gmail.com if you want to use this in context of a proprietary project.
