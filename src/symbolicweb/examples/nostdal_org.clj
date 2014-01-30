@@ -72,15 +72,15 @@
 
 
 
-         [:div {:style "padding: 1em;"}
+         [:div {:style (style {:padding "1em"})}
           [:a {:href "/static/other/IMG_5004_cropped.png"}
            [:img {:alt "" :src "/static/other/lars.png"
-                  :style "display: block; width: 15em; "}]]
-          [:em {:style "font-size: smaller;"} "&quot;Hello!&quot;"]]
+                  :style (style {:display 'block :width "15em"})}]]
+          [:em {:style (style {:font-size 'smaller})} "&quot;Hello!&quot;"]]
 
 
          [:br]
-         [:p {:style "font-family: monospace;"}
+         [:p {:style (style {:font-family 'monospace})}
           "pub   4096R/7B281AED 2013-01-24" [:br]
           "Key fingerprint = 5029 6FDD 199C 2A69 898B  40B0 A08A C77A 7B28 1AED" [:br]
           "uid                  Lars Rune Nøstdal (PGP (RSA)) <larsnostdal@gmail.com>" [:br]
