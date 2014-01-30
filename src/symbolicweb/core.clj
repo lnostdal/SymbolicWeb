@@ -26,6 +26,8 @@
 
   (:import [org.jsoup Jsoup])
 
+  (:require [garden.core :refer [css style]])
+
   (:require [cheshire.core :as json])
 
   (:require ring.util.codec)

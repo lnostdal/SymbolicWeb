@@ -42,6 +42,8 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [hiccup/hiccup "LATEST"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.4-SNAPSHOT"] ;; HTML templating.
 
+                 [garden "LATEST"]
+
                  ;; HTTP protocol handling.
                  [ring/ring-codec "LATEST"] ;; ring.util.codec
                  [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
