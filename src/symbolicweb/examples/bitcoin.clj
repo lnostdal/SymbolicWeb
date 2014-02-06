@@ -74,3 +74,8 @@
          )))
 
     viewport))
+
+
+
+(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/bitcoin" [^String uri request session]
+  (symbolicweb.examples.bitcoin/mk-bitcoin-viewport request session))
