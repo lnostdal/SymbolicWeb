@@ -10,7 +10,7 @@
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
         viewport (mk-Viewport request session root-widget :page-title "nostdal.org")]
     (add-resource viewport :css "sw/css/common.css")
-    (add-rest-head viewport "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0' />")
+    (add-rest-head viewport "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />")
     (add-rest-head viewport (html [:style (css [:body {:background-color "rgb(171,191,181)"
                                                        :color 'black
                                                        :font-family "'DejaVu Sans', sans-serif"}]
@@ -67,9 +67,7 @@
           [:li "Email, mailing list etc. type APIs (e.g. " [:a {:href "http://mandrill.com/"} "http://mandrill.com/"] ")"]
           [:li "I understand Computer Science topics well; algorithms and datastructures, programming language theory, computer architecture (hardware), etc."]
           [:li "Integration with mobile phone SMS APIs"]
-          [:li "Hardware interfacing and electronics"]
-          ]
-
+          [:li "Hardware interfacing and electronics"]]
 
 
          [:div {:style (style {:padding "1em"})}
@@ -79,7 +77,6 @@
           [:em {:style (style {:font-size 'smaller})} "&quot;Hello!&quot;"]]
 
 
-         [:br]
          [:p {:style (style {:font-family 'monospace})}
           "pub   4096R/7B281AED 2013-01-24" [:br]
           "Key fingerprint = 5029 6FDD 199C 2A69 898B  40B0 A08A C77A 7B28 1AED" [:br]
