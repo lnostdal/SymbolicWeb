@@ -96,20 +96,10 @@
 
 
 
-
 (defmulti mk-nostdal-org-viewport #(first %&))
 
 (defmethod mk-nostdal-org-viewport :default [^String uri request session]
   (mk-Viewport request session (mk-bte :root-widget? true) :page-title "SW: :default"))
-
-(defmethod mk-nostdal-org-viewport "/history" [^String uri request session]
-  (symbolicweb.examples.history/mk-history-viewport request session))
-
-(defmethod mk-nostdal-org-viewport "/bitcoin" [^String uri request session]
-  (symbolicweb.examples.bitcoin/mk-bitcoin-viewport request session))
-
-(defmethod mk-nostdal-org-viewport "/bitcoin-units" [^String uri request session]
-  (symbolicweb.examples.bitcoin-units/mk-btc-unit-viewport request session))
 
 (defmethod mk-nostdal-org-viewport "/nostdal.org" [^String uri request session]
   (homepage request session))

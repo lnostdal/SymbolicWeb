@@ -79,3 +79,8 @@
          [:p "satoshi: " (sw (mk-TextInput satoshi-io-vm :change))])))
 
     (mk-Viewport request session root-widget :page-title "Bitcoin units")))
+
+
+
+(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/bitcoin-units" [^String uri request session]
+  (symbolicweb.examples.bitcoin-units/mk-btc-unit-viewport request session))
