@@ -6,7 +6,7 @@
 (defn ^WidgetBase %mk-HTMLContainer [^Keyword html-element-type args ^Fn content-fn]
   (mk-WidgetBase (fn [^WidgetBase html-container]
                    (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
-                     (if (empty? args) ;; TODO: Check :HTML-ATTRS instead?
+                     (if (empty? args)
                        (let [html-element-type (name html-element-type)]
                          (str "<" html-element-type " id='" (.id html-container) "'>"
                               (content-fn html-container)
@@ -25,11 +25,26 @@
 
 
 (defmacro whc [[html-element-type args] & body]
-  "WITH-HTML-CONTAINER."
+  "WITH-HTML-CONTAINER. Some examples:
+
+ (swsync
+  (render-html
+   (whc [:div {:html-attrs {:style (style {:color 'red})}}]
+     \"Hello World! This is: \" (.id html-container))))
+ \"<div id=\"sw-15570\" style=\"color: red;\">Hello World! This is: sw-15570</div>\"
+
+ (swsync
+  (let [some-model (vm \"hello\")
+        some-widget (mk-span some-model)]
+    (render-html
+     (whc [:div]
+      [:p \"Here's some widget: \" (sw some-widget)]))))
+ \"<div id='sw-15591'><p>Here's some widget: <span id='sw-15590'></span></p></div>\"
+"
   `(%mk-HTMLContainer ~html-element-type
                       ~args
                       (fn [^WidgetBase ~'html-container]
-                        ~@body)))
+                        (html ~@body))))
 
 
 
