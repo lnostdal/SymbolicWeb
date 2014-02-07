@@ -67,11 +67,9 @@
 
     (jqAppend root-widget
       (whc [:div]
-        (html
-         [:h2 [:a {:href "https://nostdal.org/"} "nostdal.org"] ": bitcoin"]
-         (sw (mk-pre (:all @-btc-data-)))
-
-         )))
+        [:h2 [:a {:href "https://nostdal.org/"} "nostdal.org"] ": bitcoin"]
+        (sw (mk-pre (:all @-btc-data-)))
+        ))
 
     viewport))
 

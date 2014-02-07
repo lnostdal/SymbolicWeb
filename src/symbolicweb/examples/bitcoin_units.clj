@@ -69,14 +69,13 @@
 
     (jqAppend root-widget
       (whc [:div]
-        (html
-         [:h1 "Bitcoin Units"]
-         [:p "BTC (Bitcoin): " (sw (mk-TextInput btc-io-vm :change))]
-         [:p "dBTC (decibitcoin): " (sw (mk-TextInput dbtc-io-vm :change))]
-         [:p "cBTC (centibitcoin): " (sw (mk-TextInput cbtc-io-vm :change))]
-         [:p "mBTC (millibitcoin): " (sw (mk-TextInput mbtc-io-vm :change))]
-         [:p "μBTC (microbitcoin): " (sw (mk-TextInput ubtc-io-vm :change))]
-         [:p "satoshi: " (sw (mk-TextInput satoshi-io-vm :change))])))
+        [:h1 "Bitcoin Units"]
+        [:p "BTC (Bitcoin): " (sw (mk-TextInput btc-io-vm :change))]
+        [:p "dBTC (decibitcoin): " (sw (mk-TextInput dbtc-io-vm :change))]
+        [:p "cBTC (centibitcoin): " (sw (mk-TextInput cbtc-io-vm :change))]
+        [:p "mBTC (millibitcoin): " (sw (mk-TextInput mbtc-io-vm :change))]
+        [:p "μBTC (microbitcoin): " (sw (mk-TextInput ubtc-io-vm :change))]
+        [:p "satoshi: " (sw (mk-TextInput satoshi-io-vm :change))]))
 
     (mk-Viewport request session root-widget :page-title "Bitcoin units")))
 
