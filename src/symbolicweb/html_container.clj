@@ -41,10 +41,13 @@
       [:p \"Here's some widget: \" (sw some-widget)]))))
  \"<div id='sw-15591'><p>Here's some widget: <span id='sw-15590'></span></p></div>\"
 "
-  `(%mk-HTMLContainer ~html-element-type
-                      ~args
-                      (fn [^WidgetBase ~'html-container]
-                        (html ~@body))))
+  (let [body (if (zero? (count body))
+               '("")
+               body)]
+    `(%mk-HTMLContainer ~html-element-type
+                        ~args
+                        (fn [^WidgetBase ~'html-container]
+                          (html ~@body)))))
 
 
 
