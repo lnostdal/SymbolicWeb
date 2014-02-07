@@ -51,7 +51,7 @@ Returns WIDGET."
 
   (^WidgetBase [^Keyword html-element-type args]
      (mk-WidgetBase (fn [^WidgetBase widget]
-                      (if (empty? args) ;; TODO: Check :HTML-ATTRS instead?
+                      (if (empty? args)
                         (let [html-element-type-str (name html-element-type)]
                           (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
                         (html [html-element-type
