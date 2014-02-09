@@ -31,7 +31,9 @@ ARGS:
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
                             (str "<input type='" (or (and (:type args) (name (:type args))) "text")
                                  "' id='" (.id widget) "'>"))
-                          args)
+                          (dissoc args
+                                  :initial-sync-server? :one-way-sync-client? :clear-on-submit? :blur-on-submit?
+                                  :callback-data :output-vm))
 
       ;; INPUT-VM: Server --> client.
       (if (or (:one-way-sync-client? args)

@@ -44,28 +44,6 @@ Returns WIDGET."
 
 
 
-(defn mk-WB
-  "Creates a simple, static widget."
-  (^WidgetBase [^Keyword html-element-type]
-     (mk-WB html-element-type {}))
-
-  (^WidgetBase [^Keyword html-element-type args]
-     (mk-WidgetBase (fn [^WidgetBase widget]
-                      (if (empty? args)
-                        (let [html-element-type-str (name html-element-type)]
-                          (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
-                        (html [html-element-type
-                               (let [attrs (:html-attrs args)]
-                                 (if (:id attrs)
-                                   attrs
-                                   (assoc attrs :id (.id widget))))])))
-                    ;; :ID from :HTML-ATTRS (if supplied) should be used as ID server side also.
-                    (if-let [id (:id (:html-attrs args))]
-                      (assoc args :id id)
-                      args))))
-
-
-
 (defn ^WidgetBase mk-HTMLElement [^ValueModel value-model
                                   ^Fn render-fn
                                   ^Fn observer-fn
@@ -79,20 +57,20 @@ Returns WIDGET."
 
 
 
-(defn ^WidgetBase mk-he [html-element-type ^ValueModel value-model
-                         & {:keys [observer-fn widget-base-args]
-                            :or {widget-base-args {}
-                                 observer-fn (fn [^WidgetBase widget old-value new-value]
-                                               (jqHTML widget (if (.escape-html? widget)
-                                                                (escape-html new-value)
-                                                                new-value)))}}]
+(defn ^WidgetBase mk-he [html-element-type ^ValueModel value-model & args]
   "  :OBSERVER-FN: (fn [widget old-value new-value] ..)"
-  (let [html-element-type-str (name html-element-type)]
+  (let [args (apply hash-map args)
+        html-element-type-str (name html-element-type)]
     (mk-HTMLElement value-model
-                    (fn [^WidgetBase widget]
-                      (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">"))
-                    observer-fn
-                    widget-base-args)))
+                    (or (:render-fn args)
+                        (fn [^ValueModel widget]
+                          (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">")))
+                    (or (:observer-fn args)
+                        (fn [^WidgetBase widget old-value new-value]
+                          (jqHTML widget (if (.escape-html? widget)
+                                           (escape-html new-value)
+                                           new-value))))
+                    (dissoc args :render-fn :observer-fn))))
 
 
 

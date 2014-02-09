@@ -1,8 +1,6 @@
 (in-ns 'symbolicweb.core)
 
 
-
-;; TODO: Code in mk-WB is very similar to this.
 (defn ^WidgetBase %mk-HTMLContainer [^Keyword html-element-type args ^Fn content-fn]
   (mk-WidgetBase (fn [^WidgetBase html-container]
                    (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
@@ -12,15 +10,12 @@
                               (content-fn html-container)
                               "</" html-element-type ">"))
                        (html
-                        [html-element-type (let [attrs (:html-attrs args)]
-                                             (if-let [id (:id attrs)]
-                                               attrs
-                                               (assoc attrs :id (.id html-container))))
+                        [html-element-type (-> (dissoc args :wb-args)
+                                               (assoc :id (.id html-container)))
                          (content-fn html-container)]))))
-                 ;; :ID from :HTML-ATTRS (if supplied) should be used as ID server side also.
-                 (if-let [id (:id (:html-attrs args))]
-                   (assoc args :id id)
-                   args)))
+                 (if-let [id (:id args)]
+                   (assoc (:wb-args args) :id id)
+                   (:wb-args args))))
 
 
 
@@ -29,7 +24,7 @@
 
  (swsync
   (render-html
-   (whc [:div {:html-attrs {:style (style {:color 'red})}}]
+   (whc [:div {:style (style {:color 'red})}]
      \"Hello World! This is: \" (.id html-container))))
  \"<div id=\"sw-15570\" style=\"color: red;\">Hello World! This is: sw-15570</div>\"
 
