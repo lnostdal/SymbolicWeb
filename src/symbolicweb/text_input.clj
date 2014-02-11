@@ -52,16 +52,16 @@ ARGS:
                              ;; VM could do it instead. The benefit of that would be that several input sources could make use
                              ;; of the same VM. If not, this code needs to be called by the :ENTEPRESS case, below, also.
                              (let [value (if-let [f (:input-parsing-fn args)]
-                                               (try
+                                           (try
+                                             (f value)
+                                             (catch Throwable e
+                                               (if-let [f (:input-parsing-error-fn args)]
                                                  (f value)
-                                                 (catch Throwable e
-                                                   (if-let [f (:input-parsing-error-fn args)]
-                                                     (f value)
-                                                     (throw
-                                                      (ex-info (str "mk-TextInput: Input parsing error for widget: " (.id it))
-                                                               {:widget it :model input-vm :value value}
-                                                               e)))))
-                                               value)]
+                                                 (throw
+                                                  (ex-info (str "mk-TextInput: Input parsing error for widget: " (.id it))
+                                                           {:widget it :model input-vm :value value}
+                                                           e)))))
+                                           value)]
                                (vm-set input-vm value)
                                (when (:clear-on-submit? args)
                                  (vm-set input-vm nil))))
