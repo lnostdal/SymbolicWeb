@@ -15,19 +15,18 @@
 
     (jqAppend root-widget
       (whc [:div]
-        (html
-         [:p
-          (sw (mk-TextInput a :change :input-parsing-fn parse-long))
-          " + "
-          (sw (mk-TextInput b :change :input-parsing-fn parse-long))
-          " = "
-          (sw (mk-span sum))]
+        [:p
+         (sw (mk-TextInput a :change :input-parsing-fn parse-long))
+         " + "
+         (sw (mk-TextInput b :change :input-parsing-fn parse-long))
+         " = "
+         (sw (mk-span sum))]
 
-         [:hr]
-         [:pre
-          [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/dataflow.clj"} "Source code"]
-          " | "
-          (sw (mk-span -now-))]))) ;; -NOW- is a ValueModel updated (VM-SET) by a background thread.
+        [:hr]
+        [:pre
+         [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/dataflow.clj"} "Source code"]
+         " | "
+         (sw (mk-span -now-))])) ;; -NOW- is a ValueModel updated (VM-SET) by a background thread.
 
     (mk-Viewport request session root-widget :page-title "SW: Dataflow example")))
 

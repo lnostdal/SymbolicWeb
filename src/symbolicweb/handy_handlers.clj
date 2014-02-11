@@ -171,7 +171,9 @@
             "Click here"] " to see how you can enable JavaScript in your browser."]]
       [:p {:id "sw-page-is-loading-msg" :style "padding: 1em;"} "Loading..."]
       [:script
-       "swAddOnLoadFN(function(){ $('#sw-page-is-loading-msg').remove(); });"
+       "swAddOnLoadFN(function(){ "
+       " $('#sw-page-is-loading-msg').remove(); "
+       "});"
        "$(function(){ swBoot(); });"]]])})
 
 
