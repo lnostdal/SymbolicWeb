@@ -1,12 +1,6 @@
 (in-ns 'symbolicweb.core)
 
-;; TODO:
 
-;; * Better and more flexible parameter handling; static-attributes/CSS etc..
-
-
-
-;; TODO: Add support for :HTML-ATTRS.
 (defn ^WidgetBase mk-TextInput [^ValueModel input-vm ^Keyword trigger-event & args]
   "<input type='text' ..> type widget.
 
@@ -29,11 +23,13 @@ ARGS:
               This will also cause INPUT-VM to be synced only one way: client --> server."
   (let [args (apply hash-map args)]
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
-                            (str "<input type='" (or (and (:type args) (name (:type args))) "text")
-                                 "' id='" (.id widget) "'>"))
-                          (dissoc args
-                                  :initial-sync-server? :one-way-sync-client? :clear-on-submit? :blur-on-submit?
-                                  :callback-data :output-vm))
+                            (html [:input (-> (dissoc args :wb-args :initial-sync-server? :one-way-sync-client?
+                                                      :clear-on-submit? :blur-on-submit? :callback-data :output-vm)
+                                              (assoc :id (.id widget)
+                                                     :type (or (:type args) "text")))]))
+                          (if-let [id (:id args)]
+                            (assoc (:wb-args args) :id id)
+                            (:wb-args args)))
 
       ;; INPUT-VM: Server --> client.
       (if (or (:one-way-sync-client? args)
