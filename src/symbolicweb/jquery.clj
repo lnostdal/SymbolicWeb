@@ -1,6 +1,8 @@
 (in-ns 'symbolicweb.core)
 
 
+(declare render-html)
+
 
 (defn js-handle-value ^String [value ^Boolean as-js?]
   (if as-js?

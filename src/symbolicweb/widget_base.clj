@@ -1,6 +1,57 @@
 (in-ns 'symbolicweb.core)
 
 
+(defn mk-WidgetBase ^WidgetBase [^Fn render-fn args]
+  (with1 (WidgetBase. (with1 (or (:id args) ;; ID
+                                 (str "sw-" (generate-uid)))
+                        (assert (string? it)))
+                      (if (:root-widget? args) ;; LIFETIME
+                        (mk-LifetimeRoot)
+                        (mk-Lifetime))
+                      render-fn ;; RENDER-FN
+                      (ref nil) ;; PARENT
+                      (vm nil) ;; VIEWPORT
+                      (ref {}) ;; CALLBACKS
+                      ;; ESCAPE-HTML?
+                      (if-let [entry (find args :escape-html?)]
+                        (val entry)
+                        true))
+
+    (when-not (:root-widget? args)
+      (add-lifetime-activation-fn (.lifetime it)
+                                  (fn [^Lifetime lifetime]
+                                    (let [parent-viewport (viewport-of (parent-of it))]
+                                      (assert (not (get (:widgets @parent-viewport)
+                                                        (.id it))))
+                                      ;; Viewport --> Widget (DOM events).
+                                      (alter parent-viewport update-in [:widgets]
+                                             assoc (.id it) it)
+                                      ;; Widget --> Viewport.
+                                      (vm-set (.viewport it) parent-viewport)))))
+
+    (add-lifetime-deactivation-fn (.lifetime it)
+                                  (fn [^Lifetime lifetime]
+                                    (let [viewport (viewport-of it)]
+                                      ;; Viewport -/-> Widget (DOM events).
+                                      (alter viewport update-in [:widgets]
+                                             dissoc (.id it))
+                                      ;; Widget -/-> Viewport.
+                                      (vm-set (.viewport it) nil))))))
+
+
+
+(defn ^String render-html [^WidgetBase widget]
+  "Return HTML structure which will be the basis for further initialization."
+  ((.render-fn widget) widget))
+
+
+
+(defn ^String sw [^WidgetBase widget]
+  "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
+  (attach-branch *in-html-container?* widget)
+  (render-html widget))
+
+
 
 (defn ^WidgetBase set-event-handler [^String event-type ^WidgetBase widget ^Fn callback-fn
                                      & {:keys [js-before callback-data js-after once?]
