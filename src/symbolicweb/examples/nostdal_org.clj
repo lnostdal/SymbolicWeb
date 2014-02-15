@@ -104,11 +104,13 @@
 (defapp
   [::Nostdal-org
    (fn [request]
-     (or (= (:server-name request) "nostdal.org")
-         (= (:server-name request) "aafoss.nostdal.org")
-         (= (:server-name request) "localhost.nostdal.org")
-         (= (:server-name request) "localhost")
-         (= (:server-name request) "127.0.0.1")))]
+     (in (:server-name request)
+         "nostdal.org"
+         "aafoss.nostdal.org"
+         "localhost.nostdal.org"
+         "localhost"
+         "127.0.0.1"
+         "utgf6vb44abxntvqqfcge2rnt5wfzb5kcltglaojam4sqhemsz6q.b32.i2p"))]
 
   (fn [request session]
     (if (= (:uri request) "/") ;; Can't set a cookie here as it will become global for all paths; redirect instead.

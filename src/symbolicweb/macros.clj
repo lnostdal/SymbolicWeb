@@ -15,6 +15,11 @@
 
 
 
+(defmacro in [x & args]
+  `(or ~@(map (fn [y] `(= ~x ~y))
+              args)))
+
+
 
 (defmacro do1 [x & body]
   `(let [x# ~x]
