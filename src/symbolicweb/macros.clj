@@ -16,8 +16,10 @@
 
 
 (defmacro in [x & args]
-  `(or ~@(map (fn [y] `(= ~x ~y))
-              args)))
+  (let [it (gensym)]
+    `(let [~it ~x]
+       (or ~@(map (fn [y] `(= ~it ~y))
+                  args)))))
 
 
 
