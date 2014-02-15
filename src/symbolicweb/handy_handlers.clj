@@ -104,34 +104,33 @@
 
 (defn default-request-handler [request ^Ref session]
   "Default top-level request handler for both REST and AJAX/Comet type requests."
-  (with-once-only-ctx
-    (let [request-type (get (:query-params request) "_sw_request_type")]
-      (case request-type
-        ;; XHR.
-        ("ajax" "comet")
-        (if-let [^Ref viewport (get (ensure (:viewports @session))
-                                    (get (:query-params request) "_sw_viewport_id"))]
-          (do
-            (touch viewport)
-            ((:ajax-handler @session) request session viewport))
-          (do
-            #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport ("
-                       (get (:query-params request) "_sw_viewport_id") ")."
-                       "Refreshing page, but keeping Session (cookie).")
-            {:status 200
-             :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                       "Cache-Control" "no-cache, no-store"
-                       "Expires" "-1"}
-             ;; A new Session _might_ have been started for this request, so we reset the cookie just in case before reloading.
-             ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
-             :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
-                        "window.location.href = window.location.href;")}))
+  (let [request-type (get (:query-params request) "_sw_request_type")]
+    (case request-type
+      ;; XHR.
+      ("ajax" "comet")
+      (if-let [^Ref viewport (get (ensure (:viewports @session))
+                                  (get (:query-params request) "_sw_viewport_id"))]
+        (do
+          (touch viewport)
+          ((:ajax-handler @session) request session viewport))
+        (do
+          #_(println "DEFAULT-REQUEST-HANDLER (AJAX): Got session, but not the Viewport ("
+                     (get (:query-params request) "_sw_viewport_id") ")."
+                     "Refreshing page, but keeping Session (cookie).")
+          {:status 200
+           :headers {"Content-Type" "text/javascript; charset=UTF-8"
+                     "Cache-Control" "no-cache, no-store"
+                     "Expires" "-1"}
+           ;; A new Session _might_ have been started for this request, so we reset the cookie just in case before reloading.
+           ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
+           :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
+                      "window.location.href = window.location.href;")}))
 
-        ;; REST.
-        (let [viewport ((:mk-viewport-fn @session) request session)]
-          (if (= request-type "aux")
-            ((:aux-handler @session) request session viewport)
-            ((:rest-handler @session) request session viewport))))))) ;; E.g. DEFAULT-REST-HANDLER, below.
+      ;; REST.
+      (let [viewport ((:mk-viewport-fn @session) request session)]
+        (if (= request-type "aux")
+          ((:aux-handler @session) request session viewport)
+          ((:rest-handler @session) request session viewport)))))) ;; E.g. DEFAULT-REST-HANDLER, below.
 
 
 

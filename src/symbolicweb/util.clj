@@ -140,13 +140,6 @@ Appends a timestamp to the URL based on file mtime."
 (def ^:dynamic *with-once-only-ctx* nil)
 
 
-(defmacro with-once-only-ctx [& body]
-  `(binding [*with-once-only-ctx* (ref {})]
-     (with1 ~@body
-       (doseq [^Fn cb# (reverse (vals @*with-once-only-ctx*))]
-         (cb#)))))
-
-
 (defn once-only-get [^Keyword k]
   (when *with-once-only-ctx*
     (get @*with-once-only-ctx* k)))
@@ -168,6 +161,4 @@ Ex:
 Hello!
 Goodbye!
 "
-  `(if *with-once-only-ctx*
-     (alter *with-once-only-ctx* assoc ~k (fn [] ~@body))
-     (do ~@body)))
+  `(alter *with-once-only-ctx* assoc ~k (fn [] ~@body)))

@@ -101,7 +101,16 @@
 
 
 
-(declare do-2pctx)
+(defmacro with-once-only-ctx [& body]
+  `(binding [*with-once-only-ctx* (do
+                                    (assert (not *with-once-only-ctx*))
+                                    (ref {}))]
+     (with1 (do ~@body)
+       (doseq [^Fn cb# (reverse (vals @*with-once-only-ctx*))]
+         (cb#)))))
+
+
+
 (defmacro swsync [& body]
   "BODY executes within a 2PCTX; a combined MTX and DBTX."
-  `(do-2pctx (fn [] ~@body)))
+  `(do-2pctx (fn [] (with-once-only-ctx ~@body))))
