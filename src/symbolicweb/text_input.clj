@@ -1,6 +1,11 @@
 (in-ns 'symbolicweb.core)
 
 
+;; No input parsing here since it seems doing that on the Model end of things is better. E.g. sometimes input can come from
+;; several sources.
+
+
+
 (defn ^WidgetBase mk-TextInput [^ValueModel input-vm ^Keyword trigger-event & args]
   "<input type='text' ..> type widget.
 
@@ -41,51 +46,36 @@ ARGS:
                                                  (false nil) false)
                     #(jqVal it (or %3 ""))))
 
-      ;; INPUT-VM: Client --> server.
-      (case trigger-event
-        :change
-        (set-event-handler "change" it
-                           (fn [& {:keys [value]}]
-                             ;; TODO: Perhaps this widget shouldn't deal with input parsing at all? Dataflow via an additional
-                             ;; VM could do it instead. The benefit of that would be that several input sources could make use
-                             ;; of the same VM. If not, this code needs to be called by the :ENTEPRESS case, below, also.
-                             (let [value (if-let [f (:input-parsing-fn args)]
-                                           (try
-                                             (f value)
-                                             (catch Throwable e
-                                               (if-let [f (:input-parsing-error-fn args)]
-                                                 (f value)
-                                                 (throw
-                                                  (ex-info (str "mk-TextInput: Input parsing error for widget: " (.id it))
-                                                           {:widget it :model input-vm :value value}
-                                                           e)))))
-                                           value)]
-                               (vm-set input-vm value)
-                               (when (:clear-on-submit? args)
-                                 (vm-set input-vm nil))))
-                           :callback-data (if-let [cd (:callback-data args)]
-                                            cd
-                                            {:value "' + encodeURIComponent($(this).val()) + '"})
-                           :js-after (when (:blur-on-submit? args)
-                                       (str "$('#" (.id it) "').blur();")))
+      (letfn [(handle-input [input-value]
+                (vm-set input-vm input-value)
+                (when (:clear-on-submit? args)
+                  (vm-set input-vm nil)))]
 
-        :enterpress
-        (set-event-handler "keydown" it
-                           (fn [& {:keys [value]}]
-                             (vm-set input-vm value)
-                             (when (:clear-on-submit? args)
-                               (vm-set input-vm nil)))
-                           :callback-data (if-let [cd (:callback-data args)]
-                                            cd
-                                            {:value "' + encodeURIComponent($(this).val()) + '"})
-                           :js-before "if(event.keyCode == 10 || event.keyCode == 13) return(true); else return(false);"
-                           :js-after (when (:blur-on-submit? args)
-                                        (str "$('#" (.id it) "').blur();")))
+        ;; INPUT-VM: Client --> server.
+        (case trigger-event
+          :change
+          (set-event-handler "change" it
+                             (fn [& {:keys [value]}]
+                               (handle-input value))
+                             :callback-data (or (:callback-data args)
+                                                {:value "' + encodeURIComponent($(this).val()) + '"})
+                             :js-after (when (:blur-on-submit? args)
+                                         (str "$('#" (.id it) "').blur();")))
 
-        nil
-        nil ;; Assume the user wants to assign something later.
+          :enterpress
+          (set-event-handler "keydown" it
+                             (fn [& {:keys [value]}]
+                               (handle-input value))
+                             :callback-data (or (:callback-data args)
+                                                {:value "' + encodeURIComponent($(this).val()) + '"})
+                             :js-before "if(event.keyCode == 10 || event.keyCode == 13) return(true); else return(false);"
+                             :js-after (when (:blur-on-submit? args)
+                                         (str "$('#" (.id it) "').blur();")))
 
-        (trigger-event)) ;; Assume TRIGGER-EVENT is a Fn that will e.g. assign a custom event.
+          nil
+          nil ;; Assume the user wants to assign something later.
+
+          (trigger-event))) ;; Assume TRIGGER-EVENT is a Fn that will e.g. assign a custom event.
 
       ;; OUTPUT-VM: Server --> client.
       (when-let [output-vm (:output-vm args)]
