@@ -8,6 +8,7 @@ Some examples:
 #### HTML5 History
 
 Running here: https://nostdal.org/history
+..or on I2P darknet here: http://utgf6vb44abxntvqqfcge2rnt5wfzb5kcltglaojam4sqhemsz6q.b32.i2p/history
 
 Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj
 
@@ -17,6 +18,7 @@ YouTube: https://www.youtube.com/watch?v=GHKGCFPVbbc
 #### Dataflow; reactive programming    
     
 Running here: https://nostdal.org/bitcoin-units
+..or on I2P darknet here: http://utgf6vb44abxntvqqfcge2rnt5wfzb5kcltglaojam4sqhemsz6q.b32.i2p/bitcoin-units
 
 Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/bitcoin_units.clj
 
