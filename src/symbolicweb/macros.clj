@@ -105,7 +105,7 @@
   `(binding [*with-once-only-ctx* (do
                                     (assert (not *with-once-only-ctx*))
                                     (ref {}))]
-     (with1 (do ~@body)
+     (do1 (do ~@body)
        (doseq [^Fn cb# (reverse (vals @*with-once-only-ctx*))]
          (cb#)))))
 
