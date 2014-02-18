@@ -144,6 +144,9 @@
    :body
    (html
     (hiccup.page/doctype :html5)
+    "<!-- ########################################################################### -->\n"
+    "<!-- ## Runs on SymbolicWeb platform: https://github.com/lnostdal/SymbolicWeb ## -->\n"
+    "<!-- ########################################################################### -->\n"
     [:html
      [:head
       [:meta {:charset "UTF-8"}]

@@ -30,6 +30,7 @@
 
         satoshi-vm (vm 0)]
 
+
     (doseq [[input-vm input-unit] [[btc-io-vm :btc]
                                    [mbtc-io-vm :mbtc]
                                    [dbtc-io-vm :dbtc]
@@ -48,9 +49,7 @@
                                              input-unit
                                              :satoshi))))
 
-    (vm-sync-from-url {:name "satoshi" :model satoshi-io-vm :context-widget root-widget})
-
-    (vm-observe satoshi-vm (.lifetime root-widget) true
+    (vm-observe satoshi-vm (.lifetime root-widget) false
                 #(doseq [[output-vm output-unit] [[btc-io-vm :btc]
                                                   [dbtc-io-vm :dbtc]
                                                   [cbtc-io-vm :cbtc]
@@ -67,6 +66,8 @@
                                               :satoshi "~D")
                                       (handle-btc-value %3 :satoshi output-unit)))))
 
+    (vm-sync-from-url {:name "satoshi" :model satoshi-io-vm :context-widget root-widget})
+
     (jqAppend root-widget
       (whc [:div]
         [:h1 "Bitcoin Units"]
@@ -82,4 +83,4 @@
 
 
 (defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/bitcoin-units" [^String uri request session]
-  (symbolicweb.examples.bitcoin-units/mk-btc-unit-viewport request session))
+  (mk-btc-unit-viewport request session))

@@ -4,6 +4,10 @@
 ;; No input parsing here since it seems doing that on the Model end of things is better. E.g. sometimes input can come from
 ;; several sources.
 
+;; TODO: The jqVal triggered by e.g. :INITIAL-SYNC-SERVER? might overwrite autofilled data (I think).
+;; TODO: Autofill does not trigger onchange event ref. issue #35. Dealing with this using polling or similar leads to races
+;; with other things; e.g. form submit event.
+
 
 
 (defn ^WidgetBase mk-TextInput [^ValueModel input-vm ^Keyword trigger-event & args]
@@ -19,8 +23,8 @@ TRIGGER-EVENT:
 
 
 ARGS:
-  :INITIAL-SYNC-SERVER?: if True the value on the client will be set to the value of INPUT-VM on render.
-  :ONE-WAY-SYNC-CLIENT?: if True only changes originating from the client will be sent to the server; not the other way around.
+  :INITIAL-SYNC-SERVER?: If True the value on the client will be set to the value of INPUT-VM on render. Default is True.
+  :ONE-WAY-SYNC-CLIENT?: If True only changes originating from the client will be sent to the server; not the other way around.
   :CLEAR-ON-SUBMIT?: If True the widget will be cleared on 'submit'.
   :BLUR-ON-SUBMIT?: If True the widget will be blurred on 'submit'.
   :CALLBACK-DATA: Can be used to change data sent from client to server on the client end – before actual send.
@@ -36,22 +40,21 @@ ARGS:
                             (assoc (:wb-args args) :id id)
                             (:wb-args args)))
 
+
       ;; INPUT-VM: Server --> client.
       (if (or (:one-way-sync-client? args)
               (:output-vm args))
         (when (get args :initial-sync-server? true)
           (jqVal it @input-vm))
-        (vm-observe input-vm (.lifetime it) (case (get args :initial-sync-server? ::not-found)
-                                                 (true ::not-found) true
-                                                 (false nil) false)
+        (vm-observe input-vm (.lifetime it) (get args :initial-sync-server? true)
                     #(jqVal it (or %3 ""))))
 
+
+      ;; INPUT-VM: Client --> server.
       (letfn [(handle-input [input-value]
                 (vm-set input-vm input-value)
                 (when (:clear-on-submit? args)
                   (vm-set input-vm nil)))]
-
-        ;; INPUT-VM: Client --> server.
         (case trigger-event
           :change
           (set-event-handler "change" it
@@ -76,6 +79,7 @@ ARGS:
           nil ;; Assume the user wants to assign something later.
 
           (trigger-event))) ;; Assume TRIGGER-EVENT is a Fn that will e.g. assign a custom event.
+
 
       ;; OUTPUT-VM: Server --> client.
       (when-let [output-vm (:output-vm args)]

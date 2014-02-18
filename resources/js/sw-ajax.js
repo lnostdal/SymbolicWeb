@@ -4,8 +4,8 @@
 
 /// Deal with IE insanity ref. http://stackoverflow.com/a/13817235
 
-(function() {
-  if (!window.console) {
+(function(){
+  if(!window.console){
     window.console = {};
   }
   var m = [
@@ -13,12 +13,18 @@
     "groupCollapsed", "groupEnd", "time", "timeEnd", "profile", "profileEnd",
     "dirxml", "assert", "count", "markTimeline", "timeStamp", "clear"
   ];
-  for (var i = 0; i < m.length; i++) {
-    if (!window.console[m[i]]) {
-      window.console[m[i]] = function() {};
+  for(var i = 0; i < m.length; i++){
+    if(!window.console[m[i]]){
+      window.console[m[i]] = function(){};
     }
   }
 })();
+
+
+
+console.log("###########################################################################\n" +
+            "## Runs on SymbolicWeb platform: https://github.com/lnostdal/SymbolicWeb ##\n" +
+            "###########################################################################");
 
 
 
