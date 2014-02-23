@@ -56,10 +56,9 @@
 
 
 
-(defn ^WidgetBase mk-TemplateElement [^ValueModel value-model & widget-base-args]
+(defn ^WidgetBase mk-TemplateElement [^ValueModel value-model & args]
   "TemplateElements are meant to be used in context of HTMLContainer and its subtypes."
-  (mk-he "%TemplateElement" value-model
-         :widget-base-args (apply hash-map widget-base-args)))
+  (apply mk-he "%TemplateElement" value-model args))
 
 
 (defn ^WidgetBase mk-te [^ValueModel value-model & args]
