@@ -4,7 +4,7 @@
 
 (defn ^WidgetBase mk-HTMLTemplate [^org.jsoup.nodes.Document html-resource
                                    ^Fn content-fn
-                                   & widget-base-args]
+                                   & args]
   "Bind Widgets to existing, static HTML.
 
   CONTENT-FN is something like:
@@ -52,7 +52,7 @@
                   (binding [*in-html-container?* template-widget]
                     (attach-branch template-widget content))))))))
        (.html (.select html-resource "body"))))
-   (apply hash-map widget-base-args)))
+   (apply hash-map args)))
 
 
 
@@ -62,17 +62,16 @@
          :widget-base-args (apply hash-map widget-base-args)))
 
 
-(defn ^WidgetBase mk-te [^ValueModel value-model & widget-base-args]
+(defn ^WidgetBase mk-te [^ValueModel value-model & args]
   "Short for mk-TemplateElement."
-  (apply mk-TemplateElement value-model widget-base-args))
+  (apply mk-TemplateElement value-model args))
 
 
 
-(defn ^WidgetBase mk-BlankTemplateElement [& widget-base-args]
+(defn ^WidgetBase mk-BlankTemplateElement [& args]
   "A TemplateElement which doesn't have a Model.
 This might be used to setup a target for DOM events on some static content from a template."
-  (mk-WidgetBase (fn [_]) (apply hash-map widget-base-args)))
-
+  (mk-WidgetBase (fn [_]) (apply hash-map args)))
 
 
 (defn ^WidgetBase mk-bte [& args]
