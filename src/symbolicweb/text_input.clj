@@ -42,7 +42,8 @@ ARGS:
 
 
       ;; INPUT-VM: Server --> client.
-      (if (or (:one-way-sync-client? args)
+      (if (or (= trigger-event :input)
+              (:one-way-sync-client? args)
               (:output-vm args))
         (when (get args :initial-sync-server? true)
           (jqVal it @input-vm))
@@ -56,6 +57,13 @@ ARGS:
                 (when (:clear-on-submit? args)
                   (vm-set input-vm nil)))]
         (case trigger-event
+          :input
+          (set-event-handler "input" it
+                             (fn [& {:keys [value]}]
+                               (handle-input value))
+                             :callback-data (or (:callback-data args)
+                                                {:value "' + encodeURIComponent($(this).val()) + '"}))
+
           :change
           (set-event-handler "change" it
                              (fn [& {:keys [value]}]
