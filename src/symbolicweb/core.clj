@@ -1,6 +1,7 @@
 (set! *warn-on-reflection* true)
 (set! *print-length* 30)
 (set! *print-level* 3)
+(set! *read-eval* false)
 
 
 
