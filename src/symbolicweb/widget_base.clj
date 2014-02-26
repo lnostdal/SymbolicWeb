@@ -110,12 +110,12 @@ Returns WIDGET."
 
 (defn ^WidgetBase mk-he [html-element-type ^ValueModel value-model & args]
   "  :OBSERVER-FN: (fn [widget old-value new-value] ..)"
-  (let [args (apply hash-map args)
-        html-element-type-str (name html-element-type)]
+  (let [args (apply hash-map args)]
     (mk-HTMLElement value-model
                     (or (:render-fn args)
                         (fn [^ValueModel widget]
-                          (str "<" html-element-type-str " id='" (.id widget) "'></" html-element-type-str ">")))
+                          (html [html-element-type (-> (dissoc args :wb-args :render-fn :observer-fn)
+                                                       (assoc :id (.id widget)))])))
                     (or (:observer-fn args)
                         (fn [^WidgetBase widget old-value new-value]
                           (jqHTML widget (if (.escape-html? widget)
