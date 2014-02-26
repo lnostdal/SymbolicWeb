@@ -124,12 +124,13 @@
   (with-sw-agent (:response-agent viewport-m)
     (locking viewport
       (.append ^StringBuilder (:response-str viewport-m) new-chunk)))
-  (once-only :add-response-chunk-agent-fn
-    (with-sw-agent (:response-agent viewport-m)
-      (locking viewport
-        (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
-          (when @response-sched-fn
-            (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn)))))))
+  (swap! *dyn-ctx* assoc ::add-response-chunk-agent-fn
+         (fn []
+           (with-sw-agent (:response-agent viewport-m)
+             (locking viewport
+               (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
+                 (when @response-sched-fn
+                   (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn))))))))
 
 
 

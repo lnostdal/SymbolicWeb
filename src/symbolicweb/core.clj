@@ -115,7 +115,11 @@
        ;; TODO: Production / development modes needed here too. Logging, etc. etc...
        (with1 ((:request-handler @session) request session)
          (when (:one-shot? @session)
-           (gc-session (:uuid @session) session)))))
+           (gc-session (:uuid @session) session))
+         (when-let [^Fn f (::url-alter-query-params @*dyn-ctx*)]
+           (f))
+         (when-let [^Fn f (::add-response-chunk-agent-fn @*dyn-ctx*)]
+           (f)))))
 
     (catch Throwable e
       (let [ex-id (generate-uuid)]

@@ -113,14 +113,15 @@
                                     true))] ;; ..and here the transaction will be commited in full (return value).
     ;; Start transaction.. (1st phase)
     (dosync
-     (if-not (zero? @mtx-phase)
-       (retry-2pctx "DO-MTX: Retry.")
-       (do
-         (reset! mtx-phase 1)
-         (commute dummy (fn [_] 42))
-         (do1 (body-fn)
-           (when (.isRealized ^Delay *db*)
-             (prepare-fn))))))))
+     (binding [*dyn-ctx* (atom {})]
+       (if-not (zero? @mtx-phase)
+         (retry-2pctx "DO-MTX: Retry.")
+         (do
+           (reset! mtx-phase 1)
+           (commute dummy (fn [_] 42))
+           (do1 (body-fn)
+             (when (.isRealized ^Delay *db*)
+               (prepare-fn)))))))))
 
 
 

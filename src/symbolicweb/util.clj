@@ -134,31 +134,3 @@ Appends a timestamp to the URL based on file mtime."
 
 (defn ^java.sql.Timestamp datetime-to-sql-timestamp [^org.joda.time.DateTime datetime]
   (java.sql.Timestamp. (clj-time.coerce/to-long datetime)))
-
-
-
-(def ^:dynamic *with-once-only-ctx* nil)
-
-
-(defn once-only-get [^Keyword k]
-  (when *with-once-only-ctx*
-    (get @*with-once-only-ctx* k)))
-
-
-(defmacro once-only [^Keyword k & body]
-  "  K: Some Keyword to ID the block. See URL-ALTER-QUERY-PARAMS for an example where this can be useful in combination with
-ONCE-ONLY-GET.
-
-Ex:
-(swsync
- (with-once-only-ctx
-  (dotimes [i 10]
-    (once-only :hello
-     (println \"Hello!\"))
-    (once-only :bye
-     (println \"Goodbye!\")))))
-==>
-Hello!
-Goodbye!
-"
-  `(alter *with-once-only-ctx* assoc ~k (fn [] ~@body)))
