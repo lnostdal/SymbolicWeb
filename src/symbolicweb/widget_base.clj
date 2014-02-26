@@ -98,10 +98,10 @@ Returns WIDGET."
 (defn ^WidgetBase mk-HTMLElement [^ValueModel value-model
                                   ^Fn render-fn
                                   ^Fn observer-fn
-                                  widget-base-args]
+                                  args]
   "  RENDER-FN: (fn [widget] ..)
   OBSERVER-FN: (fn [widget value-model old-value new-value] ..)"
-  (with1 (mk-WidgetBase render-fn widget-base-args)
+  (with1 (mk-WidgetBase render-fn args)
     (vm-observe value-model (.lifetime it) true
                 (fn [^Lifetime lifetime old-value new-value]
                   (observer-fn it old-value new-value)))))

@@ -4,15 +4,9 @@
 (defn ^WidgetBase %mk-HTMLContainer [^Keyword html-element-type args ^Fn content-fn]
   (mk-WidgetBase (fn [^WidgetBase html-container]
                    (binding [*in-html-container?* html-container] ;; Target for calls to SW done in CONTENT-FN.
-                     (if (empty? args)
-                       (let [html-element-type (name html-element-type)]
-                         (str "<" html-element-type " id='" (.id html-container) "'>"
-                              (content-fn html-container)
-                              "</" html-element-type ">"))
-                       (html
-                        [html-element-type (-> (dissoc args :wb-args)
-                                               (assoc :id (.id html-container)))
-                         (content-fn html-container)]))))
+                     (html [html-element-type (-> (dissoc args :wb-args)
+                                                  (assoc :id (.id html-container)))
+                            (content-fn html-container)])))
                  (if-let [id (:id args)]
                    (assoc (:wb-args args) :id id)
                    (:wb-args args))))
