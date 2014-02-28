@@ -157,5 +157,5 @@
 
   ([^WidgetBase widget ^String value ^Boolean as-js?]
      (js-run widget
-             "$('#" (.id widget) "').attr('title', " (js-handle-value value as-js?) "); "
-             "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');")))
+       "$('#" (.id widget) "').attr('title', " (js-handle-value value as-js?) "); "
+       "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');")))
