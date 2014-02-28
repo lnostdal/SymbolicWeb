@@ -73,25 +73,23 @@ Returns WIDGET."
                           args))
                   callback-fn)
                 callback-data])
-        (add-response-chunk
-         (str "$('#" (.id widget) "')"
-              ".off('" event-type "')"
-              (if once?
-                (str ".one('" event-type "', ")
-                (str ".on('" event-type "', "))
-              "function(event){"
-              "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
-              (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
-                                            (keys callback-data)
-                                            (vals callback-data))))
-              "', function(){" js-after "});"
-              "});\n")
-         widget)
+        (js-run widget
+          "$('#" (.id widget) "')"
+          ".off('" event-type "')"
+          (if once?
+            (str ".one('" event-type "', ")
+            (str ".on('" event-type "', "))
+          "function(event){"
+          "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
+          (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                        (keys callback-data)
+                                        (vals callback-data))))
+          "', function(){" js-after "});"
+          "});")
         widget)
       (do
         (alter (.callbacks widget) dissoc event-type)
-        (add-response-chunk (str "$('#" (.id widget) "').off('" event-type "');\n")
-                            widget)))))
+        (js-run widget "$('#" (.id widget) "').off('" event-type "');")))))
 
 
 
@@ -135,11 +133,9 @@ really)."
      (fn [_]
        (let [id (generate-uid)
              viewport (viewport-of context-widget)]
-         (add-response-chunk
-          (str "$('<link id=\"sw-" id "\" rel=\"stylesheet\" href=\"" (gen-url viewport href) "\">').appendTo('head');\n")
-          context-widget)
+         (js-run context-widget
+           "$('<link id=\"sw-" id "\" rel=\"stylesheet\" href=\"" (gen-url viewport href) "\">').appendTo('head');")
          (add-lifetime-deactivation-fn
           (.lifetime context-widget)
           (fn [_]
-            (add-response-chunk (str "$('#sw-" id "').remove();\n")
-                                viewport))))))))
+            (js-run viewport "$('#sw-" id "').remove();"))))))))

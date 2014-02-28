@@ -7,14 +7,14 @@
             (loop [node (cm-head-node container-model)
                    index 1]
               (when node
-                (add-response-chunk (str "$('#" (.id container-view) " *:nth-child(" index ")')"
-                                         ".data('cmn_hash_code', '" (.hashCode node) "');")
-                                    container-view)
+                (js-run container-view
+                  "$('#" (.id container-view) " *:nth-child(" index ")')"
+                  ".data('cmn_hash_code', '" (.hashCode node) "');")
                 (when-let [right-node (cmn-right-node node)]
                   (recur right-node
                          (inc index))))))]
 
-    (add-response-chunk (str "$('#" (.id container-view) "').sortable();") container-view)
+    (js-run container-view "$('#" (.id container-view) "').sortable();")
     (update-dom-hash-codes)
 
     (set-event-handler

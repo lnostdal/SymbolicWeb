@@ -4,5 +4,4 @@
 
 ;; TODO: Leaky DOM.
 (defn show-Notification [message viewport]
-  (add-response-chunk (str "$.sticky(" (url-encode-wrap message) ");")
-                      viewport))
+  (js-run viewport "$.sticky(" (url-encode-wrap message) ");"))

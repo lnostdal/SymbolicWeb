@@ -14,9 +14,10 @@
             (not replace?))
     (swap! *dyn-ctx* assoc ::url-alter-query-params
            (fn []
-             (add-response-chunk (str "window.history." (if replace? "replaceState" "pushState")
-                                      "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');\n")
-                                 viewport)))))
+             (js-run viewport
+               "window.history." (if replace? "replaceState" "pushState")
+               "(null, '', '?" (ring.util.codec/form-encode @(:query-params @viewport)) "');")))))
+
 
 
 

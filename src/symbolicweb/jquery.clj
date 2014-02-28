@@ -21,15 +21,13 @@
      (jqHTML widget value false))
 
   ([^WidgetBase widget ^String value ^Boolean as-js?]
-     (add-response-chunk (str "$('#" (.id widget) "').html(" (js-handle-value value as-js?) ");\n")
-                         widget)))
+     (js-run widget "$('#" (.id widget) "').html(" (js-handle-value value as-js?) ");")))
 
 
 
 (defn jqAppend [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
-  (with1 (add-response-chunk (str "$('#" (.id parent) "').append(" (url-encode-wrap (render-html new-widget)) ");\n")
-                             parent)
+  (with1 (js-run parent "$('#" (.id parent) "').append(" (url-encode-wrap (render-html new-widget)) ");")
     (when-not *with-js?*
       (attach-branch parent new-widget))))
 
@@ -37,8 +35,7 @@
 
 (defn jqPrepend [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
-  (with1 (add-response-chunk (str "$('#" (.id parent) "').prepend(" (url-encode-wrap (render-html new-widget)) ");\n")
-                             parent)
+  (with1 (js-run parent "$('#" (.id parent) "').prepend(" (url-encode-wrap (render-html new-widget)) ");")
     (when-not *with-js?*
       (attach-branch parent new-widget))))
 
@@ -48,8 +45,7 @@
   "Outside."
   (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
-    (with1 (add-response-chunk (str "$('#" (.id widget) "').after(" (url-encode-wrap (render-html new-widget)) ");\n")
-                               parent)
+    (with1 (js-run parent "$('#" (.id widget) "').after(" (url-encode-wrap (render-html new-widget)) ");")
       (when-not *with-js?*
         (attach-branch parent new-widget)))))
 
@@ -59,8 +55,7 @@
   "Outside."
   (let [parent (parent-of widget)]
     (assert (or parent *with-js?*))
-    (with1 (add-response-chunk (str "$('#" (.id widget) "').before(" (url-encode-wrap (render-html new-widget)) ");\n")
-                               parent)
+    (with1 (js-run parent "$('#" (.id widget) "').before(" (url-encode-wrap (render-html new-widget)) ");")
       (when-not *with-js?*
         (attach-branch parent new-widget)))))
 
@@ -68,36 +63,31 @@
 
 (defn jqReplaceWith [^WidgetBase widget ^WidgetBase new-widget]
   (when-not *with-js?* (detach-branch widget))
-  (with1 (add-response-chunk (str "$('#" (.id widget) "').replaceWith(" (url-encode-wrap (render-html new-widget) ");\n")
-                                  widget))
+  (with1 (js-run widget "$('#" (.id widget) "').replaceWith(" (url-encode-wrap (render-html new-widget)) ");")
     (when-not *with-js?*
       (attach-branch widget new-widget))))
 
 
 
 (defn jqAddClass [^WidgetBase widget ^String class-name]
-  (add-response-chunk (str "$('#" (.id widget) "').addClass('" class-name "');\n")
-                      widget))
+  (js-run widget "$('#" (.id widget) "').addClass('" class-name "');"))
 
 
 
 (defn jqRemoveClass [^WidgetBase widget ^String class-name]
-  (add-response-chunk (str "$('#" (.id widget) "').removeClass('" class-name "');\n")
-                      widget))
+  (js-run widget "$('#" (.id widget) "').removeClass('" class-name "');"))
 
 
 
 (defn jqEmpty [^WidgetBase widget]
-  (with1 (add-response-chunk (str "$('#" (.id widget) "').empty();\n")
-                             widget)
+  (with1 (js-run widget "$('#" (.id widget) "').empty();")
     (when-not *with-js?*
       (empty-branch widget))))
 
 
 
 (defn jqRemove [^WidgetBase widget]
-  (with1 (add-response-chunk (str "$('#" (.id widget) "').remove();\n")
-                             widget)
+  (with1 (js-run widget "$('#" (.id widget) "').remove();")
     (when-not *with-js?*
       (detach-branch widget))))
 
@@ -111,8 +101,7 @@
      (jqCSS widget property-name value false))
 
   ([^WidgetBase widget ^String property-name ^String value ^Boolean as-js?]
-     (add-response-chunk (str "$('#" (.id widget) "').css('" property-name "', " (js-handle-value value as-js?) ");\n")
-                         widget)))
+     (js-run widget "$('#" (.id widget) "').css('" property-name "', " (js-handle-value value as-js?) ");")))
 
 
 
@@ -124,14 +113,12 @@
      (jqAttr widget attribute-name value false))
 
   ([^WidgetBase widget ^String attribute-name ^String value ^Boolean as-js?]
-     (add-response-chunk (str "$('#" (.id widget) "').attr('" attribute-name "', " (js-handle-value value as-js?) ");\n")
-                         widget)))
+     (js-run widget "$('#" (.id widget) "').attr('" attribute-name "', " (js-handle-value value as-js?) ");")))
 
 
 
 (defn jqAttrRemove [^WidgetBase widget ^String attribute-name]
-  (add-response-chunk (str "$('#" (.id widget) "').removeAttr('" attribute-name "');\n")
-                      widget))
+  (js-run widget "$('#" (.id widget) "').removeAttr('" attribute-name "');"))
 
 
 
@@ -143,8 +130,7 @@
      (jqProp widget attribute-name value false))
 
   ([^WidgetBase widget ^String attribute-name ^String value ^Boolean as-js?]
-     (add-response-chunk (str "$('#" (.id widget) "').prop('" attribute-name "', " (js-handle-value value as-js?) ");\n")
-                         widget)))
+     (js-run widget "$('#" (.id widget) "').prop('" attribute-name "', " (js-handle-value value as-js?) ");")))
 
 
 
@@ -156,14 +142,12 @@
      (jqVal widget value false))
 
   ([^WidgetBase widget ^String value ^Boolean as-js?]
-     (add-response-chunk (str "$('#" (.id widget) "').val(" (js-handle-value value as-js?) ");\n")
-                         widget)))
+     (js-run widget "$('#" (.id widget) "').val(" (js-handle-value value as-js?) ");")))
 
 
 
 (defn jqFocus [^WidgetBase widget]
-  (add-response-chunk (str "$('#" (.id widget) "').focus();\n")
-                      widget))
+  (js-run widget "$('#" (.id widget) "').focus();"))
 
 
 
@@ -172,6 +156,6 @@
      (jqTooltipShow widget value false))
 
   ([^WidgetBase widget ^String value ^Boolean as-js?]
-     (add-response-chunk (str "$('#" (.id widget) "').attr('title', " (js-handle-value value as-js?) ");\n"
-                              "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');\n")
-                         widget)))
+     (js-run widget
+             "$('#" (.id widget) "').attr('title', " (js-handle-value value as-js?) "); "
+             "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');")))

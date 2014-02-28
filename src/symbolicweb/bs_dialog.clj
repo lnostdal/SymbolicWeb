@@ -14,11 +14,9 @@
             (footer-fn html-container)]])
     (set-event-handler "hidden" it (fn [& _] (jqRemove it)))
     (jqAppend (:root-element @viewport) it)
-    (add-response-chunk (str "$('#" (.id it) "').modal('show');\n")
-                        viewport)))
+    (js-run viewport "$('#" (.id it) "').modal('show');")))
 
 
 
 (defn bs-hide-dialog [^WidgetBase dialog]
-  (add-response-chunk (str "$('#" (.id dialog) "').modal('hide');\n")
-                      dialog))
+  (js-run dialog "$('#" (.id dialog) "').modal('hide');"))

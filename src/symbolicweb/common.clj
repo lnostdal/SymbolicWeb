@@ -255,29 +255,25 @@ Returns a String."
 
 (defn reload-page
   ([viewport ^String rel-url]
-     (add-response-chunk (str "window.location = " (url-encode-wrap rel-url) ";")
-                         viewport))
+     (js-run viewport "window.location = " (url-encode-wrap rel-url) ";"))
+
   ([viewport]
      ;; TODO: I guess we need three ways of reloading now.
      ;;"window.location.reload(false);"
      ;; http://blog.nostdal.org/2011/12/reloading-or-refreshing-web-page-really.html
-     (add-response-chunk "window.location.href = window.location.href;"
-                         viewport)))
+     (js-run viewport "window.location.href = window.location.href;")))
 
 
 (defn replace-page [viewport ^String rel-url]
-  (add-response-chunk (str "window.location.replace(" (url-encode-wrap rel-url) ");")
-                      viewport))
+  (js-run viewport "window.location.replace(" (url-encode-wrap rel-url) ");"))
 
 
 (defn clear-session [session]
   ;; TODO: Do this on the server end instead or also?
   (with-session-viewports session
-    (add-response-chunk (set-session-cookie nil)
-                        viewport)
-    (add-response-chunk "window.location.href = window.location.href;"
-                        viewport)))
-
+    (js-run viewport
+      (set-session-cookie nil)
+      "window.location.href = window.location.href;")))
 
 
 #_(defn clear-all-sessions []
@@ -297,8 +293,7 @@ Returns a String."
 
 (defn alert
   ([msg widget]
-     (add-response-chunk (str "alert(" (url-encode-wrap msg) ");")
-                         widget)))
+     (js-run widget "alert(" (url-encode-wrap msg) ");")))
 
 
 (declare spget)

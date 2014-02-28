@@ -40,7 +40,7 @@
                               (when (or (not (find m :scroll-to-top?))
                                         (:scroll-to-top? m))
                                 ;; TODO: scrollLeft?
-                                (add-response-chunk "$('html, body').scrollTop(0);\n" viewport))
+                                (js-run viewport "$('html, body').scrollTop(0);"))
                               (when-let [f (with (:on-click-fn m)
                                              (when (fn? it) it))]
                                 (f widget))))

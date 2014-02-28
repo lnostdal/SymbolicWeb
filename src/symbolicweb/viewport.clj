@@ -86,9 +86,8 @@
            conj rest-css-entry)
     (add-lifetime-activation-fn (.lifetime (:root-element @viewport))
                                 (fn [_]
-                                  (add-response-chunk
-                                   (str "$('<link rel=\"stylesheet\" href=\"" (:url rest-css-entry) "\">').appendTo('head');\n")
-                                   viewport)))))
+                                  (js-run viewport
+                                    "$('<link rel=\"stylesheet\" href=\"" (:url rest-css-entry) "\">').appendTo('head');")))))
 
 
 
@@ -99,9 +98,8 @@
            conj rest-js-entry)
     (add-lifetime-activation-fn (.lifetime (:root-element @viewport))
                                 (fn [_]
-                                  (add-response-chunk
-                                   (str "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');\n")
-                                   viewport)))))
+                                  (js-run viewport
+                                    "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');")))))
 
 
 
@@ -164,14 +162,13 @@
         callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
     (alter (:callbacks @viewport) assoc (str selector "_" event-type)
            [callback-fn callback-data])
-    (add-response-chunk
-     (str "$(" selector ").off('" event-type "').on('" event-type"', "
-          "function(event){"
-          "swViewportEvent('" selector "_" event-type "', function(){" js-before "}, '"
-          (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
-                                        (keys callback-data)
-                                        (vals callback-data))))
-          "', function(){" js-after "});"
-          "});\n")
-     viewport)
+    (js-run viewport
+      "$(" selector ").off('" event-type "').on('" event-type"', "
+      "function(event){"
+      "swViewportEvent('" selector "_" event-type "', function(){" js-before "}, '"
+      (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
+                                    (keys callback-data)
+                                    (vals callback-data))))
+      "', function(){" js-after "});"
+      "});")
     viewport))

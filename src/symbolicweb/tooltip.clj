@@ -5,8 +5,8 @@
 
 (defn remove-Tooltip [context-widget]
   "Remove (destroy) Tooltip."
-  (add-response-chunk (str "$('#" (:id @context-widget) "').tooltip('destroy');")
-                      context-widget))
+  (js-run context-widget "$('#" (:id @context-widget) "').tooltip('destroy');"))
+
 
 
 (defn show-Tooltip
@@ -14,13 +14,15 @@
   ([context-widget message]
      (show-Tooltip context-widget message nil))
   ([context-widget message options]
-     (add-response-chunk (str "$('#" (:id @context-widget) "')"
-                              ".attr('title', '')"
-                              ".tooltip({"
-                              (map-to-js-options options)
-                              "  content: function(){ return " (url-encode-wrap message) "}"
-                              "}).tooltip('open');")
-                         context-widget)))
+     (js-run context-widget
+       "$('#" (:id @context-widget) "')"
+       ".attr('title', '')"
+       ".tooltip({"
+       (map-to-js-options options)
+       "  content: function(){ return " (url-encode-wrap message) "}"
+       "}).tooltip('open');")))
+
+
 
 
 (defn show-ErrorTooltip

@@ -169,9 +169,9 @@ Session data stored in memory; temporarly."
                                   (vm-set (spget session :session-type) login-type)
                                   (vm-set (spget session :logged-in?) true)
                                   (after-login-fn)))
-    (add-response-chunk (str (set-session-cookie new-cookie-value (= "permanent" login-type))
-                             "$(window).trigger('sw_login');\n")
-                        viewport))) ;; Only sent to VIEWPORT (i.e. not entire SESSION!) doing the actual login.
+    (js-run viewport ;; Only sent to VIEWPORT (i.e. not entire SESSION!) doing the actual login.
+      (set-session-cookie new-cookie-value (= "permanent" login-type))
+      "$(window).trigger('sw_login');") ))
 
 
 

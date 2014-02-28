@@ -74,7 +74,7 @@
     "error"
     (log "HANDLE-IN-CHANNEL-REQUEST (JS error):"
          (json-parse (get (:params request) "msg"))))
-  (add-response-chunk "swCancelSpinner();\n" viewport)
+  (js-run viewport "swCancelSpinner();")
   {:status 200
    :headers {"Content-Type" "text/javascript; charset=UTF-8"}
    :body (do
@@ -135,7 +135,7 @@
 
 
 (defn default-rest-handler [request ^Ref session ^Ref viewport]
-  (add-response-chunk "swDoOnLoadFNs();\n" (:root-element @viewport))
+  (js-run (:root-element @viewport) "swDoOnLoadFNs();")
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
              "Cache-Control" "no-cache, no-store, must-revalidate"

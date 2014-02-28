@@ -14,6 +14,6 @@
          (jqAppend it msg)
          (jqPrepend container it)
          (when delay
-           (add-response-chunk (str "setTimeout(function(){ $('#" (.id msg) "').alert('close') }, " delay ");\n") msg))
+           (js-run msg "setTimeout(function(){ $('#" (.id msg) "').alert('close') }, " delay ");"))
          ;; Ensure that the alert is visible by scrolling it into view.
-         (add-response-chunk (str "$('#" (.id container) "')[0].scrollIntoView(false);\n") container)))))
+         (js-run container "$('#" (.id container) "')[0].scrollIntoView(false);")))))

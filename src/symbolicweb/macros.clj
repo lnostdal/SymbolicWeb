@@ -109,3 +109,8 @@
 (defmacro swsync [& body]
   "BODY executes within a 2PCTX; a combined MTX and DBTX."
   `(do-2pctx (fn [] ~@body)))
+
+
+
+(defmacro js-run [widget & args]
+  `(add-response-chunk (str ~@args "\n") ~widget))

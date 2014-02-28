@@ -118,7 +118,7 @@ MODEL must be a ValueModel like created by e.g. (vm (Calendar/getInstance))."
                                                                           (let [new-cal (. old-cal clone)]
                                                                             (. new-cal set year month day)
                                                                             new-cal)))))))
-                            (add-response-chunk (str "$('#" (widget-id-of it) "').datepicker();") it))))))
+                            (js-run it "$('#" (widget-id-of it) "').datepicker();"))))))
         (observe model it false
                  (fn [_ new-calendar]
                    (vm-set hours (. new-calendar get Calendar/HOUR_OF_DAY))

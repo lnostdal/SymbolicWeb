@@ -13,14 +13,14 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
        (mk-Dialog (mk-p (vm \"test\"))
                     :js-options {:modal :true :width 800 :height 600}
                     :on-close (with-js (alert \"Dialog was closed.\")))))"
-  (add-response-chunk (str "$('#" (.id widget) "')"
-                           ".dialog({"
-                           (map-to-js-options js-options)
-                           "close: function(event, ui){"
-                           "  $('#" (.id widget) "').remove();"
-                           on-close
-                           "}});\n")
-                      widget))
+  (js-run widget
+    "$('#" (.id widget) "')"
+    ".dialog({"
+    (map-to-js-options js-options)
+    "close: function(event, ui){"
+    "  $('#" (.id widget) "').remove();"
+    on-close
+    "}});"))
 
 
 
@@ -42,5 +42,4 @@ DIALOG-JS-OPTIONS can be e.g. {:width 800 :modal true} etc., see the jQuery UI D
 
 (defn close-Dialog [widget]
   ;; TODO: But this never removes it on the server end; i.e. jqAppend also accumulates on the server end.
-  (add-response-chunk (str "$('#" (:id @widget) "').dialog('close');")
-                      widget))
+  (js-run widget "$('#" (:id @widget) "').dialog('close');"))
