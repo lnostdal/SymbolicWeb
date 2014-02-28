@@ -121,7 +121,11 @@
            (commute dummy (fn [_] 42))
            (do1 (body-fn)
              (when (.isRealized ^Delay *db*)
-               (prepare-fn)))))))))
+               (prepare-fn))
+             (when-let [^Fn f (::url-alter-query-params @*dyn-ctx*)]
+               (f))
+             (when-let [^Fn f (::add-response-chunk-agent-fn @*dyn-ctx*)]
+               (f)))))))))
 
 
 
