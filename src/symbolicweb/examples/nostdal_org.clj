@@ -43,14 +43,14 @@
           " (nice for mobile devices)"]]
 
 
-        [:h3 "Previous tech focus (history)"]
-        [:ul
+        #_[:h3 "Previous tech focus (history)"]
+        #_[:ul
          [:li "Basic (Amiga 500!), C, Pascal (Turbo, Delphi), ASP, PHP, Java, C++, Common Lisp"]
          [:li "MySQL"]]
 
 
-        [:h3 "General or other knowledge; &quot;what can you do?&quot;"]
-        [:ul
+        #_[:h3 "General or other knowledge; &quot;what can you do?&quot;"]
+        #_[:ul
          [:li "Object oriented programming (OOP), functional programming, reactive programming, metaprogramming"]
          [:li "I write clean, maintainable code that performs and scales well; I focus on simplicity, reliability and quality"]
          [:li "Source code control for project collaboration; Git"]

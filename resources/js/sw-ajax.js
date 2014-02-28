@@ -2,8 +2,7 @@
 
 
 
-/// Deal with IE insanity ref. http://stackoverflow.com/a/13817235
-
+// Deal with IE insanity ref. http://stackoverflow.com/a/13817235
 (function(){
   if(!window.console){
     window.console = {};
@@ -45,9 +44,7 @@ function swCancelSpinner(){
 
 
 
-/// HTML5 History shim for crappy browsers ///
-//////////////////////////////////////////////
-
+// HTML5 History shim for crappy browsers
 if(!window.history.replaceState) {
   window.history.replaceState = function(x, y, url_search){
     if(url_search != window.location.search){
@@ -65,9 +62,6 @@ if(!window.history.pushState){
 
 
 
-/// swHandleError ///
-/////////////////////
-
 function swHandleError(){
   try{
     swAjax("&do=error", {"msg": JSON.stringify(arguments, null, 2)});
@@ -82,9 +76,6 @@ function swHandleError(){
 window.onerror = swHandleError;
 
 
-
-/// swAddOnLoadFN ///
-/////////////////////
 
 var swAddOnLoadFN, swDoOnLoadFNs;
 (function (){
@@ -108,9 +99,6 @@ var swAddOnLoadFN, swDoOnLoadFNs;
 
 
 
-/// swURL ///
-/////////////
-
 function swURL(params){
   return([window.location.protocol, "//",
           window.location.host,
@@ -121,9 +109,6 @@ function swURL(params){
 }
 
 
-
-/// swAjax ///
-//////////////
 
 var swAjax = (function(){
   var queue = new Array();
@@ -176,9 +161,6 @@ var swAjax = (function(){
 
 
 
-/// swComet ///
-///////////////
-
 var _sw_comet_response_p = false;
 
 var swComet  = (function(){
@@ -205,9 +187,6 @@ var swComet  = (function(){
 
 
 
-/// swWidgetEvent ///
-////////////////////
-
 function swWidgetEvent(widget_id, callback_id, js_before, callback_data, js_after){
   if(js_before())
     swAjax("&do=widget-event" + "&_sw_widget-id=" + widget_id + "&_sw_callback-id=" + callback_id,
@@ -217,9 +196,6 @@ function swWidgetEvent(widget_id, callback_id, js_before, callback_data, js_afte
 
 
 
-/// swViewportEvent ///
-///////////////////////
-
 function swViewportEvent(callback_id, js_before, callback_data, js_after){
   if(js_before())
     swAjax("&do=viewport-event" + "&_sw_callback-id=" + callback_id,
@@ -228,9 +204,6 @@ function swViewportEvent(callback_id, js_before, callback_data, js_after){
 }
 
 
-
-/// Shutdown ///
-/////////////////
 
 // So unload event fires on (some, but still not all ..sigh) navigation in Opera too.
 if(typeof(opera) != "undefined"){
@@ -248,9 +221,6 @@ $(window).on("unload", function(){
 });
 
 
-
-/// Boot! ///
-/////////////
 
 function swBoot(){
   if(document.cookie.indexOf(sw_cookie_name) != -1){
