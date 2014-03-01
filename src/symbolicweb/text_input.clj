@@ -4,9 +4,9 @@
 ;; No input parsing here since it seems doing that on the Model end of things is better. E.g. sometimes input can come from
 ;; several sources.
 
-;; TODO: The jqVal triggered by e.g. :INITIAL-SYNC-SERVER? might overwrite autofilled data (I think).
 ;; TODO: Autofill does not trigger onchange event ref. issue #35. Dealing with this using polling or similar leads to races
-;; with other things; e.g. form submit event.
+;; with other things; e.g. form submit event. The currently best way of dealing with this that I know of is to on submit
+;; "manually" trigger 'change' events for each form field that might (no way to tell) have been autofilled. :(
 
 
 
@@ -30,32 +30,33 @@ ARGS:
   :CALLBACK-DATA: Can be used to change data sent from client to server on the client end – before actual send.
   :OUTPUT-VM: Takes a ValueModel that will be synced one way: server --> client.
               This will also cause INPUT-VM to be synced only one way: client --> server."
+
   (let [args (apply hash-map args)]
     (with1 (mk-WidgetBase (fn [^WidgetBase widget]
                             (html [:input (-> (dissoc args :wb-args :initial-sync-server? :one-way-sync-client?
                                                       :clear-on-submit? :blur-on-submit? :callback-data :output-vm)
                                               (assoc :id (.id widget)
-                                                     :type (or (:type args) "text")))]))
+                                                     :type (or (:type args) 'text)))]))
                           (if-let [id (:id args)]
                             (assoc (:wb-args args) :id id)
                             (:wb-args args)))
 
 
-      ;; INPUT-VM: Server --> client.
-      (if (or (= trigger-event :input)
-              (:one-way-sync-client? args)
-              (:output-vm args))
-        (when (get args :initial-sync-server? true)
-          (jqVal it @input-vm))
+      ;; Continious sync: Server --> client.
+      ;; NOTE: Chrome autofill will actually overwrite "" values ref. issue: http://goo.gl/aaHmyU
+      (when-not (or (= trigger-event :input)
+                    (:one-way-sync-client? args)
+                    (:output-vm args))
         (vm-observe input-vm (.lifetime it) (get args :initial-sync-server? true)
-                    #(jqVal it (or %3 ""))))
+                    #(jqVal it %3)))
 
 
-      ;; INPUT-VM: Client --> server.
+      ;; Continious sync: Client --> server.
       (letfn [(handle-input [input-value]
                 (vm-set input-vm input-value)
                 (when (:clear-on-submit? args)
                   (vm-set input-vm nil)))]
+
         (case trigger-event
           :input
           (set-event-handler "input" it
@@ -92,7 +93,7 @@ ARGS:
       ;; OUTPUT-VM: Server --> client.
       (when-let [output-vm (:output-vm args)]
         (vm-observe output-vm (.lifetime it) false
-                    #(jqVal it (or %3 "")))))))
+                    #(jqVal it %3))))))
 
 
 
