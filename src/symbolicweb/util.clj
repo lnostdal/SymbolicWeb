@@ -23,24 +23,10 @@
   (json/generate-string clojure-object))
 
 
-(defn strb
-  (^StringBuilder
-   [^StringBuilder sb]
-   (.append sb ""))
 
-  (^StringBuilder
-   [^StringBuilder sb ^Object x]
-   (.append sb (if (nil? x) "" (.toString x))))
-
-   (^StringBuilder
-    [^StringBuilder sb x & ys]
-    ((fn [^StringBuilder sb more]
-       (if more
-         (recur (.append sb (str (first more)))
-                (next more))
-         sb))
-     (.append sb (str x))
-     ys)))
+(defmacro strb [sb-name & args]
+  `(do ~@(map (fn [arg] `(.append ~sb-name ~arg))
+              args)))
 
 
 
