@@ -37,7 +37,7 @@
                              :response-sched-fn (atom nil)
                              :response-agent (mk-sw-agent {:executor clojure.lang.Agent/pooledExecutor} nil nil)
 
-                             ;; Resources; using Vectors since order matters.
+                             ;; Resources; maps in Clojure (still?) seem to maintain order.
                              :rest-css-entries (ref {})
                              :rest-js-entries (ref {})
                              :rest-head-entries (ref [])
