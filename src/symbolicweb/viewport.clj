@@ -38,8 +38,8 @@
                              :response-agent (mk-sw-agent {:executor clojure.lang.Agent/pooledExecutor} nil nil)
 
                              ;; Resources; using Vectors since order matters.
-                             :rest-css-entries (ref [])
-                             :rest-js-entries (ref [])
+                             :rest-css-entries (ref {})
+                             :rest-js-entries (ref {})
                              :rest-head-entries (ref [])
 
                              :session session
@@ -73,33 +73,39 @@
     (alter (:viewports @session) assoc viewport-id viewport)
     ;; Widget --> Viewport.
     (vm-set (.viewport root-widget) viewport)
-    (do-lifetime-activation (.lifetime root-widget))
-
     viewport))
 
 
 
 (defn add-rest-css [^Ref viewport rest-css-entry]
-  (when-not (some #(= (:url %) (:url rest-css-entry))
-                  (ensure (:rest-css-entries @viewport)))
+  (when-not (get (ensure (:rest-css-entries @viewport)) (:url rest-css-entry))
     (alter (:rest-css-entries @viewport)
-           conj rest-css-entry)
+           assoc (:url rest-css-entry) rest-css-entry)
     (add-lifetime-activation-fn (.lifetime (:root-element @viewport))
                                 (fn [_]
-                                  (js-run viewport
-                                    "$('<link rel=\"stylesheet\" href=\"" (:url rest-css-entry) "\">').appendTo('head');")))))
+                                  (let [rest-css-entry (get (ensure (:rest-css-entries @viewport)) (:url rest-css-entry))]
+                                    ;; Not already added via code in DEFAULT-REST-HANDLER?
+                                    (when-not (:already-added? rest-css-entry)
+                                      (js-run viewport
+                                        "$('<link rel=\"stylesheet\" href=\"" (:url rest-css-entry) "\">').appendTo('head');")
+                                      (alter (:rest-css-entries @viewport)
+                                             assoc (:url rest-css-entry) (assoc rest-css-entry :already-added? true))))))))
 
 
 
 (defn add-rest-js [^Ref viewport rest-js-entry]
-  (when-not (some #(= (:url %) (:url rest-js-entry))
-                  (ensure (:rest-js-entries @viewport)))
+  (when-not (get (ensure (:rest-js-entries @viewport)) (:url rest-js-entry))
     (alter (:rest-js-entries @viewport)
-           conj rest-js-entry)
+           assoc (:url rest-js-entry) rest-js-entry)
     (add-lifetime-activation-fn (.lifetime (:root-element @viewport))
                                 (fn [_]
-                                  (js-run viewport
-                                    "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');")))))
+                                  (let [rest-js-entry (get (ensure (:rest-js-entries @viewport)) (:url rest-js-entry))]
+                                    ;; Not already added to page via code in DEFAULT-REST-HANDLER?
+                                    (when-not (:already-added? rest-js-entry)
+                                      (js-run viewport
+                                        "$('<script src=\"" (:url rest-js-entry) "\"></script>').appendTo('head');")
+                                      (alter (:rest-js-entries @viewport)
+                                             assoc (:url rest-js-entry) (assoc rest-js-entry :already-added? true))))))))
 
 
 

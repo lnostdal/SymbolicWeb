@@ -128,9 +128,10 @@
 
       ;; REST.
       (let [viewport ((:mk-viewport-fn @session) request session)]
-        (if (= request-type "aux")
-          ((:aux-handler @session) request session viewport)
-          ((:rest-handler @session) request session viewport)))))) ;; E.g. DEFAULT-REST-HANDLER, below.
+        (do1 (if (= request-type "aux")
+               ((:aux-handler @session) request session viewport)
+               ((:rest-handler @session) request session viewport)) ;; E.g. DEFAULT-REST-HANDLER, below.
+          (do-lifetime-activation (.lifetime (:root-element @viewport))))))))
 
 
 
@@ -152,7 +153,13 @@
       [:meta {:charset "UTF-8"}]
       [:title (:page-title @viewport)]
 
-      (generate-rest-head @(:rest-head-entries @viewport))
+      (generate-rest-head (ensure (:rest-head-entries @viewport)))
+
+      (with-string-builder sb
+        (doseq [[k entry] (reverse (ensure (:rest-css-entries @viewport)))]
+          (strb sb "<link rel=\"stylesheet\" href=\"" (:url entry) "\">")
+          (alter (:rest-css-entries @viewport)
+                 assoc key (assoc entry :already-added? true))))
 
       ;; jQuery.
       "<!--[if lt IE 9]>"
@@ -164,7 +171,13 @@
 
       ;; SW specific.
       [:script (sw-js-base-bootstrap session viewport)]
-      [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]]
+      [:script {:src (gen-url viewport "sw/js/sw-ajax.js")}]
+
+      (with-string-builder sb
+        (doseq [[k entry] (reverse (ensure (:rest-js-entries @viewport)))]
+          (strb sb "<script src=\"" (:url entry) "\"></script>")
+          (alter (:rest-js-entries @viewport)
+                 assoc k (assoc entry :already-added? true))))]
 
      [:body {:id "_body"}
       [:noscript
