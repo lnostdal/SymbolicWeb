@@ -159,7 +159,7 @@
         (doseq [[k entry] (reverse (ensure (:rest-css-entries @viewport)))]
           (strb sb "<link rel=\"stylesheet\" href=\"" (:url entry) "\">")
           (alter (:rest-css-entries @viewport)
-                 assoc key (assoc entry :already-added? true))))
+                 assoc k (assoc entry :already-added? true))))
 
       ;; jQuery.
       "<!--[if lt IE 9]>"
