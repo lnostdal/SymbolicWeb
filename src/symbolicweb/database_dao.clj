@@ -248,7 +248,9 @@ Returns OBJ or NIL"
      (when-not @(:id @obj)
        (let [record-data (atom {})
              values-to-escape (atom [])
+             already-persistent-keys (atom #{})
              after-insert-fns (atom [])]
+         ;; TODO: Should a DB-CLJ-TO-DB-HANDLER deal with this?
          (doseq [[^Keyword clj-key clj-value] (ensure obj)]
            (let [res (db-clj-to-db-transformer db-cache obj clj-key clj-value)
                  ^Keyword db-key (:key res)
@@ -262,6 +264,7 @@ Returns OBJ or NIL"
                 (isa? (class clj-value) ContainerModel)
                 (swap! after-insert-fns conj
                        (fn [] (db-ensure-persistent-cm-field db-cache obj clj-key clj-value true))))
+               (swap! already-persistent-keys conj db-key)
                (swap! record-data assoc db-key db-value))))
          (let [sql (if (pos? (count @record-data))
                      (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~}) RETURNING *;"
@@ -285,12 +288,13 @@ Returns OBJ or NIL"
                                       (vals @record-data)))
                      (str "INSERT INTO " (.table-name db-cache) " DEFAULT VALUES;"))
                res (first (apply db-pstmt sql @values-to-escape))]
-           (vm-set (:id @obj) (:id res))
            (when update-cache?
              (db-cache-put db-cache (:id res) obj))
-           (doseq [^Fn f @after-insert-fns] (f)) ;; TODO: Not sure where to place this.
-           ;; TODO: The True here leads to multiple calls to DB-ENSURE-PERSISTENT.. for the same fields. ..uh, when?
-           (db-db-to-clj-entry-handler db-cache obj res true)
+           (doseq [^Fn f @after-insert-fns] (f))
+           ;; The DB might have added new fields to the OBJ on 'INSERT'. We need to make sure those are persistent too.
+           (doseq [[^Keyword db-key db-value] res]
+             (when-not (contains? @already-persistent-keys db-key)
+               (db-db-to-clj-handler db-cache obj db-key db-value true)))
            ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
            ((.after-fn db-cache) obj)
            obj)))))
