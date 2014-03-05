@@ -32,14 +32,14 @@
 
 (defn ^String db-clj-cm-to-db-array [^ContainerModel container-model ^String db-type]
   "SW (ContainerModel) --> DB (SQL Array)"
-  (with-local-vars [elts []]
+  (let [elts (atom [])]
     (cm-iterate container-model _ obj
-      (var-alter elts conj (with1 @(:id @obj)
-                             (assert (integer? it)
-                                     (str "DB-CLJ-CM-TO-DB-ARRAY: Object not in DB yet? :ID is not an integer: " it))))
+      (swap! elts conj (with1 @(:id @obj)
+                         (assert (integer? it)
+                                 (str "DB-CLJ-CM-TO-DB-ARRAY: Object not in DB yet? :ID is not an integer: " it))))
 
       false)
-    (cl-format false "ARRAY[~{~S~^, ~}]::~A[]" (var-get elts) db-type)))
+    (cl-format false "ARRAY[~{~S~^, ~}]::~A[]" @elts db-type)))
 
 
 
@@ -246,9 +246,9 @@ Returns OBJ or NIL"
   ([^Ref obj ^DBCache db-cache] (db-backend-put obj db-cache true))
   ([^Ref obj ^DBCache db-cache ^Boolean update-cache?]
      (when-not @(:id @obj)
-       (with-local-vars [record-data {}
-                         values-to-escape []
-                         after-insert-fns []]
+       (let [record-data (atom {})
+             values-to-escape (atom [])
+             after-insert-fns (atom [])]
          (doseq [[^Keyword clj-key clj-value] (ensure obj)]
            (let [res (db-clj-to-db-transformer db-cache obj clj-key clj-value)
                  ^Keyword db-key (:key res)
@@ -256,22 +256,22 @@ Returns OBJ or NIL"
              (when db-key
                (cond
                 (isa? (class clj-value) ValueModel)
-                (var-alter after-insert-fns conj
-                           (fn [] (db-ensure-persistent-vm-field db-cache obj clj-key clj-value)))
+                (swap! after-insert-fns conj
+                       (fn [] (db-ensure-persistent-vm-field db-cache obj clj-key clj-value)))
 
                 (isa? (class clj-value) ContainerModel)
-                (var-alter after-insert-fns conj
-                           (fn [] (db-ensure-persistent-cm-field db-cache obj clj-key clj-value true))))
-               (var-alter record-data assoc db-key db-value))))
-         (let [sql (if (pos? (count (var-get record-data)))
+                (swap! after-insert-fns conj
+                       (fn [] (db-ensure-persistent-cm-field db-cache obj clj-key clj-value true))))
+               (swap! record-data assoc db-key db-value))))
+         (let [sql (if (pos? (count @record-data))
                      (cl-format false "INSERT INTO ~A (~{~A~^, ~}) VALUES (~{~A~^, ~}) RETURNING *;"
                                 (.table-name db-cache)
-                                (mapv name (keys (var-get record-data)))
+                                (mapv name (keys @record-data))
                                 (mapv (fn [v]
                                         (cond
                                          (isa? (class v) ValueModel)
                                          (do1 "?"
-                                           (var-alter values-to-escape conj @v))
+                                           (swap! values-to-escape conj @v))
 
                                          ;; Dummy value here so we can do our :INSERT without having to :INSERT other objects
                                          ;;first. Doing that would be tricky since those objects might rely on this object
@@ -281,15 +281,15 @@ Returns OBJ or NIL"
 
                                          true
                                          (do1 "?"
-                                           (var-alter values-to-escape conj v))))
-                                      (vals (var-get record-data))))
+                                           (swap! values-to-escape conj v))))
+                                      (vals @record-data)))
                      (str "INSERT INTO " (.table-name db-cache) " DEFAULT VALUES;"))
-               res (first (apply db-pstmt sql (var-get values-to-escape)))]
+               res (first (apply db-pstmt sql @values-to-escape))]
            (vm-set (:id @obj) (:id res))
            (when update-cache?
              (db-cache-put db-cache (:id res) obj))
-           (doseq [^Fn f (var-get after-insert-fns)] (f)) ;; TODO: Not sure where to place this.
-           ;; TODO: The True here leads to multiple calls to DB-ENSURE-PERSISTENT.. for the same fields.
+           (doseq [^Fn f @after-insert-fns] (f)) ;; TODO: Not sure where to place this.
+           ;; TODO: The True here leads to multiple calls to DB-ENSURE-PERSISTENT.. for the same fields. ..uh, when?
            (db-db-to-clj-entry-handler db-cache obj res true)
            ;; Initialize object further; perhaps add further (e.g. non-DB related) observers of the objects fields etc..
            ((.after-fn db-cache) obj)
