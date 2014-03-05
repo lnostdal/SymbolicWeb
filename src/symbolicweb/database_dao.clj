@@ -276,9 +276,9 @@ Returns OBJ or NIL"
                                          (do1 "?"
                                            (swap! values-to-escape conj @v))
 
-                                         ;; Dummy value here so we can do our :INSERT without having to :INSERT other objects
-                                         ;;first. Doing that would be tricky since those objects might rely on this object
-                                         ;; having been :INSERTed first (:ID field).
+                                         ;; Dummy value here so we can do our 'INSERT' without having to 'INSERT' other objects
+                                         ;; first. Doing that would be tricky since those objects might rely on this object
+                                         ;; having been 'INSERT'ed first (:ID field).
                                          (isa? (class v) ContainerModel)
                                          "ARRAY[]::bigint[]" ;; TODO: Magic value.
 
@@ -286,7 +286,7 @@ Returns OBJ or NIL"
                                          (do1 "?"
                                            (swap! values-to-escape conj v))))
                                       (vals @record-data)))
-                     (str "INSERT INTO " (.table-name db-cache) " DEFAULT VALUES;"))
+                     (str "INSERT INTO " (.table-name db-cache) " DEFAULT VALUES RETURNING *;"))
                res (first (apply db-pstmt sql @values-to-escape))]
            (when update-cache?
              (db-cache-put db-cache (:id res) obj))
