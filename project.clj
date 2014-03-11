@@ -25,6 +25,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 -----END PGP SIGNATURE-----
 "
 
+
   :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
                  [org.clojure/tools.nrepl "LATEST"]
 
@@ -52,6 +53,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [org.postgresql/postgresql "LATEST"] ;; JDBC driver.
                  [com.jolbox/bonecp "LATEST"] ;; DB connection pooling.
                  ]
+
 
   :jvm-opts [;; General.
              "-server" "-XX:+TieredCompilation"

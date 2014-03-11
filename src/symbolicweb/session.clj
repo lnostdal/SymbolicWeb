@@ -15,6 +15,8 @@ CREATE TABLE sessions (
     uuid text NOT NULL,
     user_ref bigint
 );
+ALTER TABLE sessions ADD PRIMARY KEY (id);
+ALTER TABLE sessions ADD UNIQUE (uuid);
 ")))
 
 
@@ -169,7 +171,7 @@ Session data stored in memory; temporarly."
                                   (vm-set (spget session :session-type) login-type)
                                   (vm-set (spget session :logged-in?) true)
                                   (after-login-fn)))
-    (js-run viewport ;; Only sent to VIEWPORT (i.e. not entire SESSION!) doing the actual login.
+    (js-run viewport ;; Only sent to VIEWPORT (i.e. not entire SESSION which might be 'stolen'!) doing the actual login.
       (set-session-cookie new-cookie-value (= "permanent" login-type))
       "$(window).trigger('sw_login');") ))
 

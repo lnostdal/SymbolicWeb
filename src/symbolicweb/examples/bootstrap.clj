@@ -10,7 +10,6 @@
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
         viewport (mk-Viewport request session root-widget :page-title "SW: Bootstrap")]
     (add-rest-head viewport "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />")
-
     (add-resource viewport :css "bootstrap/dist/css/bootstrap.min.css")
     (add-resource viewport :css "bootstrap/dist/css/bootstrap-theme.min.css")
     (add-resource viewport :js "bootstrap/dist/js/bootstrap.min.js")
@@ -20,6 +19,7 @@
 
         [:nav {:class "navbar navbar-default" :role "navigation"}
          [:div {:class "container-fluid"}
+
           [:div {:class "navbar-header"}
            [:button {:type "button" :class "navbar-toggle" :data-toggle "collapse" :data-target ".navbar-collapse"}
             [:span {:class "sr-only"} "Toggle navigation"]
@@ -36,6 +36,6 @@
 
          [:h3 "Bootstrap: basic example"]
          [:p "This example shows how to get " [:a {:href "http://getbootstrap.com/"} "Bootstrap"]
-         " up and running with SymbolicWeb."]))
+          " up and running with SymbolicWeb."]))
 
     viewport))

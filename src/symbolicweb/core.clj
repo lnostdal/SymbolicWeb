@@ -101,6 +101,8 @@
   (:require symbolicweb.examples.history)
   (:require symbolicweb.examples.bitcoin)
   (:require symbolicweb.examples.bitcoin-units)
+  (:require symbolicweb.examples.bootstrap)
+  (:require symbolicweb.examples.foundation)
   )
 
 

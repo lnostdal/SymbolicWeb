@@ -30,9 +30,9 @@
           [:ul {:class "left"}
            [:li [:a "Left Nav Button"]]]
 
-
           [:ul {:class "right"}
            [:li [:a "Right Nav Button"]]]]]
+
 
         [:h2 "SymbolicWeb"]
         [:h3 "Foundation: basic example"]
