@@ -38,3 +38,32 @@ ALTER TABLE users ADD UNIQUE (uuid);
               :sessions (vm #{}) ;; NOTE: GC-SESSION depends on this field.
               :uuid (generate-uuid)
               args)))
+
+
+
+(swap! -db-cache-constructors- assoc "users"
+       #(mk-DBCache "users"
+                    (fn [db-cache id] (mk-UserModelBase))
+                    #'identity
+                    (fn [m]
+                      (-> m
+                          (user-model-base-clj-to-db-transformer)
+                          (db-default-clj-to-db-transformer)))
+                    #'db-default-db-to-clj-transformer))
+
+
+
+(defn user-get-or-create
+  ([^String email]
+     (user-get-or-create email nil))
+
+  ([^String email ^Fn create-fn]
+     (if-let [id (:id (first (db-pstmt "SELECT id FROM users WHERE email = ? LIMIT 1;" email)))]
+       (db-get id "users")
+       (create-fn email))))
+
+
+
+(defn strip-email ^String [^String email]
+  (-> (clojure.string/trim email)
+      (clojure.string/lower-case)))
