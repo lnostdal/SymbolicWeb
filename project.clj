@@ -58,6 +58,8 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
   :jvm-opts [;; General.
              "-server" "-XX:+TieredCompilation"
              "-XX:+UseCompressedOops"
+             "-XX:MaxInlineSize=1024"
+             "-XX:FreqInlineSize=1024"
 
 
              ;;; Garbage Collection
