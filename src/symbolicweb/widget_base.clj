@@ -76,9 +76,7 @@ Returns WIDGET."
         (js-run widget
           "$('#" (.id widget) "')"
           ".off('" event-type "')"
-          (if once?
-            (str ".one('" event-type "', ")
-            (str ".on('" event-type "', "))
+          (if once? ".one" ".on") "('" event-type "', "
           "function(event){"
           "swWidgetEvent('" (.id widget) "', '" event-type "', function(){" js-before "}, '"
           (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
