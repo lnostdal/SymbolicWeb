@@ -170,10 +170,11 @@ Session data stored in memory; temporarly."
                                   (vm-set (:user-model @session) user-model)
                                   (vm-set (spget session :session-type) login-type)
                                   (vm-set (spget session :logged-in?) true)
-                                  (after-login-fn)))
+                                  (after-login-fn))
+                                :js-after "swCancelSpinner();")
     (js-run viewport ;; Only sent to VIEWPORT (i.e. not entire SESSION which might be 'stolen'!) doing the actual login.
       (set-session-cookie new-cookie-value (= "permanent" login-type))
-      "$(window).trigger('sw_login');") ))
+      "$(window).trigger('sw_login');")))
 
 
 
