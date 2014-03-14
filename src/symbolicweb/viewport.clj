@@ -159,16 +159,25 @@
 
 
 (defn set-viewport-event-handler [^String selector ^String event-type ^Ref viewport ^Fn callback-fn
-                                  & {:keys [js-before callback-data js-after]
+                                  & {:keys [js-before callback-data js-after once?]
                                      :or {js-before "return(true);"
                                           callback-data {}
                                           js-after ""}}]
   (let [;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
-        callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
-    (alter (:callbacks @viewport) assoc (str selector "_" event-type)
-           [callback-fn callback-data])
+        callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])
+        cb-id (str selector "_" event-type)]
+    (alter (:callbacks @viewport) assoc cb-id
+           [(if once?
+              ;; Unbind event handler on server side before executing it once.
+              (comp callback-fn
+                    (fn [& args]
+                      (alter (:callbacks @viewport) dissoc cb-id)
+                      args))
+              callback-fn)
+            callback-data])
     (js-run viewport
-      "$(" selector ").off('" event-type "').on('" event-type"', "
+      "$(" selector ").off('" event-type "')"
+      (if once? ".one" ".on") "('" event-type"', "
       "function(event){"
       "swViewportEvent('" selector "_" event-type "', function(){" js-before "}, '"
       (apply str (interpose \& (map #(str (url-encode-component (str %1)) "=" %2)
