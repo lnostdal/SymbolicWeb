@@ -147,7 +147,7 @@ var swAjax = (function(){
               if(error_thrown == "timeout"){
                 doIt();
               } else {
-                setTimeout(function(){ doIt(); }, 500);
+                window.setTimeout(function(){ doIt(); }, 500);
               }
             }
           })
@@ -182,13 +182,13 @@ var swComet  = (function(){
         }
         else{
           console.log("swComet: reboot!");
-          setTimeout("swComet('&do=reboot');", 1000);
+          window.setTimeout("swComet('&do=reboot');", 1000);
         }
       });
   }
 
   // Stops "throbbing of doom" and ensure we do not recurse until a stack overflow.
-  return function(params){ setTimeout(function(){ doIt(params); }, 0); };
+  return function(params){ window.setTimeout(function(){ doIt(params); }, 0); };
 })();
 
 
