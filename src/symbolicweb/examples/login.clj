@@ -47,9 +47,8 @@
                                                                                              :password (vm @password-vm))
                                                                       (db-put it "users"))))]
                                (if (= @password-vm @(:password @user-model))
-                                 (do
-                                   (session-login session user-model viewport "permanent" (fn []))
-                                   (vm-set msg-vm "Login success."))
+                                 (session-login session user-model viewport "permanent"
+                                                (fn [] (vm-set msg-vm "Login success.")))
                                  (vm-set msg-vm "Login failed. Wrong password?"))))
                            ;; Issue #35: https://github.com/lnostdal/SymbolicWeb/issues/35
                            :js-before (str "$('#" (.id email-io-view) "').trigger('change');"

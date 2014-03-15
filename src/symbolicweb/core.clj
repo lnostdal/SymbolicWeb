@@ -103,6 +103,7 @@
   (:require symbolicweb.examples.bitcoin-units)
   (:require symbolicweb.examples.bootstrap)
   (:require symbolicweb.examples.foundation)
+  (:require symbolicweb.examples.login)
   )
 
 

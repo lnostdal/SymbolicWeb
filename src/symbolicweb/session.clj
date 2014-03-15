@@ -153,6 +153,8 @@ Session data stored in memory; temporarly."
 
 
 (defn session-login [^Ref session ^Ref user-model ^Ref viewport ^String login-type ^Fn after-login-fn]
+  "Note that this is a non-blocking call. I.e. if you need to run something after (for sure) login, use the AFTER-LOGIN-FN
+callback."
   (let [old-cookie-value (:uuid @session)
         new-cookie-value (generate-uuid)]
     (alter session assoc :uuid new-cookie-value)
