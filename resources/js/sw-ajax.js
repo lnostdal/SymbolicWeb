@@ -27,19 +27,24 @@ console.log("###################################################################
 
 
 
+var sw_spinner_cnt = 0;
 var sw_spinner = false;
 
 function swPrepareSpinner(){
-  if(!sw_spinner)
-    sw_spinner = setTimeout(function(){ $("html, body").css("cursor", "wait"); },
-                            100);
+  if(sw_spinner_cnt == 0)
+    sw_spinner = window.setTimeout(function(){ $("html, body").css("cursor", "wait"); },
+                                   100);
+  sw_spinner_cnt++;
 }
 
 function swCancelSpinner(){
-  if(sw_spinner){
-    clearTimeout(sw_spinner);
-    sw_spinner = false;
-    $("html, body").css("cursor", "auto");
+  if(sw_spinner_cnt > 0){
+    sw_spinner_cnt--;
+    if(sw_spinner_cnt == 0){
+      window.clearTimeout(sw_spinner);
+      sw_spinner = false;
+      $("html, body").css("cursor", "auto");
+    }
   }
 }
 
