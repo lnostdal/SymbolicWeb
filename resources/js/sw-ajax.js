@@ -30,8 +30,9 @@ console.log("###################################################################
 var sw_spinner = false;
 
 function swPrepareSpinner(){
-  sw_spinner = setTimeout(function(){ $("html, body").css("cursor", "wait"); },
-                          100);
+  if(!sw_spinner)
+    sw_spinner = setTimeout(function(){ $("html, body").css("cursor", "wait"); },
+                            100);
 }
 
 function swCancelSpinner(){
