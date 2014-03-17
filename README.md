@@ -9,7 +9,7 @@ Some examples:
 
 Running here: https://nostdal.org/history
 
-..or on I2P darknet here: http://utgf6vb44abxntvqqfcge2rnt5wfzb5kcltglaojam4sqhemsz6q.b32.i2p/history
+..or on I2P darknet here: http://4jiq4axgdpk3bmnfmbtmuoj3cjhnaj74lbhqptvc2fhdabvsgncq.b32.i2p/history
 
 Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj
 
@@ -20,11 +20,20 @@ YouTube: https://www.youtube.com/watch?v=GHKGCFPVbbc
 
 Running here: https://nostdal.org/bitcoin-units
 
-..or on I2P darknet here: http://utgf6vb44abxntvqqfcge2rnt5wfzb5kcltglaojam4sqhemsz6q.b32.i2p/bitcoin-units
+..or on I2P darknet here: http://4jiq4axgdpk3bmnfmbtmuoj3cjhnaj74lbhqptvc2fhdabvsgncq.b32.i2p/bitcoin-units
 
 Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/bitcoin_units.clj
 
 YouTube: https://www.youtube.com/watch?v=5W_gYla0UsY
+
+
+#### Login example
+
+Running here: https://nostdal.org/login
+
+..or on I2P darknet here: http://4jiq4axgdpk3bmnfmbtmuoj3cjhnaj74lbhqptvc2fhdabvsgncq.b32.i2p/login
+
+Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/login.clj
 
 
 
