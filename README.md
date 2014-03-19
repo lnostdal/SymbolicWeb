@@ -36,6 +36,15 @@ Running here: https://nostdal.org/login
 Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/login.clj
 
 
+#### Templating example
+
+Running here: https://nostdal.org/templating
+
+..or on I2P darknet here: http://4jiq4axgdpk3bmnfmbtmuoj3cjhnaj74lbhqptvc2fhdabvsgncq.b32.i2p/templating
+
+Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/templating.clj
+
+
 
 ## Status
 
