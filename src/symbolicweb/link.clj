@@ -24,9 +24,8 @@
          (when-let [viewport (viewport-of widget)]
            (vm-set query-str-vm
                    (ring.util.codec/form-encode
-                    ;; QUERY-PARAMS is a Sorted Map, and so result of MERGE will be too.
-                    (apply merge @(:query-params @viewport)
-                           (map (fn [[url-mapper url-mapper-mutator-vm]]
+                    (apply merge @(:query-params @viewport) ;; QUERY-PARAMS is a Sorted Map, and so result of MERGE will be too.
+                           (map (fn [[url-mapper ^ValueModel url-mapper-mutator-vm]]
                                   (hash-map (:name url-mapper) @url-mapper-mutator-vm))
                                 url-mappers))))))
 
