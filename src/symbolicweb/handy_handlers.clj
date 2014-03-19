@@ -180,6 +180,7 @@
                  assoc k (assoc entry :already-added? true))))]
 
      [:body {:id "_body"}
+      [:div {:id "_sw_htmlctemplates" :style "display: none;"}]
       [:noscript
        [:h3 "JavaScript needs to be enabled in your browser"]
        [:p [:a {:href "https://encrypted.google.com/search?hl=en&q=how%20to%20enable%20javascript"}

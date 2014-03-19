@@ -41,6 +41,7 @@
                              :rest-css-entries (ref {})
                              :rest-js-entries (ref {})
                              :rest-head-entries (ref [])
+                             :html-templates (ref #{}) ;; mk-HTMLCTemplate
 
                              :session session
                              :root-element root-widget ;; TODO: Rename...
