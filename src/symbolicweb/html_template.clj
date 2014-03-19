@@ -75,7 +75,7 @@
                   (cond
                    (= java.lang.String content-class)
                    (js-run template-widget
-                     "$('#" (.id template-widget) " " selector "').text(" (js-handle-value content false) ");")
+                     "$('#" (.id template-widget) "').find('" selector "').text(" (js-handle-value content false) ");")
 
                    (= clojure.lang.PersistentVector content-class)
                    (let [cmd (first content)]
@@ -83,17 +83,17 @@
                        :attr
                        (let [[^Keyword attr-key ^String attr-value] (rest content)]
                          (js-run template-widget
-                           "$('#" (.id template-widget) " " selector "').attr('" (name attr-key) "', "
+                           "$('#" (.id template-widget) "').find('" selector "').attr('" (name attr-key) "', "
                            (js-handle-value attr-value false) ");"))
 
                        :html
                        (js-run template-widget
-                         "$('#" (.id template-widget) " " selector "').html(" (js-handle-value (second content) false) ");")))
+                         "$('#" (.id template-widget) "').find('" selector "').html(" (js-handle-value (second content) false) ");")))
 
                    (= symbolicweb.core.WidgetBase content-class)
                    (do
                      (js-run template-widget
-                       "$('#" (.id template-widget) " " selector "').attr('id', '" (.id ^WidgetBase content) "');")
+                       "$('#" (.id template-widget) "').find('" selector "').attr('id', '" (.id ^WidgetBase content) "');")
                      (when-not (= content template-widget)
                        (binding [*in-html-container?* template-widget]
                          (attach-branch template-widget content))))))))))
