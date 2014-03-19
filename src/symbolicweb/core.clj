@@ -104,6 +104,7 @@
   (:require symbolicweb.examples.bootstrap)
   (:require symbolicweb.examples.foundation)
   (:require symbolicweb.examples.login)
+  (:require symbolicweb.examples.templating)
   )
 
 
