@@ -16,6 +16,10 @@
    (fn [^WidgetBase template-widget]
      (let [transformation-data (content-fn template-widget)
            html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
+       ;; Assign id to template instance.
+       (with (.first (.select html-resource "body"))
+         (assert (count (.children it)) 1)
+         (.attr (.child it 0) "id" (.id template-widget)))
        (doseq [[^String selector content] (partition 2 transformation-data)]
          (when-let [^org.jsoup.nodes.Element element
                     (with (.select html-resource selector)
