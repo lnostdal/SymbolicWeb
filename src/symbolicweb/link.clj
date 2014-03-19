@@ -15,21 +15,20 @@
        (mk-Link url-mappers widget-or-m (mk-bte))))
 
   ([url-mappers m ^WidgetBase widget]
-     (let [query-str-vm (vm "")
-           query-params (vm nil)]
+     (let [query-str-vm (vm "")]
 
        (vm-observe query-str-vm (.lifetime widget) false
                    #(jqAttr widget "href" (str "window.location.pathname + '?' + " (url-encode-wrap %3)) true))
 
-       (doseq [[url-mapper url-mapper-mutator-vm] url-mappers]
-         (with-observed-vms (.lifetime widget)
-           (when-let [viewport (viewport-of widget)]
-             (when-not @query-params
-               (vm-set query-params @(:query-params @viewport)))
-             (vm-set query-str-vm (ring.util.codec/form-encode
-                                   @(with1 query-params
-                                      ;; QUERY-PARAMS is a Sorted Map, and result of MERGE will be too.
-                                      (vm-set it (merge @it {(:name url-mapper) @url-mapper-mutator-vm}))))))))
+       (with-observed-vms (.lifetime widget)
+         (when-let [viewport (viewport-of widget)]
+           (vm-set query-str-vm
+                   (ring.util.codec/form-encode
+                    ;; QUERY-PARAMS is a Sorted Map, and so result of MERGE will be too.
+                    (apply merge @(:query-params @viewport)
+                           (map (fn [[url-mapper url-mapper-mutator-vm]]
+                                  (hash-map (:name url-mapper) @url-mapper-mutator-vm))
+                                url-mappers))))))
 
        (set-event-handler "click" widget
                           (fn [& _]
