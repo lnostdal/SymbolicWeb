@@ -180,16 +180,14 @@
                  assoc k (assoc entry :already-added? true))))]
 
      [:body {:id "_body"}
-      [:div {:id "_sw_htmlctemplates" :style "display: none;"}]
+      [:div {:id "_sw_htmlctemplates" :style "display: none !important;"}]
       [:noscript
        [:h3 "JavaScript needs to be enabled in your browser"]
        [:p [:a {:href "https://encrypted.google.com/search?hl=en&q=how%20to%20enable%20javascript"}
             "Click here"] " to see how you can enable JavaScript in your browser."]]
       [:p {:id "sw-page-is-loading-msg" :style "padding: 1em;"} "Loading..."]
       [:script
-       "swAddOnLoadFN(function(){ "
-       " $('#sw-page-is-loading-msg').remove(); "
-       "});"
+       "swAddOnLoadFN(function(){ $('#sw-page-is-loading-msg').remove(); });"
        "$(function(){ swBoot(); });"]]])})
 
 

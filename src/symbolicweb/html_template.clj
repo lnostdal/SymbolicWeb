@@ -2,9 +2,7 @@
 
 
 
-(defn ^WidgetBase mk-HTMLTemplate [^org.jsoup.nodes.Document html-resource
-                                   ^Fn content-fn
-                                   & args]
+(defn ^WidgetBase mk-HTMLTemplate [^org.jsoup.nodes.Document html-resource ^Fn content-fn & args]
   "Bind Widgets to existing, static HTML.
 
   CONTENT-FN is something like:
@@ -16,7 +14,7 @@
      \"#sw-js-bootstrap\" (sw-js-bootstrap)]) ;; String."
   (mk-WidgetBase
    (fn [^WidgetBase template-widget]
-     (let [transformation-data (content-fn template-widget) ;; NOTE: Using a Vector since it maintains order; Clojure Maps do not.
+     (let [transformation-data (content-fn template-widget)
            html-resource (.clone html-resource)] ;; Always manipulate a copy to avoid any concurrency problems.
        (doseq [[^String selector content] (partition 2 transformation-data)]
          (when-let [^org.jsoup.nodes.Element element
