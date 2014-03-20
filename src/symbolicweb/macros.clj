@@ -7,7 +7,6 @@
 
 ;; html_container.clj
 (def ^:dynamic *in-html-container?* false)
-(def ^:dynamic *with-js?* false)
 
 
 ;; model.clj
@@ -32,12 +31,6 @@
   `(let [x# ~x]
      ~@body
      x#))
-
-
-
-(defmacro with-js [& body]
-  `(binding [*with-js?* true]
-     ~@body))
 
 
 

@@ -21,75 +21,78 @@
      (jqHTML widget value false))
 
   ([^WidgetBase widget ^String value ^Boolean as-js?]
-     (js-run widget "$('#" (.id widget) "').html(" (js-handle-value value as-js?) ");")))
+     (js-run widget "$('#" (.id widget) "').html(" (js-handle-value value as-js?) ");")
+     widget))
 
 
 
 (defn jqAppend [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
-  (with1 (js-run parent "$('#" (.id parent) "').append(" (url-encode-wrap (render-html new-widget)) ");")
-    (when-not *with-js?*
-      (attach-branch parent new-widget))))
+  (js-run parent "$('#" (.id parent) "').append(" (url-encode-wrap (render-html new-widget)) ");")
+  (attach-branch parent new-widget)
+  parent)
 
 
 
 (defn jqPrepend [^WidgetBase parent ^WidgetBase new-widget]
   "Inside."
-  (with1 (js-run parent "$('#" (.id parent) "').prepend(" (url-encode-wrap (render-html new-widget)) ");")
-    (when-not *with-js?*
-      (attach-branch parent new-widget))))
+  (js-run parent "$('#" (.id parent) "').prepend(" (url-encode-wrap (render-html new-widget)) ");")
+  (attach-branch parent new-widget)
+  parent)
 
 
 
 (defn jqAfter [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
   (let [parent (parent-of widget)]
-    (assert (or parent *with-js?*))
-    (with1 (js-run parent "$('#" (.id widget) "').after(" (url-encode-wrap (render-html new-widget)) ");")
-      (when-not *with-js?*
-        (attach-branch parent new-widget)))))
+    (assert parent)
+    (js-run parent "$('#" (.id widget) "').after(" (url-encode-wrap (render-html new-widget)) ");")
+    (attach-branch parent new-widget)
+    widget))
 
 
 
 (defn jqBefore [^WidgetBase widget ^WidgetBase new-widget]
   "Outside."
   (let [parent (parent-of widget)]
-    (assert (or parent *with-js?*))
-    (with1 (js-run parent "$('#" (.id widget) "').before(" (url-encode-wrap (render-html new-widget)) ");")
-      (when-not *with-js?*
-        (attach-branch parent new-widget)))))
+    (assert parent)
+    (js-run parent "$('#" (.id widget) "').before(" (url-encode-wrap (render-html new-widget)) ");")
+    (attach-branch parent new-widget)
+    widget))
 
 
 
 (defn jqReplaceWith [^WidgetBase widget ^WidgetBase new-widget]
-  (when-not *with-js?* (detach-branch widget))
-  (with1 (js-run widget "$('#" (.id widget) "').replaceWith(" (url-encode-wrap (render-html new-widget)) ");")
-    (when-not *with-js?*
-      (attach-branch widget new-widget))))
+  (detach-branch widget)
+  (js-run widget "$('#" (.id widget) "').replaceWith(" (url-encode-wrap (render-html new-widget)) ");")
+  (attach-branch widget new-widget)
+  widget)
 
 
 
 (defn jqAddClass [^WidgetBase widget ^String class-name]
-  (js-run widget "$('#" (.id widget) "').addClass('" class-name "');"))
+  (js-run widget "$('#" (.id widget) "').addClass('" class-name "');")
+  widget)
 
 
 
 (defn jqRemoveClass [^WidgetBase widget ^String class-name]
-  (js-run widget "$('#" (.id widget) "').removeClass('" class-name "');"))
+  (js-run widget "$('#" (.id widget) "').removeClass('" class-name "');")
+  widget)
 
 
 
 (defn jqEmpty [^WidgetBase widget]
-  (with1 (js-run widget "$('#" (.id widget) "').empty();")
-    (when-not *with-js?*
-      (empty-branch widget))))
+  (js-run widget "$('#" (.id widget) "').empty();")
+  (empty-branch widget)
+  widget)
 
 
 
 (defn jqRemove [^WidgetBase widget]
-  (with1 (js-run widget "$('#" (.id widget) "').remove();")
-    (when-not *with-js?*
-      (detach-branch widget))))
+  (js-run widget "$('#" (.id widget) "').remove();")
+  (detach-branch widget)
+  widget)
 
 
 
@@ -101,7 +104,8 @@
      (jqCSS widget property-name value false))
 
   ([^WidgetBase widget ^String property-name ^String value ^Boolean as-js?]
-     (js-run widget "$('#" (.id widget) "').css('" property-name "', " (js-handle-value value as-js?) ");")))
+     (js-run widget "$('#" (.id widget) "').css('" property-name "', " (js-handle-value value as-js?) ");")
+     widget))
 
 
 
@@ -113,12 +117,14 @@
      (jqAttr widget attribute-name value false))
 
   ([^WidgetBase widget ^String attribute-name ^String value ^Boolean as-js?]
-     (js-run widget "$('#" (.id widget) "').attr('" attribute-name "', " (js-handle-value value as-js?) ");")))
+     (js-run widget "$('#" (.id widget) "').attr('" attribute-name "', " (js-handle-value value as-js?) ");")
+     widget))
 
 
 
 (defn jqAttrRemove [^WidgetBase widget ^String attribute-name]
-  (js-run widget "$('#" (.id widget) "').removeAttr('" attribute-name "');"))
+  (js-run widget "$('#" (.id widget) "').removeAttr('" attribute-name "');")
+  widget)
 
 
 
@@ -130,7 +136,8 @@
      (jqProp widget attribute-name value false))
 
   ([^WidgetBase widget ^String attribute-name ^String value ^Boolean as-js?]
-     (js-run widget "$('#" (.id widget) "').prop('" attribute-name "', " (js-handle-value value as-js?) ");")))
+     (js-run widget "$('#" (.id widget) "').prop('" attribute-name "', " (js-handle-value value as-js?) ");")
+     widget))
 
 
 
@@ -142,12 +149,14 @@
      (jqVal widget value false))
 
   ([^WidgetBase widget ^String value ^Boolean as-js?]
-     (js-run widget "$('#" (.id widget) "').val(" (js-handle-value value as-js?) ");")))
+     (js-run widget "$('#" (.id widget) "').val(" (js-handle-value value as-js?) ");")
+     widget))
 
 
 
 (defn jqFocus [^WidgetBase widget]
-  (js-run widget "$('#" (.id widget) "').focus();"))
+  (js-run widget "$('#" (.id widget) "').focus();")
+  widget)
 
 
 
@@ -158,4 +167,5 @@
   ([^WidgetBase widget ^String value ^Boolean as-js?]
      (js-run widget
        "$('#" (.id widget) "').attr('title', " (js-handle-value value as-js?) "); "
-       "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');")))
+       "$('#" (.id widget) "').tooltip({track: true}).tooltip('open');")
+     widget))

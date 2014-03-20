@@ -140,22 +140,18 @@
 
 (defn add-response-chunk ^String [^String new-chunk widget]
   "WIDGET: A WidgetBase or Viewport instance."
-  (if *with-js?*
-    new-chunk
-    (do
-      (if (viewport? widget)
-        (let [viewport widget
-              viewport-m @widget]
-          (add-response-chunk-agent-fn viewport viewport-m new-chunk))
-        (letfn [(do-it []
-                  (let [viewport (viewport-of widget)
-                        viewport-m @viewport]
-                    (add-response-chunk-agent-fn viewport viewport-m new-chunk)))]
-          (if (viewport-of widget) ;; Visible?
-            (do-it)
-            (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
-              (add-lifetime-activation-fn (.lifetime ^WidgetBase widget) (fn [_] (do-it)))))))
-      widget)))
+  (if (viewport? widget)
+    (let [viewport widget
+          viewport-m @widget]
+      (add-response-chunk-agent-fn viewport viewport-m new-chunk))
+    (letfn [(do-it []
+              (let [viewport (viewport-of widget)
+                    viewport-m @viewport]
+                (add-response-chunk-agent-fn viewport viewport-m new-chunk)))]
+      (if (viewport-of widget) ;; Visible?
+        (do-it)
+        (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
+          (add-lifetime-activation-fn (.lifetime ^WidgetBase widget) (fn [_] (do-it))))))))
 
 
 
