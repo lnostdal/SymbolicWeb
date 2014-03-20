@@ -18,20 +18,11 @@
     (add-rest-head viewport "<link href='data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA' rel='icon' type='image/x-icon' />")
     (jqAppend root-widget
       (whc [:div]
-        [:h2 "Lars Rune Nøstdal"]
-
-        [:p "Hello! I'm a 33 year old freelancer and " [:a {:href "https://encrypted.google.com/search?hl=en&q=telecommuting"} "telecommuter"] " originally from "
-         [:a {:href "https://en.wikipedia.org/wiki/Norway"} "Norway"]
-         ". My laptop and I travel the world, and I enjoy things like sailing, nature and hiking."]
-
+        [:h2 "nostdal.org"]
 
         [:ul
          [:li "Email: " [:a {:href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
-         [:li "Some source code at " [:a {:href "https://github.com/lnostdal/"} "GitHub"]]]
-
-
-        [:h3 "Current tech focus"]
-        [:ul
+         [:li "Some source code at " [:a {:href "https://github.com/lnostdal/"} "GitHub"]]
          [:li [:a {:href "https://en.wikipedia.org/wiki/Clojure"} "Clojure"]]
          [:li [:a {:href "https://en.wikipedia.org/wiki/PostgreSQL"} "PostgreSQL"]]
          [:li [:a {:href "https://en.wikipedia.org/wiki/Linux"} "Linux"] " (since 1998)"]
@@ -40,39 +31,6 @@
          [:li [:a {:href "https://en.wikipedia.org/wiki/Bootstrap_(front-end_framework)"} "Twitter Bootstrap"]
           ", " [:a {:href "https://en.wikipedia.org/wiki/Foundation_(framework)"} "Foundation (ZURB)"]
           " (nice for mobile devices)"]]
-
-
-        #_[:h3 "Previous tech focus (history)"]
-        #_[:ul
-         [:li "Basic (Amiga 500!), C, Pascal (Turbo, Delphi), ASP, PHP, Java, C++, Common Lisp"]
-         [:li "MySQL"]]
-
-
-        #_[:h3 "General or other knowledge; &quot;what can you do?&quot;"]
-        #_[:ul
-         [:li "Object oriented programming (OOP), functional programming, reactive programming, metaprogramming"]
-         [:li "I write clean, maintainable code that performs and scales well; I focus on simplicity, reliability and quality"]
-         [:li "Source code control for project collaboration; Git"]
-         [:li "Project management and leadership; both technical details and people related details (e.g. teaching)"]
-         [:li [:a {:href "https://en.wikipedia.org/wiki/Facebook_Platform"} "Facebook API"] " and integration"]
-         [:li "Twitter API and integration"]
-         [:li "Linux server setup, configuration, optimization and administration from scratch; database, web server, etc."]
-         [:li [:a {:href "https://en.wikipedia.org/wiki/FFmpeg"} "FFmpeg"] " for video and audio encoding, transcoding, etc."]
-         [:li "Payment systems; Payex etc."]
-         [:li "Bitcoin related APIs"]
-         [:li "Security, encryption, SSL/TLS, privacy (Tor, I2P), etc."]
-         [:li "Email, mailing list etc. type APIs (e.g. " [:a {:href "http://mandrill.com/"} "http://mandrill.com/"] ")"]
-         [:li "I understand Computer Science topics well; algorithms and datastructures, programming language theory, computer architecture (hardware), etc."]
-         [:li "Integration with mobile phone SMS APIs"]
-         [:li "Hardware interfacing and electronics"]]
-
-
-        [:div {:style (style {:padding "1em"})}
-         [:a {:href "/static/other/IMG_5004_cropped.png"}
-          [:img {:alt "" :src "/static/other/lars.png"
-                 :style (style {:display 'block :width "15em"})}]]
-         [:em {:style (style {:font-size 'smaller})} "&quot;Hello!&quot;"]]
-
 
         [:p {:style (style {:font-family 'monospace})}
          "pub   4096R/7B281AED 2013-01-24" [:br]
