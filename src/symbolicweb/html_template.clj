@@ -38,7 +38,7 @@
               (.text element content)
 
               (= clojure.lang.PersistentVector content-class)
-              (let [cmd (first content)]
+              (let [^Keyword cmd (first content)]
                 (case cmd
                   :attr
                   (let [[^Keyword attr-key ^String attr-value] (rest content)]
@@ -71,9 +71,9 @@
               (js-run template-widget
                 "$('#_sw_htmlctemplates').append($(" (js-handle-value html-resource false) ").attr('id', '" resource-hash "'));"))
             (let [transformation-data (content-fn template-widget)]
+              ;; Instantiate (clone) template and assign HTML attr. ID for it.
               (js-run template-widget
-                "$('#" (.id template-widget) "').replaceWith($('#" resource-hash "').clone().attr('id', '"
-                (.id template-widget) "'));")
+                "$('#" (.id template-widget) "').replaceWith($('#" resource-hash "').clone().attr('id', '" (.id template-widget) "'));")
               (doseq [[^String selector content] (partition 2 transformation-data)]
                 (let [content-class (class content)]
                   (cond
@@ -82,7 +82,7 @@
                      "$('#" (.id template-widget) "').find('" selector "').text(" (js-handle-value content false) ");")
 
                    (= clojure.lang.PersistentVector content-class)
-                   (let [cmd (first content)]
+                   (let [^Keyword cmd (first content)]
                      (case cmd
                        :attr
                        (let [[^Keyword attr-key ^String attr-value] (rest content)]
