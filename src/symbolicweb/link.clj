@@ -42,15 +42,13 @@
                               (when-let [f (with (:on-click-fn m)
                                              (when (fn? it) it))]
                                 (f widget))))
-                          ;; TODO: Remove this when IE9 is gone.
-                          ;; NOTE: Super, mega, hack for IE 9. :(. We clear the page while (before) re-rendering it to avoid some
-                          ;; flickering the user isn't used to seeing. MS needs to just go away.
                           :js-before
                           (str (with (:on-click-fn m)
                                  (when (string? it)
-                                   it))
-                               " if(navigator.userAgent.search('MSIE 9') != -1) { $('#_body').css('display', 'none'); } return(true);")
-                          :js-after (str (when (:event-stop-propagation? m) "event.stopPropagation(); ")
-                                         "event.preventDefault(); return(false);"))
+                                   it)))
+                          :js-after
+                          (str (when (:event-stop-propagation? m)
+                                 "event.stopPropagation(); ")
+                               "event.preventDefault(); return(false);"))
 
        widget)))
