@@ -45,7 +45,9 @@
                           :js-before
                           (str (with (:on-click-fn m)
                                  (when (string? it)
-                                   it)))
+                                   it))
+                               " return(true);")
+
                           :js-after
                           (str (when (:event-stop-propagation? m)
                                  "event.stopPropagation(); ")
