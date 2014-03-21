@@ -29,7 +29,8 @@
 
                              ;; gen-url
                              :genurl-fs-path "resources/web-design/"
-                             :genurl-domain (:server-name request)
+                             :genurl-domain (or (get (:headers request) "x-forwarded-host")
+                                                (:server-name request))
                              :genurl-path "static/"
 
                              ;; Comet.
