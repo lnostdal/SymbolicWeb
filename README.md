@@ -47,7 +47,7 @@ Running here: https://nostdal.org/templating
 Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/templating.clj
 
 
-### Server push example
+#### Server push example
 
 Running here: https://nostdal.org/clock
 
