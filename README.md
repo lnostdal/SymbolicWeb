@@ -47,6 +47,15 @@ Running here: https://nostdal.org/templating
 Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/templating.clj
 
 
+### Server push example
+
+Running here: https://nostdal.org/clock
+
+..or on I2P darknet here: http://4jiq4axgdpk3bmnfmbtmuoj3cjhnaj74lbhqptvc2fhdabvsgncq.b32.i2p.us/clock
+
+Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/clock.clj
+
+
 
 ## Status
 
