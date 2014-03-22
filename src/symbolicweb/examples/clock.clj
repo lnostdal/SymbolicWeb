@@ -3,20 +3,32 @@
 
 
 
+(defonce -clock-vm- (vm (.toString (clj-time.core/now))))
+
+
+
 (defn mk-clock-viewport [request session]
-  (let [root-widget (mk-bte :id "_body" :root-widget? true)]
+  (let [root-widget (mk-bte :id "_body" :root-widget? true)
+        viewport (mk-Viewport request session root-widget :page-title "SW: Clock example")]
+    (add-resource viewport :css "sw/css/common.css")
     (jqAppend root-widget
-      (mk-b -now-))
-    (mk-Viewport request session root-widget :page-title "SW: Clock example")))
+      (whc [:div]
+        [:h2 "SymbolicWeb: Clock example"]
+        [:p "This simple example shows &quot;" [:a {:href "https://en.wikipedia.org/wiki/Comet_%28programming%29"}
+                                                "server push"] "&quot; in action."]
+        [:p (sw (mk-b -clock-vm-))]))
+    viewport))
 
 
 
-(defapp
-  [::Clock
-   (fn [request]
-     (re-find #"clock$" (:uri request)))]
+(defonce -clock-thread-
+  (future
+    (loop []
+      (Thread/sleep 1000)
+      (swsync (vm-set -clock-vm- (.toString (clj-time.core/now))))
+      (recur))))
 
 
-  (fn [id & args]
-    (apply mk-Session id :mk-viewport-fn mk-clock-viewport
-           args)))
+
+(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/clock" [uri request session]
+  (mk-clock-viewport request session))
