@@ -129,7 +129,7 @@
   (with-sw-agent (:response-agent viewport-m)
     (locking viewport
       (.append ^StringBuilder (:response-str viewport-m) new-chunk)))
-  (swap! *dyn-ctx* assoc ::add-response-chunk-agent-fn
+  (swap! *dyn-ctx* assoc [::add-response-chunk-agent-fn viewport]
          (fn []
            (with-sw-agent (:response-agent viewport-m)
              (locking viewport

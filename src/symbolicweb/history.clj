@@ -12,7 +12,7 @@
   ;; case to always win regardless of order.
   (when (or (not (::url-alter-query-params @*dyn-ctx*))
             (not replace?))
-    (swap! *dyn-ctx* assoc ::url-alter-query-params
+    (swap! *dyn-ctx* assoc [::url-alter-query-params viewport]
            (fn []
              (js-run viewport
                "window.history." (if replace? "replaceState" "pushState")
