@@ -7,6 +7,7 @@
 
 (defn mk-history-viewport [request session]
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
+        viewport (mk-Viewport request session root-widget :page-title "SW: History example")
 
         a-input-model (vm 3)
         b-input-model (vm 2)
@@ -21,9 +22,10 @@
 
         a-url-mapper (vm-sync-from-url {:name "a" :model a-input-model :context-widget a-view})
         b-url-mapper (vm-sync-from-url {:name "b" :model b-input-model :context-widget b-view})]
-
+    (add-resource viewport :css "sw/css/common.css")
     (jqAppend root-widget
       (whc [:div]
+        [:h2 "SymbolicWeb: History example"]
         [:p (sw a-view) " + " (sw b-view) " = " (sw sum-view)]
 
         [:p "Random number for each page (re)load, " [:b (rand-int 9000)]
@@ -38,8 +40,9 @@
         [:pre
          [:a {:target "_blank" :href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/history.clj"}
           "Source code"]]))
+    viewport))
 
-    (mk-Viewport request session root-widget :page-title "SW: History example")))
+
 
 
 

@@ -46,7 +46,6 @@
                                (when (string? it)
                                  it))
                              " return(true);")
-
                         :js-after
                         (str (when (:event-stop-propagation? m)
                                "event.stopPropagation(); ")
