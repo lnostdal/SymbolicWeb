@@ -50,9 +50,7 @@
               (= symbolicweb.core.WidgetBase content-class)
               (do
                 (.attr element "id" ^String (.id ^WidgetBase content))
-                (when-not (= content template-widget)
-                  (binding [*in-html-container?* template-widget]
-                    (attach-branch template-widget content))))))))
+                (attach-branch template-widget content))))))
        (.html (.select html-resource "body"))))
    (apply hash-map args)))
 
@@ -98,9 +96,7 @@
                    (do
                      (js-run template-widget
                        "$('#" (.id template-widget) "').find('" selector "').attr('id', '" (.id ^WidgetBase content) "');")
-                     (when-not (= content template-widget)
-                       (binding [*in-html-container?* template-widget]
-                         (attach-branch template-widget content))))))))))
+                     (attach-branch template-widget content))))))))
        (str "<div id='" (.id template-widget) "' style='display: none;'></div>"))
      (apply hash-map args))))
 
