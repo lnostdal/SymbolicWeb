@@ -36,11 +36,6 @@
      true accept-header)))
 
 
-(defn viewport? [o]
-  (and (ref? o)
-       (dosync (isa? (:type @o) ::Viewport))))
-
-
 (declare viewport-of)
 (defn session-of [widget]
   (when-let [viewport (viewport-of widget)]

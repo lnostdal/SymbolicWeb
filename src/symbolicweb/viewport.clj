@@ -12,7 +12,6 @@
   (assert (= :lifetime-root @(.parent (.lifetime root-widget))))
   (let [viewport-id (str "sw-" (generate-uid))
         viewport (ref (apply assoc {}
-                             :type ::Viewport
                              :id viewport-id
                              :last-activity-time (atom (System/currentTimeMillis))
 
@@ -139,20 +138,17 @@
 
 
 
-(defn add-response-chunk ^String [^String new-chunk widget]
+(defn add-response-chunk [^String new-chunk widget]
   "WIDGET: A WidgetBase or Viewport instance."
-  (if (viewport? widget)
-    (let [viewport widget
-          viewport-m @widget]
-      (add-response-chunk-agent-fn viewport viewport-m new-chunk))
-    (letfn [(do-it []
-              (let [viewport (viewport-of widget)
-                    viewport-m @viewport]
-                (add-response-chunk-agent-fn viewport viewport-m new-chunk)))]
-      (if (viewport-of widget) ;; Visible?
-        (do-it)
-        (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
-          (add-lifetime-activation-fn (.lifetime ^WidgetBase widget) (fn [_] (do-it))))))))
+  (if (= (class widget) WidgetBase)
+    (if-let [^Ref viewport (viewport-of ^WidgetBase widget)] ;; Visible?
+      (add-response-chunk-agent-fn viewport @viewport new-chunk)
+      (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
+        (add-lifetime-activation-fn (.lifetime ^WidgetBase widget)
+                                    (fn [_]
+                                      (let [^Ref viewport (viewport-of ^WidgetBase widget)]
+                                        (add-response-chunk-agent-fn viewport @viewport new-chunk))))))
+    (add-response-chunk-agent-fn widget @widget new-chunk))) ;; WIDGET is assumed to be a Viewport.
 
 
 
