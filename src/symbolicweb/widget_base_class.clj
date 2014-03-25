@@ -37,8 +37,8 @@
                  ", EXISTING-PARENT-ID: " (.id (parent-of child))
                  ", CHILD-ID: " (.id child)))
     ;; CHILD -> PARENT.
-    (ref-set (.parent child) parent)
-    (attach-lifetime (.lifetime parent) (.lifetime child)))
+    (ref-set (.parent ^WidgetBase child) parent)
+    (attach-lifetime (.lifetime parent) (.lifetime ^WidgetBase child)))
 
 
   (detach-branch [widget]
@@ -53,5 +53,5 @@
     ;; ..so, a hack (e.g. can .VIEWPORT return NIL?) instead – we scan all Widgets in the Viewport of WIDGET.
     (when-let [viewport @(.viewport widget)]
       (doseq [some-widget (vals (:widgets @viewport))]
-        (when (= widget @(.parent some-widget))
+        (when (= widget @(.parent ^WidgetBase some-widget))
           (detach-branch some-widget))))))

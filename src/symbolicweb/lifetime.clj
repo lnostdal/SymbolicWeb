@@ -61,8 +61,8 @@ If LIFETIME is active it will be deactivated with all its children.")
       (do
         (assert (= :initial (lifetime-state-of child))
                 (str child " in invalid state: " (lifetime-state-of child)))
-        (ref-set (.state child) :member-of-tree)
-        (ref-set (.parent child) parent)
+        (ref-set (.state ^Lifetime child) :member-of-tree)
+        (ref-set (.parent ^Lifetime child) parent)
         (alter children conj child)
         (when (= :activated (lifetime-state-of parent))
           (do-lifetime-activation child)))
@@ -79,7 +79,7 @@ If LIFETIME is active it will be deactivated with all its children.")
         (when (= :activated (lifetime-state-of lifetime))
           (do-lifetime-deactivation lifetime))
         (when-not (= :lifetime-root (lifetime-parent-of lifetime))
-          (alter (.children (lifetime-parent-of lifetime)) (partial filterv #(not= % lifetime)))))
+          (alter (.children ^Lifetime (lifetime-parent-of lifetime)) (partial filterv #(not= % lifetime)))))
 
       nil)
     lifetime)
@@ -110,7 +110,7 @@ If LIFETIME is active it will be deactivated with all its children.")
 
   (do-lifetime-activation [lifetime]
     (with (lifetime-state-of lifetime)
-      (case it
+      (case ^Keyword it
         ;; TODO: Including :ACTIVATED here seems strange; see issue #24.
         (:member-of-tree :activated)
         (do
