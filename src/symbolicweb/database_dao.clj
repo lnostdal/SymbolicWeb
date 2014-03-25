@@ -404,6 +404,10 @@ Blocking."
              (throw (Exception. (str "DB-GET: Object with ID " id " not found in " (.table-name db-cache)))))
            (catch com.google.common.util.concurrent.UncheckedExecutionException e
              (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
+             (throw (.getCause e)))
+           ;; Issue #45.
+           (catch com.google.common.util.concurrent.ExecutionError e
+             (println (str "DB-GET [" id " " table-name "]: Re-throwing cause " (.getCause e) " of " e))
              (throw (.getCause e))))))))
 
 
