@@ -26,7 +26,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 "
 
 
-  :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]
                  [org.clojure/tools.nrepl "LATEST"]
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
