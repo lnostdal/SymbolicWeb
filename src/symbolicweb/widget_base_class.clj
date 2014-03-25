@@ -32,7 +32,7 @@
 
 
   (attach-branch [parent child]
-    (assert (not (parent-of child))
+    #_(assert (not (parent-of child))
             (str "ATTACH-BRANCH: CHILD already has a parent assigned for it: " (parent-of child)
                  ", EXISTING-PARENT-ID: " (.id (parent-of child))
                  ", CHILD-ID: " (.id child)))

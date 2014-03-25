@@ -2,9 +2,8 @@
 
 
 (defn mk-WidgetBase ^WidgetBase [^Fn render-fn args]
-  (with1 (WidgetBase. (with1 (or (:id args) ;; ID
-                                 (str "sw-" (generate-uid)))
-                        (assert (string? it)))
+  (with1 (WidgetBase. (or (:id args) ;; ID
+                          (str "sw-" (generate-uid)))
                       (if (:root-widget? args) ;; LIFETIME
                         (mk-LifetimeRoot)
                         (mk-Lifetime))
@@ -21,7 +20,7 @@
       (add-lifetime-activation-fn (.lifetime it)
                                   (fn [^Lifetime lifetime]
                                     (let [parent-viewport (viewport-of (parent-of it))]
-                                      (assert (not (get (:widgets @parent-viewport)
+                                      #_(assert (not (get (:widgets @parent-viewport)
                                                         (.id it))))
                                       ;; Viewport --> Widget (DOM events).
                                       (alter parent-viewport update-in [:widgets]
