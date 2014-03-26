@@ -15,7 +15,7 @@
 
 
 ;; Used by SWSYNC; bound in DO-MTX.
-(def ^:dynamic *dyn-ctx* (atom {}))
+(def ^:dynamic *dyn-ctx* nil)
 
 
 

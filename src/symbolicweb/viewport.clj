@@ -35,7 +35,6 @@
                              ;; Comet.
                              :response-str (StringBuilder.)
                              :response-sched-fn (atom nil)
-                             :response-agent (mk-sw-agent {:executor clojure.lang.Agent/pooledExecutor} nil nil)
 
                              ;; Resources; maps in Clojure (still?) seem to maintain order.
                              :rest-css-entries (ref {})
@@ -124,31 +123,28 @@
 
 
 
-(defn add-response-chunk-agent-fn [^Ref viewport viewport-m ^String new-chunk]
-  (with-sw-agent (:response-agent viewport-m)
-    (locking viewport
-      (.append ^StringBuilder (:response-str viewport-m) new-chunk)))
-  (swap! *dyn-ctx* assoc [::add-response-chunk-agent-fn viewport]
-         (fn []
-           (with-sw-agent (:response-agent viewport-m)
-             (locking viewport
-               (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
-                 (when @response-sched-fn
-                   (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn))))))))
-
-
-
 (defn add-response-chunk [^String new-chunk widget]
   "WIDGET: A WidgetBase or Viewport instance."
-  (if (= (class widget) WidgetBase)
-    (if-let [^Ref viewport (viewport-of ^WidgetBase widget)] ;; Visible?
-      (add-response-chunk-agent-fn viewport @viewport new-chunk)
-      (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
-        (add-lifetime-activation-fn (.lifetime ^WidgetBase widget)
-                                    (fn [_]
-                                      (let [^Ref viewport (viewport-of ^WidgetBase widget)]
-                                        (add-response-chunk-agent-fn viewport @viewport new-chunk))))))
-    (add-response-chunk-agent-fn widget @widget new-chunk))) ;; WIDGET is assumed to be a Viewport.
+  (letfn [(do-it [^Ref viewport viewport-m]
+            ;; Other end of this is in DO-MTX.
+            (swap! *dyn-ctx* update-in [:viewports viewport ::comet-string-builder]
+                   #(if %
+                      (.append ^StringBuilder % new-chunk)
+                      (StringBuilder. new-chunk)))
+            (swap! *dyn-ctx* update-in [:viewports viewport] assoc ::comet-response-trigger
+                   (fn []
+                     (let [response-sched-fn ^Atom (:response-sched-fn viewport-m)]
+                       (when @response-sched-fn
+                         (.runTask ^org.httpkit.timer.CancelableFutureTask @response-sched-fn))))))]
+    (if (= (class widget) WidgetBase)
+      (if-let [^Ref viewport (viewport-of ^WidgetBase widget)] ;; Visible?
+        (do-it viewport @viewport)
+        (when-not (= :deactivated (lifetime-state-of (.lifetime ^WidgetBase widget)))
+          (add-lifetime-activation-fn (.lifetime ^WidgetBase widget)
+                                      (fn [_]
+                                        (let [^Ref viewport (viewport-of ^WidgetBase widget)]
+                                          (do-it viewport @viewport))))))
+      (do-it widget @widget)))) ;; WIDGET is assumed to be a Viewport.
 
 
 

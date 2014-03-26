@@ -104,12 +104,18 @@
   COMMIT-FN is called while the MTX is held; we will not roll back here."
   (let [mtx-phase (atom 0)
         dummy (ref nil :validator (fn [x]
-                                    (when (and (= x 42)
-                                               (.isRealized ^Delay *db*))
-                                      (assert (= 1 @mtx-phase))
-                                      (reset! mtx-phase 2) ;; ..hold transaction.. (2nd phase)
-                                      (commit-fn)
-                                      (reset! mtx-phase 3))
+                                    (when x
+                                      (when (.isRealized ^Delay *db*)
+                                        (assert (= 1 @mtx-phase))
+                                        (reset! mtx-phase 2) ;; ..hold transaction.. (2nd phase)
+                                        (commit-fn))
+                                      (reset! mtx-phase 3)
+                                      ;; Other end of this is in ADD-RESPONSE-CHUNK.
+                                      (doseq [[^Ref viewport m] (:viewports x)]
+                                        (locking viewport
+                                          (.append ^StringBuilder (:response-str @viewport)
+                                                   (.toString ^StringBuilder (::comet-string-builder m)))
+                                          ((::comet-response-trigger m)))))
                                     true))] ;; ..and here the transaction will be commited in full (return value).
     ;; Start transaction.. (1st phase)
     (dosync
@@ -118,15 +124,12 @@
          (retry-2pctx "DO-MTX: Retry.")
          (do
            (reset! mtx-phase 1)
-           (commute dummy (fn [_] 42))
            (do1 (body-fn)
-             ;; TODO: Make this stuff nicer; more general.
-             (doseq [[[^Keyword k] ^Fn f] @*dyn-ctx*]
-               (when (= k ::url-alter-query-params)
+             ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
+             (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
+               (when-let [^Fn f (::url-alter-query-params m)]
                  (f)))
-             (doseq [[[^Keyword k] ^Fn f] @*dyn-ctx*]
-               (when (= k ::add-response-chunk-agent-fn)
-                 (f)))
+             (commute dummy (with @*dyn-ctx* (fn [_] it)))
              (when (.isRealized ^Delay *db*)
                (prepare-fn)))))))))
 

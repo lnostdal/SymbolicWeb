@@ -10,9 +10,9 @@
   ;; The strange WHEN here is here to handle cases where we'll be passed both True and False for REPLACE? when this function
   ;; is called many times within a SWSYNC context. So, yeah – only one of them win out and we'd like the False (for REPLACE?)
   ;; case to always win regardless of order.
-  (when (or (not (::url-alter-query-params @*dyn-ctx*))
+  (when (or (not (get-in @*dyn-ctx* [:viewports viewport ::url-alter-query-params]))
             (not replace?))
-    (swap! *dyn-ctx* assoc [::url-alter-query-params viewport]
+    (swap! *dyn-ctx* update-in [:viewports viewport] assoc ::url-alter-query-params
            (fn []
              (js-run viewport
                "window.history." (if replace? "replaceState" "pushState")
