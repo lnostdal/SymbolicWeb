@@ -44,7 +44,7 @@ ALTER TABLE users ADD UNIQUE (uuid);
 (swap! -db-cache-constructors- assoc "users"
        #(mk-DBCache "users"
                     (fn [db-cache id] (mk-UserModelBase))
-                    #'identity
+                    identity
                     (fn [m]
                       (-> m
                           (user-model-base-clj-to-db-transformer)

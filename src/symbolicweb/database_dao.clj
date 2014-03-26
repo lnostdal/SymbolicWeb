@@ -226,7 +226,7 @@ Returns the ContainerModel"
 
 
 (defn db-backend-remove [^DBCache db-cache ^Long id]
-  (db-stmt (str "DELETE FROM " (.table-name db-cache) " WHERE id = " id ";")))
+  (db-pstmt (str "DELETE FROM " (.table-name db-cache) " WHERE id = ?;") id))
 
 
 
@@ -234,7 +234,7 @@ Returns the ContainerModel"
   "Used by DB-GET; see DB-GET.
 Returns OBJ or NIL"
   ;;(println "DB-BACKEND-GET:" id "(" (.table-name db-cache) ")")
-  (let [res (db-stmt (str "SELECT * FROM " (.table-name db-cache) " WHERE id = " id " LIMIT 1;"))]
+  (let [res (db-pstmt (str "SELECT * FROM " (.table-name db-cache) " WHERE id = ? LIMIT 1;") id)]
     (when-let [db-row (first res)]
       (db-db-to-clj-entry-handler db-cache obj db-row true)
       obj)))
