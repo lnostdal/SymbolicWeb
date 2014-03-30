@@ -52,6 +52,8 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [sqlingvo "LATEST"] ;; SQL DSL.
                  [org.postgresql/postgresql "LATEST"] ;; JDBC driver.
                  [com.jolbox/bonecp "LATEST"] ;; DB connection pooling.
+
+                 [me.raynes/conch "LATEST"]
                  ]
 
 
