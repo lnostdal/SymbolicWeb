@@ -8,7 +8,6 @@
 
 
 
-
 (defn ^String gpg-symmetric-encrypt [^String s ^String passphrase]
   "Returns an encrypted String on success (exit code 0), or a Map when there is a problem."
   (with (with-programs [gpg]
@@ -22,7 +21,7 @@
 
 
 (defn ^String gpg-symmetric-decrypt [^String s ^String passphrase]
-  "Returns a String on success (exit code 0), or a Map when there is a problem."
+  "Returns a decrypted String on success (exit code 0), or a Map when there is a problem."
   (with (with-programs [gpg]
           (gpg "--decrypt" "--passphrase" passphrase
                {:in s
@@ -30,3 +29,17 @@
     (if (zero? @(:exit-code it))
       (:stdout it)
       it)))
+
+
+
+(defn gpg-sign [^String s ^String id]
+  )
+
+
+
+(defn gpg-verify
+  ([^String s]
+     )
+
+  ([^String s ^String id]
+     ))

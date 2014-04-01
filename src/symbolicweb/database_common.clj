@@ -99,6 +99,7 @@
 
 
 
+;; TODO: Very specific *DYN-CTX* stuff being mixed in here sucks.
 (defn do-mtx [^Fn body-fn ^Fn prepare-fn ^Fn commit-fn]
   "  PREPARE-FN is called just before the MTX is held; we might still roll back.
   COMMIT-FN is called while the MTX is held; we will not roll back here."

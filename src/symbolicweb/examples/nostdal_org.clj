@@ -32,6 +32,34 @@
           ", " [:a {:href "https://en.wikipedia.org/wiki/Foundation_(framework)"} "Foundation (ZURB)"]
           " (nice for mobile devices)"]]
 
+        [:p
+         [:em "NOTE: I haven't bothered updating my HTTPS CA for this domain (nostdal.org). I thought about this for a year now, and I think CA's are a terrible idea. If you want to reach this site via an encrypted line " [:b "and"] " be 100% sure that you're not getting " [:a {:href "https://en.wikipedia.org/wiki/Man-in-the-middle_attack"} "MITM'ed"] ", do so via the Darknet (" [:a {:href "https://geti2p.net/en/"} "I2P"] ") where 3rd party trust (extra risk) is not needed at all: "
+          [:a {:href "http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/nostdal.org"} "http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/nostdal.org"] ". I've digitally signed this URL here:"]]
+
+        [:p
+         [:pre
+          "-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/nostdal.org
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.20 (GNU/Linux)
+
+iQIcBAEBCgAGBQJTOs10AAoJEKCKx3p7KBrtK8YP/1WIVT5jjR7NZyZhfKO2TK2/
+NlgnfIVmzI4hRibhut+idjrXfWvEyD0XIvvzz3fKwkCO+uY/uHAVPB2phu5aR5bE
+DWbPtIDObAMzVn60MLt4VGhv5i1rjK67tdu7N5MX+5rLkQOoW6xySGT6FLx6ETL2
+N3Ga7pzVMaMQII1OWk8SsQwBXAhKLVpSjOsgK/cyd/024yI0F3hFZO4kVYTAm4Nt
+iJ4E2e6Q7vPWY6fQGCRqdAqE7qA1gqaWYH83W73YtwEkWMVPPAkac/reOYR82KPP
+vhp5+dtvV7CE+g1Z3pNJDT7NlZR/xdNVBvqZDf5y/Ye9PlPr5mJdxfWRjmECX4/S
+x/6Oat1teJEJvJCKyBH/JoirhZSMx4q+yK3OGE3gIg+BzUcKj5/YnKEmFgaMiK23
+0O5ig8Zt6R/Kgw4clkV6bz735ybVR3fd/hSpViox+ajQUfFVWJoi/OJBxavv+PAg
+uxUV/bdHkeI++cWDn6T/HWkiC80QL02m9xh/oB3F+laN4o2rPtuBYY7DLwds1j7P
+bAz9QAIAJYKNXPOR3WLdjahv8q/N4VKhDjNbdp1oGoxOSnpUu6CN9OcR91HfNOxJ
+vDBgdEj1a5UFaQYMe5zs3PXUcF8hM5XvR/O7eg/t0TNgeS2DbhtWKl/uqgilP9if
+V5+Jcg3lyI2SvDFY0Pke
+=Jj6N
+-----END PGP SIGNATURE-----"]]
+
         [:p {:style (style {:font-family 'monospace})}
          "pub   4096R/7B281AED 2013-01-24" [:br]
          "Key fingerprint = 5029 6FDD 199C 2A69 898B  40B0 A08A C77A 7B28 1AED" [:br]
@@ -67,7 +95,10 @@
          "localhost.nostdal.org"
          "localhost"
          "127.0.0.1"
-         "symbolicweb.i2p" "utgf6vb44abxntvqqfcge2rnt5wfzb5kcltglaojam4sqhemsz6q.b32.i2p"))]
+         "symbolicweb.i2p"
+         "o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p" ;; nostdal.org
+         "4jiq4axgdpk3bmnfmbtmuoj3cjhnaj74lbhqptvc2fhdabvsgncq.b32.i2p" ;; Laptop.
+         ))]
 
   (fn [request session]
     (if (= (:uri request) "/") ;; Can't set a cookie here as it will become global for all paths; redirect instead.

@@ -381,6 +381,9 @@ Blocking."
        (letfn [(grab-it []
                  (with (.get ^com.google.common.cache.LocalCache$LocalLoadingCache (get-internal-cache db-cache) id
                              (fn []
+                               ;; TODO: What happens around here in recursive scenarios? E.g. in session.clj we db-get a user
+                               ;; object while constructing a session object. Perhaps that user object can point back to the
+                               ;; session object. We have a circle..
                                (when-let [^Ref new-obj (db-backend-get db-cache id ((.constructor-fn db-cache) db-cache id))]
                                  (after-construction-fn ((.after-fn db-cache) new-obj))
                                  new-obj)))
