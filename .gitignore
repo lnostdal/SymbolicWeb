@@ -9,3 +9,5 @@ pom.xml
 .emacs-desktop
 .emacs.desktop
 resources/js/jquery.sha256
+.lein-repl-history
+.nrepl-port
