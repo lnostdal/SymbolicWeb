@@ -75,6 +75,7 @@
 
       (body-fn (fn []
                  #_(println "DO-DBTX: ..hold-transaction.. (1st phase)")
+                 (assert (= 0 @dbtx-phase))
                  (.execute @db-stmt (str "PREPARE TRANSACTION '" dbtx-id "';"))
                  (.commit @*db*)
                  (.setAutoCommit @*db* true)
@@ -103,36 +104,40 @@
 (defn do-mtx [^Fn body-fn ^Fn prepare-fn ^Fn commit-fn]
   "  PREPARE-FN is called just before the MTX is held; we might still roll back.
   COMMIT-FN is called while the MTX is held; we will not roll back here."
-  (let [mtx-phase (atom 0)
-        dummy (ref nil :validator (fn [x]
-                                    (when x
-                                      (when (.isRealized ^Delay *db*)
-                                        (assert (= 1 @mtx-phase))
-                                        (reset! mtx-phase 2) ;; ..hold transaction.. (2nd phase)
-                                        (commit-fn))
-                                      (reset! mtx-phase 3)
-                                      ;; Other end of this is in ADD-RESPONSE-CHUNK.
-                                      (doseq [[^Ref viewport m] (:viewports x)]
-                                        (locking viewport
-                                          (.append ^StringBuilder (:response-str @viewport)
-                                                   (.toString ^StringBuilder (::comet-string-builder m)))
-                                          ((::comet-response-trigger m)))))
-                                    true))] ;; ..and here the transaction will be commited in full (return value).
+  (let [mtx-phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
+        dummy (ref nil)]
+
+    (add-watch dummy :dummy
+               (fn [_ _ _ dyn-ctx]
+                 (assert (= 2 @mtx-phase))
+                 ;; At this point in time the MTX has been commited, and we know the prepared DBTX won't roll back.
+                 (when (.isRealized ^Delay *db*)
+                   (commit-fn))
+                 ;; Other end of this is in ADD-RESPONSE-CHUNK.
+                 (doseq [[^Ref viewport m] (:viewports dyn-ctx)]
+                   (locking viewport
+                     (.append ^StringBuilder (:response-str @viewport)
+                              (.toString ^StringBuilder (::comet-string-builder m)))
+                     ((::comet-response-trigger m))))
+                 (reset! mtx-phase 3)))
+
     ;; Start transaction.. (1st phase)
-    (dosync
-     (binding [*dyn-ctx* (atom {})]
-       (if-not (zero? @mtx-phase)
-         (retry-2pctx "DO-MTX: Retry.")
-         (do
-           (reset! mtx-phase 1)
-           (do1 (body-fn)
-             ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
-             (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
-               (when-let [^Fn f (::url-alter-query-params m)]
-                 (f)))
-             (commute dummy (with @*dyn-ctx* (fn [_] it)))
-             (when (.isRealized ^Delay *db*)
-               (prepare-fn)))))))))
+    (do1 (dosync
+          (binding [*dyn-ctx* (atom {})]
+            (if-not (zero? @mtx-phase)
+              (retry-2pctx "DO-MTX: Retry.")
+              (do
+                (reset! mtx-phase 1)
+                (do1 (body-fn)
+                  ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
+                  (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
+                    (when-let [^Fn f (::url-alter-query-params m)]
+                      (f)))
+                  (when (.isRealized ^Delay *db*)
+                    (prepare-fn))
+                  (commute dummy (with @*dyn-ctx* (fn [_] it)))
+                  (reset! mtx-phase 2))))))
+      (assert (= 3 @mtx-phase)))))
 
 
 
