@@ -14,7 +14,7 @@
                                      {:status 200
                                       :headers {"Content-Type" "text/javascript; charset=UTF-8"}
                                       :body (do
-                                              (.append response-str "_sw_comet_response_p = true;")
+                                              (.append response-str "_sw_comet_response_p = true;\n")
                                               (.toString response-str))})
               (.setLength response-str 0)))]
     (locking viewport
@@ -118,9 +118,7 @@
                      (get (:query-params request) "_sw_viewport_id") ")."
                      "Refreshing page, but keeping Session (cookie).")
           {:status 200
-           :headers {"Content-Type" "text/javascript; charset=UTF-8"
-                     "Cache-Control" "no-cache, no-store"
-                     "Expires" "-1"}
+           :headers {"Content-Type" "text/javascript; charset=UTF-8"}
            ;; A new Session _might_ have been started for this request, so we reset the cookie just in case before reloading.
            ;; TODO: This and SW-JS-BASE-BOOTSTRAP should be unified.
            :body (str (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
@@ -140,8 +138,7 @@
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
              "Cache-Control" "no-cache, no-store, must-revalidate"
-             "Pragma" "no-cache"
-             "Expires" "-1"}
+             "Expires" "0"}
    :body
    (html
     (hiccup.page/doctype :html5)
@@ -196,7 +193,8 @@
 (defn not-found-page-handler [request ^Ref session ^Ref viewport]
   {:status 404
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Cache-Control" "no-cache"}
+             "Cache-Control" "no-cache, no-store, must-revalidate"
+             "Expires" "0"}
    :body
    (html
     (hiccup.page/doctype :html5)
@@ -217,5 +215,6 @@
   (fn []
     {:status 200
      :headers {"Content-Type" "text/javascript; charset=UTF-8"
-               "Cache-Control" "no-cache"}
+               "Cache-Control" "no-cache, no-store, must-revalidate"
+               "Expires" "0"}
      :body (fn-to-wrap)}))

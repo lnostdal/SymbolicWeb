@@ -135,7 +135,8 @@
         ;; (sw-ajax.js) currently handles this by checking for 500 status.
         {:status 500
          :headers {"Content-Type" "text/html; charset=UTF-8"
-                   "Cache-Control" "no-cache"}
+                   "Cache-Control" "no-cache, no-store, must-revalidate"
+                   "Expires" "0"}
          :body
          (html
           [:html

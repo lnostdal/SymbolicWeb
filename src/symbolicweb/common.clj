@@ -211,40 +211,40 @@ Returns a String."
 (defn http-js-response [body]
   {:status 200
    :headers {"Content-Type" "text/javascript; charset=UTF-8"
-             "Cache-Control" "no-cache, no-store"
-             "Expires" "-1"}
+             "Cache-Control" "no-cache, no-store, must-revalidate"
+             "Expires" "0"}
    :body body})
 
 
 (defn http-html-response [body]
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Cache-Control" "no-cache, no-store"
-             "Expires" "-1"}
+             "Cache-Control" "no-cache, no-store, must-revalidate"
+             "Expires" "0"}
    :body body})
 
 
 (defn http-text-response [body]
   {:status 200
    :headers {"Content-Type" "text/plain; charset=UTF-8"
-             "Cache-Control" "no-cache, no-store"
-             "Expires" "-1"}
+             "Cache-Control" "no-cache, no-store, must-revalidate"
+             "Expires" "0"}
    :body body})
 
 
 (defn http-replace-response [^String location]
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Cache-Control" "no-cache, no-store"
-             "Expires" "-1"}
+             "Cache-Control" "no-cache, no-store, must-revalidate"
+             "Expires" "0"}
    :body (str "<script> window.location.replace(" (url-encode-wrap location) "); </script>")})
 
 
 (defn http-redirect-response [^String location]
   {:status 200
    :headers {"Content-Type" "text/html; charset=UTF-8"
-             "Cache-Control" "no-cache, no-store"
-             "Expires" "-1"}
+             "Cache-Control" "no-cache, no-store, must-revalidate"
+             "Expires" "0"}
    :body (str "<script> window.location = " (url-encode-wrap location) "; </script>")})
 
 
