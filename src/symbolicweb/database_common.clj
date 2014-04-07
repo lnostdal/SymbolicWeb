@@ -105,23 +105,7 @@
   "  PREPARE-FN is called just before the MTX is held; we might still roll back.
   COMMIT-FN is called while the MTX is held; we will not roll back here."
   (let [mtx-phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
-        dummy (ref nil)]
-
-    (add-watch dummy :dummy
-               (fn [_ _ _ dyn-ctx]
-                 (assert (= 2 @mtx-phase))
-                 ;; At this point in time the MTX has been commited, and we know the prepared DBTX won't roll back.
-                 (when (.isRealized ^Delay *db*)
-                   (commit-fn))
-                 ;; Other end of this is in ADD-RESPONSE-CHUNK.
-                 (doseq [[^Ref viewport m] (:viewports dyn-ctx)]
-                   (locking viewport
-                     (.append ^StringBuilder (:response-str @viewport)
-                              (.toString ^StringBuilder (::comet-string-builder m)))
-                     ((::comet-response-trigger m))))
-                 (reset! mtx-phase 3)))
-
-    ;; Start transaction.. (1st phase)
+        dyn-ctx (atom nil)]
     (do1 (dosync
           (binding [*dyn-ctx* (atom {})]
             (if-not (zero? @mtx-phase)
@@ -135,9 +119,19 @@
                       (f)))
                   (when (.isRealized ^Delay *db*)
                     (prepare-fn))
-                  (commute dummy (with @*dyn-ctx* (fn [_] it)))
-                  (reset! mtx-phase 2))))))
-      (assert (= 3 @mtx-phase)))))
+                  (reset! dyn-ctx @*dyn-ctx*))))))
+      ;; TODO: The following must not fail (we should retry a few times; perhaps the DB is restarting), and if it does fail the
+      ;; system should bail out completely to avoid data corruption since the MTX cannot be rolled back at this point.
+      ;; Other end of this is in ADD-RESPONSE-CHUNK.
+      (doseq [[^Ref viewport m] (:viewports @dyn-ctx)]
+        (locking viewport
+          (.append ^StringBuilder (:response-str @viewport)
+                   (.toString ^StringBuilder (::comet-string-builder m)))
+          ((::comet-response-trigger m))))
+      ;; At this point the MTX has been commited, and we are ready to commit the prepared (held) DBTX. Note how this means that
+      ;; view of memory will be more recent than view of DB from other 2PCTX' point of view.
+      (when (.isRealized ^Delay *db*)
+        (commit-fn)))))
 
 
 
