@@ -120,18 +120,23 @@
                   (when (.isRealized ^Delay *db*)
                     (prepare-fn))
                   (reset! dyn-ctx @*dyn-ctx*))))))
-      ;; TODO: The following must not fail (we should retry a few times; perhaps the DB is restarting), and if it does fail the
-      ;; system should bail out completely to avoid data corruption since the MTX cannot be rolled back at this point.
-      ;; Other end of this is in ADD-RESPONSE-CHUNK.
-      (doseq [[^Ref viewport m] (:viewports @dyn-ctx)]
-        (locking viewport
-          (.append ^StringBuilder (:response-str @viewport)
-                   (.toString ^StringBuilder (::comet-string-builder m)))
-          ((::comet-response-trigger m))))
-      ;; At this point the MTX has been commited, and we are ready to commit the prepared (held) DBTX. Note how this means that
-      ;; view of memory will be more recent than view of DB from other 2PCTX' point of view.
-      (when (.isRealized ^Delay *db*)
-        (commit-fn)))))
+      (try
+        ;; Other end of this is in ADD-RESPONSE-CHUNK.
+        (doseq [[^Ref viewport m] (:viewports @dyn-ctx)]
+          (locking viewport
+            (.append ^StringBuilder (:response-str @viewport)
+                     (.toString ^StringBuilder (::comet-string-builder m)))
+            ((::comet-response-trigger m))))
+        ;; At this point the MTX has been committed, and we are ready to commit the prepared (held) DBTX. Note how this means that
+        ;; view of memory will be more recent than view of DB from other 2PCTX' point of view.
+        (when (.isRealized ^Delay *db*)
+          (commit-fn))
+        (catch Throwable e
+          ;; TODO: Retry a few times (perhaps the DB is restarting) before giving up like this?
+          (when (.isRealized ^Delay *db*)
+            (println "## DO-MTX: Failure while pushing data to client or committing data to DB. Giving up; shutting down server to avoid data inconsistency and corruption.")
+            (stop-server))
+          (throw e))))))
 
 
 
