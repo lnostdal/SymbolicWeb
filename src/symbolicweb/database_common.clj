@@ -38,7 +38,7 @@
 
 
 (defn db-update [table-name m where]
-  "E.g. (db-update :testing {:value 42} [\"id = ?\" 100])"
+  "E.g. (db-update :testing {:value 42} '(= :id 100))"
   (let [res (sql/sql (sql/update table-name m (sql/where where)))
         ^String sql (first res)
         params (rest res)]
@@ -47,7 +47,7 @@
 
 
 (defn db-delete [table-name where]
-  "E.g. (db-delete :testing [\"id = ?\" 100])"
+  "E.g. (db-delete :testing '(= :id 100))"
   (let [res (sql/sql (sql/delete table-name (sql/where where)))
         ^String sql (first res)
         params (rest res)]
