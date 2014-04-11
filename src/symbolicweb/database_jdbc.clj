@@ -13,8 +13,8 @@
     (.setJdbcUrl config (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
     (.setUsername config (:user spec))
     (.setPassword config (:password spec))
-    (.setDefaultAutoCommit config true)
-    ;;(.setDefaultTransactionIsolation config "SERIALIZABLE")
+    (.setDefaultAutoCommit config false)
+    ;;(.setDefaultTransactionIsolation config "SERIALIZABLE") ;; Doesn't seem to work...
     (com.jolbox.bonecp.BoneCP. config)))
 
 
@@ -38,20 +38,13 @@
           retval (atom nil)]
       (while (not @done?)
         (let [db-conn (delay (with1 (.getConnection db-spec)
-                               (.setTransactionIsolation it java.sql.Connection/TRANSACTION_SERIALIZABLE) ;; TODO: Magic value.
-                               (.setAutoCommit ^com.jolbox.bonecp.ConnectionHandle it false)))] ;; Begin.
+                               (.setTransactionIsolation it java.sql.Connection/TRANSACTION_SERIALIZABLE)))]
           (try
             (binding [*db* db-conn]
               (reset! retval (body-fn))
-              (when (and (.isRealized db-conn)
-                         (not (.getAutoCommit ^com.jolbox.bonecp.ConnectionHandle @db-conn)))
-                (.commit ^com.jolbox.bonecp.ConnectionHandle @db-conn)) ;; Commit.
               (reset! done? true))
 
             (catch Throwable e
-              (when (and (.isRealized db-conn)
-                         (not (.getAutoCommit ^com.jolbox.bonecp.ConnectionHandle @db-conn)))
-                (.rollback ^com.jolbox.bonecp.ConnectionHandle @db-conn)) ;; Rollback.
               (if (isa? (class e) java.sql.SQLException)
                 (if (= "40001" (.getSQLState ^java.sql.SQLException e))
                   (when on-serialization-failure-fn
@@ -63,7 +56,6 @@
 
             (finally
               (when (.isRealized db-conn)
-                (.setAutoCommit ^com.jolbox.bonecp.ConnectionHandle @db-conn true) ;; End after Commit or Rollback.
                 (.close ^com.jolbox.bonecp.ConnectionHandle @db-conn))))))
       @retval)))
 

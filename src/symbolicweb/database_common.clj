@@ -65,78 +65,73 @@
 
 
 
-(defn do-dbtx [^Fn body-fn]
-  "  BODY-FN: (fn [DBTX-PREPARE-FN DBTX-COMMIT-FN] ..)"
-  (let [db-stmt (delay (.createStatement (.deref ^Delay *db*)))
-        dbtx-id (.toString (generate-uid))
-        dbtx-phase (atom 0)]
+(declare stop-server)
+(defn do-dbtx [^Fn dbtx-body-fn]
+  "  2PCTX-BODY-FN: (fn [DBTX-COMMIT-FN] ..)"
+  (let [dbtx-phase (atom 0)]
     (try
-      #_(println "DO-DBTX: Start transaction.. (0th phase)")
-
-      (body-fn (fn []
-                 #_(println "DO-DBTX: ..hold-transaction.. (1st phase)")
-                 (assert (= 0 @dbtx-phase))
-                 (.execute @db-stmt (str "PREPARE TRANSACTION '" dbtx-id "';"))
-                 (.commit @*db*)
-                 (.setAutoCommit @*db* true)
-                 (reset! dbtx-phase 1))
-               (fn []
-                 #_(println "DO-DBTX: ..commit transaction. (2st phase)")
-                 (assert (= 1 @dbtx-phase))
-                 (.execute @db-stmt (str "COMMIT PREPARED '" dbtx-id "';"))
-                 (reset! dbtx-phase 2)))
+      (dbtx-body-fn
+       (fn []
+         (assert (= 0 @dbtx-phase))
+         (when (.isRealized ^Delay *db*)
+           (.commit ^com.jolbox.bonecp.ConnectionHandle (.deref ^Delay *db*)))
+         (reset! dbtx-phase 1)))
 
       (catch Throwable e
         #_(println "DO-DBTX: Rolling back phase" @dbtx-phase "DBTX:" e)
-        (case @dbtx-phase
-          0 nil
-          1 (.execute @db-stmt (str "ROLLBACK PREPARED '" dbtx-id "';"))
-          2 (assert false "DO-DBTX: This shouldn't happen."))
-        (throw e))
+        (case (int @dbtx-phase)
+          0 (when (.isRealized ^Delay *db*)
+              (.rollback ^com.jolbox.bonecp.ConnectionHandle (.deref ^Delay *db*)))
+          1 (do
+              (println "DO-DBTX: This shouldn't happen; MTX can rollback while DBTX can't. :(")
+              (println "DO-DBTX: Stopping server to avoid data corruption.")
+              (stop-server)))
 
-      (finally
-        (when (.isRealized db-stmt)
-          (.close @db-stmt))))))
+        (throw (or (:dyn-ctx-validator-throwable (ex-data e))
+                   e))))))
 
 
 
-;; TODO: Very specific *DYN-CTX* stuff being mixed in here sucks.
-(defn do-mtx [^Fn body-fn ^Fn prepare-fn ^Fn commit-fn]
-  "  PREPARE-FN is called just before the MTX is held; we might still roll back.
-  COMMIT-FN is called while the MTX is held; we will not roll back here."
+;; TODO: Unrelated *DYN-CTX* stuff being mixed in here sucks.
+(defn do-mtx [^Fn body-fn ^Fn dbtx-commit-fn]
   (let [mtx-phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
-        dyn-ctx (atom nil)]
-    (do1 (dosync
-          (binding [*dyn-ctx* (atom {})]
-            (if-not (zero? @mtx-phase)
-              (retry-2pctx "DO-MTX: Retry.")
-              (do
-                (reset! mtx-phase 1)
-                (do1 (body-fn)
-                  ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
-                  (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
-                    (when-let [^Fn f (::url-alter-query-params m)]
-                      (f)))
-                  (when (.isRealized ^Delay *db*)
-                    (prepare-fn))
-                  (reset! dyn-ctx @*dyn-ctx*))))))
-      (try
-        ;; Other end of this is in ADD-RESPONSE-CHUNK.
-        (doseq [[^Ref viewport m] (:viewports @dyn-ctx)]
-          (locking viewport
-            (.append ^StringBuilder (:response-str @viewport)
-                     (.toString ^StringBuilder (::comet-string-builder m)))
-            ((::comet-response-trigger m))))
-        ;; At this point the MTX has been committed, and we are ready to commit the prepared (held) DBTX. Note how this means that
-        ;; view of memory will be more recent than view of DB from other 2PCTX' point of view.
-        (when (.isRealized ^Delay *db*)
-          (commit-fn))
-        (catch Throwable e
-          ;; TODO: Retry a few times (perhaps the DB is restarting) before giving up like this?
-          (when (.isRealized ^Delay *db*)
-            (println "## DO-MTX: Failure while pushing data to client or committing data to DB. Giving up; shutting down server to avoid data inconsistency and corruption.")
-            (stop-server))
-          (throw e))))))
+        dyn-ctx (ref false
+                     :validator ;; TODO: Doing 2PCTX like this (via :validator) has significant risks. See issue #48.
+                     (fn [dyn-ctx]
+                       (when dyn-ctx
+                         ;; At this point the MTX is prepared or "held" and we can commit the DBTX. A conflict will rollback
+                         ;; both the MTX and the DBTX.
+                         (try
+                           (dbtx-commit-fn)
+                           (catch Throwable e
+                             (throw (ex-info "Deal with Clojure :VALIDATOR retardedness: http://goo.gl/2ynLdL"
+                                             {:dyn-ctx-validator-throwable e}))))
+
+                         ;; Other end of this is in ADD-RESPONSE-CHUNK.
+                         (try
+                           (doseq [[^Ref viewport m] (:viewports dyn-ctx)]
+                             (locking viewport
+                               (.append ^StringBuilder (:response-str @viewport)
+                                        (.toString ^StringBuilder (::comet-string-builder m)))
+                               ((::comet-response-trigger m))))
+                           (catch Throwable e
+                             ;; TODO: STOP-SERVER here? See issue #48.
+                             ;; Will have to "eat" (ignore) any problem at this point since the DBTX has been commited.
+                             (println "DO-MTX: Eating exception:" e)
+                             (clojure.stacktrace/print-stack-trace e 50))))
+                       true))]
+    (dosync
+     (binding [*dyn-ctx* (atom {})]
+       (if-not (zero? @mtx-phase)
+         (retry-2pctx "DO-MTX: Retry.")
+         (do
+           (reset! mtx-phase 1)
+           (do1 (body-fn)
+             ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
+             (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
+               (when-let [^Fn f (::url-alter-query-params m)]
+                 (f)))
+             (commute dyn-ctx (with @*dyn-ctx* (fn [_] it))))))))))
 
 
 
@@ -149,8 +144,8 @@
       (try
         (reset! retval
                 (with-db-conn (fn [] (retry-2pctx "DO-2PCTX: Retry."))
-                  (do-dbtx (fn [^Fn dbtx-prepare-fn ^Fn dbtx-commit-fn]
-                             (do-mtx body-fn dbtx-prepare-fn dbtx-commit-fn)))))
+                  (do-dbtx (fn [^Fn dbtx-commit-fn]
+                             (do-mtx body-fn dbtx-commit-fn)))))
         (reset! done? true)
         (catch clojure.lang.ExceptionInfo e
           (case (:2pctx-state (ex-data e))
@@ -294,12 +289,11 @@ Returns :ID and :PARENT columns."
 
 
 (defn db-delete-prepared-transactions []
-  (with-db-conn nil
-    (.setAutoCommit @*db* true)
-    (doseq [res (db-stmt "SELECT gid FROM pg_prepared_xacts;")]
-      (println "deleting prepared transaction:" (:gid res))
-      (db-stmt (str "ROLLBACK PREPARED '" (:gid res) "';")))
-    (.setAutoCommit @*db* false)))
+  (swsync
+   (doseq [res (db-stmt "SELECT gid FROM pg_prepared_xacts;")]
+     (println "deleting prepared transaction:" (:gid res))
+     (db-stmt (str "ROLLBACK PREPARED '" (:gid res) "';")))))
+
 
 
 
