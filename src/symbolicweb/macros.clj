@@ -37,7 +37,7 @@
 ;; Doesn't belong here, but can't find a way to bootstrap this crap proper.
 (defmacro dbg-prin1 [form]
   `(let [res# ~form]
-     (println '~form "=>" res#)
+     (println '~form "=>" res#) (flush)
      res#))
 
 
