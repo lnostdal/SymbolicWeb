@@ -50,10 +50,10 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
 
                  [sqlingvo "LATEST"] ;; SQL DSL.
-                 [org.postgresql/postgresql "LATEST"] ;; JDBC driver.
-                 [com.jolbox/bonecp "LATEST"] ;; DB connection pooling.
+                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.4-SNAPSHOT"] ;; JDBC driver
+                 [com.zaxxer/HikariCP "LATEST"] ;; DB connection pooling.
 
-                 [me.raynes/conch "LATEST"]
+                 ;;[me.raynes/conch "LATEST"] ;; Shell tools (used by gpg.clj).
                  ]
 
 

@@ -74,14 +74,14 @@
        (fn []
          (assert (= 0 @dbtx-phase))
          (when (.isRealized ^Delay *db*)
-           (.commit ^com.jolbox.bonecp.ConnectionHandle (.deref ^Delay *db*)))
+           (.commit ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy (.deref ^Delay *db*)))
          (reset! dbtx-phase 1)))
 
       (catch Throwable e
         #_(println "DO-DBTX: Rolling back phase" @dbtx-phase "DBTX:" e)
         (case (int @dbtx-phase)
           0 (when (.isRealized ^Delay *db*)
-              (.rollback ^com.jolbox.bonecp.ConnectionHandle (.deref ^Delay *db*)))
+              (.rollback ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy (.deref ^Delay *db*)))
           1 (do
               (println "DO-DBTX: This shouldn't happen; MTX can rollback while DBTX can't. :(")
               (println "DO-DBTX: Stopping server to avoid data corruption.")

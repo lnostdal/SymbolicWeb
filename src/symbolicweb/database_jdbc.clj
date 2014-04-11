@@ -7,29 +7,34 @@
 
 
 
-(defn mk-db-pool ^com.jolbox.bonecp.BoneCP [spec]
-  (let [config (com.jolbox.bonecp.BoneCPDataSource.)]
-    (.setDriverClass config (:classname spec)) ;; Would work with BoneCPDataSource class (subclass of BoneCPConfig).
-    (.setJdbcUrl config (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
-    (.setUsername config (:user spec))
-    (.setPassword config (:password spec))
-    (.setDefaultAutoCommit config true)
-    ;;(.setDefaultTransactionIsolation config "SERIALIZABLE.") ;; Doesn't seem to work...
-    (com.jolbox.bonecp.BoneCP. config)))
+(defn mk-db-pool ^com.zaxxer.hikari.HikariDataSource [spec]
+  (with (com.zaxxer.hikari.HikariConfig.)
+    (.setMaximumPoolSize it (* 2 (. (Runtime/getRuntime) availableProcessors)))
+    (.setDataSourceClassName it "com.impossibl.postgres.jdbc.PGDataSource")
+    (.addDataSourceProperty it "host" "127.0.0.1")
+    (.addDataSourceProperty it "database" (:database spec))
+    (.addDataSourceProperty it "user" (:user spec))
+    (.addDataSourceProperty it "password" (:password spec))
+
+    (.setTransactionIsolation it "TRANSACTION_SERIALIZABLE")
+    (.setAutoCommit it false)
+
+    (.setLeakDetectionThreshold it 5)
+
+    (com.zaxxer.hikari.HikariDataSource. it)))
 
 
-
+(defonce -pooled-db-spec- nil)
+(when -pooled-db-spec- (.shutdown -pooled-db-spec-))
 (def -pooled-db-spec-
   (mk-db-pool
-   {:classname "org.postgresql.Driver"
-    :subprotocol "postgresql"
-    :subname "test"
+   {:database "test"
     :user "test"
     :password "test"}))
 
 
 
-(defn %with-jdbc-conn [^com.jolbox.bonecp.BoneCP db-spec ^Fn on-serialization-failure-fn ^Fn body-fn]
+(defn %with-jdbc-conn [^com.zaxxer.hikari.HikariDataSource db-spec ^Fn on-serialization-failure-fn ^Fn body-fn]
   (if *db*
     (do
       (println "WARNING: Nesting of WITH-JDBC-CONN forms might cause unintended behavior.")
@@ -37,9 +42,7 @@
     (let [done? (atom false)
           retval (atom nil)]
       (while (not @done?)
-        (let [db-conn (delay (with1 (.getConnection db-spec)
-                               (.setTransactionIsolation it java.sql.Connection/TRANSACTION_SERIALIZABLE)
-                               (.setAutoCommit ^com.jolbox.bonecp.ConnectionHandle it false)))] ;; DBTX: `BEGIN`.
+        (let [db-conn (delay (.getConnection db-spec))]
           (try
             (binding [*db* db-conn]
               (reset! retval (body-fn))
@@ -57,8 +60,7 @@
 
             (finally
               (when (.isRealized db-conn)
-                (.setAutoCommit ^com.jolbox.bonecp.ConnectionHandle @db-conn true)
-                (.close ^com.jolbox.bonecp.ConnectionHandle @db-conn))))))
+                (.close ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy @db-conn))))))
       @retval)))
 
 (defmacro with-jdbc-conn [db-spec on-serialization-failure-fn & body]
@@ -68,10 +70,10 @@
 
 
 
-(defn- jdbc-pstmt [^com.jolbox.bonecp.ConnectionHandle db-conn ^String sql params]
+(defn- jdbc-pstmt [^com.zaxxer.hikari.proxy.ConnectionJavassistProxy db-conn ^String sql params]
   "Create (or fetch from cache) and execute PreparedStatement."
   (try
-    (with-open [stmt (.prepareStatement db-conn sql)] ;; TODO: I'm assuming the Pg JDBC driver caches based on SQL here.
+    (with-open [stmt (.prepareStatement db-conn sql)]
       (dorun (map-indexed (fn [ix value]
                             (.setObject stmt (inc ix) value))
                           params))
@@ -90,7 +92,7 @@
 
 
 
-(defn- jdbc-stmt [^com.jolbox.bonecp.ConnectionHandle db-conn ^String sql]
+(defn- jdbc-stmt [^com.zaxxer.hikari.proxy.ConnectionJavassistProxy db-conn ^String sql]
   "Create and execute Statement."
   (try
     (with-open [stmt (.createStatement db-conn)]
