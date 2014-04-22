@@ -35,33 +35,29 @@
 
 
 (defn %with-jdbc-conn [^com.zaxxer.hikari.HikariDataSource db-spec ^Fn on-serialization-failure-fn ^Fn body-fn]
-  (if *db*
-    (do
-      (println "WARNING: Nesting of WITH-JDBC-CONN forms might cause unintended behavior.")
-      (body-fn))
-    (let [done? (atom false)
-          retval (atom nil)]
-      (while (not @done?)
-        (let [db-conn (delay (.getConnection db-spec))]
-          (try
-            (binding [*db* db-conn]
-              (reset! retval (body-fn))
-              (reset! done? true))
+  (let [done? (atom false)
+        retval (atom nil)]
+    (while (not @done?)
+      (let [db-conn (delay (.getConnection db-spec))]
+        (try
+          (binding [*db* db-conn]
+            (reset! retval (body-fn))
+            (reset! done? true))
 
-            (catch Throwable e
-              (if (isa? (class e) java.sql.SQLException)
-                (if (= "40001" (.getSQLState ^java.sql.SQLException e))
-                  (when on-serialization-failure-fn
-                    (on-serialization-failure-fn))
-                  (do
-                    (println "\n%WITH-JDBC-CONN: getSQLState:" (.getSQLState ^java.sql.SQLException e))
-                    (throw e)))
-                (throw e)))
+          (catch Throwable e
+            (if (isa? (class e) java.sql.SQLException)
+              (if (= "40001" (.getSQLState ^java.sql.SQLException e))
+                (when on-serialization-failure-fn
+                  (on-serialization-failure-fn))
+                (do
+                  (println "\n%WITH-JDBC-CONN: getSQLState:" (.getSQLState ^java.sql.SQLException e))
+                  (throw e)))
+              (throw e)))
 
-            (finally
-              (when (.isRealized db-conn)
-                (.close ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy @db-conn))))))
-      @retval)))
+          (finally
+            (when (.isRealized db-conn)
+              (.close ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy @db-conn))))))
+    @retval))
 
 (defmacro with-jdbc-conn [db-spec on-serialization-failure-fn & body]
   "Runs BODY within a DBTX.
