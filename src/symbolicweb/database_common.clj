@@ -140,8 +140,8 @@
                (commute dyn-ctx (with @*dyn-ctx* (fn [_] it)))
                (ref-set mtx-done? true))))))
       (finally
-        (when (and (= 2 @phase) ;; DBTX committed?
-                   (not @mtx-done?)) ;; ..but MTX not?
+        (assert (= 2 @phase)) ;; DBTX committed?
+        (when-not @mtx-done? ;; ..but MTX not?
           ;; At this point the MTX has been rolled back, but the DBTX has been committed. This cannot be dealt
           ;; with so we stop the server. See issue #48.
           (println "DO-MTX: Some :VALIDATOR failed or something else went wrong. Stopping server. See issue #48.")
