@@ -97,8 +97,8 @@
 ;; vs. :VIEWPORT / ::COMET-STRING-BUILDER etc. still matter.
 ;; TODO: Using a :VALIDATOR like this has significant risks. See issue #48.
 (defn do-mtx [^Fn body-fn ^Fn dbtx-commit-fn]
-  (let [phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
-        mtx-done? (ref false)
+  (let [^Atom phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
+        ^Ref mtx-done? (ref false)
         dyn-ctx (ref false
                      :validator
                      (fn [dyn-ctx]
@@ -134,14 +134,14 @@
              (reset! phase 1)
              (do1 (body-fn)
                ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
-               (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
+               (doseq [[^Ref viewport m] (:viewports (.deref ^Atom *dyn-ctx*))]
                  (when-let [^Fn f (::url-alter-query-params m)]
                    (f)))
-               (commute dyn-ctx (with @*dyn-ctx* (fn [_] it)))
+               (commute dyn-ctx (with (.deref ^Atom *dyn-ctx*) (fn [_] it)))
                (ref-set mtx-done? true))))))
       (finally
-        (assert (= 2 @phase)) ;; DBTX committed?
-        (when-not @mtx-done? ;; ..but MTX not?
+        (when (and (= 2 (.deref phase)) ;; DBTX commited?
+                   (not (.deref mtx-done?))) ;; ..but MTX not?
           ;; At this point the MTX has been rolled back, but the DBTX has been committed. This cannot be dealt
           ;; with so we stop the server. See issue #48.
           (println "DO-MTX: Some :VALIDATOR failed or something else went wrong. Stopping server. See issue #48.")
