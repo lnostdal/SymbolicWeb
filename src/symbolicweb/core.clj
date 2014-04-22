@@ -168,6 +168,6 @@
                                 #(with-bindings bnds
                                    (handler %1))))
                               {:port port
-                               :thread (. (Runtime/getRuntime) availableProcessors)
+                               :thread (* 2 (. (Runtime/getRuntime) availableProcessors))
                                :worker-name-prefix "http-worker-"
                                :max-body 1048576})))) ;; Max 1M request body (e.g. POST).

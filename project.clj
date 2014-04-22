@@ -34,23 +34,23 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [http-kit/http-kit "LATEST"] ;; HTTP (server) stuff.
                  [clj-http "LATEST"] ;; HTTP (client) stuff.
 
-                 [com.google.guava/guava "LATEST"] ;; For soft hash cache.
+                 [com.google.guava/guava "LATEST"] ;; For soft hash cache (database_dao.clj).
 
-                 [cheshire "LATEST"] ;; JSON.
+                 [cheshire "LATEST"] ;; JSON parsing and generation.
 
-                 [clj-time/clj-time "0.6.1-SNAPSHOT"]
+                 [clj-time/clj-time "LATEST"]
 
                  [hiccup/hiccup "LATEST"] ;; HTML generation.
                  [org.jsoup/jsoup "1.7.4-SNAPSHOT"] ;; HTML templating.
-
-                 [garden "LATEST"]
+                 [garden "LATEST"] ;; CSS generation.
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "LATEST"] ;; ring.util.codec
                  [ring/ring-core "LATEST"] ;; ring.middleware.params, ring.middleware.cookies
 
+                 ;; DB stuff.
                  [sqlingvo "LATEST"] ;; SQL DSL.
-                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.4-SNAPSHOT"] ;; JDBC driver
+                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.4-SNAPSHOT"] ;; JDBC driver.
                  [com.zaxxer/HikariCP "LATEST"] ;; DB connection pooling.
 
                  ;;[me.raynes/conch "LATEST"] ;; Shell tools (used by gpg.clj).
