@@ -85,18 +85,22 @@
           1 (do
               (println "DO-DBTX: This shouldn't happen; MTX can rollback while DBTX can't. :(")
               (println "DO-DBTX: Stopping server to avoid data corruption.")
+              (clojure.stacktrace/print-stack-trace e 50)
               (stop-server)))
-
         (throw (or (:dyn-ctx-validator-throwable (ex-data e))
                    e))))))
 
 
 
 ;; TODO: Unrelated *DYN-CTX* stuff being mixed in here sucks.
+;; Perhaps a simple fix would be to name they key in *DYN-CTX* ::POST-COMMIT or similar, but order of ::URL-ALTER-QUERY-PARAMS
+;; vs. :VIEWPORT / ::COMET-STRING-BUILDER etc. still matter.
+;; TODO: Using a :VALIDATOR like this has significant risks. See issue #48.
 (defn do-mtx [^Fn body-fn ^Fn dbtx-commit-fn]
-  (let [mtx-phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
+  (let [phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
+        mtx-done? (ref false)
         dyn-ctx (ref false
-                     :validator ;; TODO: Doing 2PCTX like this (via :validator) has significant risks. See issue #48.
+                     :validator
                      (fn [dyn-ctx]
                        (when dyn-ctx
                          ;; At this point the MTX is prepared or "held" and we can commit the DBTX. A conflict will rollback
@@ -104,8 +108,9 @@
                          (try
                            (dbtx-commit-fn)
                            (catch Throwable e
-                             (throw (ex-info "Deal with Clojure :VALIDATOR retardedness: http://goo.gl/2ynLdL"
+                             (throw (ex-info "Deal with Clojure :VALIDATOR exception retardedness: http://goo.gl/2ynLdL"
                                              {:dyn-ctx-validator-throwable e}))))
+                         (reset! phase 2)
 
                          ;; Other end of this is in ADD-RESPONSE-CHUNK.
                          (try
@@ -115,23 +120,32 @@
                                         (.toString ^StringBuilder (::comet-string-builder m)))
                                ((::comet-response-trigger m))))
                            (catch Throwable e
-                             ;; TODO: STOP-SERVER here? See issue #48.
+                             ;; TODO: STOP-SERVER here?
                              ;; Will have to "eat" (ignore) any problem at this point since the DBTX has been commited.
                              (println "DO-MTX: Eating exception:" e)
                              (clojure.stacktrace/print-stack-trace e 50))))
                        true))]
-    (dosync
-     (binding [*dyn-ctx* (atom {})]
-       (if-not (zero? @mtx-phase)
-         (retry-2pctx "DO-MTX: Retry.")
-         (do
-           (reset! mtx-phase 1)
-           (do1 (body-fn)
-             ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
-             (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
-               (when-let [^Fn f (::url-alter-query-params m)]
-                 (f)))
-             (commute dyn-ctx (with @*dyn-ctx* (fn [_] it))))))))))
+    (try
+      (dosync
+       (binding [*dyn-ctx* (atom {})]
+         (if-not (zero? @phase)
+           (retry-2pctx "DO-MTX: Retry.")
+           (do
+             (reset! phase 1)
+             (do1 (body-fn)
+               ;; Other end of this is in URL-ALTER-QUERY-PARAMS.
+               (doseq [[^Ref viewport m] (:viewports @*dyn-ctx*)]
+                 (when-let [^Fn f (::url-alter-query-params m)]
+                   (f)))
+               (commute dyn-ctx (with @*dyn-ctx* (fn [_] it)))
+               (ref-set mtx-done? true))))))
+      (finally
+        (when (and (= 2 @phase) ;; DBTX committed?
+                   (not @mtx-done?)) ;; ..but MTX not?
+          ;; At this point the MTX has been rolled back, but the DBTX has been committed. This cannot be dealt
+          ;; with so we stop the server. See issue #48.
+          (println "DO-MTX: Some :VALIDATOR failed or something else went wrong. Stopping server. See issue #48.")
+          (stop-server))))))
 
 
 
