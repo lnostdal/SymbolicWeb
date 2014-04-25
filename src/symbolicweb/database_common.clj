@@ -144,8 +144,8 @@
                    (not (.deref mtx-done?))) ;; ..but MTX not?
           ;; At this point the MTX has been rolled back, but the DBTX has been committed. This cannot be dealt
           ;; with so we stop the server. See issue #48.
-          (println "DO-MTX: Some :VALIDATOR failed or something else went wrong. Stopping server. See issue #48.")
-          (stop-server))))))
+          (stop-server)
+          (throw (ex-info "DO-MTX: Some :VALIDATOR failed or something else went wrong. Stopping server. See issue #48.")))))))
 
 
 
