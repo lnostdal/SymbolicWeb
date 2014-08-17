@@ -312,20 +312,32 @@ Returns :ID and :PARENT columns."
 
 
 #_(defn db-common-test []
-  (let [r (ref 0)
-        f1 (future
-             (swsync
-              (println "F1 starting..")
-              (db-update :testing {:value (ensure r)} ["id = ?" 391878])
-              (Thread/sleep 1000))
-             (println "F1 done."))
-        f2 (future
-             (swsync
-              (println "F2 starting..")
-              (db-update :testing {:value -2} ["id = ?" 391878])
-              (ref-set r 42)
-              (Thread/sleep 1000))
-             (println "F2 done."))]
-    @f1
-    @f2
-    nil))
+  (let [res (swsync
+             (db-insert :test {:value 0}))]
+    (let [r (ref 0)
+          f1 (future
+               (swsync
+                (println "F1 starting")
+                (alter r inc)
+                (dbg-prin1 r)
+                (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
+                (println "F1 sleeping")
+                (Thread/sleep 1000)
+                )
+               (println "F1 done"))
+          f2 (future
+               (swsync
+                (println "F2 starting")
+                (alter r inc)
+                (dbg-prin1 r)
+                (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
+                (println "F2 sleeping")
+                (Thread/sleep 1000)
+                )
+               (println "F2 done"))]
+      @f1
+      @f2
+      (swsync
+       (assert (= (dbg-prin1 (ensure r))
+                  (:value (dbg-prin1 (first (db-pstmt "SELECT * FROM test WHERE id = ? LIMIT 1;" (:id (first res)))))))))
+      nil)))

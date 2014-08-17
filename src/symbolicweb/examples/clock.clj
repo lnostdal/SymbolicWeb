@@ -21,15 +21,11 @@
 
 
 
-
-
-
 (defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/clock" [uri request session]
   (defonce -clock-thread-
     (future
       (loop []
         (Thread/sleep 1000)
-        (swsync
-         (vm-set -clock-vm- (.toString (clj-time.core/now))))
+        (swsync (vm-set -clock-vm- (.toString (clj-time.core/now))))
         (recur))))
   (mk-clock-viewport request session))

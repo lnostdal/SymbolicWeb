@@ -1,5 +1,10 @@
 (in-ns 'symbolicweb.core)
 
+;;; TODO(?)
+;;; Bjarne Stroustrup: Why you should avoid Linked Lists
+;;; https://www.youtube.com/watch?v=YQs6IC-vgmo
+
+
 
 (defmacro cm-iterate [container-model cmn-symbol cmn-data-symbol & body]
   "Iterate over CMNs in CONTAINER-MODEL executing BODY for each iteration with CMN-DATA-SYMBOL bound to the CMN-DATA of each
