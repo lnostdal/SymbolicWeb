@@ -26,17 +26,17 @@
         cbtc-io-vm (vm "0")
         mbtc-io-vm (vm "0")
         ubtc-io-vm (vm "0")
+        nbtc-io-vm (vm "0")
         satoshi-io-vm (vm "0")
 
         satoshi-vm (vm 0)]
 
-
     (doseq [[input-vm input-unit] [[btc-io-vm :btc]
-                                   [mbtc-io-vm :mbtc]
                                    [dbtc-io-vm :dbtc]
                                    [cbtc-io-vm :cbtc]
                                    [mbtc-io-vm :mbtc]
                                    [ubtc-io-vm :ubtc]
+                                   [nbtc-io-vm :nbtc]
                                    [satoshi-io-vm :satoshi]]]
       (vm-observe input-vm (.lifetime root-widget) false
                   #(vm-set satoshi-vm
@@ -55,6 +55,7 @@
                                                   [cbtc-io-vm :cbtc]
                                                   [mbtc-io-vm :mbtc]
                                                   [ubtc-io-vm :ubtc]
+                                                  [nbtc-io-vm :nbtc]
                                                   [satoshi-io-vm :satoshi]]]
                    (vm-set output-vm
                            (cl-format false (case output-unit
@@ -63,6 +64,7 @@
                                               :cbtc "~6$"
                                               :mbtc "~5$"
                                               :ubtc "~4$"
+                                              :nbtc "~1$"
                                               :satoshi "~D")
                                       (handle-btc-value %3 :satoshi output-unit)))))
 
@@ -76,6 +78,7 @@
         [:p "cBTC (centibitcoin): " (sw (mk-TextInput cbtc-io-vm :change))]
         [:p "mBTC (millibitcoin): " (sw (mk-TextInput mbtc-io-vm :change))]
         [:p "μBTC (microbitcoin): " (sw (mk-TextInput ubtc-io-vm :change))]
+        [:p "nBTC (nanobitcoin): " (sw (mk-TextInput nbtc-io-vm :change))]
         [:p "satoshi: " (sw (mk-TextInput satoshi-io-vm :change))]))
 
     (mk-Viewport request session root-widget :page-title "Bitcoin units")))
