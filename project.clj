@@ -49,7 +49,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  ;; DB stuff.
                  [sqlingvo "LATEST"] ;; SQL DSL.
-                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.4-SNAPSHOT"] ;; JDBC driver.
+                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.5-SNAPSHOT"] ;; JDBC driver.
                  [com.zaxxer/HikariCP "LATEST"] ;; DB connection pooling.
 
                  ;;[me.raynes/conch "LATEST"] ;; Shell tools (used by gpg.clj).

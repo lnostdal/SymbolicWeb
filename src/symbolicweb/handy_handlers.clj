@@ -161,10 +161,10 @@
 
       ;; jQuery.
       "<!--[if lt IE 9]>"
-      [:script {:src (gen-url viewport "sw/js/jquery-1.11.0.min.js")}]
+      [:script {:src (gen-url viewport "sw/js/jquery-1.11.1.min.js")}]
       "<![endif]-->"
       "<!--[if gte IE 9]><!-->"
-      [:script {:src (gen-url viewport "sw/js/jquery-2.1.0.min.js")}]
+      [:script {:src (gen-url viewport "sw/js/jquery-2.1.1.min.js")}]
       "<!--<![endif]-->"
 
       ;; SW specific.

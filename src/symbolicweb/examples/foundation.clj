@@ -12,7 +12,7 @@
         viewport (mk-Viewport request session root-widget :page-title "SW: Foundation")]
     (add-rest-head viewport "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />")
     (add-resource viewport :css "foundation/dist/assets/css/normalize.css")
-    (add-resource viewport :css "foundation/dist/assets/css/foundation.min.css")
+    (add-resource viewport :css "foundation/dist/assets/css/foundation.css")
     (add-resource viewport :js "Modernizr/dist/modernizr-build.min.js")
     (add-resource viewport :js "foundation/dist/assets/js/foundation.min.js")
 
