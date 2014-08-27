@@ -8,8 +8,8 @@
 
 
 (deftype DBCache
-    [^Fn db-clj-to-db-transformer-fn
-     ^Fn db-db-to-clj-transformer-fn
+    [^Fn dao-clj-to-db-transformer-fn
+     ^Fn dao-db-to-clj-transformer-fn
 
      ^String table-name
 

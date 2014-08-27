@@ -48,8 +48,8 @@ ALTER TABLE users ADD UNIQUE (uuid);
                     (fn [m]
                       (-> m
                           (user-model-base-clj-to-db-transformer)
-                          (db-default-clj-to-db-transformer)))
-                    #'db-default-db-to-clj-transformer))
+                          (dao-default-clj-to-db-transformer)))
+                    #'dao-default-db-to-clj-transformer))
 
 
 
@@ -59,7 +59,7 @@ ALTER TABLE users ADD UNIQUE (uuid);
 
   ([^String email ^Fn create-fn]
      (if-let [id (:id (first (db-pstmt "SELECT id FROM users WHERE email = ? LIMIT 1;" email)))]
-       (db-get id "users")
+       (dao-get id "users")
        (create-fn email))))
 
 

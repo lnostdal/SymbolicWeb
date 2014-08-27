@@ -18,8 +18,8 @@
     (vm-alter -num-sessions-model- dec)
     (when-not (:one-shot? @session)
       (if (= "permanent" @(spget session :session-type))
-        (db-cache-remove (db-get-cache "sessions") @(:id session-m))
-        (db-remove session "sessions")))
+        (dao-cache-remove (dao-get-cache "sessions") @(:id session-m))
+        (dao-remove session "sessions")))
 
     ;; GC all Viewports in SESSION.
     (doseq [[viewport-id viewport] (ensure (:viewports session-m))]

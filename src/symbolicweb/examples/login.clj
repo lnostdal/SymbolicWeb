@@ -45,7 +45,7 @@
                                                                   (fn [email]
                                                                     (with1 (mk-UserModelBase :email (vm email)
                                                                                              :password (vm @password-vm))
-                                                                      (db-put it "users"))))]
+                                                                      (dao-put it "users"))))]
                                (if (= @password-vm @(:password @user-model))
                                  (session-login session user-model viewport "permanent"
                                                 (fn [] (vm-set msg-vm "Login success.")))

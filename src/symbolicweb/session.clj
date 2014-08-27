@@ -48,20 +48,20 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
                       @(:id @user-model)))
 
            m)))
-      (db-default-clj-to-db-transformer)))
+      (dao-default-clj-to-db-transformer)))
 
 
 
 (defn session-model-db-to-clj-transformer [m]
   "DB --> SW"
   (-> m
-      (db-default-db-to-clj-transformer)
+      (dao-default-db-to-clj-transformer)
       ((fn [m]
          (case (:key m)
            :user-ref
            (assoc m
              :key :user-model
-             :value (when (:value m) (db-get (:value m) "users")))
+             :value (when (:value m) (dao-get (:value m) "users")))
 
            :json
            (db-db-to-json-transformer m)
@@ -201,7 +201,7 @@ callback."
 (defn create-session [session-type one-shot?]
   (with1 (mk-Session :uuid (generate-uuid) :session-type session-type)
     (when-not one-shot?
-      (db-put it "sessions"))))
+      (dao-put it "sessions"))))
 
 
 
@@ -216,7 +216,7 @@ callback."
         (let [session-skeleton
               (or (and cookie-value
                        (when-let [res (first (db-pstmt "SELECT id FROM sessions WHERE uuid = ? LIMIT 1;" cookie-value))]
-                         (with1 (db-get (:id res) "sessions")
+                         (with1 (dao-get (:id res) "sessions")
                            (vm-set (:touched @it) (datetime-to-sql-timestamp (time/now))))))
                   (mk-Session :uuid (generate-uuid)
                               :session-type session-type
@@ -229,7 +229,7 @@ callback."
           (alter -sessions- assoc (:uuid @session-skeleton) session-skeleton)
           (with1 ((:session-constructor-fn session-type) request session-skeleton)
             (when-not (:one-shot? @it)
-              (db-put it "sessions"))))
+              (dao-put it "sessions"))))
         (do
           ;;(log "FIND-OR-CREATE-SESSION: 404 NOT FOUND:" request)
           (mk-Session :uuid cookie-value
