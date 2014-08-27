@@ -54,7 +54,7 @@
           nil
 
           true
-          (keyword (str/replace (name (:key m)) \- \_)))
+          (keyword (str/replace (name (:key m)) \- \_))) ;; :some-field --> :some_field
 
     :value (cond
             (isa? (class (:value m)) ValueModel)

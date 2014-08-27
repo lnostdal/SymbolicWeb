@@ -3,6 +3,12 @@
 (declare ref? observe %vm-deref)
 
 
+;;; NOTES:
+;;
+;;   * ADD-WATCH etc. is pointless because (clojure.lang.LockingTransaction/isRunning) yields FALSE when called from
+;;     the ADD-WATCH callback.
+
+
 ;;; TODO:
 ;;
 ;;   * The VALUE field should be a Fn; not a Ref. That Fn could close over a Ref -- or something else.
