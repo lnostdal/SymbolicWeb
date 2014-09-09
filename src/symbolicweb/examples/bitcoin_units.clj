@@ -21,23 +21,23 @@
 (defn mk-btc-unit-viewport [request session]
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
 
-        btc-io-vm (vm "0")
-        dbtc-io-vm (vm "0")
-        cbtc-io-vm (vm "0")
-        mbtc-io-vm (vm "0")
-        ubtc-io-vm (vm "0")
-        nbtc-io-vm (vm "0")
-        satoshi-io-vm (vm "0")
+        btc-input-vm (vm 0) btc-output-vm (vm 0)
+        dbtc-input-vm (vm 0) dbtc-output-vm (vm 0)
+        cbtc-input-vm (vm 0) cbtc-output-vm (vm 0)
+        mbtc-input-vm (vm 0) mbtc-output-vm (vm 0)
+        ubtc-input-vm (vm 0) ubtc-output-vm (vm 0)
+        nbtc-input-vm (vm 0) nbtc-output-vm (vm 0)
+        satoshi-input-vm (vm 0) satoshi-output-vm (vm 0)
 
         satoshi-vm (vm 0)]
 
-    (doseq [[input-vm input-unit] [[btc-io-vm :btc]
-                                   [dbtc-io-vm :dbtc]
-                                   [cbtc-io-vm :cbtc]
-                                   [mbtc-io-vm :mbtc]
-                                   [ubtc-io-vm :ubtc]
-                                   [nbtc-io-vm :nbtc]
-                                   [satoshi-io-vm :satoshi]]]
+    (doseq [[input-vm input-unit] [[btc-input-vm :btc]
+                                   [dbtc-input-vm :dbtc]
+                                   [cbtc-input-vm :cbtc]
+                                   [mbtc-input-vm :mbtc]
+                                   [ubtc-input-vm :ubtc]
+                                   [nbtc-input-vm :nbtc]
+                                   [satoshi-input-vm :satoshi]]]
       (vm-observe input-vm (.lifetime root-widget) false
                   #(vm-set satoshi-vm
                            (handle-btc-value (try
@@ -50,13 +50,13 @@
                                              :satoshi))))
 
     (vm-observe satoshi-vm (.lifetime root-widget) false
-                #(doseq [[output-vm output-unit] [[btc-io-vm :btc]
-                                                  [dbtc-io-vm :dbtc]
-                                                  [cbtc-io-vm :cbtc]
-                                                  [mbtc-io-vm :mbtc]
-                                                  [ubtc-io-vm :ubtc]
-                                                  [nbtc-io-vm :nbtc]
-                                                  [satoshi-io-vm :satoshi]]]
+                #(doseq [[output-vm output-unit] [[btc-output-vm :btc]
+                                                  [dbtc-output-vm :dbtc]
+                                                  [cbtc-output-vm :cbtc]
+                                                  [mbtc-output-vm :mbtc]
+                                                  [ubtc-output-vm :ubtc]
+                                                  [nbtc-output-vm :nbtc]
+                                                  [satoshi-output-vm :satoshi]]]
                    (vm-set output-vm
                            (cl-format false (case output-unit
                                               :btc "~8$"
@@ -68,18 +68,22 @@
                                               :satoshi "~D")
                                       (handle-btc-value %3 :satoshi output-unit)))))
 
-    (vm-sync-from-url {:name "satoshi" :model satoshi-io-vm :context-widget root-widget})
+    (vm-sync-from-url {:name "satoshi"
+                       :model (with1 (vm-sync satoshi-vm nil #(str %3))
+                                (vm-observe it nil false #(vm-set satoshi-input-vm %3)))
+
+                       :context-widget root-widget})
 
     (jqAppend root-widget
       (whc [:div]
         [:h1 "Bitcoin Units"]
-        [:p "BTC (Bitcoin): " (sw (mk-TextInput btc-io-vm :change))]
-        [:p "dBTC (decibitcoin): " (sw (mk-TextInput dbtc-io-vm :change))]
-        [:p "cBTC (centibitcoin): " (sw (mk-TextInput cbtc-io-vm :change))]
-        [:p "mBTC (millibitcoin): " (sw (mk-TextInput mbtc-io-vm :change))]
-        [:p "μBTC (microbitcoin): " (sw (mk-TextInput ubtc-io-vm :change))]
-        [:p "nBTC (nanobitcoin): " (sw (mk-TextInput nbtc-io-vm :change))]
-        [:p "satoshi: " (sw (mk-TextInput satoshi-io-vm :change))]))
+        [:p "BTC (Bitcoin): " (sw (mk-TextInput btc-input-vm :change :output-vm btc-output-vm))]
+        [:p "dBTC (decibitcoin): " (sw (mk-TextInput dbtc-input-vm :change :output-vm dbtc-output-vm))]
+        [:p "cBTC (centibitcoin): " (sw (mk-TextInput cbtc-input-vm :change :output-vm cbtc-output-vm))]
+        [:p "mBTC (millibitcoin): " (sw (mk-TextInput mbtc-input-vm :change :output-vm mbtc-output-vm))]
+        [:p "μBTC (microbitcoin): " (sw (mk-TextInput ubtc-input-vm :change :output-vm ubtc-output-vm))]
+        [:p "nBTC (nanobitcoin): " (sw (mk-TextInput nbtc-input-vm :change :output-vm nbtc-output-vm))]
+        [:p "satoshi: " (sw (mk-TextInput satoshi-input-vm :change :output-vm satoshi-output-vm))]))
 
     (mk-Viewport request session root-widget :page-title "Bitcoin units")))
 

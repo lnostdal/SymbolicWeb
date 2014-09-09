@@ -92,7 +92,7 @@ ARGS:
 
       ;; OUTPUT-VM: Server --> client.
       (when-let [output-vm (:output-vm args)]
-        (vm-observe output-vm (.lifetime it) false
+        (vm-observe output-vm (.lifetime it) (get args :initial-sync-server? true)
                     #(jqVal it %3))))))
 
 
