@@ -9,7 +9,7 @@ WUI for Clojure.
 
 #### HTML5 History
 
-Running here: http://nostdal.org/history
+Running here: http://www.nostdal.org/history
 
 ..or on I2P darknet here: http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/history
 
@@ -20,7 +20,7 @@ YouTube: https://www.youtube.com/watch?v=GHKGCFPVbbc
 
 #### Dataflow; reactive programming
 
-Running here: http://nostdal.org/bitcoin-units
+Running here: http://www.nostdal.org/bitcoin-units
 
 ..or on I2P darknet here: http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/bitcoin-units
 
@@ -31,7 +31,7 @@ YouTube: https://www.youtube.com/watch?v=5W_gYla0UsY
 
 #### Login example
 
-Running here: http://nostdal.org/login
+Running here: http://www.nostdal.org/login
 
 ..or on I2P darknet here: http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/login
 
@@ -40,7 +40,7 @@ Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb
 
 #### Templating example
 
-Running here: http://nostdal.org/templating
+Running here: http://www.nostdal.org/templating
 
 ..or on I2P darknet here: http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/templating
 
@@ -49,7 +49,7 @@ Source code: https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb
 
 #### Server push example
 
-Running here: http://nostdal.org/clock
+Running here: http://www.nostdal.org/clock
 
 ..or on I2P darknet here: http://o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p/clock
 

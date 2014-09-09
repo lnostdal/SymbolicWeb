@@ -70,8 +70,7 @@
 
     (vm-sync-from-url {:name "satoshi"
                        :model (with1 (vm-sync satoshi-vm nil #(str %3))
-                                (vm-observe it nil false #(vm-set satoshi-input-vm %3)))
-
+                                (vm-observe it nil true #(vm-set satoshi-input-vm %3)))
                        :context-widget root-widget})
 
     (jqAppend root-widget
