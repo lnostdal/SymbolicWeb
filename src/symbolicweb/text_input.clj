@@ -23,7 +23,8 @@ TRIGGER-EVENT:
 
 
 ARGS:
-  :INITIAL-SYNC-SERVER?: If True the value on the client will be set to the value of INPUT-VM on render. Default is True.
+  :INITIAL-SYNC-SERVER?: If True (default), the value on the client will be set to the value of INPUT-VM or
+                         OUTPUT-VM (if supplied) on render.
   :ONE-WAY-SYNC-CLIENT?: If True only changes originating from the client will be sent to the server; not the other way around.
   :CLEAR-ON-SUBMIT?: If True the widget will be cleared on 'submit'.
   :BLUR-ON-SUBMIT?: If True the widget will be blurred on 'submit'.
@@ -42,7 +43,7 @@ ARGS:
                             (:wb-args args)))
 
 
-      ;; Continious sync: Server --> client.
+      ;; Continious sync: server --> client.
       ;; NOTE: Chrome autofill will actually overwrite "" values ref. issue: http://goo.gl/aaHmyU
       (when-not (or (= trigger-event :input)
                     (:one-way-sync-client? args)
@@ -51,7 +52,7 @@ ARGS:
                     #(jqVal it %3)))
 
 
-      ;; Continious sync: Client --> server.
+      ;; Continious sync: client --> server.
       (letfn [(handle-input [input-value]
                 (vm-set input-vm input-value)
                 (when (:clear-on-submit? args)
@@ -90,7 +91,7 @@ ARGS:
           (trigger-event))) ;; Assume TRIGGER-EVENT is a Fn that will e.g. assign a custom event.
 
 
-      ;; OUTPUT-VM: Server --> client.
+      ;; OUTPUT-VM: server --> client.
       (when-let [output-vm (:output-vm args)]
         (vm-observe output-vm (.lifetime it) (get args :initial-sync-server? true)
                     #(jqVal it %3))))))
@@ -98,6 +99,7 @@ ARGS:
 
 
 ;; TODO: Switch to something like bcrypt or scrypt. http://crackstation.net/hashing-security.htm
+;; TODO: Don't bother salting on the client? It must be encrypted anyway.
 #_(defn mk-HashedInput [model server-salt & attributes]
   "<input type='password' ..> type widget using SHA256 hashing on the client and server end. It is salted on the client and server
  end: (sha (str server-salt (sha hash)))"
