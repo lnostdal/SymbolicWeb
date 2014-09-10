@@ -27,14 +27,6 @@
 
 
 
-(defmacro do1 [x & body]
-  `(let [x# ~x]
-     ~@body
-     x#))
-
-
-
-;; Doesn't belong here, but can't find a way to bootstrap this crap proper.
 (defmacro dbg-prin1 [form]
   `(let [res# ~form]
      (println '~form "=>" res#) (flush)
