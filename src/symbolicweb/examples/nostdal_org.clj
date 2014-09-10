@@ -66,6 +66,7 @@
    (fn [request]
      (in (:server-name request)
          "nostdal.org"
+         "www.nostdal.org"
          "aafoss.nostdal.org"
          "localhost.nostdal.org"
          "localhost"
