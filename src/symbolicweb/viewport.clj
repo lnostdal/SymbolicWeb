@@ -42,6 +42,7 @@
                              :rest-head-entries (ref [])
                              :html-templates (ref #{}) ;; mk-HTMLCTemplate
 
+                             :initial-html nil ;; add-rest-initial
                              :session session
                              :root-element root-widget ;; TODO: Rename...
                              :widgets {(.id root-widget) root-widget} ;; Viewport --> Widget  (DOM events.)
@@ -120,6 +121,11 @@
 
     :js
     (add-rest-js viewport (mk-rest-js-entry (gen-url viewport url)))))
+
+
+
+(defn add-rest-initial [^Ref viewport ^String html]
+  (alter viewport assoc :initial-html html))
 
 
 
