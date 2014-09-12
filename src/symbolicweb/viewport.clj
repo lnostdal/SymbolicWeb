@@ -130,7 +130,8 @@
 
 
 (defn add-response-chunk [^String new-chunk widget]
-  "WIDGET: A WidgetBase or Viewport instance."
+  "WIDGET: A WidgetBase or Viewport instance.
+Also see JS-RUN."
   (letfn [(do-it [^Ref viewport viewport-m]
             ;; Other end of this is in DO-MTX.
             (swap! *dyn-ctx* update-in [:viewports viewport ::comet-string-builder]

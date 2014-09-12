@@ -8,6 +8,7 @@
 (let [conversation-area-model (cm)]
   (defn mk-chat-viewport [request session]
     (let [root-widget (mk-bte :id "_body" :root-widget? true)
+          viewport (mk-Viewport request session root-widget :page-title "SW: Chat example")
           nickname (with (spget session :nickname)
                      (when-not @it
                        (vm-set it (str "anon-" (Long/toHexString (generate-uid)))))
@@ -17,44 +18,34 @@
                                                    (fn [container-view node]
                                                      (let [[nickname-model msg] (cmn-data node)]
                                                        (whc [:div]
-                                                        (html
                                                          [:b (sw (mk-span nickname-model))] ": "
-                                                         (escape-html msg))))))
-          viewport (mk-Viewport request session root-widget :page-title "SW: Chat example")]
-
+                                                         (escape-html msg)))))]
       (jqAppend root-widget
         (whc [:div]
-          (html
-           [:div (sw conversation-area-view)]
-           [:div
-            "Nick: " (sw (mk-TextInput nickname :change)) " | "
-            (let [chat-input-model (vm "")
-                  chat-input-view (with1 (mk-TextInput chat-input-model :enterpress
-                                                       :clear-on-submit? true
-                                                       :one-way-sync-client? true)
-                                    (jqCSS it "width" "'700px'"))]
-              (add-response-chunk (str "$('#" (.id chat-input-view) "').focus();") chat-input-view)
-              (vm-observe chat-input-model nil false
-                          (fn [inner-lifetime old-value new-value]
-                            (cm-append conversation-area-model (cmn [nickname new-value]))))
-              (sw chat-input-view))]
+          [:div (sw conversation-area-view)]
+          [:table {:style "width: 100%;"}
+           [:tr
+            [:td {:style "white-space: nowrap;"} "Nick: " (sw (mk-TextInput nickname :change)) " | "]
+            [:td {:style "width: 100%;"}
+             (let [chat-input-model (vm "")
+                   chat-input-view (with1 (mk-TextInput chat-input-model :enterpress
+                                                        :clear-on-submit? true)
+                                     (jqCSS it "width" "100%"))]
+               (js-run chat-input-view "$('#" (.id chat-input-view) "').focus();")
+               (vm-observe chat-input-model nil false
+                           (fn [inner-lifetime old-value new-value]
+                             (when new-value
+                               (cm-append conversation-area-model (cmn [nickname new-value])))))
+               (sw chat-input-view))]]]
 
-           [:hr]
-           [:pre
-            [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/chat.clj"}
-             "Source code"]])))
+          [:hr]
+          [:pre
+           [:a {:href "https://github.com/lnostdal/SymbolicWeb/blob/master/src/symbolicweb/examples/chat.clj"}
+            "Source code"]]))
 
       viewport)))
 
 
 
-(defapp
-  [::Chat
-   (fn [request]
-     (re-find #"chat$" (:uri request)))]
-
-  (fn [session-skeleton]
-    (alter session-skeleton assoc
-           :mk-viewport-fn #'mk-chat-viewport)
-    (vm-set (spget session-skeleton :session-type) "permanent")
-    session-skeleton))
+(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/chat" [uri request session]
+  (mk-chat-viewport request session))
