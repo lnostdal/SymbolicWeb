@@ -21,13 +21,13 @@
 (defn mk-btc-unit-viewport [request session]
   (let [root-widget (mk-bte :id "_body" :root-widget? true)
 
-        btc-input-vm (vm 0) btc-output-vm (vm 0)
-        dbtc-input-vm (vm 0) dbtc-output-vm (vm 0)
-        cbtc-input-vm (vm 0) cbtc-output-vm (vm 0)
-        mbtc-input-vm (vm 0) mbtc-output-vm (vm 0)
-        ubtc-input-vm (vm 0) ubtc-output-vm (vm 0)
-        nbtc-input-vm (vm 0) nbtc-output-vm (vm 0)
-        satoshi-input-vm (vm 0) satoshi-output-vm (vm 0)
+        btc-input-vm (vm 0 (constantly false)) btc-output-vm (vm 0)
+        dbtc-input-vm (vm 0 (constantly false)) dbtc-output-vm (vm 0)
+        cbtc-input-vm (vm 0 (constantly false)) cbtc-output-vm (vm 0)
+        mbtc-input-vm (vm 0 (constantly false)) mbtc-output-vm (vm 0)
+        ubtc-input-vm (vm 0 (constantly false)) ubtc-output-vm (vm 0)
+        nbtc-input-vm (vm 0 (constantly false)) nbtc-output-vm (vm 0)
+        satoshi-input-vm (vm 0 (constantly false)) satoshi-output-vm (vm 0)
 
         satoshi-vm (vm 0)]
 
