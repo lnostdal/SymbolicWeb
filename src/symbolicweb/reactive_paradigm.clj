@@ -46,9 +46,7 @@ as the first argument to CALLBACK."
   ;; early.
   (let [callback (fn [& args]
                    (if (contains? *observables-stack* observable)
-                     (clojure.stacktrace/print-stack-trace
-                      (Throwable. (str "OBSERVE: Circular recursion; bailing out:" observable))
-                      50)
+                     (throw (Exception. (str "OBSERVE: Circular recursion; bailing out: " observable)))
                      (binding [*observables-stack* (conj *observables-stack* observable)]
                        (apply callback args))))]
     (if lifetime
