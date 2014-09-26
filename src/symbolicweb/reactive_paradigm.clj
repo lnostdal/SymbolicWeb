@@ -24,8 +24,7 @@
 
 
 
-(def ^:dynamic *observables-stack* {})
-(def -observables-max-num-iterations- 10)
+(def ^:dynamic *observables-stack* #{})
 
 
 
@@ -37,14 +36,21 @@ deactivated. If given FALSE, observation will start at once and last forever; as
 
 Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
 as the first argument to CALLBACK."
+  ;; 3 choices:
+  ;;   * Allow circular references fully, which might lead to infinite loops in some cases; so it's not really "allowed" anyway.
+  ;;   * Allow circular refeneces "partially"; let it recurse up until some limit then, say, show a warning or similar.
+  ;;   * Disallow circular references.
+  ;;
+  ;; I've been playing around with these options, and it seems the first option is risky as it might lead to infinite loops and
+  ;; stack overflows. The second option means stuff will break "sometimes". The third option is simple; things will always fail
+  ;; early.
   (let [callback (fn [& args]
-                   (let [n (or (get *observables-stack* observable)
-                               0)]
-                     (if (> n -observables-max-num-iterations-)
-                       (throw (Exception. (str "OBSERVE: Possible infinite recursion after "
-                                               -observables-max-num-iterations- " iterations. Bailing out!")))
-                       (binding [*observables-stack* (assoc *observables-stack* observable (inc n))]
-                         (apply callback args)))))]
+                   (if (contains? *observables-stack* observable)
+                     (clojure.stacktrace/print-stack-trace
+                      (Throwable. (str "OBSERVE: Circular recursion; bailing out:" observable))
+                      50)
+                     (binding [*observables-stack* (conj *observables-stack* observable)]
+                       (apply callback args))))]
     (if lifetime
       (let [inner-lifetime (mk-Lifetime)
             callback (partial callback inner-lifetime)]
