@@ -40,7 +40,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [clj-time/clj-time "LATEST"]
 
                  [hiccup/hiccup "LATEST"] ;; HTML generation.
-                 [org.jsoup/jsoup "1.7.4-SNAPSHOT"] ;; HTML templating.
+                 [org.jsoup/jsoup "1.8.2-SNAPSHOT"] ;; HTML templating.
                  [garden "LATEST"] ;; CSS generation.
 
                  ;; HTTP protocol handling.

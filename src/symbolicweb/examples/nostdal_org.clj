@@ -10,11 +10,13 @@
         viewport (mk-Viewport request session root-widget :page-title "nostdal.org")]
     (add-resource viewport :css "sw/css/common.css")
     (add-rest-head viewport "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />")
-    (add-rest-head viewport (html [:style (css [:body {:background-color "rgb(171,191,181)"
-                                                       :color 'black
-                                                       :font-family "'DejaVu Sans', sans-serif"}]
-                                               [:a {:color 'black}]
-                                               [:li {:padding-bottom "0.5em"}])]))
+    (add-rest-head viewport
+      (html
+       [:style (css [:body {:background-color "rgb(171,191,181)"
+                            :color 'black
+                            :font-family "'DejaVu Sans', sans-serif"}]
+                    [:a {:color 'black}]
+                    [:li {:padding-bottom "0.5em"}])]))
     (add-rest-head viewport "<link href='data:image/x-icon;base64,AAABAAEAEBAQAAAAAAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAjIyMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAABAQAAAQAAAAAAAAAAAAAAABAAAAAAAAAAAAAQAAAAAAABAAEAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA54cAAOOHAADzvwAA878AAPk/AAD5PwAA/H8AAPx/AAD+/wAA/v8AAP7/AAD8/wAA9P8AAPH/AAD//wAA' rel='icon' type='image/x-icon' />")
     (add-rest-initial viewport
       (html
@@ -23,7 +25,7 @@
        [:ul
         [:li "Email: " [:a {:href "mailto:larsnostdal@gmail.com"} "larsnostdal@gmail.com"]]
         [:li "Some source code at " [:a {:href "https://github.com/lnostdal/"} "GitHub"]]
-        [:li [:a {:href "https://en.wikipedia.org/wiki/Clojure"} "Clojure"]]
+        [:li [:a {:href "https://en.wikipedia.org/wiki/Clojure"} "Clojure"] " (on the Linux+Java platform)"]
         [:li [:a {:href "https://en.wikipedia.org/wiki/PostgreSQL"} "PostgreSQL"]]
         [:li [:a {:href "https://en.wikipedia.org/wiki/Linux"} "Linux"] " (since 1998)"]
         [:li "JavaScript (e.g. jQuery), HTML5, CSS, Nginx"]
@@ -68,12 +70,13 @@
          "nostdal.org"
          "www.nostdal.org"
          "aafoss.nostdal.org"
+         "laptop.nostdal.org"
          "localhost.nostdal.org"
          "localhost"
          "127.0.0.1"
          "symbolicweb.i2p"
          "o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p" ;; nostdal.org
-         "4jiq4axgdpk3bmnfmbtmuoj3cjhnaj74lbhqptvc2fhdabvsgncq.b32.i2p" ;; Laptop.
+         "4dwnre62brvfzj5l2bazq6kkztliskwnf6bzzh7z3nnsfqmrwckq.b32.i2p" ;; laptop
          ))]
 
   (fn [request session]

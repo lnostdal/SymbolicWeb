@@ -46,7 +46,7 @@ as the first argument to CALLBACK."
   ;; early.
   (let [callback (fn [& args]
                    (if (contains? *observables-stack* observable)
-                     (throw (Exception. (str "OBSERVE: Circular recursion; bailing out: " observable)))
+                     (throw (Exception. (str "OBSERVE: Circular reference; bailing out: " observable)))
                      (binding [*observables-stack* (conj *observables-stack* observable)]
                        (apply callback args))))]
     (if lifetime

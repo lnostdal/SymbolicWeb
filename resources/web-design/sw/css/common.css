@@ -1,4 +1,22 @@
+* {
+    box-sizing: border-box;
+}
+
+
+
 html {
     overflow-y: scroll;
+}
+
+
+
+body {
+    margin: 0;
+}
+
+
+
+html, body {
+    height: 100%;
     font-family: 'DejaVu Sans', sans-serif;
 }

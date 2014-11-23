@@ -93,7 +93,7 @@
 
 
 ;; TODO: Unrelated *DYN-CTX* stuff being mixed in here sucks.
-;; Perhaps a simple fix would be to name they key in *DYN-CTX* ::POST-COMMIT or similar, but order of ::URL-ALTER-QUERY-PARAMS
+;; Perhaps a simple fix would be to name the key in *DYN-CTX* ::POST-COMMIT or similar, but order of ::URL-ALTER-QUERY-PARAMS
 ;; vs. :VIEWPORT / ::COMET-STRING-BUILDER etc. still matter.
 ;; TODO: Using a :VALIDATOR like this has significant risks. See issue #48.
 (defn do-mtx [^Fn body-fn ^Fn dbtx-commit-fn]
