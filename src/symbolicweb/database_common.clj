@@ -6,6 +6,9 @@
 ;; Builds on stuff in database_jdbc.clj.
 
 
+(def -sqlingvo-db- (sqlingvo.db/postgresql))
+
+
 
 (defmacro with-db-conn [on-serialization-failure-fn & body]
   `(with-jdbc-conn -pooled-db-spec- ~on-serialization-failure-fn
@@ -29,7 +32,7 @@
      (db-insert table-name m true))
 
   ([table-name m ^Boolean return-result?]
-     (let [res (sql/sql (sql/insert table-name [] (sql/values m)
+     (let [res (sql/sql (sql/insert -sqlingvo-db- table-name [] (sql/values m)
                                     (when return-result? (sql/returning :*))))
            ^String sql (first res)
            params (rest res)]
@@ -39,16 +42,18 @@
 
 (defn db-update [table-name m where]
   "E.g. (db-update :testing {:value 42} '(= :id 100))"
-  (let [res (sql/sql (sql/update table-name m (sql/where where)))
+  (dbg-prin1 [:db-update table-name m where])
+  (let [res (sql/sql (sql/update -sqlingvo-db- table-name m (sql/where where)))
         ^String sql (first res)
         params (rest res)]
+    (dbg-prin1 [:db-update sql])
     (apply db-pstmt sql params)))
 
 
 
 (defn db-delete [table-name where]
   "E.g. (db-delete :testing '(= :id 100))"
-  (let [res (sql/sql (sql/delete table-name (sql/where where)))
+  (let [res (sql/sql (sql/delete -sqlingvo-db- table-name (sql/where where)))
         ^String sql (first res)
         params (rest res)]
     (apply db-pstmt sql params)))
