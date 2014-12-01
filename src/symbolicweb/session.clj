@@ -107,10 +107,14 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 
 
-(defn spget [^Ref session ^Keyword k & not-found]
+(defn spget
   "\"Session Permanent Get\"
-Session data stored in DB; permanent."
-  (db-json-get (:json @session) k not-found))
+  Session data stored in DB; permanent."
+  ([^Ref session ^Keyword k]
+   (spget session k nil))
+
+  ([^Ref session ^Keyword k not-found]
+   (db-json-get (:json @session) k not-found)))
 
 
 

@@ -34,14 +34,16 @@
 
 
 
-(defn db-json-get [^ValueModel json-store ^Keyword k & not-found]
+(defn db-json-get [^ValueModel json-store ^Keyword k not-found]
   (let [res (get @json-store k ::not-found)]
     (if (= res ::not-found)
-      (with1 (vm (first not-found))
-        ;; Observe field itself.
+      (with1 (vm not-found)
+        ;; Observe field value itself.
         ;; TODO: Perhaps we could/should(?) use the Lifetime of SESSION here – if it had one; see #28.
         (vm-observe it nil false (fn [_ _ _]
                                    ;; Readding the field to the store will trigger an update.
+                                   ;; TODO: It might be possible in more recent PostgreSQL versions to update just the single
+                                   ;; JSON entry instead of the entire map.
                                    (vm-alter json-store assoc k it)))
         ;; Add field to store.
         (vm-alter json-store assoc k it))
