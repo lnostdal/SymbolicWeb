@@ -42,11 +42,9 @@
 
 (defn db-update [table-name m where]
   "E.g. (db-update :testing {:value 42} '(= :id 100))"
-  (dbg-prin1 [:db-update table-name m where])
   (let [res (sql/sql (sql/update -sqlingvo-db- table-name m (sql/where where)))
         ^String sql (first res)
         params (rest res)]
-    (dbg-prin1 [:db-update sql])
     (apply db-pstmt sql params)))
 
 
