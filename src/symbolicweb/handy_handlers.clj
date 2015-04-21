@@ -160,12 +160,7 @@
                  assoc k (assoc entry :already-added? true))))
 
       ;; jQuery.
-      "<!--[if lt IE 9]>"
-      [:script {:src (gen-url viewport "sw/js/jquery-1.11.1.min.js")}]
-      "<![endif]-->"
-      "<!--[if gte IE 9]><!-->"
-      [:script {:src (gen-url viewport "sw/js/jquery-2.1.1.min.js")}]
-      "<!--<![endif]-->"
+      [:script {:src (gen-url viewport "sw/js/jquery-2.1.3.min.js")}]
 
       ;; SW specific.
       [:script (sw-js-base-bootstrap session viewport)]
