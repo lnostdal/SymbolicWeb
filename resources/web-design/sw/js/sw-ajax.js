@@ -222,8 +222,7 @@ if(typeof(opera) != "undefined"){
 $(window).on("unload", function(){
   if(typeof(_sw_viewport_id) != "undefined")
     $.ajax({type: "POST",
-            url: swURL(["&_sw_request_type=ajax", ["&do=unload"]]),
-            async: false});
+            url: swURL(["&_sw_request_type=ajax", ["&do=unload"]])});
 });
 
 
