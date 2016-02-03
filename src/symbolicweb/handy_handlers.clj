@@ -160,7 +160,7 @@
                  assoc k (assoc entry :already-added? true))))
 
       ;; jQuery.
-      [:script {:src (gen-url viewport "sw/js/jquery-2.1.4.min.js")}]
+      [:script {:src (gen-url viewport "sw/js/jquery-2.2.0.min.js")}]
 
       ;; SW specific.
       [:script (sw-js-base-bootstrap session viewport)]
