@@ -29,14 +29,14 @@
 (defn db-insert
   "E.g. (db-insert :testing {:value 42})"
   ([table-name m]
-     (db-insert table-name m true))
+   (db-insert table-name m true))
 
   ([table-name m ^Boolean return-result?]
-     (let [res (sql/sql (sql/insert -sqlingvo-db- table-name [] (sql/values m)
-                                    (when return-result? (sql/returning :*))))
-           ^String sql (first res)
-           params (rest res)]
-       (apply db-pstmt sql params))))
+   (let [res (sql/sql (sql/insert -sqlingvo-db- table-name [] (sql/values m)
+                                  (when return-result? (sql/returning :*))))
+         ^String sql (first res)
+         params (rest res)]
+     (apply db-pstmt sql params))))
 
 
 
@@ -102,32 +102,32 @@
 (defn do-mtx [^Fn body-fn ^Fn dbtx-commit-fn]
   (let [^Atom phase (atom 0) ;; Side-effect applied to this is used to detect MTX retries.
         ^Ref mtx-done? (ref false)
-        dyn-ctx (ref false
-                     :validator
-                     (fn [dyn-ctx]
-                       (when dyn-ctx
-                         ;; At this point the MTX is prepared or "held" and we can commit the DBTX. A conflict will rollback
-                         ;; both the MTX and the DBTX.
-                         (try
-                           (dbtx-commit-fn)
-                           (catch Throwable e
-                             (throw (ex-info "Deal with Clojure :VALIDATOR exception retardedness: http://goo.gl/2ynLdL"
-                                             {:dyn-ctx-validator-throwable e}))))
-                         (reset! phase 2)
+        ^Ref dyn-ctx (ref false
+                          :validator
+                          (fn [dyn-ctx]
+                            (when dyn-ctx
+                              ;; At this point the MTX is prepared or "held" and we can commit the DBTX. A conflict will rollback
+                              ;; both the MTX and the DBTX.
+                              (try
+                                (dbtx-commit-fn)
+                                (catch Throwable e
+                                  (throw (ex-info "Deal with Clojure :VALIDATOR exception retardedness: http://goo.gl/2ynLdL"
+                                                  {:dyn-ctx-validator-throwable e}))))
+                              (reset! phase 2)
 
-                         ;; Other end of this is in ADD-RESPONSE-CHUNK.
-                         (try
-                           (doseq [[^Ref viewport m] (:viewports dyn-ctx)]
-                             (locking viewport
-                               (.append ^StringBuilder (:response-str @viewport)
-                                        (.toString ^StringBuilder (::comet-string-builder m)))
-                               ((::comet-response-trigger m))))
-                           (catch Throwable e
-                             ;; TODO: STOP-SERVER here?
-                             ;; Will have to "eat" (ignore) any problem at this point since the DBTX has been commited.
-                             (println "DO-MTX: Eating exception:" e)
-                             (clojure.stacktrace/print-stack-trace e 50))))
-                       true))]
+                              ;; Other end of this is in ADD-RESPONSE-CHUNK.
+                              (try
+                                (doseq [[^Ref viewport m] (:viewports dyn-ctx)]
+                                  (locking viewport
+                                    (.append ^StringBuilder (:response-str @viewport)
+                                             (.toString ^StringBuilder (::comet-string-builder m)))
+                                    ((::comet-response-trigger m))))
+                                (catch Throwable e
+                                  ;; TODO: STOP-SERVER here?
+                                  ;; Will have to "eat" (ignore) any problem at this point since the DBTX has been commited.
+                                  (println "DO-MTX: Eating exception:" e)
+                                  (clojure.stacktrace/print-stack-trace e 50))))
+                            true))]
     (try
       (dosync
        (binding [*dyn-ctx* (atom {})]
@@ -184,10 +184,10 @@
 (defn swsync-abort
   "Abort SWSYNC transaction in progress; rolls back all transactions in progress; MTX and DBTX."
   ([]
-     (swsync-abort nil))
+   (swsync-abort nil))
 
   ([retval]
-     (abort-2pctx retval)))
+   (abort-2pctx retval)))
 
 
 
@@ -204,24 +204,24 @@
 
 ;; TODO: Finish this..
 #_(defn nsm-insert [^String table-name ^Long right-of]
-  "Nested Set Model insert right of existing node; creating a sibling."
-  (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
-            right-of)
-  (db-pstmt (str "UPDATE " table-name " SET lft = lft + 2 WHERE lft > ?;")
-            right-of)
-  (db-insert table-name {:name "GAME CONSOLES" "lft" (inc right-of ) "rgt" (+ 2 right-of)}))
+    "Nested Set Model insert right of existing node; creating a sibling."
+    (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
+              right-of)
+    (db-pstmt (str "UPDATE " table-name " SET lft = lft + 2 WHERE lft > ?;")
+              right-of)
+    (db-insert table-name {:name "GAME CONSOLES" "lft" (inc right-of ) "rgt" (+ 2 right-of)}))
 
 
 
 ;; TODO: Only works when parent doesn't already have children. In other cases, NSM-INSERT must be used.
 ;; TODO: Finish this..
 #_(defn nsm-add-child [^String table-name ^long parent-id]
-  (let [lft (:lft (first (db-pstmt (str "SELECT lft FROM " table-name " WHERE id = ? LIMIT 1;") parent-id)))]
-    (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
-              lft)
-    (db-pstmt (str "UPDATE " table-name " SET lft = lft + 2 WHERE lft > ?;")
-              lft)
-    (db-insert table-name {:name "FRS" :lft (inc lft) :rgt (+ 2 lft)})))
+    (let [lft (:lft (first (db-pstmt (str "SELECT lft FROM " table-name " WHERE id = ? LIMIT 1;") parent-id)))]
+      (db-pstmt (str "UPDATE " table-name " SET rgt = rgt + 2 WHERE rgt > ?;")
+                lft)
+      (db-pstmt (str "UPDATE " table-name " SET lft = lft + 2 WHERE lft > ?;")
+                lft)
+      (db-insert table-name {:name "FRS" :lft (inc lft) :rgt (+ 2 lft)})))
 
 
 
@@ -233,13 +233,13 @@
   "Adjacency List: Get descendants."
   [(str "WITH RECURSIVE q AS "
         "((SELECT " id-name ", " parent-name (cl-format false "~{, ~A~}" columns)
-         " FROM " table-name " WHERE " id-name " = ?"
-         (when order-by
-           (str " ORDER BY " order-by))
-         ") UNION ALL "
-         "SELECT self." id-name ", self." parent-name (cl-format false "~{, self.~A~}" columns)
-          " FROM q JOIN " table-name " self ON self." parent-name " = q." id-name ") "
-          "SELECT * FROM q")
+        " FROM " table-name " WHERE " id-name " = ?"
+        (when order-by
+          (str " ORDER BY " order-by))
+        ") UNION ALL "
+        "SELECT self." id-name ", self." parent-name (cl-format false "~{, self.~A~}" columns)
+        " FROM q JOIN " table-name " self ON self." parent-name " = q." id-name ") "
+        "SELECT * FROM q")
    (concat [id] params)])
 
 
@@ -315,32 +315,32 @@ Returns :ID and :PARENT columns."
 
 
 #_(defn db-common-test []
-  (let [res (swsync
-             (db-insert :test {:value 0}))]
-    (let [r (ref 0)
-          f1 (future
-               (swsync
-                (println "F1 starting")
-                (alter r inc)
-                (dbg-prin1 r)
-                (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
-                (println "F1 sleeping")
-                (Thread/sleep 1000)
-                )
-               (println "F1 done"))
-          f2 (future
-               (swsync
-                (println "F2 starting")
-                (alter r inc)
-                (dbg-prin1 r)
-                (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
-                (println "F2 sleeping")
-                (Thread/sleep 1000)
-                )
-               (println "F2 done"))]
-      @f1
-      @f2
-      (swsync
-       (assert (= (dbg-prin1 (ensure r))
-                  (:value (dbg-prin1 (first (db-pstmt "SELECT * FROM test WHERE id = ? LIMIT 1;" (:id (first res)))))))))
-      nil)))
+    (let [res (swsync
+               (db-insert :test {:value 0}))]
+      (let [r (ref 0)
+            f1 (future
+                 (swsync
+                  (println "F1 starting")
+                  (alter r inc)
+                  (dbg-prin1 r)
+                  (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
+                  (println "F1 sleeping")
+                  (Thread/sleep 1000)
+                  )
+                 (println "F1 done"))
+            f2 (future
+                 (swsync
+                  (println "F2 starting")
+                  (alter r inc)
+                  (dbg-prin1 r)
+                  (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
+                  (println "F2 sleeping")
+                  (Thread/sleep 1000)
+                  )
+                 (println "F2 done"))]
+        @f1
+        @f2
+        (swsync
+         (assert (= (dbg-prin1 (ensure r))
+                    (:value (dbg-prin1 (first (db-pstmt "SELECT * FROM test WHERE id = ? LIMIT 1;" (:id (first res)))))))))
+        nil)))
