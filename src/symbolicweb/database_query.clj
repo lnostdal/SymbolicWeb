@@ -42,117 +42,117 @@
 
 
 
-
-;;; Globally Ordered: ORDER + index
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;; Chunked DB query results by using LIMIT and ORDER BY without OFFSET on indexed (for performance) ID fields.
-;;; Used for e.g. pagination or "infinite scroll".
+;;; Globally Ordered: ORDER BY + index without OFFSET for performance
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; http://www.postgresql.org/docs/current/static/indexes-ordering.html
 ;;
-;; Features and limitations:
-;;
-;;   * No global sorting by user defined criteria i.e. via ORDER BY.
-;;   * Global ordering by newest or oldest entries first is supported though. I.e. by ID column.
-;;   * These limitations are tradeoffs for (I hope) scalability and performance.
-;;
+;; Fast chunked DB query results by using LIMIT and ORDER BY (without OFFSET) on indexed field.
+;; Used for fast pagination or similar over huge amounts of data.
 ;;
 ;; TODO:
 ;;
 ;;   * It'd perhaps be great to change to a less strict isolation level, locally, here, if that's possible.
-;;   * Since things are always ordered by ID, writes (via e.g. DAOs) know what chunks might need updating.
-;;   * Ability to specify what column to order by? It would still have to be a number though.
+;;   * Writes (via e.g. DAOs) know what chunks might need updating. Might be able to sync this on MTX side?
+;;   * Rethink the use of >= and <=. It is perhaps more common to not include the tail;
+;;     "from and including, up to but not including".
+;;   * This used to support subqueries (via RELATION arg), but does not anymore. Fix this.
 
+(defn db-ordered-query-get-chunk [relation ^Keyword global-direction from ^Keyword direction ^Long size
+                                  & {:keys [order-by where other params]
+                                     :or {order-by "id"}}]
+  "Returns a chunk of a complete result. See DB-QUERY-SEQ for a way to get hold of the complete (e.g. big) result without running out of memory.
 
-(defn db-ordered-query-get-chunk [relation ^Keyword global-direction ^Long from-id ^Keyword direction ^Long size
-                                  & {:keys [where other params]}]
-  "Returns a LazySeq of IDs representing a chunk of a complete result. See DB-QUERY-SEQ for a way to get hold of the complete
-result.
+  RELATION: DB table or view name (String).
 
-  GLOBAL-DIRECTION: :OLDEST-FIRST or :NEWEST-FIRST
+  GLOBAL-DIRECTION: :LESSER-FIRST or :GREATER-FIRST
 
-  FROM-ID: Relative ID of chunk start.
-           If -1 and GLOBAL-DIRECTION is :NEWEST-FIRST, the last DB entry is implied.
+  FROM: Relative id, timestamp or similar of chunk start (inclusive).
+        If :LAST is given and GLOBAL-DIRECTION is :GREATER-FIRST, the last DB entry is implied.
 
-  DIRECTION: :RIGHT or :LEFT
+  DIRECTION: :DOWN or :UP. I.e. based on order of rows in result.
 
-  SIZE: Size of chunk. E.g. LIMIT in SQL query.
+  SIZE: Size of chunk. I.e. LIMIT in SQL query.
 
   :WHERE: E.g. \"mod(value, 2) = 1\"
 
+  :ORDER-BY: Name of field that can be ordered (String).
+
   :PARAMS: Params (prepared DB statement) for :WHERE and :OTHER (in that order)."
-  (let [res (apply db-pstmt (str "SELECT * FROM " (if (string? relation)
-                                                     relation
-                                                     (str "(" (first relation) ") AS db_ordered_query_get_chunk_rel"))
+  (apply db-pstmt (str "SELECT * FROM " (if (string? relation)
+                                          relation
+                                          (str "(" (first relation) ") AS db_ordered_query_get_chunk_rel"))
 
-                                 " WHERE "
-                                 (case [direction global-direction]
-                                   [:right :oldest-first] "id >= ?"
-                                   [:left :oldest-first] " id <= ?"
-                                   [:right :newest-first] (if (neg? from-id)
-                                                            (str "id <= (SELECT max(id) FROM " (if (string? relation)
-                                                                                                 (first relation)
-                                                                                                 "blah") ")")
-                                                            "id <= ?")
-                                   [:left :newest-first] (if (neg? from-id)
-                                                           (str "id >= (SELECT max(id) FROM " (if (string? relation)
-                                                                                                (first relation)
-                                                                                                "blah") ")")
-                                                           "id >= ?"))
-                                 (when where
-                                   (str " AND " where))
+                       " WHERE "
+                       (case [direction global-direction]
+                         [:down :lesser-first] (str order-by " >= ?")
+                         [:up   :lesser-first] (str order-by " <= ?")
+                         [:down :greater-first] (if (= :last from)
+                                                  (str order-by " <= (SELECT max(" order-by ") FROM " relation ")")
+                                                  (str order-by " <= ?"))
+                         [:up   :greater-first] (if (= :last from)
+                                                  (str order-by " >= (SELECT max(" order-by ") FROM " relation ")")
+                                                  (str order-by " >= ?")))
+                       (when where
+                         (str " AND " where))
 
-                                 " ORDER BY " (case [direction global-direction]
-                                                [:right :oldest-first] "id ASC"
-                                                [:left :oldest-first] "id DESC"
-                                                [:right :newest-first] "id DESC"
-                                                [:left :newest-first] "id ASC")
+                       " ORDER BY " order-by " "
+                       (case [direction global-direction]
+                         [:down :lesser-first] "ASC"
+                         [:up   :lesser-first] "DESC"
+                         [:down :greater-first] "DESC"
+                         [:up   :greater-first] "ASC")
 
-                                 (when other
-                                   (str " " other))
+                       (when other
+                         (str " " other))
 
-                                 " LIMIT ?;")
+                       " LIMIT ?;")
 
-                   (concat (when-not (string? relation)
-                             (rest relation))
-                           (when-not (and (= :newest-first global-direction)
-                                          (neg? from-id))
-                             [from-id])
-                           params
-                           [size]))]
-    res))
+         (concat (when-not (string? relation)
+                   (rest relation))
+                 (when-not (and (= :greater-first global-direction)
+                                (= :last from))
+
+                   [from])
+                 params
+                 [size])))
 
 
 
-(defn db-ordered-query-seq [relation ^Keyword global-direction ^Long from-id ^Keyword direction ^Long size
-                            & {:keys [where other params]}]
-  "Returns a LazySeq of IDs.
+(defn db-ordered-query-seq [relation ^Keyword global-direction from ^Keyword direction ^Long size
+                            & {:keys [step-forward step-backward order-by where other params]
+                               :or {step-forward inc
+                                    step-backward dec
+                                    order-by "id"}}]
+  "Wraps chunks from DB-ORDERED-QUERY-GET-CHUNK in a LazySeq.
 
-  SIZE: Size of internal chunks; how much to fetch at a time from the DB when consuming data from the Seq.
+  SIZE: Size of internal chunks; how much to fetch at a time from the DB when consuming data from the LazySeq.
 
+See DB-ORDERED-QUERY-GET-CHUNK docstring for description of other parameters. A DB table with 10 entries, IDs 1 to 10, would
+give results like:
 
-A DB table with 10 entries, IDs 1 to 10, would give results like:
-
-  (swsync (doall (take 3 (db-ordered-query-seq :testing :oldest-first 5 :right 2))))  => (5 6 7)
-  (swsync (doall (take 3 (db-ordered-query-seq :testing :oldest-first 5 :left 2))))   => (5 4 3)
-  (swsync (doall (take 3 (db-ordered-query-seq :testing :newest-first 5 :right 2))))  => (5 4 3)
-  (swsync (doall (take 3 (db-ordered-query-seq :testing :newest-first 5 :left 2))))   => (5 6 7)
-  (swsync (doall (take 3 (db-ordered-query-seq :testing :newest-first -1 :right 2)))) => (10 9 8)
+  (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :lesser-first 5   :down 2)))) => (5 6 7)
+  (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :lesser-first 5   :up 2))))   => (5 4 3)
+  (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :greater-first 5  :down 2)))) => (5 4 3)
+  (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :greater-first 5  :up 2))))   => (5 6 7)
+  (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :greater-first -1 :down 2)))) => (10 9 8)
 
 
 Mapping to DAOs goes like this:
 
   (swsync (doall (take 3 (map #(db-get % \"testing\")
-                              (db-ordered-query-seq :testing :oldest-first 5 :right 2)))))"
-  (let [chunk (db-ordered-query-get-chunk relation global-direction from-id direction size
-                                          :where where :other other :params params)]
+                              (db-ordered-query-seq :testing :lesser-first 5 :down 2)))))"
+  ;; TODO: Args are repeated over and over again here.
+  (let [chunk (db-ordered-query-get-chunk relation global-direction from direction size
+                                          :order-by order-by :where where :other other :params params)]
     (when-not (empty? chunk)
       (concat chunk
               (lazy-seq (db-ordered-query-seq relation global-direction
                                               (case [direction global-direction]
-                                                [:right :oldest-first] (inc (last chunk))
-                                                [:left :oldest-first] (dec (last chunk))
-                                                [:right :newest-first] (dec (last chunk))
-                                                [:left :newest-first] (inc (last chunk)))
+                                                [:down :lesser-first] (step-forward (last chunk))
+                                                [:up :lesser-first] (step-backward (last chunk))
+                                                [:down :greater-first] (step-backward (last chunk))
+                                                [:up :greater-first] (step-forward (last chunk)))
                                               direction size
-                                              :where where :other other :params params))))))
+                                              :step-forward step-forward :step-backward step-backward
+                                              :order-by order-by :where where :other other :params params))))))
