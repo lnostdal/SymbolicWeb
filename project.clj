@@ -26,12 +26,19 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 "
 
 
-  :dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]
+  :global-vars {*warn-on-reflection* true, *unchecked-math* :warn-on-boxed, *read-eval* false}
+
+
+  :dependencies [;;[org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojure "1.9.0-master-SNAPSHOT"]
+                 [mvxcvi/puget "LATEST"] ;; Colorizing canonical Clojure printer for EDN values.
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
-                 [http-kit/http-kit "LATEST"] ;; HTTP (server) stuff.
-                 [clj-http "LATEST"] ;; HTTP (client) stuff.
+                 [http-kit/http-kit "2.1.21-alpha2"] ;; HTTP (server) stuff.
+                 ;;[org.immutant/web "LATEST"] ;; HTTP/WebSocket server stuff.
+                 ;;[org.immutant/web "2.1.3-SNAPSHOT"] ;; HTTP/WebSocket server stuff.
+                 [clj-http "LATEST"] ;; HTTP client stuff. TODO: HTTP-KIT already has client code..
 
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache (database_dao.clj).
 
@@ -40,8 +47,8 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [clj-time/clj-time "LATEST"]
 
                  [hiccup/hiccup "LATEST"] ;; HTML generation.
-                 [org.jsoup/jsoup "1.8.2"] ;; HTML templating.
-                 [garden "LATEST"] ;; CSS generation.
+                 [org.jsoup/jsoup "1.8.4-SNAPSHOT"] ;; HTML templating.
+                 [garden "1.3.2-SNAPSHOT"] ;; CSS generation.
 
                  ;; HTTP protocol handling.
                  [ring/ring-codec "LATEST"] ;; ring.util.codec
@@ -56,22 +63,24 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  ]
 
 
-  :plugins [[cider/cider-nrepl "LATEST"]]
+  :plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]]
 
 
-  :jvm-opts [;; General.
+  :jvm-opts [;; General
              "-server" "-XX:+TieredCompilation"
+             ;;"-Xms512M" "-Xmx512M"
+
+
+             ;;  Garbage collection, Performance
+             ;;"-XX:+UseG1GC" "-XX:+UseStringDeduplication"
+             ;;"-verbose:gc"
+             ;;"-XX:+PrintGCDetails"
+             ;;"-XX:+AggressiveOpts" "-XX:+UseFastAccessorMethods" "XX:+OptimizeStringConcat"
              "-XX:+UseCompressedOops"
 
 
-             ;;; Garbage Collection
-             "-XX:+UseG1GC"
-             ;;"-verbose:gc"
-             ;;"-XX:+PrintGCDetails"
-
-
-             ;; Debugging.
+             ;; Debugging
              "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
-             "-XX:+HeapDumpOnOutOfMemoryError"
+             ;;"-XX:+HeapDumpOnOutOfMemoryError"
              ;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
              ])
