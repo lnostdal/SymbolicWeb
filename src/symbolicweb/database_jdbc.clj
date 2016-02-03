@@ -25,12 +25,13 @@
 
 
 (defonce -pooled-db-spec- nil)
-(when -pooled-db-spec- (.shutdown -pooled-db-spec-))
-(def -pooled-db-spec-
-  (mk-db-pool
-   {:database "test"
-    :user "test"
-    :password "test"}))
+(defn start-database []
+  (when -pooled-db-spec- (.close -pooled-db-spec-))
+  (def -pooled-db-spec-
+    (mk-db-pool
+     {:database "test"
+      :user "test"
+      :password "test"})))
 
 
 
