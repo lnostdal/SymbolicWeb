@@ -26,7 +26,7 @@
 
 (defonce -pooled-db-spec- nil)
 (defn start-database []
-  (when -pooled-db-spec- (.close -pooled-db-spec-))
+  (when -pooled-db-spec- (.close ^com.zaxxer.hikari.HikariDataSource -pooled-db-spec-))
   (def -pooled-db-spec-
     (mk-db-pool
      {:database "test"
@@ -57,7 +57,7 @@
 
           (finally
             (when (.isRealized db-conn)
-              (.close ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy @db-conn))))))
+              (.close ^com.zaxxer.hikari.pool.HikariProxyConnection @db-conn))))))
     @retval))
 
 (defmacro with-jdbc-conn [db-spec on-serialization-failure-fn & body]
@@ -67,11 +67,11 @@
 
 
 
-(defn- jdbc-pstmt [^com.zaxxer.hikari.proxy.ConnectionJavassistProxy db-conn ^String sql params]
+(defn- jdbc-pstmt [^com.zaxxer.hikari.pool.HikariProxyConnection db-conn ^String sql params]
   "Create (or fetch from cache) and execute PreparedStatement."
   (try
     (with-open [stmt (.prepareStatement db-conn sql)]
-      (dorun (map-indexed (fn [ix value]
+      (dorun (map-indexed (fn [^long ix value]
                             (.setObject stmt (inc ix) value))
                           params))
       (if (.execute stmt)
@@ -89,7 +89,7 @@
 
 
 
-(defn- jdbc-stmt [^com.zaxxer.hikari.proxy.ConnectionJavassistProxy db-conn ^String sql]
+(defn- jdbc-stmt [^com.zaxxer.hikari.pool.HikariProxyConnection db-conn ^String sql]
   "Create and execute Statement."
   (try
     (with-open [stmt (.createStatement db-conn)]

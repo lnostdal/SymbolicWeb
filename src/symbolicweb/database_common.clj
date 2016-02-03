@@ -77,14 +77,14 @@
        (fn []
          (assert (= 0 @dbtx-phase))
          (when (.isRealized ^Delay *db*)
-           (.commit ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy (.deref ^Delay *db*)))
+           (.commit ^com.zaxxer.hikari.pool.HikariProxyConnection (.deref ^Delay *db*)))
          (reset! dbtx-phase 1)))
 
       (catch Throwable e
         #_(println "DO-DBTX: Rolling back phase" @dbtx-phase "DBTX:" e)
         (case (int @dbtx-phase)
           0 (when (.isRealized ^Delay *db*)
-              (.rollback ^com.zaxxer.hikari.proxy.ConnectionJavassistProxy (.deref ^Delay *db*)))
+              (.rollback ^com.zaxxer.hikari.pool.HikariProxyConnection (.deref ^Delay *db*)))
           1 (do
               (println "DO-DBTX: This shouldn't happen; MTX can rollback while DBTX can't. :(")
               (println "DO-DBTX: Stopping server to avoid data corruption.")
@@ -131,7 +131,7 @@
     (try
       (dosync
        (binding [*dyn-ctx* (atom {})]
-         (if-not (zero? @phase)
+         (if-not (zero? ^long @phase)
            (retry-2pctx "DO-MTX: Retry.")
            (do
              (reset! phase 1)
@@ -144,11 +144,11 @@
                (ref-set mtx-done? true))))))
       (finally
         (when (and (= 2 (.deref phase)) ;; DBTX commited?
-                   (not (.deref mtx-done?))) ;; ..but MTX not?
+                   (not (.deref mtx-done?))) ;; ..but MTX not?   ;; ### http://dev.clojure.org/jira/browse/CLJ-1809 ###
           ;; At this point the MTX has been rolled back, but the DBTX has been committed. This cannot be dealt
           ;; with so we stop the server. See issue #48.
           (stop-server)
-          (throw (ex-info "DO-MTX: Some :VALIDATOR failed or something else went wrong. Stopping server. See issue #48.")))))))
+          (throw (ex-info "DO-MTX: Some :VALIDATOR failed or something else went wrong. Stopping server. See issue #48." {})))))))
 
 
 
