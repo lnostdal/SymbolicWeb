@@ -1,10 +1,3 @@
-(set! *warn-on-reflection* true)
-(set! *print-length* 30)
-(set! *print-level* 4)
-(set! *read-eval* false)
-
-
-
 (ns symbolicweb.core
   ;;(:require symbolicweb.init)
 

@@ -26,7 +26,11 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 "
 
 
-  :global-vars {*warn-on-reflection* true, *unchecked-math* :warn-on-boxed, *read-eval* false}
+  :global-vars {*warn-on-reflection* true
+                *unchecked-math* :warn-on-boxed
+                *read-eval* false
+                *print-length* 300
+                *print-level* 6}
 
 
   :dependencies [;;[org.clojure/clojure "1.8.0"]
