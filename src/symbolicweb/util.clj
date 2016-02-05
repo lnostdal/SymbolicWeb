@@ -120,3 +120,15 @@ Appends a timestamp to the URL based on file mtime."
 
 (defn ^java.sql.Timestamp datetime-to-sql-timestamp [^org.joda.time.DateTime datetime]
   (java.sql.Timestamp. (clj-time.coerce/to-long datetime)))
+
+
+
+(defn float-to-string [x]
+  "If `x` is float, double or ratio converts it to a simple string representation of the number suitable
+for e.g. APIs and similar. I.e. not ratio or scientific notation format.
+
+If `x` is something else pass it throgh as is."
+  (if-let [v (or (and (float? x) x)
+                 (and (ratio? x) (double x)))]
+    (format "%.4f" v)
+    x))
