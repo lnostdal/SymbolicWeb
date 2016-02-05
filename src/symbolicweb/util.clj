@@ -103,11 +103,11 @@ Appends a timestamp to the URL based on file mtime."
 
 (defn mk-rest-js-entry
   ([^String url]
-     (mk-rest-js-entry url false false))
+   (mk-rest-js-entry url false false))
   ([^String url ^Boolean defer?]
-     (mk-rest-js-entry url defer? false))
+   (mk-rest-js-entry url defer? false))
   ([^String url ^Boolean defer? ^Boolean async?]
-     {:url url :defer? defer? :async? async?}))
+   {:url url :defer? defer? :async? async?}))
 
 
 
