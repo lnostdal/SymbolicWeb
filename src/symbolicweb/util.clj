@@ -129,7 +129,7 @@ Appends a timestamp to the URL based on file mtime."
 
   If `x` is something else pass it through as is."
   ([x]
-   (float-to-string x ".000"))
+   (float-to-string x "0.000"))
 
   ([x ^String decimal-format]
    (float-to-string x decimal-format java.math.RoundingMode/DOWN))
