@@ -39,7 +39,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
-                 [http-kit/http-kit "2.1.21-alpha2"] ;; HTTP (server) stuff.
+                 [http-kit/http-kit "2.2.0-alpha1"] ;; HTTP (server) stuff.
                  ;;[org.immutant/web "LATEST"] ;; HTTP/WebSocket server stuff.
                  ;;[org.immutant/web "2.1.3-SNAPSHOT"] ;; HTTP/WebSocket server stuff.
                  [clj-http "LATEST"] ;; HTTP client stuff. TODO: HTTP-KIT already has client code..
@@ -67,7 +67,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  ]
 
 
-  :plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]]
+  :plugins [[cider/cider-nrepl "0.12.0-SNAPSHOT"]]
 
 
   :jvm-opts [;; General
