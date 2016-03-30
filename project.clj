@@ -42,7 +42,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [http-kit/http-kit "2.2.0-alpha1"] ;; HTTP (server) stuff.
                  ;;[org.immutant/web "LATEST"] ;; HTTP/WebSocket server stuff.
                  ;;[org.immutant/web "2.1.3-SNAPSHOT"] ;; HTTP/WebSocket server stuff.
-                 [clj-http "2.1.0"] ;; HTTP client stuff. TODO: HTTP-KIT already has client code..
+                 ;;[clj-http "2.1.0"] ;; HTTP client stuff. TODO: HTTP-KIT already has client code..
 
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache (database_dao.clj).
 

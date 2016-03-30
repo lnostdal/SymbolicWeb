@@ -9,8 +9,6 @@
            symbolicweb.core.ValueModel
            symbolicweb.core.ContainerModel
            symbolicweb.core.ContainerModelNode)
-  (:require [symbolicweb.facebook :as swfb])
-  (:require [symbolicweb.mail-chimp :as swmail])
 
   (:use hiccup.core)
   (:use clojure.math.numeric-tower)
