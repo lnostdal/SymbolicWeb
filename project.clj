@@ -33,7 +33,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                 *print-level* 6}
 
 
-  :dependencies [;;[org.clojure/clojure "1.8.0"]
+  :dependencies [;;[org.clojure/clojure "LATEST"]
                  [org.clojure/clojure "1.9.0-master-SNAPSHOT"]
                  [mvxcvi/puget "LATEST"] ;; Colorizing canonical Clojure printer for EDN values.
 
