@@ -21,7 +21,7 @@
 
 
 
-(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/clock" [uri request session]
+(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/sw/clock" [uri request session]
   (defonce -clock-thread-
     (future
       (loop []

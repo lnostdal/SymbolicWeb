@@ -44,7 +44,5 @@
 
 
 
-
-
-(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/history" [^String uri request session]
+(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/sw/history" [^String uri request session]
   (mk-history-viewport request session))

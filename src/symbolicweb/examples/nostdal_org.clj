@@ -58,32 +58,20 @@
 (defmethod mk-nostdal-org-viewport :default [^String uri request session]
   (mk-Viewport request session (mk-bte :root-widget? true) :page-title "SW: :default"))
 
-(defmethod mk-nostdal-org-viewport "/nostdal.org" [^String uri request session]
+(defmethod mk-nostdal-org-viewport "/sw/nostdal.org" [^String uri request session]
   (homepage request session))
 
 
 
 (defapp
-  [::Nostdal-org
-   (fn [request]
-     (in (:server-name request)
-         "nostdal.org"
-         "www.nostdal.org"
-         "aafoss.nostdal.org"
-         "laptop.nostdal.org"
-         "localhost.nostdal.org"
-         "localhost"
-         "127.0.0.1"
-         "symbolicweb.i2p"
-         "o6v2tmi2jc54b3rt5v6gd5qgie4yvvg4ocpyqtvy4rfxbgkecsjq.b32.i2p" ;; nostdal.org
-         "4dwnre62brvfzj5l2bazq6kkztliskwnf6bzzh7z3nnsfqmrwckq.b32.i2p" ;; laptop
-         ))]
+  [::Nostdal-org (constantly true)]
 
   (fn [request session]
-    (if (= (:uri request) "/") ;; Can't set a cookie here as it will become global for all paths; redirect instead.
+    ;; Can't set a cookie here as it will become global for all paths; redirect instead.
+    (if (= (:uri request) "/sw/")
       (alter session assoc
              :rest-handler (fn [request session viewport]
-                             (http-redirect-response "/nostdal.org"))
+                             (http-redirect-response "/sw/nostdal.org"))
              :one-shot? true)
       (alter session assoc
              :mk-viewport-fn (fn [request session]

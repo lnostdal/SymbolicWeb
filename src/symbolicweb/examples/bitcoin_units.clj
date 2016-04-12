@@ -86,5 +86,5 @@
 
 
 
-(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/bitcoin-units" [^String uri request session]
+(defmethod symbolicweb.examples.nostdal-org/mk-nostdal-org-viewport "/sw/bitcoin-units" [^String uri request session]
   (mk-btc-unit-viewport request session))

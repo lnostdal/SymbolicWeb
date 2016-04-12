@@ -202,9 +202,9 @@
       [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"}]
       [:title "SW: 404 Page Not Found"]
 
-     [:body
-      [:h1 "SW: HTTP 404: Not Found"]
-      [:p "Going " [:a {:href (str "//" (:server-name request) "/")} "home"] " might help."]]]])})
+      [:body
+       [:h1 "SW: HTTP 404: Not Found"]
+       [:p "Going " [:a {:href (str "//" (:server-name request) "/")} "home"] " might help."]]]])})
 
 
 
