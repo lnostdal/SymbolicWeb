@@ -39,10 +39,8 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
-                 [http-kit/http-kit "2.2.0-alpha1"] ;; HTTP (server) stuff.
-                 ;;[org.immutant/web "LATEST"] ;; HTTP/WebSocket server stuff.
-                 ;;[org.immutant/web "2.1.3-SNAPSHOT"] ;; HTTP/WebSocket server stuff.
-                 ;;[clj-http "2.1.0"] ;; HTTP client stuff. TODO: HTTP-KIT already has client code..
+                 ;;[http-kit/http-kit "2.2.0-alpha1"] ;; HTTP (server) stuff.
+                 [http-kit/http-kit "LATEST"] ;; HTTP server and client.
 
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache (database_dao.clj).
 
@@ -50,6 +48,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  [clj-time/clj-time "LATEST"]
 
+                 ;; HTML/CSS generation/templating etc.
                  [hiccup/hiccup "LATEST"] ;; HTML generation.
                  [org.jsoup/jsoup "LATEST"] ;; HTML templating.
                  [garden "LATEST"] ;; CSS generation.
@@ -67,7 +66,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  ]
 
 
-  :plugins [[cider/cider-nrepl "0.12.0-SNAPSHOT"]]
+  :plugins [[cider/cider-nrepl "0.13.0-SNAPSHOT"]]
 
 
   :jvm-opts [;; General
