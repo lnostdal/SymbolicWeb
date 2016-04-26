@@ -26,13 +26,14 @@
 
 
 
+;; TODO: Add support for [m] or just m here.
 (defn db-insert
   "E.g. (db-insert :testing {:value 42})"
   ([table-name m]
    (db-insert table-name m true))
 
   ([table-name m ^Boolean return-result?]
-   (let [res (sql/sql (sql/insert -sqlingvo-db- table-name [] (sql/values m)
+   (let [res (sql/sql (sql/insert -sqlingvo-db- table-name [] (sql/values [m])
                                   (when return-result? (sql/returning :*))))
          ^String sql (first res)
          params (rest res)]
