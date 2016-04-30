@@ -154,31 +154,33 @@
 
 
 (defn do-2pctx [^Fn body-fn]
-  (assert (not (clojure.lang.LockingTransaction/isRunning))
-          "DO-2PCTX: SWSYNC within DOSYNC (or another SWSYNC) not allowed.")
-  (let [done? (atom false)
-        retval (atom nil)]
-    (while (not @done?)
-      (try
-        (reset! retval
-                (with-db-conn (fn [] (retry-2pctx "DO-2PCTX: Retry."))
-                  (do-dbtx (fn [^Fn dbtx-commit-fn]
-                             (do-mtx body-fn dbtx-commit-fn)))))
-        (reset! done? true)
-        (catch clojure.lang.ExceptionInfo e
-          (case (:2pctx-state (ex-data e))
-            :retry
-            (do
-              #_(println "DO-2PCTX: :RETRY:" e))
+  #_(assert (not (clojure.lang.LockingTransaction/isRunning))
+            "DO-2PCTX: SWSYNC within DOSYNC (or another SWSYNC) not allowed.")
+  (if (clojure.lang.LockingTransaction/isRunning)
+    (body-fn)
+    (let [done? (atom false)
+          retval (atom nil)]
+      (while (not @done?)
+        (try
+          (reset! retval
+                  (with-db-conn (fn [] (retry-2pctx "DO-2PCTX: Retry."))
+                    (do-dbtx (fn [^Fn dbtx-commit-fn]
+                               (do-mtx body-fn dbtx-commit-fn)))))
+          (reset! done? true)
+          (catch clojure.lang.ExceptionInfo e
+            (case (:2pctx-state (ex-data e))
+              :retry
+              (do
+                #_(println "DO-2PCTX: :RETRY:" e))
 
-            :abort
-            (let [ex-retval (:return-value (ex-data e))]
-              #_(println "DO-2PCTX: :ABORT, :RETURN-VALUE:" ex-retval)
-              (reset! done? true)
-              (reset! retval ex-retval))
+              :abort
+              (let [ex-retval (:return-value (ex-data e))]
+                #_(println "DO-2PCTX: :ABORT, :RETURN-VALUE:" ex-retval)
+                (reset! done? true)
+                (reset! retval ex-retval))
 
-            (throw e)))))
-    @retval))
+              (throw e)))))
+      @retval)))
 
 
 
