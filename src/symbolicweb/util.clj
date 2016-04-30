@@ -142,9 +142,9 @@ Appends a timestamp to the URL based on file mtime."
    (float-to-string x decimal-format java.math.RoundingMode/DOWN))
 
   ([x ^String decimal-format rounding-mode]
-     (if-let [v (or (and (float? x) x)
-                    (and (ratio? x) (double x)))]
-       (.format (with1 (java.text.DecimalFormat. decimal-format)
-                  (.setRoundingMode it rounding-mode))
-                v)
-       x)))
+   (if-let [v (or (and (float? x) x)
+                  (and (ratio? x) (double x)))]
+     (.format (with1 (java.text.DecimalFormat. decimal-format)
+                (.setRoundingMode it rounding-mode))
+              v)
+     x)))
