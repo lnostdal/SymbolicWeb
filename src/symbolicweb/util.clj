@@ -3,9 +3,16 @@
 
 
 (defn ^Long parse-long [input]
-  (if (number? input)
-    (long input)
-    (Long/parseLong input)))
+  (if (string? input)
+    (Long/parseLong input)
+    (long input)))
+
+
+
+(defn ^Double parse-double [input]
+  (if (string? input)
+    (Double/parseDouble input)
+    (double input)))
 
 
 
