@@ -15,11 +15,6 @@
     (double input)))
 
 
-
-(defn boolean? [x]
-  (= java.lang.Boolean (class x)))
-
-
 (defn json-parse [^String json-string]
   "Parse JSON-STRING returning Clojure object."
   (json/parse-string json-string true))
