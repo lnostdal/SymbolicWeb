@@ -28,8 +28,7 @@
 
                              ;; gen-url
                              :genurl-fs-path "resources/web-design/"
-                             :genurl-domain (or (get (:headers request) "x-forwarded-host")
-                                                (:server-name request))
+                             :genurl-domain (get (:headers request) "host")
                              :genurl-path "static/"
 
                              ;; Comet.
@@ -59,15 +58,15 @@
 
     ;; Viewport scrolled to the bottom
     #_(set-viewport-event-handler "window" "sw_scrollbottom" viewport
-                                (fn [& _] (vm-alter (:scrolled-to-bottom-event @viewport) inc)))
+                                  (fn [& _] (vm-alter (:scrolled-to-bottom-event @viewport) inc)))
     ;; TODO: Reduce spammy event rate: http://underscorejs.org/#throttle
     #_(add-response-chunk
-     (str "$(window).scroll(function(){"
-          "  if(50 > $(document).height() - $(window).height() - $(window).scrollTop()){"
-          "    $(window).trigger('sw_scrollbottom');"
-          "  }"
-          "});\n")
-     viewport)
+       (str "$(window).scroll(function(){"
+            "  if(50 > $(document).height() - $(window).height() - $(window).scrollTop()){"
+            "    $(window).trigger('sw_scrollbottom');"
+            "  }"
+            "});\n")
+       viewport)
 
     ;; Session --> Viewport
     (alter (:viewports @session) assoc viewport-id viewport)
