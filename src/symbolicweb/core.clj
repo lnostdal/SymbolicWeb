@@ -96,7 +96,7 @@
   ;;(:require symbolicweb.examples.bitcoin)
   (:require symbolicweb.examples.bitcoin-units)
   (:require symbolicweb.examples.bootstrap)
-  (:require symbolicweb.examples.foundation)
+  ;;(:require symbolicweb.examples.foundation)
   (:require symbolicweb.examples.login)
   (:require symbolicweb.examples.templating)
   (:require symbolicweb.examples.clock)
