@@ -132,7 +132,7 @@ Appends a timestamp to the URL based on file mtime."
 
 (defn float-to-string
   "If `x` is float, double or ratio converts it to a simple string representation of the number suitable
-  for e.g. APIs and similar. I.e. not ratio or scientific notation format.
+  for e.g. APIs and similar. I.e. not ratio or scientific notation format. This will also round the number down (java.math.RoundingMode/DOWN).
 
   If `x` is something else pass it through as is."
   ([x]
@@ -145,6 +145,10 @@ Appends a timestamp to the URL based on file mtime."
    (if-let [v (or (and (float? x) x)
                   (and (ratio? x) (double x)))]
      (.format (with1 (java.text.DecimalFormat. decimal-format)
-                (.setRoundingMode it rounding-mode))
+                (.setRoundingMode it rounding-mode)
+                (.setGroupingUsed it false)
+                (.setDecimalFormatSymbols it (let [dfs (.getDecimalFormatSymbols it)]
+                                               (.setDecimalSeparator dfs \.)
+                                               dfs)))
               v)
      x)))
