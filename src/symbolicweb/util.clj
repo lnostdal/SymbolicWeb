@@ -2,14 +2,14 @@
 
 
 
-(defn ^Long parse-long [input]
+(defn parse-long ^long [input]
   (if (string? input)
     (Long/parseLong input)
     (long input)))
 
 
 
-(defn ^Double parse-double [input]
+(defn parse-double ^double [input]
   (if (string? input)
     (Double/parseDouble input)
     (double input)))
@@ -20,7 +20,7 @@
   (json/parse-string json-string true))
 
 
-(defn ^String json-generate [clojure-object]
+(defn json-generate ^String [clojure-object]
   "Returns JSON string from CLOJURE-OBJECT."
   (json/generate-string clojure-object))
 
