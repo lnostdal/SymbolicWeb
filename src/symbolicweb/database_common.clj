@@ -6,7 +6,7 @@
 ;; Builds on stuff in database_jdbc.clj.
 
 
-(def -sqlingvo-db- (sqlingvo.db/postgresql))
+(def -sqlingvo-db- (sqlingvo.db/db :postgresql))
 
 
 
