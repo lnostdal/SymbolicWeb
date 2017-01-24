@@ -1,6 +1,6 @@
 # SymbolicWeb
 
-WUI for Clojure.
+WUI for Clojure. UPDATE: I would probably not use this for anything right now; it is sort of a mess as development of certain parts have been rushed. I also want to redesign certain things; e.g. less focus on mutable state and STM.
 
 
 
