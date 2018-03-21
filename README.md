@@ -1,7 +1,8 @@
 # SymbolicWeb
 
-WUI for Clojure. UPDATE: I would probably not use this for anything right now; it is sort of a mess as development of certain parts have been rushed. I also want to redesign certain things; e.g. less focus on mutable state and STM.
+**UPDATE: I would probably not use this for anything right now; it is sort of a mess as development of certain parts have been rushed. I also want to redesign certain things; e.g. less focus on mutable state and STM. Things like Functional Reactive Programming (FRP) overall seems more feasible in Clojure these days via clojure.async.**
 
+WUI for Clojure. 
 
 
 ## Some examples
