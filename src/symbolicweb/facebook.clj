@@ -53,7 +53,7 @@
 
 (defn user-get-info [^String user-access-token]
   (let [http-response (http.client/get (str "https://graph.facebook.com/me"
-                                             "?access_token=" (url-encode-component user-access-token)))]
+                                            "?access_token=" (url-encode-component user-access-token)))]
     (json-parse (:body http-response))))
 
 (defn user-get-info-by-id [fb-uid]
@@ -62,7 +62,7 @@
 
 (defn user-get-likes [^String user-access-token]
   (let [http-response (http.client/get (str "https://graph.facebook.com/me/likes?access_token="
-                                             (url-encode-component user-access-token)))]
+                                            (url-encode-component user-access-token)))]
     (json-parse (:body http-response))))
 
 
@@ -138,18 +138,18 @@
   (case (get (:query-params request) "do")
     ;;"realtime-update" ;; TODO: Fix this; not using Aleph anymore – and this stuff is not related to auth anyway (move it).
     #_(if (and ;; test if this is a subscription verification
-         (= (get (:query-params request) "hub.mode") "subscribe")
-         (= (get (:query-params request) "hub.verify_token") realtime-verify-token))
-      (http-html-response (get (:query-params request) "hub.challenge"))
-      ;; else: assume that this is realtime update POST request
-      (do
-        (let [update-json (json-parse (aleph.formats/bytes->string (:body request)))
-              entry (get update-json :entry)
-              entries (if (coll? entry) entry [entry])]
-          (when (= "user" (get update-json :object)) ;; ignore anything but user updates for now
-            (doseq [entry entries]
-              (user-data-updated-fn (get entry :changed_fields)
-                                    (user-get-info-by-id (get entry :uid))))))))
+           (= (get (:query-params request) "hub.mode") "subscribe")
+           (= (get (:query-params request) "hub.verify_token") realtime-verify-token))
+        (http-html-response (get (:query-params request) "hub.challenge"))
+        ;; else: assume that this is realtime update POST request
+        (do
+          (let [update-json (json-parse (aleph.formats/bytes->string (:body request)))
+                entry (get update-json :entry)
+                entries (if (coll? entry) entry [entry])]
+            (when (= "user" (get update-json :object)) ;; ignore anything but user updates for now
+              (doseq [entry entries]
+                (user-data-updated-fn (get entry :changed_fields)
+                                      (user-get-info-by-id (get entry :uid))))))))
 
     "login_init"
     ;; FB: 1. Redirect the user to the OAuth Dialog
@@ -163,34 +163,34 @@
     ;; FB: 4. Exchange the code for a user access token
     "login_redirect"
     (cond
-     ;; Authorization accepted?
-     (get (:query-params request) "code")
-     (let [code (get (:query-params request) "code")
-           csrf-check (get (:query-params request) "state")]
-       ;;(assert (= csrf-check (stget session :facebook-csrf-check)))
-       (when-not (= csrf-check (stget session :facebook-csrf-check))
-         ;; TODO: Ignoring this for now; just logging it instead because I cannot reproduce it and I do not care anymore.
-         (println (str "HTTP-OAUTH-HANDLER: CSRF-CHECK failed; got \"" csrf-check
-                       "\" while expected \"" (stget session :facebook-csrf-check) "\"")))
-       ;;(session-del application :facebook-csrf-check) ;; TODO: Needed?
-       (let [access-token (user-get-access-token app-id app-secret code response-uri)]
-         (authorization-accepted-fn (user-get-info access-token) access-token)
-         (dorun (map (partial url-alter-query-params viewport true dissoc) ["_sw_request_type"
-                                                                            "return_uri" "do" "ns"
-                                                                            ;; Added by FB:
-                                                                            "code" "state"]))
-         ((:rest-handler @session) request session viewport)))
+      ;; Authorization accepted?
+      (get (:query-params request) "code")
+      (let [code (get (:query-params request) "code")
+            csrf-check (get (:query-params request) "state")]
+        ;;(assert (= csrf-check (stget session :facebook-csrf-check)))
+        (when-not (= csrf-check (stget session :facebook-csrf-check))
+          ;; TODO: Ignoring this for now; just logging it instead because I cannot reproduce it and I do not care anymore.
+          (println (str "HTTP-OAUTH-HANDLER: CSRF-CHECK failed; got \"" csrf-check
+                        "\" while expected \"" (stget session :facebook-csrf-check) "\"")))
+        ;;(session-del application :facebook-csrf-check) ;; TODO: Needed?
+        (let [access-token (user-get-access-token app-id app-secret code response-uri)]
+          (authorization-accepted-fn (user-get-info access-token) access-token)
+          (dorun (map (partial url-alter-query-params viewport true dissoc) ["_sw_request_type"
+                                                                             "return_uri" "do" "ns"
+                                                                             ;; Added by FB:
+                                                                             "code" "state"]))
+          ((:rest-handler @session) request session viewport)))
 
-     ;; Authorization declined?
-     (get (:query-params request) "error")
-     (do
-       (authorization-declined-fn (:query-params request))
-       (dorun (map (partial url-alter-query-params viewport true dissoc) ["_sw_request_type"
-                                                                          "return_uri" "do" "ns"
-                                                                          ;; Added by FB:
-                                                                          "code" "state" "error_reason"
-                                                                          "error" "error_code" "error_description"]))
-       ((:rest-handler @session) request session viewport)))))
+      ;; Authorization declined?
+      (get (:query-params request) "error")
+      (do
+        (authorization-declined-fn (:query-params request))
+        (dorun (map (partial url-alter-query-params viewport true dissoc) ["_sw_request_type"
+                                                                           "return_uri" "do" "ns"
+                                                                           ;; Added by FB:
+                                                                           "code" "state" "error_reason"
+                                                                           "error" "error_code" "error_description"]))
+        ((:rest-handler @session) request session viewport)))))
 
 
 

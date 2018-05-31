@@ -29,7 +29,7 @@
 
 (defmacro dbg-prin1 [form]
   `(let [res# ~form]
-     (println '~form "=>" res#) (flush)
+     (println '~form "=>" res#)
      res#))
 
 

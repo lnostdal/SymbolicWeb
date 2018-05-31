@@ -53,11 +53,6 @@
                                             :update_existing true}
                                            m))))
 
-#_(swsync
- (swmail/mailchimp-subscribe (swmail/mk-MailChimp "4d58a3cb5dd97dd3940787f1b63a85f2-us5")
-                             "333317793c"
-                             {:email {:email "larsnostdal@gmail.com" :email_type "html"}}))
-
 
 (defn mailchimp-unsubscribe [context ^String list-id m]
   (http-post-request (str (:url context) "lists/unsubscribe.json")

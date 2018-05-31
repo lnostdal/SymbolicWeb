@@ -34,13 +34,13 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
 
   :dependencies [;;[org.clojure/clojure "LATEST"]
-                 [org.clojure/clojure "1.9.0-master-SNAPSHOT"]
+                 [org.clojure/clojure "1.10.0-master-SNAPSHOT"]
                  ;;[mvxcvi/puget "LATEST"] ;; Colorizing canonical Clojure printer for EDN values.
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
-                 ;;[http-kit/http-kit "2.2.0-alpha1"] ;; HTTP (server) stuff.
                  [http-kit/http-kit "LATEST"] ;; HTTP server and client.
+                 [clj-http "LATEST"] ;; HTTP(S) client.
 
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache (database_dao.clj).
 
@@ -62,7 +62,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [com.impossibl.pgjdbc-ng/pgjdbc-ng "LATEST"] ;; JDBC driver.
                  [com.zaxxer/HikariCP "LATEST"] ;; DB connection pooling.
 
-                 ;;[me.raynes/conch "LATEST"] ;; Shell tools (used by gpg.clj).
+                 [me.raynes/conch "LATEST"] ;; Shell tools (used by gpg.clj).
                  ]
 
 

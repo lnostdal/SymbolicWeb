@@ -119,6 +119,7 @@
 
 
 
+;; TODO: Check this out: https://github.com/timescale/timescaledb
 (defn db-ordered-query-seq [relation ^Keyword global-direction from ^Keyword direction ^Long size
                             & {:keys [step-forward step-backward order-by where other params]
                                :or {step-forward inc
