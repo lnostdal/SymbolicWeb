@@ -31,12 +31,12 @@
 (defmacro dbg [x]
   (let [m (meta &form)]
     `(let [res# ~x]
-       (locking -dbg-locker- ;; Try to generate better output.
-         (print (str "#DBG " ~*file* ":" ~(:line m) ":" ~(:column m) ": " \newline))
-         (println (str (puget.printer/cprint-str '~x)
-                       " => "
-                       (puget.printer/cprint-str res#) \newline
-                       "#DBG ---------------------------------------------------------")))
+       (locking -dbg-locker- ;; Try to generate better output when doing threading.
+         (println (str "#DBG " ~*file* ":" ~(:line m) ":" ~(:column m) " >>>"))
+         (puget.printer/cprint '~x)
+         (println "#DBG =>")
+         (puget.printer/cprint res#)
+         (newline))
        res#)))
 
 
