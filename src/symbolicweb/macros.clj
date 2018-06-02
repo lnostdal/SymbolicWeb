@@ -29,6 +29,16 @@
 
 (defonce -dbg-locker- (Object.))
 (defmacro dbg [x]
+  "Quick inline debugging where other stuff will or might provide context."
+  `(let [res# ~x]
+     (locking -dbg-locker- ;; Try to generate better output when doing threading.
+       (println (str "#DBG " (puget.printer/cprint-str '~x) " => " (puget.printer/cprint-str res#))))
+     res#))
+
+
+
+(defmacro dbg-full [x]
+  "Full detail inline debugging."
   (let [m (meta &form)]
     `(let [res# ~x]
        (locking -dbg-locker- ;; Try to generate better output when doing threading.
