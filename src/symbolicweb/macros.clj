@@ -27,10 +27,14 @@
 
 
 
-(defmacro dbg-prin1 [form]
-  `(let [res# ~form]
-     (println '~form "=>" res#)
-     res#))
+(defmacro dbg [x]
+  (let [m (meta &form)]
+    `(let [res# ~x]
+       (print (str "#DBG " ~*file* ":" ~(:line m) ":" ~(:column m) ": " \newline))
+       (println (str "  " (puget.printer/cprint-str '~x)
+                     " => "
+                     (puget.printer/cprint-str res#)))
+       res#)))
 
 
 

@@ -325,7 +325,7 @@ Returns :ID and :PARENT columns."
                  (swsync
                   (println "F1 starting")
                   (alter r inc)
-                  (dbg-prin1 r)
+                  (dbg r)
                   (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
                   (println "F1 sleeping")
                   (Thread/sleep 1000)
@@ -335,7 +335,7 @@ Returns :ID and :PARENT columns."
                  (swsync
                   (println "F2 starting")
                   (alter r inc)
-                  (dbg-prin1 r)
+                  (dbg r)
                   (db-update :test {:value (ensure r)} `(= :id ~(:id (first res))))
                   (println "F2 sleeping")
                   (Thread/sleep 1000)
@@ -344,6 +344,6 @@ Returns :ID and :PARENT columns."
         @f1
         @f2
         (swsync
-         (assert (= (dbg-prin1 (ensure r))
-                    (:value (dbg-prin1 (first (db-pstmt "SELECT * FROM test WHERE id = ? LIMIT 1;" (:id (first res)))))))))
+         (assert (= (dbg (ensure r))
+                    (:value (dbg (first (db-pstmt "SELECT * FROM test WHERE id = ? LIMIT 1;" (:id (first res)))))))))
         nil)))

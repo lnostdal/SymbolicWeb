@@ -23,7 +23,7 @@
                 attributes)
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]
-                         (dbg-prin1 new-value)
+                         (dbg new-value)
                          ;; Search for Node matching NEW-VALUE.
                          (dosync
                           (loop [node (cm-head-node container-model)]

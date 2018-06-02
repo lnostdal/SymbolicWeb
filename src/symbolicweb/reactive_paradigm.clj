@@ -68,24 +68,24 @@ as the first argument to CALLBACK."
 
 
 #_(try
-  (dosync
-   (let [x (vm 0)]
-     (vm-observe x nil false (fn [lifetime old-value new-value]
-                               (dbg-prin1 [new-value old-value])))
-     (vm-set x 42)))
-  (catch Throwable e
-    (clojure.stacktrace/print-stack-trace e)))
+    (dosync
+     (let [x (vm 0)]
+       (vm-observe x nil false (fn [lifetime old-value new-value]
+                                 (dbg [new-value old-value])))
+       (vm-set x 42)))
+    (catch Throwable e
+      (clojure.stacktrace/print-stack-trace e)))
 ;; [new-value old-value] => [42 0]
 ;; 42
 
 
 #_(dosync
- (let [x (vm 0)
-       squared-x (with-observed-vms nil
-                   (* @x @x))] ;;(vm-sync x nil (fn [x & _] (* x x)))]
-   (dbg-prin1 [x squared-x])
-   (vm-set x 2)
-   (dbg-prin1 [x squared-x])))
+   (let [x (vm 0)
+         squared-x (with-observed-vms nil
+                     (* @x @x))] ;;(vm-sync x nil (fn [x & _] (* x x)))]
+     (dbg [x squared-x])
+     (vm-set x 2)
+     (dbg [x squared-x])))
 
 
 
@@ -94,30 +94,30 @@ as the first argument to CALLBACK."
 ;;; Playing around with "functional" stuff here.
 ;;
 ;;
-;
+                                        ;
 
 
 ;;(def -symbolicweb-world- (agent {}))
 
 
 #_(defn sw-notify-observers [world ks k v old-value]
-  "Returns WORLD transformed."
-  ;; Look up observers in WORLD via [KS K]. An observer is a vector of FNs.
-  ;; TODO: Is it possible to serialize the FNs somehow? I guess the [KS K] lookup will lead to code doing the same thing
-  ;; for each SW server restart. ...or, there's: https://github.com/technomancy/serializable-fn
-  )
+    "Returns WORLD transformed."
+    ;; Look up observers in WORLD via [KS K]. An observer is a vector of FNs.
+    ;; TODO: Is it possible to serialize the FNs somehow? I guess the [KS K] lookup will lead to code doing the same thing
+    ;; for each SW server restart. ...or, there's: https://github.com/technomancy/serializable-fn
+    )
 
 
 #_(defn sw-update [world ks k v]
-  "Returns WORLD transformed."
-  (let [old-value (with (get-in world ks ::not-found)
-                    (if (= ::not-found it)
-                      ::initial-update
-                      (get it k ::initial-update)))]
-    (sw-notify-observers (update-in world ks
-                                    assoc k v)
-                         ks k v old-value)))
+    "Returns WORLD transformed."
+    (let [old-value (with (get-in world ks ::not-found)
+                      (if (= ::not-found it)
+                        ::initial-update
+                        (get it k ::initial-update)))]
+      (sw-notify-observers (update-in world ks
+                                      assoc k v)
+                           ks k v old-value)))
 
 
 #_(defn do-sw-update [ks k v]
-  (send -symbolicweb-world- sw-update ks k v))
+    (send -symbolicweb-world- sw-update ks k v))
