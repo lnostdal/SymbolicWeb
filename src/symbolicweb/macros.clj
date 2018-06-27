@@ -20,6 +20,8 @@
 
 
 (defmacro in [x & args]
+  "Is `x` equal (=) to any of the elements in `args`?
+E.g. ```(in :filled :new :filled) => true``` or ```(in :cancelled :new :filled) => false```"
   (let [it (gensym)]
     `(let [~it ~x]
        (or ~@(map (fn [y] `(= ~it ~y))
@@ -32,8 +34,21 @@
   "Quick inline debugging where other stuff will or might provide context."
   `(let [res# ~x]
      (locking -dbg-locker- ;; Try to generate better output when doing threading.
-       (println (str "#DBG " (puget.printer/cprint-str '~x) " => " (puget.printer/cprint-str res#))))
+       (println (str (puget.printer/cprint-str '~x) " => " (puget.printer/cprint-str res#))))
      res#))
+
+
+
+(defmacro dbgf [ctx x]
+  "Quick inline debugging where other stuff with context from `ctx` and meta-environment."
+  (let [m (meta &form)]
+    `(let [res# ~x]
+       (locking -dbg-locker- ;; Try to generate better output when doing threading.
+         (println (str "[" ~ctx " "
+                       (last (str/split ~*file* #"/"))
+                       ":" ~(:line m) ":" ~(:column m) "]: "
+                       (puget.printer/cprint-str '~x) " => " (puget.printer/cprint-str res#))))
+       res#)))
 
 
 

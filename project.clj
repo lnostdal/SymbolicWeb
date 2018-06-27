@@ -35,7 +35,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
   :dependencies [;;[org.clojure/clojure "LATEST"]
                  [org.clojure/clojure "1.10.0-master-SNAPSHOT"]
-                 ;;[mvxcvi/puget "LATEST"] ;; Colorizing canonical Clojure printer for EDN values.
+                 [mvxcvi/puget "LATEST"] ;; Colorizing canonical Clojure printer for EDN values.
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
