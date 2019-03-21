@@ -65,22 +65,61 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [me.raynes/conch "LATEST"] ;; Shell tools (used by gpg.clj).
                  ]
 
-  ;;:aot :all
-  :jvm-opts [;; General
-             "-server" "-XX:+TieredCompilation"
-             ;;"-Xms512M" "-Xmx512M"
+  :jvm-opts ^:replace
+  [;;; General
+   "-server" "-XX:+TieredCompilation"
+   ;;"-XX:+UnlockExperimentalVMOptions" "-XX:+UseJVMCICompiler" ;; Graal JIT compiler.
+   ;;"-Xms1000m" "-Xmx6000m"
+   ;;"-Xss2M" ;; 2MB stack. The default on x64 seems to be 1MB which is not that much.
 
 
-             ;;  Garbage collection, Performance
-             ;;"-XX:+UseG1GC" "-XX:+UseStringDeduplication"
-             ;;"-verbose:gc"
-             ;;"-XX:+PrintGCDetails"
-             ;;"-XX:+AggressiveOpts" "-XX:+UseFastAccessorMethods" "XX:+OptimizeStringConcat"
-             "-XX:+UseCompressedOops"
+   ;;; Garbage collection, performance
+   ;;"-XX:+UseG1GC" ;; This should be the default now, but OK.
+   "-XX:+UseStringDeduplication" ;; This seems to make things slower ..odd. TODO: Check this again.
+   "-XX:+CompactStrings"
+   "-XX:+UseCompressedOops" ;; Seems -Xmx must not be mentioned if this is to work? TODO: Check this again.
+   ;;"-XX:+AlwaysPreTouch" ;; Pre-allocate all memory in *physical* (not virtual as normal) memory.
+   ;;"-XX:MaxGCPauseMillis=15000" ;; We don't care about latency; we want throughput for backtesting.
+   "-XX:+AggressiveOpts" "-XX:MaxTrivialSize=12" "-XX:MaxInlineSize=270" "-XX:InlineSmallCode=2000"
+   ;;"-XX:CompileThreshold=10000" "-XX:+UseBiasedLocking"
+   "-XX:-DontCompileHugeMethods" ;; Compile big Fns.
+   "-XX:+PerfDisableSharedMem" ;; http://www.evanjones.ca/jvm-mmap-pause.html [this breaks certain debugging tools like jstat!]
 
 
-             ;; Debugging
-             "-XX:-OmitStackTraceInFastThrow" ;; http://stackoverflow.com/a/2070568/160305
-             ;;"-XX:+HeapDumpOnOutOfMemoryError"
-             ;;"-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" ;; For JSwat.
-             ])
+   ;;; Debugging
+   "-XX:+PrintFlagsFinal"
+   ;;"-Xdebug" ;; NOTE: Enabling -Xdebug will slow down execution. It is needed for things like profiling, breakpoints, etc..
+   "-Xverify:none" ;; Suppresses the bytecode verifier (which speeds up classloading).
+   ;; I'm not using exceptions for path control, so full stacktraces (slow!) are OK.
+   "-XX:-OmitStackTraceInFastThrow" ;; See http://stackoverflow.com/a/2070568/160305 ..and this is also interesting http://blogs.atlassian.com/2011/05/if_you_use_exceptions_for_path_control_dont_fill_in_the_stac/
+   "-XX:-HeapDumpOnOutOfMemoryError"
+   ;;"-verbose:gc" ;;"-XX:+PrintGCDetails"
+
+
+   ;;; Needed for VisualVM ref: https://torsten.io/stdout/how-to-profile-clojure-code/
+   ;; NOTE: If none of this works, check the networking / proxy settings in VisualVM!
+   ;; "-Dcom.sun.management.jmxremote"
+   ;; "-Dcom.sun.management.jmxremote.port=43210"
+   ;; "-Dcom.sun.management.jmxremote.rmi.port=43210"
+   ;; "-Dcom.sun.management.jmxremote.ssl=false"
+   ;; "-Dcom.sun.management.jmxremote.authenticate=false"
+   ;; "-Dcom.sun.management.jmxremote.local.only=true" ;; Use SSH proxy as mentioned in link above!
+
+
+   ;;; YourKit
+   ;;"-agentpath:/home/lnostdal/Downloads/yjp-2016.06/bin/linux-x86-64/libyjpagent.so"
+
+
+      ;;; Clojure specific
+   ;;"-Dclojure.compiler.direct-linking=true" ;; We want this true when running long simulations / optimizations. It also makes return value type-hints better(!) which helps during certain parts of development.
+   ;;"-Dclojure.debug=false" ;; TODO!: What's this thing again? Document!
+
+
+   ;;; OpenJ9 JVM options ( https://www.eclipse.org/openj9/docs/cmdline_specifying/ )
+   "-Xquickstart"
+   ;;"-Xgcpolicy:optthruput" ;; is optimized for throughput by disabling the concurrent mark phase, which means that applications will stop for long pauses while garbage collection takes place. You might consider using this policy when high application throughput, rather than short garbage collection pauses, is the main performance goal.
+   ;;"-Xjit:optLevel=scorching" ;; optimize later when the JIT has done more profiling.
+   ;;"-Xjit:disableIprofilerDataPersistence" ;; TODO: https://github.com/eclipse/openj9/issues/4205
+   "-Xshareclasses:name=symbolicweb" ;; TODO: https://github.com/eclipse/openj9/issues/4205
+   "-Xscmx1g" ;; https://www.eclipse.org/openj9/docs/xscmx/
+   ])
