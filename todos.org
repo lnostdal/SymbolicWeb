@@ -13,3 +13,7 @@
     - Each app will have an explicit event loop; we will then control time as a first class citizen instead of trying to pretend it is not there.
     - Each app (and/or possibly group of apps) will have a context that holds state during the event loop.
     - By doing this I can pretty much get rid of all the two-phase commit stuff.
+    - I'm pretty sure this means that I should have one request/event handling queue (or c.c.async channel?) for each application type (-session-type-).
+  - Get rid of clj-time.
+    - Similar to what I did for quanto.ga. Some tools where put in lrn-utils.
+
