@@ -1,0 +1,10 @@
+#+OPTIONS: toc:nil
+#+STARTUP: logdone
+#+TITLE: SymbolicWeb: WUI for Clojure
+
+* Todos
+  - Get rid of jQuery.
+    Look at things like:
+    - https://github.blog/2018-09-06-removing-jquery-from-github-frontend/
+    - https://www.html5rocks.com/en/tutorials/webcomponents/template/
+    - https://developers.google.com/web/fundamentals/web-components/shadowdom

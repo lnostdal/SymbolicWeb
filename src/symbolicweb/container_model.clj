@@ -6,11 +6,11 @@
 
 
 
-(defmacro cm-iterate [container-model cmn-symbol cmn-data-symbol & body]
-  "Iterate over CMNs in CONTAINER-MODEL executing BODY for each iteration with CMN-DATA-SYMBOL bound to the CMN-DATA of each
-CMN respectively.
+(defmacro cm-iterate "Iterate over CMNs in CONTAINER-MODEL executing BODY for each iteration with CMN-DATA-SYMBOL bound to the CMN-DATA of each
+  CMN respectively.
 
-Iteration will end whenever BODY returns a True value, or when the tail of CONTAINER-MODEL was reached."
+  Iteration will end whenever BODY returns a True value, or when the tail of CONTAINER-MODEL was reached."
+  [container-model cmn-symbol cmn-data-symbol & body]
   `(loop [~cmn-symbol (cm-head-node ~container-model)]
      (when ~cmn-symbol
        (let [~cmn-data-symbol (cmn-data ~cmn-symbol)]
@@ -120,26 +120,26 @@ Iteration will end whenever BODY returns a True value, or when the tail of CONTA
 
 
 (declare cm-prepend cmn-after)
-(defn cm-append [^ContainerModel cm ^ContainerModelNode new-node]
-  "Add NEW-NODE to end of the contained nodes in CM.
-This mirrors the jQuery `append' function:
+(defn cm-append "Add NEW-NODE to end of the contained nodes in CM.
+  This mirrors the jQuery `append' function:
   http://api.jquery.com/append/"
+  [^ContainerModel cm ^ContainerModelNode new-node]
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertEnd(List list, Node newNode)
   (if (not (cm-tail-node cm)) ;; if list.lastNode == null
     (cm-prepend cm new-node) ;; insertBeginning(list, newNode)
-  ;; else
+    ;; else
     (cmn-after (cm-tail-node cm) new-node)) ;; insertAfter(list, list.lastNode, newNode)
   cm)
 
 
 
 (declare cmn-before)
-(defn cm-prepend [^ContainerModel cm ^ContainerModelNode new-node]
-  "Add NEW-NODE to beginning of the contained nodes in CM.
-This mirrors the jQuery `prepend' function:
+(defn cm-prepend "Add NEW-NODE to beginning of the contained nodes in CM.
+  This mirrors the jQuery `prepend' function:
   http://api.jquery.com/prepend/"
+  [^ContainerModel cm ^ContainerModelNode new-node]
   ;; http://en.wikipedia.org/wiki/Doubly-linked_list#Inserting_a_node
   ;;
   ;; function insertBeginning(List list, Node newNode)
@@ -163,8 +163,8 @@ This mirrors the jQuery `prepend' function:
 
 
 
-(defn cm-clear [^ContainerModel cm]
-  "Empty the ContainerModel; calls jqEmpty at the client (View) end."
+(defn cm-clear "Empty the ContainerModel; calls jqEmpty at the client (View) end."
+  [^ContainerModel cm]
   (cm-set-count cm 0)
   (cm-iterate cm node _
               (detach-lifetime (.lifetime ^ContainerModelNode node))

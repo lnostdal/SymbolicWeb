@@ -60,15 +60,15 @@
               (.close ^com.zaxxer.hikari.pool.HikariProxyConnection @db-conn))))))
     @retval))
 
-(defmacro with-jdbc-conn [db-spec on-serialization-failure-fn & body]
-  "Runs BODY within a DBTX.
+(defmacro with-jdbc-conn "Runs BODY within a DBTX.
   ON-SERIALIZATION-FN: Fn or NIL. When NIL the transaction will restart silently on conflict."
+  [db-spec on-serialization-failure-fn & body]
   `(%with-jdbc-conn ~db-spec ~on-serialization-failure-fn (fn [] ~@body)))
 
 
 
-(defn- jdbc-pstmt [^com.zaxxer.hikari.pool.HikariProxyConnection db-conn ^String sql params]
-  "Create (or fetch from cache) and execute PreparedStatement."
+(defn- jdbc-pstmt "Create (or fetch from cache) and execute PreparedStatement."
+  [^com.zaxxer.hikari.pool.HikariProxyConnection db-conn ^String sql params]
   (try
     (with-open [stmt (.prepareStatement db-conn sql)]
       (dorun (map-indexed (fn [^long ix value]
@@ -89,8 +89,8 @@
 
 
 
-(defn- jdbc-stmt [^com.zaxxer.hikari.pool.HikariProxyConnection db-conn ^String sql]
-  "Create and execute Statement."
+(defn- jdbc-stmt "Create and execute Statement."
+  [^com.zaxxer.hikari.pool.HikariProxyConnection db-conn ^String sql]
   (try
     (with-open [stmt (.createStatement db-conn)]
       (if (.execute stmt sql)

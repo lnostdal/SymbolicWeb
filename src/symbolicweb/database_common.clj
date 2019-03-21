@@ -41,8 +41,8 @@
 
 
 
-(defn db-update [table-name m where]
-  "E.g. (db-update :testing {:value 42} '(= :id 100))"
+(defn db-update "E.g. (db-update :testing {:value 42} '(= :id 100))"
+  [table-name m where]
   (let [res (sql/sql (sql/update -sqlingvo-db- table-name m (sql/where where)))
         ^String sql (first res)
         params (rest res)]
@@ -50,8 +50,8 @@
 
 
 
-(defn db-delete [table-name where]
-  "E.g. (db-delete :testing '(= :id 100))"
+(defn db-delete "E.g. (db-delete :testing '(= :id 100))"
+  [table-name where]
   (let [res (sql/sql (sql/delete -sqlingvo-db- table-name (sql/where where)))
         ^String sql (first res)
         params (rest res)]
@@ -70,8 +70,8 @@
 
 
 (declare stop-server)
-(defn do-dbtx [^Fn dbtx-body-fn]
-  "  2PCTX-BODY-FN: (fn [DBTX-COMMIT-FN] ..)"
+(defn do-dbtx "2PCTX-BODY-FN: (fn [DBTX-COMMIT-FN] ..)"
+  [^Fn dbtx-body-fn]
   (let [dbtx-phase (atom 0)]
     (try
       (dbtx-body-fn
@@ -194,8 +194,8 @@
 
 
 
-(defn nsm-get [^String table-name ^Long branch-id]
-  "Nested Set Model query."
+(defn nsm-get "Nested Set Model query."
+  [^String table-name ^Long branch-id]
   ;; TODO: Grab IDs only.
   (db-pstmt (str "SELECT node.name FROM " table-name " AS node, " table-name " AS parent"
                  " WHERE node.lft BETWEEN parent.lft AND parent.rgt"
@@ -228,12 +228,12 @@
 
 
 
-(defn al-descendants [^String table-name ^Long id & {:keys [id-name parent-name
-                                                            columns
-                                                            where order-by
-                                                            params]
-                                                     :or {id-name "id" parent-name "parent"}}]
-  "Adjacency List: Get descendants."
+(defn al-descendants "Adjacency List: Get descendants."
+  [^String table-name ^Long id & {:keys [id-name parent-name
+                                         columns
+                                         where order-by
+                                         params]
+                                  :or {id-name "id" parent-name "parent"}}]
   [(str "WITH RECURSIVE q AS "
         "((SELECT " id-name ", " parent-name (cl-format false "~{, ~A~}" columns)
         " FROM " table-name " WHERE " id-name " = ?"
@@ -247,11 +247,11 @@
 
 
 
-(defn al-descendants-to-level [^String table-name ^Long id ^Long level & {:keys [id-name parent-name
-                                                                                 params]
-                                                                          :or {id-name "id" parent-name "parent"}}]
-  "Adjecency List: Get descendants down to a LEVEL or limit.
-Returns :ID and :PARENT columns."
+(defn al-descendants-to-level "Adjecency List: Get descendants down to a LEVEL or limit.
+  Returns :ID and :PARENT columns."
+  [^String table-name ^Long id ^Long level & {:keys [id-name parent-name
+                                                     params]
+                                              :or {id-name "id" parent-name "parent"}}]
   [(str "WITH RECURSIVE q AS "
         "(SELECT " id-name ", " parent-name ", ARRAY[id] AS level FROM " table-name " hc WHERE " id-name " = ?"
         " UNION ALL "
@@ -262,11 +262,11 @@ Returns :ID and :PARENT columns."
 
 
 
-(defn al-ancestors [^String table-name ^Long id & {:keys [id-name parent-name
-                                                          columns]
-                                                   :or {id-name "id" parent-name "parent"}}]
-  "Adacency List: Get ancestors.
-Returns :ID and :PARENT columns."
+(defn al-ancestors "Adacency List: Get ancestors.
+  Returns :ID and :PARENT columns."
+  [^String table-name ^Long id & {:keys [id-name parent-name
+                                         columns]
+                                  :or {id-name "id" parent-name "parent"}}]
   [(str "WITH RECURSIVE q AS "
         "(SELECT h.*, 1 AS level FROM " table-name " h WHERE " id-name " = ?"
         " UNION ALL "

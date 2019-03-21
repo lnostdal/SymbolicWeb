@@ -5,9 +5,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defn db-query-get-chunk [relation ^Long offset ^Long limit
-                          & {:keys [where order-by other params]}]
-  "  RELATION: SQL or [SQL PARAMS]"
+(defn db-query-get-chunk "RELATION: SQL or [SQL PARAMS]"
+  [relation ^Long offset ^Long limit
+   & {:keys [where order-by other params]}]
   (let [res (apply db-pstmt (str "SELECT * FROM " (if (string? relation)
                                                     relation
                                                     (str "(" (first relation) ") AS db_query_get_chunk_rel"))
@@ -30,9 +30,9 @@
 
 
 
-(defn db-query-seq [relation ^Long offset ^Long limit
-                    & {:keys [where order-by other params]}]
-  "Returns a LazySeq of IDs."
+(defn db-query-seq "Returns a LazySeq of IDs."
+  [relation ^Long offset ^Long limit
+   & {:keys [where order-by other params]}]
   (let [chunk (db-query-get-chunk relation offset limit
                                   :where where :order-by order-by :other other :params params)]
     (when-not (empty? chunk)
@@ -58,10 +58,7 @@
 ;;     "from and including, up to but not including".
 ;;   * This used to support subqueries (via RELATION arg), but does not anymore. Fix this.
 
-(defn db-ordered-query-get-chunk [relation ^Keyword global-direction from ^Keyword direction ^Long size
-                                  & {:keys [order-by where other params]
-                                     :or {order-by "id"}}]
-  "Returns a chunk of a complete result. See DB-QUERY-SEQ for a way to get hold of the complete (e.g. big) result without running out of memory.
+(defn db-ordered-query-get-chunk "Returns a chunk of a complete result. See DB-QUERY-SEQ for a way to get hold of the complete (e.g. big) result without running out of memory.
 
   RELATION: DB table or view name (String).
 
@@ -79,6 +76,9 @@
   :ORDER-BY: Name of field that can be ordered (String).
 
   :PARAMS: Params (prepared DB statement) for :WHERE and :OTHER (in that order)."
+  [relation ^Keyword global-direction from ^Keyword direction ^Long size
+   & {:keys [order-by where other params]
+      :or {order-by "id"}}]
   (apply db-pstmt (str "SELECT * FROM " (if (string? relation)
                                           relation
                                           (str "(" (first relation) ") AS db_ordered_query_get_chunk_rel"))
@@ -120,17 +120,12 @@
 
 
 ;; TODO: Check this out: https://github.com/timescale/timescaledb
-(defn db-ordered-query-seq [relation ^Keyword global-direction from ^Keyword direction ^Long size
-                            & {:keys [step-forward step-backward order-by where other params]
-                               :or {step-forward inc
-                                    step-backward dec
-                                    order-by "id"}}]
-  "Wraps chunks from DB-ORDERED-QUERY-GET-CHUNK in a LazySeq.
+(defn db-ordered-query-seq "Wraps chunks from DB-ORDERED-QUERY-GET-CHUNK in a LazySeq.
 
   SIZE: Size of internal chunks; how much to fetch at a time from the DB when consuming data from the LazySeq.
 
-See DB-ORDERED-QUERY-GET-CHUNK docstring for description of other parameters. A DB table with 10 entries, IDs 1 to 10, would
-give results like:
+  See DB-ORDERED-QUERY-GET-CHUNK docstring for description of other parameters. A DB table with 10 entries, IDs 1 to 10, would
+  give results like:
 
   (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :lesser-first 5   :down 2)))) => (5 6 7)
   (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :lesser-first 5   :up 2))))   => (5 4 3)
@@ -139,10 +134,15 @@ give results like:
   (swsync (doall (take 3 (db-ordered-query-seq \"testing\" :greater-first -1 :down 2)))) => (10 9 8)
 
 
-Mapping to DAOs goes like this:
+  Mapping to DAOs goes like this:
 
   (swsync (doall (take 3 (map #(db-get % \"testing\")
                               (db-ordered-query-seq :testing :lesser-first 5 :down 2)))))"
+  [relation ^Keyword global-direction from ^Keyword direction ^Long size
+   & {:keys [step-forward step-backward order-by where other params]
+      :or {step-forward inc
+           step-backward dec
+           order-by "id"}}]
   ;; TODO: Args are repeated over and over again here.
   (let [chunk (db-ordered-query-get-chunk relation global-direction from direction size
                                           :order-by order-by :where where :other other :params params)]

@@ -2,10 +2,10 @@
 
 
 
-(defn url-alter-query-params [^Ref viewport ^Boolean replace? ^Fn f & args]
-  "Directly alters query-params of URL for Viewport.
+(defn url-alter-query-params "Directly alters query-params of URL for Viewport.
 
   REPLACE?: If True, a history entry will not be added at the client end."
+  [^Ref viewport ^Boolean replace? ^Fn f & args]
   (apply vm-alter (:query-params @viewport) f args)
   ;; The strange WHEN here is here to handle cases where we'll be passed both True and False for REPLACE? when this function
   ;; is called many times within a SWSYNC context. So, yeah – only one of them win out and we'd like the False (for REPLACE?)
@@ -21,10 +21,10 @@
 
 
 
-(defn vm-sync-to-url [m]
-  "Maps :MODEL to Viewport URL based on :NAME. A one-way sync for the Lifetime of :CONTEXT-WIDGET: Server --> Client.
+(defn vm-sync-to-url "Maps :MODEL to Viewport URL based on :NAME. A one-way sync for the Lifetime of :CONTEXT-WIDGET: Server --> Client.
 
-Returns M."
+  Returns M."
+  [m]
   ;; Server --> Client; via CONTEXT-WIDGET.
   (with1 m
     (let [name (:name m)
@@ -52,13 +52,13 @@ Returns M."
 
 
 
-(defn vm-sync-from-url [m]
-  "Maps Viewport URL to :MODEL based on :NAME. A one-way sync for the Lifetime of :VIEWPORT or the Viewport of
-:CONTEXT-WIDGET: Client --> Server.
+(defn vm-sync-from-url "Maps Viewport URL to :MODEL based on :NAME. A one-way sync for the Lifetime of :VIEWPORT or the Viewport of
+  :CONTEXT-WIDGET: Client --> Server.
 
-If :CONTEXT-WIDGET is given, VM-SYNC-TO-URL is also called with M as argument.
+  If :CONTEXT-WIDGET is given, VM-SYNC-TO-URL is also called with M as argument.
 
-Returns M."
+  Returns M."
+  [m]
   (with1 m
     (let [name (:name m)
           model (:model m)

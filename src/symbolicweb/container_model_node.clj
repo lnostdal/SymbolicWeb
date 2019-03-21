@@ -19,10 +19,10 @@
 
 
 
-(defn cmn-remove [^ContainerModelNode node]
-  "Pretty much does what you'd expect.
-This mirrors the jQuery `remove' function:
+(defn cmn-remove "Pretty much does what you'd expect.
+  This mirrors the jQuery `remove' function:
   http://api.jquery.com/remove/"
+  [^ContainerModelNode node]
   (let [^ContainerModel cm (cmn-container-model node)]
     (cm-set-count cm (dec (count cm)))
     (detach-lifetime (.lifetime node))
@@ -50,10 +50,10 @@ This mirrors the jQuery `remove' function:
 
 
 
-(defn cmn-after [^ContainerModelNode existing-node ^ContainerModelNode new-node]
-  "Add NEW-NODE to right side of EXISTING-NODE.
-This mirrors the jQuery `after' function:
+(defn cmn-after "Add NEW-NODE to right side of EXISTING-NODE.
+  This mirrors the jQuery `after' function:
   http://api.jquery.com/after/"
+  [^ContainerModelNode existing-node ^ContainerModelNode new-node]
   (let [^ContainerModel cm (cmn-container-model existing-node)]
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)
@@ -85,10 +85,10 @@ This mirrors the jQuery `after' function:
 
 
 
-(defn cmn-before [^ContainerModelNode existing-node ^ContainerModelNode new-node]
-  "Add NEW-NODE to left side of EXISTING-NODE.
-This mirrors the jQuery `before' function:
+(defn cmn-before "Add NEW-NODE to left side of EXISTING-NODE.
+  This mirrors the jQuery `before' function:
   http://api.jquery.com/before/"
+  [^ContainerModelNode existing-node ^ContainerModelNode new-node]
   (let [^ContainerModel cm (cmn-container-model existing-node)]
     (assert (not (cmn-container-model new-node)))
     (cmn-set-container-model new-node cm)

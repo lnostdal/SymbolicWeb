@@ -4,10 +4,10 @@
 ;;; When talking about the "outer node" it is meant in context of the ContainerModel observed by FILTERED-CONTAINER-MODEL.
 
 
-(defn node-of-node-in-context [our-context ^ContainerModelNode outer-node]
-  "Used by mk-FilteredContainerModel instance to find Node closest to OUTER-NODE in OUR-CONTEXT.
+(defn node-of-node-in-context "Used by mk-FilteredContainerModel instance to find Node closest to OUTER-NODE in OUR-CONTEXT.
 
-Returns two values: [ContainerModelNode relative-position] where relative-position can be :direct, :left, :right or :none."
+  Returns two values: [ContainerModelNode relative-position] where relative-position can be :direct, :left, :right or :none."
+  [our-context ^ContainerModelNode outer-node]
   (let [our-context (ensure our-context)]
     (if-let [closest-node (get our-context outer-node)]
       [closest-node :direct]
@@ -107,38 +107,38 @@ Returns two values: [ContainerModelNode relative-position] where relative-positi
 
 
 
-(defn ^ContainerModel mk-FilteredContainerModel
+(defn mk-FilteredContainerModel
   "Returns a ContainerModel that is synced with CONTAINER-MODEL via FILTER-NODE-FN."
-  ([^ContainerModel container-model
-    ^Fn filter-node-fn]
-     (mk-FilteredContainerModel container-model filter-node-fn #(cmn-data %)))
+  (^ContainerModel [^ContainerModel container-model
+                    ^Fn filter-node-fn]
+   (mk-FilteredContainerModel container-model filter-node-fn #(cmn-data %)))
 
 
-  ([^ContainerModel container-model
-    ^Fn filter-node-fn
-    ^Fn extract-vm-from-node-fn] ;; TODO: Default value; identity.
+  (^ContainerModel [^ContainerModel container-model
+                    ^Fn filter-node-fn
+                    ^Fn extract-vm-from-node-fn] ;; TODO: Default value; identity.
 
-     (let [^ContainerModel filtered-container-model (cm)
-           context (ref {})] ;; Mapping between CMNs in CONTAINER-MODEL and CMNs in FILTERED-CONTAINER-MODEL.
+   (let [^ContainerModel filtered-container-model (cm)
+         context (ref {})] ;; Mapping between CMNs in CONTAINER-MODEL and CMNs in FILTERED-CONTAINER-MODEL.
 
-       ;; Make FILTERED-CONTAINER-MODEL aware of existing CMNs in CONTAINER-MODEL.
-       (loop [^ContainerModelNode outer-node (cm-tail-node container-model)]
-         (when outer-node
-           (handle-filtered-container-event filtered-container-model
-                                            context
-                                            filter-node-fn
-                                            extract-vm-from-node-fn
-                                            ['cm-prepend outer-node])
-           (recur (cmn-left-node outer-node))))
+     ;; Make FILTERED-CONTAINER-MODEL aware of existing CMNs in CONTAINER-MODEL.
+     (loop [^ContainerModelNode outer-node (cm-tail-node container-model)]
+       (when outer-node
+         (handle-filtered-container-event filtered-container-model
+                                          context
+                                          filter-node-fn
+                                          extract-vm-from-node-fn
+                                          ['cm-prepend outer-node])
+         (recur (cmn-left-node outer-node))))
 
-       (observe (.observable container-model) (.lifetime filtered-container-model)
-                (fn [_ event-args]
-                  (handle-filtered-container-event filtered-container-model
-                                                   context
-                                                   filter-node-fn
-                                                   extract-vm-from-node-fn
-                                                   event-args)))
+     (observe (.observable container-model) (.lifetime filtered-container-model)
+              (fn [_ event-args]
+                (handle-filtered-container-event filtered-container-model
+                                                 context
+                                                 filter-node-fn
+                                                 extract-vm-from-node-fn
+                                                 event-args)))
 
-       (attach-lifetime (.lifetime container-model) (.lifetime filtered-container-model))
+     (attach-lifetime (.lifetime container-model) (.lifetime filtered-container-model))
 
-       filtered-container-model)))
+     filtered-container-model)))

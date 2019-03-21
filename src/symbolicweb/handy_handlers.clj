@@ -7,8 +7,8 @@
 
 
 
-(defn handle-out-channel-request [^org.httpkit.server.AsyncChannel channel request ^Ref session ^Ref viewport]
-  "Output (hanging AJAX; Comet) channel."
+(defn handle-out-channel-request "Output (hanging AJAX; Comet) channel."
+  [^org.httpkit.server.AsyncChannel channel request ^Ref session ^Ref viewport]
   (letfn [(do-it [^StringBuilder response-str]
             (when (http.server/send! channel
                                      {:status 200
@@ -36,8 +36,8 @@
 
 
 
-(defn handle-in-channel-request [request ^Ref session ^Ref viewport]
-  "Input (AJAX) channel."
+(defn handle-in-channel-request "Input (AJAX) channel."
+  [request ^Ref session ^Ref viewport]
   (case (get (:query-params request) "do")
     "widget-event"
     (let [query-params (:query-params request)
@@ -102,8 +102,8 @@
 
 
 
-(defn default-request-handler [request ^Ref session]
-  "Default top-level request handler for both REST and AJAX/Comet type requests."
+(defn default-request-handler "Default top-level request handler for both REST and AJAX/Comet type requests."
+  [request ^Ref session]
   (let [request-type (get (:query-params request) "_sw_request_type")]
     (case request-type
       ;; XHR.
@@ -142,9 +142,6 @@
    :body
    (html
     (hiccup.page/doctype :html5)
-    "<!-- ############################################################################### -->\n"
-    "<!-- ## Runs on the SymbolicWeb platform: https://github.com/lnostdal/SymbolicWeb ## -->\n"
-    "<!-- ############################################################################### -->\n"
     [:html
      [:head
       [:meta {:charset "UTF-8"}]

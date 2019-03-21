@@ -9,8 +9,8 @@
 
 
 
-(defn db-db-to-json-transformer [m]
-  "DB --> SW"
+(defn db-db-to-json-transformer "DB --> SW"
+  [m]
   (let [js (into {} (map (fn [[k v]]
                            [k (vm v)])
                          (json-parse (:value m))))]
@@ -24,8 +24,8 @@
 
 
 
-(defn db-json-to-db-transformer [m]
-  "SW --> DB"
+(defn db-json-to-db-transformer "SW --> DB"
+  [m]
   (let [json-str (json-generate (into {} (map (fn [[k v]]
                                                 [k @v])
                                               @(:value m))))]

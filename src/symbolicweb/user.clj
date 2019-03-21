@@ -18,8 +18,8 @@ ALTER TABLE users ADD UNIQUE (uuid);
 
 
 
-(defn user-model-base-clj-to-db-transformer [m]
-  "SW --> DB"
+(defn user-model-base-clj-to-db-transformer "SW --> DB"
+  [m]
   (-> m
       ((fn [m]
          (case (:key m)
