@@ -35,48 +35,38 @@
     (:session @viewport)))
 
 
-(defn alter-options [options fn & args]
-  "> (alter-options (list :js-options {:close (with-js (alert \"closed!\"))}
+(defn alter-options "> (alter-options (list :js-options {:close (with-js (alert \"closed!\"))}
                           :on-close (with-js (alert \"yep, really closed!\")))
                     update-in [:js-options] assoc :modal :true)
    (:js-options {:modal :true, :close \"alert(decodeURIComponent('closed%21'));\"}
     :on-close \"alert(decodeURIComponent('yep%2C%20really%20closed%21'));\")"
+  [options fn & args]
   (with-local-vars [lst (list)]
     (doseq [option (apply fn (apply hash-map options) args)]
       (var-set lst (conj (var-get lst) (val option) (key option))))
     (var-get lst)))
 
 
-(defmacro typecase [e & clauses]
-  ;; (str 'clojure.lang.PersistentVector)
-  ;; (case (.getName (type []))
-  ;;   "clojure.lang.PersistentVector" (println "test"))
-  ;;
-  ;; <clgv> lnostdal_: another way is to use cond and instance? see ##(doc instance?)
-  ;; <lazybot> ⇒ "([c x]); Evaluates x and tests if it is an instance of the class c. Returns true or false"
-  )
 
-
-
-(defmacro with-all-viewports [& body]
-  "Handy when testing things in the REPL.
-SESSION and VIEWPORT are bound within BODY."
+(defmacro with-all-viewports "Handy when testing things in the REPL.
+  SESSION and VIEWPORT are bound within BODY."
+  [& body]
   `(doseq [~'session (vals @-sessions-)]
      (doseq [~'viewport (vals @(:viewports @~'session))]
        ~@body)))
 
 
-(defmacro with-session-viewports [session & body]
-  "Run BODY in context of all Viewports of SESSION..
-SESSION and VIEWPORT are bound within BODY."
+(defmacro with-session-viewports "Run BODY in context of all Viewports of SESSION..
+  SESSION and VIEWPORT are bound within BODY."
+  [session & body]
   `(let [~'session ~session]
      (doseq [~'viewport (vals @(:viewports @~'session))]
        ~@body)))
 
 
-(defmacro with-user-viewports [user-model & body]
-  "Run BODY in context of all Viewports in all Sessions of USER-MODEL (UserModelBase).
-SESSION and VIEWPORT are bound within BODY."
+(defmacro with-user-viewports "Run BODY in context of all Viewports in all Sessions of USER-MODEL (UserModelBase).
+  SESSION and VIEWPORT are bound within BODY."
+  [user-model & body]
   `(let [user-model# ~user-model]
      (doseq [session# (dosync @(:sessions @user-model#))]
        (with-session-viewports session#
@@ -128,15 +118,8 @@ SESSION and VIEWPORT are bound within BODY."
 
 
 (let [id-generator-value (atom 0)]
-  (defn ^Long generate-uid []
-    "Generates an unique ID; non-universal or only pr. server instance based."
-    (swap! id-generator-value inc)))
-
-
-(defn generate-uuid ^String []
-  "Generates an universal unique ID (UUID).
-Returns a String."
-  (.toString (java.util.UUID/randomUUID)))
+  (defn uid "Generates an unique ID; non-universal or only pr. server instance based."
+    ^long [] (swap! id-generator-value inc)))
 
 
 (defn touch [^Ref obj]
@@ -179,7 +162,7 @@ Returns a String."
 
 
 
-(defn ^String set-session-cookie [value permanent?]
+(defn set-session-cookie ^String [value permanent?]
   (set-document-cookie :name -session-cookie-name- :value value :domain? false :permanent? permanent?))
 
 
@@ -273,7 +256,7 @@ Returns a String."
 
 
 (declare spget)
-(defn ^String sw-js-base-bootstrap [^Ref session ^Ref viewport]
+(defn sw-js-base-bootstrap ^String [^Ref session ^Ref viewport]
   (str "var sw_cookie_name = '" -session-cookie-name- "';\n"
        (set-document-cookie :name -session-cookie-name- :value nil :domain? false :path "/")
        (set-session-cookie (:uuid @session) (= "permanent" @(spget session :session-type)))
@@ -281,8 +264,8 @@ Returns a String."
 
 
 
-(defn pred-with-limit [pred limit]
-  "Returns a new predicate based on PRED which only \"lasts\" LIMIT number of times."
+(defn pred-with-limit "Returns a new predicate based on PRED which only \"lasts\" LIMIT number of times."
+  [pred limit]
   (let [limit (atom limit)]
     (fn [elt]
       (if-not (pred elt)

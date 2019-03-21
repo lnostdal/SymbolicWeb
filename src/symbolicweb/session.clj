@@ -21,8 +21,8 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 
 
-(defn session-model-clj-to-db-transformer [m]
-  "SW --> DB"
+(defn session-model-clj-to-db-transformer "SW --> DB"
+  [m]
   (-> m
       ((fn [m]
          (case (:key m)
@@ -52,8 +52,8 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 
 
-(defn session-model-db-to-clj-transformer [m]
-  "DB --> SW"
+(defn session-model-db-to-clj-transformer "DB --> SW"
+  [m]
   (-> m
       (dao-default-db-to-clj-transformer)
       ((fn [m]
@@ -126,7 +126,7 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 
 (defn stput "\"Session Temporary Put\"
-  Session data stored in memory; temporarly."
+  Session data stored in memory; temporarily."
   [^Ref session ^Keyword k value]
   (alter (:temp-data @session) assoc
          k value))
@@ -135,7 +135,7 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 (defn stget
   "\"Session Temporary Get\"
-  Session data stored in memory; temporarly."
+  Session data stored in memory; temporarily."
   ([^Ref session ^Keyword k]
    (stget session k (vm nil)))
 
@@ -156,9 +156,8 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 
 
-(defn session-login [^Ref session ^Ref user-model ^Ref viewport ^String login-type ^Fn after-login-fn]
-  "Note that this is a non-blocking call. I.e. if you need to run something after (for sure) login, use the AFTER-LOGIN-FN
-callback."
+(defn session-login "Note that this is a non-blocking call. I.e. if you need to run something after (for sure) login, use the AFTER-LOGIN-FN callback."
+  [^Ref session ^Ref user-model ^Ref viewport ^String login-type ^Fn after-login-fn]
   (let [old-cookie-value (:uuid @session)
         new-cookie-value (generate-uuid)]
     (alter session assoc :uuid new-cookie-value)
