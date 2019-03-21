@@ -28,14 +28,13 @@
 
 
 
-(defn observe [^Observable observable lifetime ^Fn callback]
-  "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and last until it is
-deactivated. If given FALSE, observation will start at once and last forever; as long as OBSERVABLE exists.
+(defn observe "LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and last until it is
+  deactivated. If given FALSE, observation will start at once and last forever; as long as OBSERVABLE exists.
 
   CALLBACK: (fn [inner-lifetime & args] ..), where INNER-LIFETIME may be an instance of Lifetime or FALSE.
 
-Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
-as the first argument to CALLBACK."
+  Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
+  as the first argument to CALLBACK."
   ;; 3 choices:
   ;;   * Allow circular references fully, which might lead to infinite loops in some cases; so it's not really "allowed" anyway.
   ;;   * Allow circular refeneces "partially"; let it recurse up until some limit then, say, show a warning or similar.
@@ -44,6 +43,7 @@ as the first argument to CALLBACK."
   ;; I've been playing around with these options, and it seems the first option is risky as it might lead to infinite loops and
   ;; stack overflows. The second option means stuff will break "sometimes". The third option is simple; things will always fail
   ;; early.
+  ^Lifetime [^Observable observable lifetime ^Fn callback]
   (let [callback (fn [& args]
                    (if (contains? *observables-stack* observable)
                      (throw (Exception. (str "OBSERVE: Circular reference; bailing out: " observable)))
@@ -83,9 +83,9 @@ as the first argument to CALLBACK."
    (let [x (vm 0)
          squared-x (with-observed-vms nil
                      (* @x @x))] ;;(vm-sync x nil (fn [x & _] (* x x)))]
-     (dbg [x squared-x])
+     (println [@x @squared-x])
      (vm-set x 2)
-     (dbg [x squared-x])))
+     (println [@x @squared-x])))
 
 
 

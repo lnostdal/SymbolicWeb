@@ -4,8 +4,8 @@
 
 (defn %mk-SessionTable []
   (swsync
-    (db-stmt
-"
+   (db-stmt
+    "
 CREATE TABLE sessions (
     id bigserial NOT NULL,
     created timestamp without time zone NOT NULL,
@@ -27,9 +27,9 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
       ((fn [m]
          (case (:key m)
            (:type :logged-in? :last-activity-time :viewports :mk-viewport-fn
-            :request-handler :rest-handler :ajax-handler :aux-handler
-            :one-shot? :temp-data
-            :user-handle-login-token)
+                  :request-handler :rest-handler :ajax-handler :aux-handler
+                  :one-shot? :temp-data
+                  :user-handle-login-token)
            (assoc m
              :key nil)
 
@@ -118,16 +118,16 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 
 
-(defn spdel [^Ref session ^Keyword k]
-  "\"Session Permanent Delete\"
-Session data stored in DB; permanent."
+(defn spdel "\"Session Permanent Delete\"
+  Session data stored in DB; permanent."
+  [^Ref session ^Keyword k]
   (vm-alter (:json @session) dissoc k))
 
 
 
-(defn stput [^Ref session ^Keyword k value]
-  "\"Session Temporary Put\"
-Session data stored in memory; temporarly."
+(defn stput "\"Session Temporary Put\"
+  Session data stored in memory; temporarly."
+  [^Ref session ^Keyword k value]
   (alter (:temp-data @session) assoc
          k value))
 
@@ -135,17 +135,17 @@ Session data stored in memory; temporarly."
 
 (defn stget
   "\"Session Temporary Get\"
-Session data stored in memory; temporarly."
+  Session data stored in memory; temporarly."
   ([^Ref session ^Keyword k]
-     (stget session k (vm nil)))
+   (stget session k (vm nil)))
 
   ([^Ref session ^Keyword k not-found]
-     (with (get @(:temp-data @session) k ::not-found)
-       (if (= it ::not-found)
-         (do
-           (stput session k not-found)
-           not-found)
-         it))))
+   (with (get @(:temp-data @session) k ::not-found)
+     (if (= it ::not-found)
+       (do
+         (stput session k not-found)
+         not-found)
+       it))))
 
 
 

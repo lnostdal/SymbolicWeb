@@ -15,16 +15,6 @@
     (double input)))
 
 
-(defn json-parse [^String json-string]
-  "Parse JSON-STRING returning Clojure object."
-  (json/parse-string json-string true))
-
-
-(defn json-generate ^String [clojure-object]
-  "Returns JSON string from CLOJURE-OBJECT."
-  (json/generate-string clojure-object))
-
-
 
 (defmacro strb [sb-name & args]
   `(do ~@(map (fn [arg] `(.append ~sb-name ~arg))

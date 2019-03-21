@@ -14,10 +14,10 @@
 
   (:import (com.google.common.cache CacheBuilder CacheLoader))
 
-  (:require [hiccup.core :refer (html)])
   (:use lrn-utils.core)
   (:import (lrn_utils.core OLong ODouble OBoolean OObject GCedResource))
 
+  (:require [hiccup2.core :refer (html)])
   (:require [hiccup.util :refer (escape-html)])
   (:require [hiccup.page :refer (doctype xhtml-tag)])
 
@@ -25,7 +25,7 @@
 
   (:require [garden.core :refer [css style]])
 
-  (:require [cheshire.core :as json])
+  (:require [jsonista.core :as json]) ;; Faster than Cheshire.
 
   (:require ring.util.codec)
   (:require ring.middleware.params)
@@ -135,13 +135,14 @@
                    "Cache-Control" "no-cache, no-store, must-revalidate"
                    "Expires" "0"}
          :body
-         (html
-          [:html
-           [:head [:title "Top Level Server Exception: HTTP 500"]]
-           [:body {:style "font-family: sans-serif;"}
-            [:p {:style "color: red;"} [:b (escape-html (str e))]]
-            [:p "This incident has been logged (ID: " ex-id ")."]
-            [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]]])}))))
+         (-> (html
+              [:html
+               [:head [:title "Top Level Server Exception: HTTP 500"]]
+               [:body {:style "font-family: sans-serif;"}
+                [:p {:style "color: red;"} [:b (escape-html (str e))]]
+                [:p "This incident has been logged (ID: " ex-id ")."]
+                [:p [:pre (escape-html (with-out-str (clojure.stacktrace/print-stack-trace e 1000)))]]]])
+             (str))}))))
 
 
 

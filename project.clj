@@ -42,8 +42,9 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache (database_dao.clj).
 
-                 [cheshire "LATEST"] ;; JSON parsing and generation.
                  [lrn-utils "0.1.0-SNAPSHOT"]
+
+                 [metosin/jsonista "LATEST"] ;; JSON parsing and generation.
 
                  [clj-time/clj-time "LATEST"]
 

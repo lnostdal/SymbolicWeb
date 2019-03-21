@@ -3,6 +3,17 @@
 (declare add-response-chunk ref?)
 
 
+(let [jom (json/object-mapper {:encode-key-fn true,
+                               :decode-key-fn true})]
+
+  (defn json-generate ^String [o]
+    (json/write-value-as-string o jom))
+
+  (defn json-parse [^String json-str]
+    (json/read-value json-str jom)))
+
+
+
 (defn var-alter [^clojure.lang.Var var ^Fn fun & args]
   (var-set var (apply fun (var-get var) args)))
 
@@ -11,11 +22,11 @@
 (defn expected-response-type [request]
   (let [accept-header (get (:headers request) "accept")]
     (cond
-     (re-find #"text/javascript" accept-header) :javascript
-     (re-find #"text/html" accept-header) :html
-     (re-find #"text/plain" accept-header) :plain
-     (re-find #"text/plugin-api" accept-header) :plugin-api
-     true accept-header)))
+      (re-find #"text/javascript" accept-header) :javascript
+      (re-find #"text/html" accept-header) :html
+      (re-find #"text/plain" accept-header) :plain
+      (re-find #"text/plugin-api" accept-header) :plugin-api
+      true accept-header)))
 
 
 (declare viewport-of)
@@ -133,7 +144,7 @@ Returns a String."
           (System/currentTimeMillis)))
 
 
- (defn script-src [^String src]
+(defn script-src [^String src]
   [:script {:type "text/javascript" :src src}])
 
 
@@ -220,13 +231,13 @@ Returns a String."
 
 (defn reload-page
   ([viewport ^String rel-url]
-     (js-run viewport "window.location = " (url-encode-wrap rel-url) ";"))
+   (js-run viewport "window.location = " (url-encode-wrap rel-url) ";"))
 
   ([viewport]
-     ;; TODO: I guess we need three ways of reloading now.
-     ;;"window.location.reload(false);"
-     ;; http://blog.nostdal.org/2011/12/reloading-or-refreshing-web-page-really.html
-     (js-run viewport "window.location.href = window.location.href;")))
+   ;; TODO: I guess we need three ways of reloading now.
+   ;;"window.location.reload(false);"
+   ;; http://blog.nostdal.org/2011/12/reloading-or-refreshing-web-page-really.html
+   (js-run viewport "window.location.href = window.location.href;")))
 
 
 (defn replace-page [viewport ^String rel-url]
@@ -242,23 +253,23 @@ Returns a String."
 
 
 #_(defn clear-all-sessions []
-  ;; TODO: Do this on the server end instead or also.
-  (doseq [id_application @-applications-]
-    (binding [*application* (val id_application)]
-      (doseq [id_viewport (:viewports @*application*)]
-        (binding [*viewport* (val id_viewport)]
-          (clear-session *application*))))))
+    ;; TODO: Do this on the server end instead or also.
+    (doseq [id_application @-applications-]
+      (binding [*application* (val id_application)]
+        (doseq [id_viewport (:viewports @*application*)]
+          (binding [*viewport* (val id_viewport)]
+            (clear-session *application*))))))
 
 
 (defn is-url?
   ([url-path uri]
-     (= (subs uri 0 (min (count url-path) (count uri)))
-        url-path)))
+   (= (subs uri 0 (min (count url-path) (count uri)))
+      url-path)))
 
 
 (defn alert
   ([msg widget]
-     (js-run widget "alert(" (url-encode-wrap msg) ");")))
+   (js-run widget "alert(" (url-encode-wrap msg) ");")))
 
 
 (declare spget)
@@ -284,17 +295,17 @@ Returns a String."
 
 
 #_(defn with-future* [timeout-ms body-fn]
-  "Executes BODY-FN in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
-  (let [the-future (future (with-errors-logged (body-fn)))]
-    (future
-      (with-errors-logged
-        (let [result (deref the-future timeout-ms ::with-future-timeout-event)]
-          (if (not= result ::with-future-timeout-event)
-            result
-            (future-cancel the-future)))))
-    nil))
+    "Executes BODY-FN in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
+    (let [the-future (future (with-errors-logged (body-fn)))]
+      (future
+        (with-errors-logged
+          (let [result (deref the-future timeout-ms ::with-future-timeout-event)]
+            (if (not= result ::with-future-timeout-event)
+              result
+              (future-cancel the-future)))))
+      nil))
 
 
 #_(defmacro with-future [timeout-ms & body]
-  "Executes BODY in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
-  `(with-future* ~timeout-ms (fn [] ~@body)))
+    "Executes BODY in a future with a timeout designated by TIMEOUT-MS for execution; i.e. not only for deref."
+    `(with-future* ~timeout-ms (fn [] ~@body)))

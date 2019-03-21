@@ -46,16 +46,16 @@
 
 
 
-(defn vm-observe [^ValueModel value-model lifetime ^Boolean initial-sync? ^Fn callback]
-  "  LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and lasts until it is
-deactivated. If given FALSE, observation will start at once and last forever or as long as VALUE-MODEL exists.
+(defn vm-observe "LIFETIME: If given an instance of Lifetime, observation will start once that Lifetime is activated and lasts until it is
+  deactivated. If given FALSE, observation will start at once and last forever or as long as VALUE-MODEL exists.
 
   INITIAL-SYNC?: If TRUE, CALLBACK will be triggered once as soon as observation starts.
 
   CALLBACK: (fn [inner-lifetime old-value new-value] ..)
 
-Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
-as the first argument to CALLBACK."
+  Returns a (new) instance of Lifetime if LIFETIME was an instance of Lifetime, or FALSE otherwise. This is also the value passed
+  as the first argument to CALLBACK."
+  [^ValueModel value-model lifetime ^Boolean initial-sync? ^Fn callback]
   (let [observe-res (observe (.observable value-model) lifetime callback)]
     (when initial-sync?
       (letfn [(initial-sync []
@@ -104,26 +104,26 @@ as the first argument to CALLBACK."
 
 
 
-(defn ^ValueModel vm-copy [^ValueModel value-model]
-  "Creates a ValueModel. The initial value of it will be extracted from VALUE-MODEL. Further changes (mutation of) to
-VALUE-MODEL will not affect the ValueModel created and returned here.
-See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
+(defn vm-copy "Creates a ValueModel. The initial value of it will be extracted from VALUE-MODEL. Further changes (mutation of) to
+  VALUE-MODEL will not affect the ValueModel created and returned here.
+  See VM-SYNC if you need a copy that is synced with the original VALUE-MODEL."
+  ^ValueModel [^ValueModel value-model]
   (vm @value-model))
 
 
 
-(defn ^ValueModel vm-sync
+(defn vm-sync
   "Returns a new ValueModel which is kept in one-way sync from VALUE-MODEL via CALLBACK.
 
   CALLBACK: (fn [inner-lifetime old-value new-value] ..)
             Return value of CALLBACK will be the continuous value of the returned ValueModel.
 
   LIFETIME: The lifetime of this connection is governed by LIFETIME and can be an instance of Lifetime or NIL for 'infinite'
-lifetime (as long as VALUE-MODEL exists)."
-  ([^ValueModel value-model lifetime ^Fn callback]
+  lifetime (as long as VALUE-MODEL exists)."
+  (^ValueModel [^ValueModel value-model lifetime ^Fn callback]
    (vm-sync value-model lifetime callback true))
 
-  ([^ValueModel value-model lifetime ^Fn callback ^Boolean initial-sync?]
+  (^ValueModel [^ValueModel value-model lifetime ^Fn callback ^Boolean initial-sync?]
    (let [^ValueModel mid (vm nil)]
      (vm-observe value-model lifetime initial-sync?
                  #(vm-set mid (apply callback %&)))
@@ -131,12 +131,12 @@ lifetime (as long as VALUE-MODEL exists)."
 
 
 
-(defn ^ValueModel vm-syncs
-  "  CALLBACK takes no arguments."
-  ([value-models lifetime ^Fn callback]
+(defn vm-syncs
+  "CALLBACK takes no arguments."
+  (^ValueModel [value-models lifetime ^Fn callback]
    (vm-syncs value-models lifetime callback true))
 
-  ([value-models lifetime ^Fn callback ^Boolean initial-sync?]
+  (^ValueModel [value-models lifetime ^Fn callback ^Boolean initial-sync?]
    (let [^ValueModel mid (vm nil)
          ^Atom already-synced? (atom false)] ;; We only want to trigger an initial sync once if at all.
      (doseq [^ValueModel value-model value-models]
