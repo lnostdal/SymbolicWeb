@@ -1,6 +1,6 @@
 # SymbolicWeb
 
-**UPDATE: I would not use this for anything right now; it is sort of a mess as development of certain parts have been rushed and code quality is low in some areas. I also want to redesign certain (or many) things; e.g. less focus on mutable state and STM. Things like Functional Reactive Programming (FRP) overall seems more feasible in Clojure these days via clojure.async.**
+**UPDATE: I would not use this for anything right now. At this point I'd like to redesign certain things; e.g. less focus on mutable state and STM. Things like Functional Reactive Programming (FRP) overall seems more feasible these days via clojure.async.**
 
 WUI for Clojure. 
 
