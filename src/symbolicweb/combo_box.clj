@@ -19,7 +19,7 @@
                                      (dosync
                                       (let [model (cmn-data node)]
                                         (mk-HTMLElement "option" (:text @model)
-                                                          :static-attributes {:value (:id @model)}))))
+                                                        :static-attributes {:value (:id @model)}))))
                 attributes)
     (set-event-handler "change" it
                        (fn [& {:keys [new-value]}]

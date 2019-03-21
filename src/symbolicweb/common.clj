@@ -134,7 +134,7 @@
 
 
 
-(defn ^String set-document-cookie [& {:keys [path domain? name value permanent?]
+(defn set-document-cookie ^String [& {:keys [path domain? name value permanent?]
                                       :or {domain? true
                                            path "\" + window.location.pathname + \""
                                            name "name"

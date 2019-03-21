@@ -3,8 +3,8 @@
 
 (defn %mk-UserTable []
   (swsync
-    (db-stmt
-"
+   (db-stmt
+    "
 CREATE TABLE users (
     id bigserial NOT NULL,
     email text NOT NULL ,
@@ -55,12 +55,12 @@ ALTER TABLE users ADD UNIQUE (uuid);
 
 (defn user-get-or-create
   ([^String email]
-     (user-get-or-create email nil))
+   (user-get-or-create email nil))
 
   ([^String email ^Fn create-fn]
-     (if-let [id (:id (first (db-pstmt "SELECT id FROM users WHERE email = ? LIMIT 1;" email)))]
-       (dao-get id "users")
-       (create-fn email))))
+   (if-let [id (:id (first (db-pstmt "SELECT id FROM users WHERE email = ? LIMIT 1;" email)))]
+     (dao-get id "users")
+     (create-fn email))))
 
 
 

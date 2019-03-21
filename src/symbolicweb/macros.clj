@@ -35,8 +35,8 @@
 
 
 
-(defmacro with-object [object & body]
-  "Used by OBJ."
+(defmacro with-object "Used by OBJ."
+  [object & body]
   `(let [~'%with-object ~object]
      ~@body))
 
@@ -53,9 +53,8 @@
                  "NIL"))))
 
 
-(defmacro swsync [& body]
-  "BODY executes within a 2PCTX; a combined MTX and DBTX."
-  `(do-2pctx (fn [] ~@body)))
+(defmacro swsync "BODY executes within a 2PCTX; a combined MTX and DBTX."
+  [& body] `(do-2pctx (fn [] ~@body)))
 
 
 

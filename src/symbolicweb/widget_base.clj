@@ -39,26 +39,25 @@
 
 
 
-(defn ^String render-html [^WidgetBase widget]
-  "Return HTML structure which will be the basis for further initialization."
+(defn render-html "Return HTML structure which will be the basis for further initialization."
+  ^String [^WidgetBase widget]
   ((.render-fn widget) widget))
 
 
 
-(defn ^String sw [^WidgetBase widget]
-  "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
+(defn sw "Render WIDGET as part of a HTMLContainer; WITH-HTML-CONTAINER."
+  ^String [^WidgetBase widget]
   (attach-branch *in-html-container?* widget)
   (render-html widget))
 
 
 
-(defn ^WidgetBase set-event-handler [^String event-type ^WidgetBase widget ^Fn callback-fn
-                                     & {:keys [js-before callback-data js-after once?]
-                                        :or {js-before "return(true);"
-                                             callback-data {}
-                                             js-after ""}}]
-  "Set an event handler for WIDGET.
-Returns WIDGET."
+(defn set-event-handler "Set an event handler for WIDGET. Returns WIDGET."
+  ^WidgetBase [^String event-type ^WidgetBase widget ^Fn callback-fn
+               & {:keys [js-before callback-data js-after once?]
+                  :or {js-before "return(true);"
+                       callback-data {}
+                       js-after ""}}]
   (let [;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
         callback-data (conj callback-data [:sw-token (subs (uuid) 0 8)])]
     (if callback-fn
@@ -90,12 +89,9 @@ Returns WIDGET."
 
 
 
-(defn ^WidgetBase mk-HTMLElement [^ValueModel value-model
-                                  ^Fn render-fn
-                                  ^Fn observer-fn
-                                  args]
-  "  RENDER-FN: (fn [widget] ..)
+(defn mk-HTMLElement "RENDER-FN: (fn [widget] ..)
   OBSERVER-FN: (fn [widget value-model old-value new-value] ..)"
+  ^WidgetBase  [^ValueModel value-model ^Fn render-fn ^Fn observer-fn args]
   (with1 (mk-WidgetBase render-fn args)
     (vm-observe value-model (.lifetime it) true
                 (fn [^Lifetime lifetime old-value new-value]
@@ -103,8 +99,8 @@ Returns WIDGET."
 
 
 
-(defn ^WidgetBase mk-he [html-element-type ^ValueModel value-model & args]
-  "  :OBSERVER-FN: (fn [widget old-value new-value] ..)"
+(defn mk-he ":OBSERVER-FN: (fn [widget old-value new-value] ..)"
+  ^WidgetBase [html-element-type ^ValueModel value-model & args]
   (let [args (apply hash-map args)]
     (mk-HTMLElement value-model
                     (or (:render-fn args)
@@ -120,9 +116,8 @@ Returns WIDGET."
 
 
 
-(defn ^WidgetBase assoc-Stylesheet [^String href m]
-  "Adds CSS stylesheet (HREF) to Viewport of :CONTEXT-WIDGET for the Lifetime of :CONTEXT-WIDGET or :VIEWPORT (root widget
-really)."
+(defn assoc-Stylesheet "Adds CSS stylesheet (HREF) to Viewport of :CONTEXT-WIDGET for the Lifetime of :CONTEXT-WIDGET or :VIEWPORT (root widget really)."
+  ^WidgetBase [^String href m]
   (let [context-widget (or (and (:viewport m) (:root-element @(:viewport m)))
                            (:context-widget m))]
     (add-lifetime-activation-fn

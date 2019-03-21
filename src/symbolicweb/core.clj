@@ -156,7 +156,7 @@
 
 
 
-(defn start-server [^Long port]
+(defn start-server [^long port]
   (stop-server)
   ;; Back-end Java code from HTTP-KIT spawning threads has no idea what Clojure bindings are, so we forward them here.
   (let [bnds (get-thread-bindings)]
@@ -167,5 +167,5 @@
                                    (handler %1))))
                               {:port port
                                :thread (* 2 (. (Runtime/getRuntime) availableProcessors))
-                               :worker-name-prefix "http-worker-"
+                               :worker-name-prefix "sw-http-worker-"
                                :max-body 1048576})))) ;; Max 1M request body (e.g. POST).
