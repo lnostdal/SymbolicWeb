@@ -3,7 +3,7 @@
 
 (defn mk-WidgetBase ^WidgetBase [^Fn render-fn args]
   (with1 (WidgetBase. (or (:id args) ;; ID
-                          (str "sw-" (generate-uid)))
+                          (str "sw-" (uid)))
                       (if (:root-widget? args) ;; LIFETIME
                         (mk-LifetimeRoot)
                         (mk-Lifetime))
@@ -21,7 +21,7 @@
                                   (fn [^Lifetime lifetime]
                                     (let [parent-viewport (viewport-of (parent-of it))]
                                       #_(assert (not (get (:widgets @parent-viewport)
-                                                        (.id it))))
+                                                          (.id it))))
                                       ;; Viewport --> Widget (DOM events).
                                       (alter parent-viewport update-in [:widgets]
                                              assoc (.id it) it)
@@ -60,7 +60,7 @@
   "Set an event handler for WIDGET.
 Returns WIDGET."
   (let [;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
-        callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])]
+        callback-data (conj callback-data [:sw-token (subs (uuid) 0 8)])]
     (if callback-fn
       (do
         (alter (.callbacks widget) assoc event-type
@@ -128,7 +128,7 @@ really)."
     (add-lifetime-activation-fn
      (.lifetime context-widget)
      (fn [_]
-       (let [id (generate-uid)
+       (let [id (uid)
              viewport (viewport-of context-widget)]
          (js-run context-widget
            "$('<link id=\"sw-" id "\" rel=\"stylesheet\" href=\"" (gen-url viewport href) "\">').appendTo('head');")

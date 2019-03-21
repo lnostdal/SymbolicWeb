@@ -159,7 +159,7 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 (defn session-login "Note that this is a non-blocking call. I.e. if you need to run something after (for sure) login, use the AFTER-LOGIN-FN callback."
   [^Ref session ^Ref user-model ^Ref viewport ^String login-type ^Fn after-login-fn]
   (let [old-cookie-value (:uuid @session)
-        new-cookie-value (generate-uuid)]
+        new-cookie-value (uuid)]
     (alter session assoc :uuid new-cookie-value)
     (db-update :sessions {:uuid new-cookie-value}
                `(= :id ~(deref (:id @session))))
@@ -202,7 +202,7 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
 
 
 (defn create-session [session-type one-shot?]
-  (with1 (mk-Session :uuid (generate-uuid) :session-type session-type)
+  (with1 (mk-Session :uuid (uuid) :session-type session-type)
     (when-not one-shot?
       (dao-put it "sessions"))))
 
@@ -221,7 +221,7 @@ ALTER TABLE sessions ADD UNIQUE (uuid);
                        (when-let [res (first (db-pstmt "SELECT id FROM sessions WHERE uuid = ? LIMIT 1;" cookie-value))]
                          (with1 (dao-get (:id res) "sessions")
                            (vm-set (:touched @it) (datetime-to-sql-timestamp (time/now))))))
-                  (mk-Session :uuid (generate-uuid)
+                  (mk-Session :uuid (uuid)
                               :session-type session-type
                               :one-shot? (or (with (get (:query-params request) "_sw_session_one_shot_p")
                                                (if (nil? it)

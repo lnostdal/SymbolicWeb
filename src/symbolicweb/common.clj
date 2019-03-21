@@ -118,10 +118,6 @@
                                args))))
 
 
-(let [id-generator-value (atom 0)]
-  (defn uid "Generates an unique ID; non-universal or only pr. server instance based."
-    ^long [] (swap! id-generator-value inc)))
-
 
 (defn touch [^Ref obj]
   (reset! ^Atom (:last-activity-time @obj)

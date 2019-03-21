@@ -6,7 +6,7 @@
 
 (defn mk-ComboBoxElt [value-model]
   ;;(vm-sync vm (fn [v o n] n))
-  (ref {:id (cl-format false "~36R" (generate-uid))
+  (ref {:id (cl-format false "~36R" (uid))
         :text (vm value-model)}))
 
 

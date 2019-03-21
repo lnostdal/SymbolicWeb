@@ -153,7 +153,7 @@
 
     "login_init"
     ;; FB: 1. Redirect the user to the OAuth Dialog
-    (let [csrf-check (generate-uuid)]
+    (let [csrf-check (uuid)]
       ;; TODO: This no longer makes sense using page-redirects given that Sessions might time out.
       (stput session :facebook-csrf-check csrf-check)
       (let [location (user-authenticate-url app-id permission-names csrf-check user-authenticate-display response-uri)]

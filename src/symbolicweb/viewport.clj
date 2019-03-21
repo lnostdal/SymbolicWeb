@@ -10,7 +10,7 @@
 (defn mk-Viewport [request ^Ref session ^WidgetBase root-widget & args]
   "This will instantiate a new Viewport and also 'register' it as a part of SESSION and the server via -VIEWPORTS-."
   (assert (= :lifetime-root @(.parent (.lifetime root-widget))))
-  (let [viewport-id (str "sw-" (generate-uid))
+  (let [viewport-id (str "sw-" (uid))
         viewport (ref (apply assoc {}
                              :id viewport-id
                              :last-activity-time (atom (System/currentTimeMillis))
@@ -160,7 +160,7 @@ Also see JS-RUN."
                                           callback-data {}
                                           js-after ""}}]
   (let [;; CSRF security check token. Check is done in HANDLE-IN-CHANNEL-REQUEST.
-        callback-data (conj callback-data [:sw-token (subs (generate-uuid) 0 8)])
+        callback-data (conj callback-data [:sw-token (subs (uuid) 0 8)])
         cb-id (str selector "_" event-type)]
     (alter (:callbacks @viewport) assoc cb-id
            [(if once?

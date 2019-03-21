@@ -120,7 +120,7 @@
            (gc-session (:uuid @session) session)))))
 
     (catch Throwable e
-      (let [ex-id (generate-uuid)]
+      (let [ex-id (uuid)]
         (log "Top Level Exception:"
              (with-out-str
                (println "\n\nREQUEST-ID:" ex-id)
