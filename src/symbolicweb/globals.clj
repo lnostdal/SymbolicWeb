@@ -1,8 +1,5 @@
 (in-ns 'symbolicweb.core)
 
-(defn ^Boolean ref? [x]
-  (= Ref (class x)))
-
 (defonce ^:const -http-server-string- "SymbolicWeb")
 
 ;; Long poll timeout every X / 1000 seconds.

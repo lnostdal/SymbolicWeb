@@ -3,6 +3,14 @@
 (declare add-response-chunk ref?)
 
 
+(definline ref? [x]
+  `(instance? Ref ~x))
+
+(definline agent? [x]
+  `(instance? clojure.lang.Agent ~x))
+
+
+
 (let [jom (json/object-mapper {:encode-key-fn true,
                                :decode-key-fn true})]
 
@@ -77,17 +85,10 @@
   (get (:widgets @viewport) id))
 
 
-(defn ensure-model [obj]
-  (assert (ref? obj))
-  obj)
-
 
 (defn url-encode-wrap ^String [^String s]
   (str "decodeURIComponent('" (url-encode-component s) "')"))
 
-
-(defn agent? [x]
-  (= clojure.lang.Agent (type x)))
 
 
 (defn default-parse-callback-data-handler [request widget callback-data]
