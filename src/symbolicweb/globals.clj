@@ -11,12 +11,12 @@
 ;; X / 1000 seconds since -VIEWPORT-TIMEOUT- and still no new request (long poll) from any Viewport in the session?
 (defonce ^:const -session-timeout- (+ -viewport-timeout- 10000))
 
-(defonce ^:const -request-counter- (atom 0))
+(defonce -request-counter- (atom 0))
 
 (defonce ^:const -session-cookie-name- "_sw")
 
-(defonce ^:const -session-types- (atom {})) ;; name -> {:fit-fn fit-fn, :session-constructor-fn session-constructor-fn]
+(defonce -session-types- (atom {})) ;; name -> {:fit-fn fit-fn, :session-constructor-fn session-constructor-fn]
 
-(defonce ^:const -num-sessions-model- (vm 0))
+(defonce -num-sessions-model- (vm 0))
 
-(defonce ^:const -sessions- (ref {})) ;; SESSION-COOKIE-VALUE -> APPLICATION
+(defonce -sessions- (ref {})) ;; SESSION-COOKIE-VALUE -> APPLICATION
