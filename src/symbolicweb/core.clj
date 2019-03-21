@@ -15,6 +15,9 @@
   (:import (com.google.common.cache CacheBuilder CacheLoader))
 
   (:require [hiccup.core :refer (html)])
+  (:use lrn-utils.core)
+  (:import (lrn_utils.core OLong ODouble OBoolean OObject GCedResource))
+
   (:require [hiccup.util :refer (escape-html)])
   (:require [hiccup.page :refer (doctype xhtml-tag)])
 

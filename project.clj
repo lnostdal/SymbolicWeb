@@ -33,9 +33,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                 *print-level* 6}
 
 
-  :dependencies [;;[org.clojure/clojure "LATEST"]
-                 [org.clojure/clojure "1.10.0-master-SNAPSHOT"]
-                 [mvxcvi/puget "LATEST"] ;; Colorizing canonical Clojure printer for EDN values.
+  :dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]
 
                  [org.clojure/math.numeric-tower "LATEST"] ;; ROUND etc.
 
@@ -45,6 +43,7 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
                  [com.google.guava/guava "LATEST"] ;; For soft hash cache (database_dao.clj).
 
                  [cheshire "LATEST"] ;; JSON parsing and generation.
+                 [lrn-utils "0.1.0-SNAPSHOT"]
 
                  [clj-time/clj-time "LATEST"]
 
@@ -64,10 +63,6 @@ DOltIy+DABz3mcJznUaQ5ikwf7Y0m3iPFB3nBsJGgQJaD9VlY3Wpvm78RQIGRhGI
 
                  [me.raynes/conch "LATEST"] ;; Shell tools (used by gpg.clj).
                  ]
-
-
-  :plugins [[cider/cider-nrepl "LATEST"]]
-
 
   ;;:aot :all
   :jvm-opts [;; General

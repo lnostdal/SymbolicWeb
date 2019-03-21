@@ -7,24 +7,6 @@
   (var-set var (apply fun (var-get var) args)))
 
 
-(defn ^String url-encode-component [^String s]
-  ;; TODO: This is retarded and slow.
-  (.replace (java.net.URLEncoder/encode s "UTF-8")
-            "+"
-            "%20"))
-
-
-(defn ^String url-decode-component [^String s]
-  (java.net.URLDecoder/decode s "UTF-8"))
-
-
-(defn ^String mime-encode-rfc-2047 [^String s]
-  (str "=?UTF-8?Q?"
-       (-> (url-encode-component s)
-           (str/replace "%20" "_")
-           (str/replace "%" "="))
-       "?="))
-
 
 (defn expected-response-type [request]
   (let [accept-header (get (:headers request) "accept")]
@@ -63,18 +45,6 @@
   ;; <lazybot> ⇒ "([c x]); Evaluates x and tests if it is an instance of the class c. Returns true or false"
   )
 
-
-(defn sha ^String [^String input-str]
-  (let [md (java.security.MessageDigest/getInstance "SHA-512")]
-    (. md update (.getBytes input-str))
-    (let [digest (.digest md)]
-      (apply str (map #(format "%02x" (bit-and % 0xff)) digest)))))
-
-
-(defn ensure-vector [x]
-  (if (vector? x)
-    x
-    (vector x)))
 
 
 (defmacro with-all-viewports [& body]

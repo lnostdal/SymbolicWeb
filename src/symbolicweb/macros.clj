@@ -18,54 +18,6 @@
 (def ^:dynamic *dyn-ctx* nil)
 
 
-
-(defmacro in [x & args]
-  "Is `x` equal (=) to any of the elements in `args`?
-E.g. ```(in :filled :new :filled) => true``` or ```(in :cancelled :new :filled) => false```"
-  (let [it (gensym)]
-    `(let [~it ~x]
-       (or ~@(map (fn [y] `(= ~it ~y))
-                  args)))))
-
-
-
-(defonce -dbg-locker- (Object.))
-(defmacro dbg [x]
-  "Quick inline debugging where other stuff will or might provide context."
-  `(let [res# ~x]
-     (locking -dbg-locker- ;; Try to generate better output when doing threading.
-       (println (str (puget.printer/cprint-str '~x) " => " (puget.printer/cprint-str res#))))
-     res#))
-
-
-
-(defmacro dbgf [ctx x]
-  "Quick inline debugging where other stuff with context from `ctx` and meta-environment."
-  (let [m (meta &form)]
-    `(let [res# ~x]
-       (locking -dbg-locker- ;; Try to generate better output when doing threading.
-         (println (str "[" ~ctx " "
-                       (last (str/split ~*file* #"/"))
-                       ":" ~(:line m) ":" ~(:column m) "]: "
-                       (puget.printer/cprint-str '~x) " => " (puget.printer/cprint-str res#))))
-       res#)))
-
-
-
-(defmacro dbg-full [x]
-  "Full detail inline debugging."
-  (let [m (meta &form)]
-    `(let [res# ~x]
-       (locking -dbg-locker- ;; Try to generate better output when doing threading.
-         (println (str "#DBG " ~*file* ":" ~(:line m) ":" ~(:column m) " >>>"))
-         (puget.printer/cprint '~x)
-         (println "#DBG =>")
-         (puget.printer/cprint res#)
-         (newline))
-       res#)))
-
-
-
 (defn %with-errors-logged [f]
   (try
     (f)
@@ -80,19 +32,6 @@ E.g. ```(in :filled :new :filled) => true``` or ```(in :cancelled :new :filled) 
 
 (defmacro with-errors-logged [& body]
   `(%with-errors-logged (fn [] ~@body)))
-
-
-
-(defmacro with [form & body]
-  `(let [~'it ~form]
-     ~@body))
-
-
-
-(defmacro with1 [form & body]
-  `(with ~form
-     ~@body
-     ~'it))
 
 
 
@@ -112,15 +51,6 @@ E.g. ```(in :filled :new :filled) => true``` or ```(in :cancelled :new :filled) 
                (if obj
                  (str "<" (class obj) ": " obj ">")
                  "NIL"))))
-
-
-
-(defmacro do1 [x & body]
-  "As PROG1 from Common Lisp."
-  `(let [x# ~x]
-     ~@body
-     x#))
-
 
 
 (defmacro swsync [& body]
